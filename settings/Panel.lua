@@ -197,20 +197,56 @@ local function buildHeader(panel, title, opts)
                      -Const.PANEL_PADDING_X, -Const.PANEL_HEADER_HEIGHT)
     divider:SetVertexColor(titleFS:GetTextColor())
 
-    local defaultsBtn
-    if opts.defaultsButton then
-        defaultsBtn = AceGUI:Create("Button")
-        defaultsBtn:SetText(L["Defaults"])
-        defaultsBtn:SetWidth(Const.PANEL_DEFAULTS_W)
-        defaultsBtn.frame:SetParent(panel)
-        defaultsBtn.frame:ClearAllPoints()
-        defaultsBtn.frame:SetPoint("TOPRIGHT", panel, "TOPRIGHT",
-                                   -Const.PANEL_PADDING_X, -Const.PANEL_HEADER_TOP)
-        defaultsBtn.frame:Show()
-        attachTooltip(defaultsBtn, "Defaults", opts.defaultsTooltip)
+    -- The Defaults button is NOT built here — only the intent to have one is
+    -- recorded. buildHeader runs at registration time (OnInitialize), which is
+    -- too early; ensureDefaultsButton below builds it on first OnShow and
+    -- explains why.
+    panel.wantsDefaultsButton = opts.defaultsButton and true or false
+    panel.defaultsTooltip     = opts.defaultsTooltip
+
+    return titleFS, divider
+end
+
+-- ---------------------------------------------------------------------
+-- Defaults button — created lazily, on the panel's FIRST OnShow.
+--
+-- It stays an AceGUI Button (options-ui-§5), but *when* it is created matters
+-- as much as *what* creates it. AceGUI is a SHARED library: UI-skinning addons
+-- restyle its widgets by hooking RegisterAsWidget, so any widget created before
+-- that hook is installed keeps Blizzard's stock UI-Panel-Button-Up art — the red
+-- stone button — for the rest of the session, while everything created after it
+-- comes out skinned.
+--
+-- registerPanels() runs during OnInitialize (ADDON_LOADED), i.e. mid-load, so
+-- building the button there is a race against every other addon's load order:
+-- it looks correct only for as long as PrettyChat happens to load after the
+-- skinner. Rename the folder, or install a skin, and the identical code renders
+-- a red button. Deferring creation to first OnShow removes the race outright —
+-- by then every addon has loaded. Do NOT "simplify" this back into buildHeader.
+--
+-- Idempotent: safe to call on every OnShow.
+-- ---------------------------------------------------------------------
+
+local function ensureDefaultsButton(panel)
+    if not panel or panel.defaultsBtn or not panel.wantsDefaultsButton then return end
+
+    local defaultsBtn = AceGUI:Create("Button")
+    defaultsBtn:SetText(L["Defaults"])
+    defaultsBtn:SetWidth(Const.PANEL_DEFAULTS_W)
+    defaultsBtn.frame:SetParent(panel)
+    defaultsBtn.frame:ClearAllPoints()
+    defaultsBtn.frame:SetPoint("TOPRIGHT", panel, "TOPRIGHT",
+                               -Const.PANEL_PADDING_X, -Const.PANEL_HEADER_TOP)
+    defaultsBtn.frame:Show()
+    attachTooltip(defaultsBtn, "Defaults", panel.defaultsTooltip)
+
+    -- The click handler is registered at panel-registration time, long before the
+    -- button exists, so it is parked on the panel and wired up here.
+    if panel.defaultsOnClick then
+        defaultsBtn:SetCallback("OnClick", panel.defaultsOnClick)
     end
 
-    return titleFS, divider, defaultsBtn
+    panel.defaultsBtn = defaultsBtn
 end
 
 -- ---------------------------------------------------------------------
@@ -226,17 +262,16 @@ local function createPanel(title, opts)
     panel.name = title
     panel:Hide()
 
-    local titleFS, divider, defaultsBtn = buildHeader(panel, title, opts)
-    panel.title       = titleFS
-    panel.divider     = divider
-    panel.defaultsBtn = defaultsBtn
+    local titleFS, divider = buildHeader(panel, title, opts)
+    panel.title   = titleFS
+    panel.divider = divider
 
     local body = CreateFrame("Frame", nil, panel)
     body:SetPoint("TOPLEFT",     panel, "TOPLEFT",     0, -(Const.PANEL_HEADER_HEIGHT + 8))
     body:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, 0)
     panel.body = body
 
-    return { panel = panel, body = body, scroll = nil, defaultsBtn = defaultsBtn }
+    return { panel = panel, body = body, scroll = nil }
 end
 
 local function ensureScroll(ctx)
@@ -661,24 +696,24 @@ local function registerPanels()
         local rendered = false
         if category == "General" then
             catCtx.panel:SetScript("OnShow", function()
+                ensureDefaultsButton(catCtx.panel)
                 if rendered then return end
                 rendered = true
                 Schema.RegisterRefresher(category, buildGeneralBody(catCtx))
             end)
         else
             local catData = ns.Defaults[category]
-            if catData then
-                if catCtx.defaultsBtn then
-                    catCtx.defaultsBtn:SetCallback("OnClick", function()
-                        PrettyChat:ResetCategory(category)
-                    end)
-                end
-                catCtx.panel:SetScript("OnShow", function()
-                    if rendered then return end
-                    rendered = true
-                    Schema.RegisterRefresher(category, buildCategoryBody(catCtx, category, catData))
-                end)
+            -- Parked for ensureDefaultsButton to wire on first OnShow — the
+            -- button does not exist yet at registration time.
+            catCtx.panel.defaultsOnClick = function()
+                PrettyChat:ResetCategory(category)
             end
+            catCtx.panel:SetScript("OnShow", function()
+                ensureDefaultsButton(catCtx.panel)
+                if rendered or not catData then return end
+                rendered = true
+                Schema.RegisterRefresher(category, buildCategoryBody(catCtx, category, catData))
+            end)
         end
 
         Settings.RegisterCanvasLayoutSubcategory(
