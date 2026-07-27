@@ -50,6 +50,7 @@ Source `.lua` is grouped under `core/`, `defaults/`, `locales/`, `modules/`, and
 
 - `PrettyChat.toc` — Interface line (`120007`), version, SavedVariables (`PrettyChatDB`), section comments, and file load order. Order is dependency order, not alphabetical: `libs/` → `locales/enUS` → `core/Compat` → `core/Constants` → `core/Namespace` → `core/State` → `core/Util` → `core/Database` → `core/DebugLog` → `core/PrettyChat` → `defaults/Profile` → `defaults/Defaults` → GlobalStrings chunks → `modules/Override` → `settings/Schema` → `settings/Slash` → `settings/Panel`.
 - `libs/` — vendored Ace3 + LibStub. Tracked in git (standard WoW addon practice).
+- `tests/` — the headless harness (stock Lua 5.1, no client). `run.lua` (runner + micro-framework + the `--list` inventory mode), `loader.lua` (loads the sources in TOC order and runs the AceAddon lifecycle), `wow_mock.lua` (the WoW/Ace3/AceGUI/Settings mock builder), and one `test_<module>.lua` suite per module. Excluded from luacheck. See [testing.md](./testing.md).
 - `media/` — local copies of the logo + before/after screenshots (the README references CDN URLs, not these — kept as source backups) and `media/fonts/` (vendored JetBrains Mono, OFL), which **is** loaded at runtime by `core/DebugLog.lua` via `ns.Const.FONT_MONO`.
 - `.gitattributes` — forces CRLF on disk for all text files (overrides per-user `core.autocrlf`).
 - `.gitignore` — OS / editor cruft + `TODO.md` + `.claude/`.

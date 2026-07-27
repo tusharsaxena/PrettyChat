@@ -122,11 +122,11 @@ local function EnsureFrame()
     toggleFS:SetPoint("LEFT")
     toggleBtn:SetScript("OnEnter", function() toggleFS:SetTextColor(1, 0.82, 0) end)
     toggleBtn:SetScript("OnLeave", function() D:RefreshHeader() end)
-    local function onToggleClick() D:SetEnabled(not (ns.State and ns.State.debug)) end
-    toggleBtn:SetScript("OnClick", onToggleClick)
+    toggleBtn:SetScript("OnClick", function()
+        D:SetEnabled(not (ns.State and ns.State.debug))
+    end)
     frame.debugToggle = toggleFS
     frame.debugToggleBtn = toggleBtn
-    D._toggleClickForTest = onToggleClick   -- test seam (mock stubs GetScript)
 
     local log = CreateFrame("ScrollingMessageFrame", nil, frame)
     log:SetPoint("TOPLEFT", 8, -(26 + 6))

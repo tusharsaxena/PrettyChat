@@ -45,6 +45,70 @@ return function(ctx)
         t.eq(env[g], def, "string back on reapplies override")
     end)
 
+    test("the cascade is a conjunction — every layer must be on to apply", function()
+        -- All eight master/category/string combinations, so no single layer can
+        -- be quietly promoted to "wins" by a future refactor.
+        local paths = {
+            master = "General.enabled",
+            cat    = cat .. ".enabled",
+            str    = cat .. "." .. g .. ".enabled",
+        }
+        for _, combo in ipairs({
+            { true,  true,  true  },
+            { true,  true,  false },
+            { true,  false, true  },
+            { true,  false, false },
+            { false, true,  true  },
+            { false, true,  false },
+            { false, false, true  },
+            { false, false, false },
+        }) do
+            Schema.Set(paths.master, combo[1])
+            Schema.Set(paths.cat,    combo[2])
+            Schema.Set(paths.str,    combo[3])
+            local expectApplied = combo[1] and combo[2] and combo[3]
+            t.eq(env[g], expectApplied and def or orig,
+                ("master=%s category=%s string=%s"):format(tostring(combo[1]),
+                    tostring(combo[2]), tostring(combo[3])))
+        end
+        inst.addon:ResetAll()
+    end)
+
+    test("a disabled category leaves other categories applied", function()
+        inst.addon:ResetAll()
+        local otherRow = firstFormatRow(Schema, "Money")
+        Schema.Set(cat .. ".enabled", false)
+        t.eq(env[g], orig, "the disabled category is restored")
+        t.eq(env[otherRow.globalName], otherRow.default, "its neighbour is untouched")
+        inst.addon:ResetAll()
+    end)
+
+    test("a string with no snapshot is left alone rather than blanked", function()
+        -- ApplyStrings only restores globals it snapshotted in OnEnable; a
+        -- global with no original must not be written to nil.
+        inst.addon.originalStrings[g] = nil
+        env[g] = "SOMETHING ELSE"
+        Schema.Set("General.enabled", false)
+        t.eq(env[g], "SOMETHING ELSE", "an unsnapshotted global is skipped, not cleared")
+        inst.addon.originalStrings[g] = orig
+        Schema.Set("General.enabled", true)
+        t.eq(env[g], def, "and normal service resumes once it is back")
+    end)
+
+    test("repeated applies are idempotent across the whole surface", function()
+        inst.addon:ResetAll()
+        local snapshot = {}
+        for _, category in ipairs(Schema.CATEGORY_ORDER) do
+            for globalName in pairs((inst.ns.Defaults[category] or {}).strings or {}) do
+                snapshot[globalName] = env[globalName]
+            end
+        end
+        for _ = 1, 3 do inst.addon:ApplyStrings() end
+        for globalName, value in pairs(snapshot) do
+            t.eq(env[globalName], value, globalName .. " is unchanged by re-applying")
+        end
+    end)
+
     test("ResetString clears both the custom format and the per-string disable", function()
         -- A per-string reset must restore BOTH dimensions to default (enabled
         -- + default format), matching ResetCategory/ResetAll. Dirty both first.

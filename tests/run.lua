@@ -64,13 +64,20 @@ local ctx = { t = t, test = test, loadAddon = loadAddon, mock = mock, root = roo
 -- ---- Suites ----------------------------------------------------------
 -- Order is load-order-sensitive; keep it stable.
 local SUITES = {
+    "test_compat",
+    "test_constants",
+    "test_util",
+    "test_locale",
+    "test_defaults",
     "test_schema",
     "test_render",
     "test_apply",
+    "test_override",
     "test_database",
+    "test_lifecycle",
     "test_debuglog",
     "test_slash",
-    "test_util",
+    "test_panel",
 }
 
 -- Register every suite. Calling the suite chunk runs its top-level setup

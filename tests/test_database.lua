@@ -35,4 +35,43 @@ return function(ctx)
         t.eq(old.global.schemaVersion, Database.SCHEMA_VERSION,
             "old DB upgraded to current version")
     end)
+
+    test("the schema version is a positive integer the defaults start below", function()
+        t.eq(type(Database.SCHEMA_VERSION), "number", "SCHEMA_VERSION is a number")
+        t.truthy(Database.SCHEMA_VERSION >= 1, "and at least 1")
+        t.eq(Database.defaults.global.schemaVersion, 0,
+            "a brand-new DB starts at 0 so it runs cleanly up to current")
+    end)
+
+    test("a DB with no recorded version is treated as version 0", function()
+        local fresh = { global = {} }
+        Database.RunMigrations(fresh)
+        t.eq(fresh.global.schemaVersion, Database.SCHEMA_VERSION,
+            "an absent version migrates from the beginning")
+    end)
+
+    test("RunMigrations tolerates nil and a db without .global", function()
+        t.truthy(pcall(Database.RunMigrations), "nil db is a no-op")
+        t.truthy(pcall(Database.RunMigrations, {}), "a db with no namespaces is a no-op")
+        t.truthy(pcall(Database.RunMigrations, { global = false }), "a non-table global is a no-op")
+    end)
+
+    test("the runner stamps the current version even with no steps to run", function()
+        -- There are no migrations yet; the runner still normalises the stamp so
+        -- the next release can rely on it.
+        local ahead = { global = { schemaVersion = Database.SCHEMA_VERSION + 5 } }
+        Database.RunMigrations(ahead)
+        t.eq(ahead.global.schemaVersion, Database.SCHEMA_VERSION,
+            "the stamp is written unconditionally")
+    end)
+
+    test("migrating emits no debug noise when nothing ran", function()
+        -- debug-logging-§8: the lifecycle trace fires only when a step actually
+        -- executed, so a normal login stays quiet.
+        inst.ns.State.debug = true
+        inst.ns.DebugLog:Clear()
+        Database.RunMigrations(db)
+        t.eq(#inst.ns.DebugLog.buffer, 0, "a no-op migration logs nothing")
+        inst.ns.State.debug = false
+    end)
 end

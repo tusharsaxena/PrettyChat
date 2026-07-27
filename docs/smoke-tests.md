@@ -1,6 +1,6 @@
 # Smoke tests
 
-PrettyChat's automated coverage is the headless harness under `tests/` (`lua tests/run.lua` — see [testing.md](./testing.md)). It exercises the schema, sample renderer, apply pipeline, migration runner, slash dispatcher, and debug console under stock Lua, but it can't reach behavior that depends on live WoW client state — `_G[GLOBALNAME]`, the AceDB profile, the live chat frame, the Settings panel. This checklist is that second layer: manual, in-game validation of what stock Lua can't exercise.
+PrettyChat's automated coverage is the headless harness under `tests/` (`lua tests/run.lua` — see [testing.md](./testing.md)). It exercises the schema, sample renderer, apply pipeline and override engine, migration runner, slash dispatcher, debug console, and the settings panel's registration and widget wiring under stock Lua — but only against mocks. What it cannot reach is behaviour that depends on the live client: real `_G[GLOBALNAME]` formats rendered by Blizzard's own chat code, the persisted AceDB profile across `/reload`, actual panel layout, fonts and third-party skinning, taint, and positional `%n$s` formats. This checklist is that second layer: manual, in-game validation of what stock Lua can't exercise.
 
 Run the **quick recipe** for routine work. Run the **full suite** before tagging a release, after touching `OnEnable` / `ApplyStrings` / `settings/Schema.lua`, or after a WoW client patch.
 

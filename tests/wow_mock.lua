@@ -4,14 +4,29 @@
 -- loaded and exercised headlessly under stock Lua 5.1 (no WoW client).
 --
 -- Design notes:
---   * Frame/widget mocks are self-returning no-ops — enough that any
---     CreateFrame():SetPoint():Show() chain won't crash. They are NOT
---     asked to model layout behaviour; no test drives the panel.
 --   * The DB and the _G global-string table ARE real Lua tables, so the
 --     schema / apply / render logic is genuinely exercised (per the
 --     harness design in docs/audits/2026-07-12/04_TECHNICAL_DESIGN.md §A).
 --   * `_G` is the env itself, so `_G[GLOBALNAME] = value` writes in
 --     ApplyStrings land back in the same table the loader reads.
+--   * Frame and AceGUI widget mocks are stubs, not a layout engine — they
+--     model *state and wiring* (scripts, callbacks, shown-ness, child
+--     order, text) and nothing about pixels. That is deliberately enough
+--     to drive settings/Panel.lua headlessly: the panel's contract is
+--     "which widget, wired to which schema path", not where it lands.
+--
+-- Mock fidelity — three pieces are load-bearing and must not be
+-- simplified away:
+--   * the AceAddon mock stamps AceConsole's colliding `:Print` mixin, so
+--     the tests exercise the real printer-reclaim path (anti-pattern #36);
+--   * frames resolve UNKNOWN **PascalCase** keys to a self-returning
+--     no-op (every WoW/AceGUI method is PascalCase) but resolve unknown
+--     lowercase keys to nil — addon-owned fields (`panel.defaultsBtn`,
+--     `frame.log`, `scroll.content`) are lowercase, and a catch-all that
+--     answered those with a truthy function would silently invert every
+--     `if not panel.defaultsBtn` guard in the addon;
+--   * Show()/Hide() fire the OnShow/OnHide scripts and hooks, which is
+--     what makes the panel's lazy first-OnShow body build testable.
 
 local M = {}
 
@@ -25,17 +40,195 @@ M.metadata = {
 
 local function noop() end
 
--- Self-returning no-op frame/widget: every indexed method returns a
--- function that returns the receiver, so chained calls are inert.
-local function newFrame()
-    local f = {}
+-- ---- Frame mock ------------------------------------------------------
+
+local frameMethods = {}
+
+local function newFrame(name)
+    local f = {
+        _name     = name,
+        _shown    = true,
+        _scripts  = {},   -- script name -> primary handler
+        _hooks    = {},   -- script name -> { handler, ... }
+        _width    = 600,
+        _height   = 400,
+        _children = {},
+        messages  = {},   -- ScrollingMessageFrame line sink
+    }
     return setmetatable(f, {
-        __index = function()
-            return function(self) return self end
+        __index = function(_, k)
+            local m = frameMethods[k]
+            if m then return m end
+            -- PascalCase => an (unmodelled) WoW method: inert, self-returning.
+            -- Anything else => an addon-owned field that genuinely is nil.
+            if type(k) == "string" and k:find("^%u") then
+                return function(self) return self end
+            end
+            return nil
         end,
     })
 end
 M.newFrame = newFrame
+
+function frameMethods:SetScript(script, handler)
+    self._scripts[script] = handler
+    return self
+end
+
+function frameMethods:GetScript(script)
+    return self._scripts[script]
+end
+
+function frameMethods:HookScript(script, handler)
+    self._hooks[script] = self._hooks[script] or {}
+    table.insert(self._hooks[script], handler)
+    return self
+end
+
+-- Run a script + every hook attached to it, in registration order.
+function frameMethods:FireScript(script, ...)
+    local primary = self._scripts[script]
+    if primary then primary(self, ...) end
+    for _, h in ipairs(self._hooks[script] or {}) do h(self, ...) end
+    return self
+end
+
+function frameMethods:Show()
+    self._shown = true
+    return self:FireScript("OnShow")
+end
+
+function frameMethods:Hide()
+    self._shown = false
+    return self:FireScript("OnHide")
+end
+
+function frameMethods:SetShown(v)
+    if v then return self:Show() end
+    return self:Hide()
+end
+
+function frameMethods:IsShown() return self._shown and true or false end
+function frameMethods:IsVisible() return self._shown and true or false end
+
+function frameMethods:GetName() return self._name end
+
+function frameMethods:SetText(text) self.text = text; return self end
+function frameMethods:GetText() return self.text end
+
+function frameMethods:SetWidth(w)  self._width  = w; return self end
+function frameMethods:SetHeight(h) self._height = h; return self end
+function frameMethods:SetSize(w, h) self._width, self._height = w, h; return self end
+function frameMethods:GetWidth()  return self._width  end
+function frameMethods:GetHeight() return self._height end
+
+function frameMethods:GetTextColor() return 1, 1, 1, 1 end
+
+-- GameTooltip surface: SetText lands in `text` (above) and each AddLine is
+-- recorded, so a suite can read back what a tooltip would show.
+function frameMethods:AddLine(text)
+    self.lines = self.lines or {}
+    self.lines[#self.lines + 1] = text
+    return self
+end
+
+function frameMethods:CreateFontString()
+    local fs = newFrame()
+    table.insert(self._children, fs)
+    return fs
+end
+
+function frameMethods:CreateTexture()
+    local tex = newFrame()
+    table.insert(self._children, tex)
+    return tex
+end
+
+-- ScrollingMessageFrame surface. The scroll getters return real numbers so
+-- DebugLog:UpdateScrollBar walks its whole body instead of bailing at the
+-- type guard.
+function frameMethods:AddMessage(msg)
+    self.messages[#self.messages + 1] = msg
+    return self
+end
+
+function frameMethods:Clear()
+    for i = #self.messages, 1, -1 do self.messages[i] = nil end
+    return self
+end
+
+function frameMethods:GetMaxScrollRange() return self._maxScroll or 0 end
+function frameMethods:GetScrollOffset()   return self._scrollOffset or 0 end
+function frameMethods:SetScrollOffset(v)  self._scrollOffset = v; return self end
+
+function frameMethods:SetMinMaxValues(lo, hi)
+    self._min, self._max = lo, hi
+    return self
+end
+
+function frameMethods:SetValue(v) self._value = v; return self end
+function frameMethods:GetValue()  return self._value end
+
+-- ---- AceGUI widget mock ---------------------------------------------
+
+local widgetMethods = {}
+
+local function newWidget(wtype)
+    local w = {
+        type      = wtype,
+        frame     = newFrame(),
+        children  = {},
+        callbacks = {},
+        disabled  = false,
+    }
+    -- Label / Heading expose a `.label` FontString in real AceGUI; the panel
+    -- font-object branches key off it, so model it for those two types only.
+    if wtype == "Label" or wtype == "Heading" then
+        w.label = newFrame()
+    end
+    return setmetatable(w, { __index = widgetMethods })
+end
+
+function widgetMethods:SetText(text)  self.text = text;   return self end
+function widgetMethods:GetText()      return self.text end
+function widgetMethods:SetLabel(text) self.labelText = text; return self end
+function widgetMethods:SetValue(v)    self.value = v;    return self end
+function widgetMethods:GetValue()     return self.value end
+function widgetMethods:SetDisabled(v) self.disabled = v and true or false; return self end
+function widgetMethods:SetLayout(l)   self.layout = l;   return self end
+function widgetMethods:SetFullWidth(v)     self.fullWidth = v and true or false; return self end
+function widgetMethods:SetRelativeWidth(v) self.relativeWidth = v; return self end
+function widgetMethods:SetHeight(h)   self.height = h;   return self end
+function widgetMethods:SetWidth(w)    self.width = w;    return self end
+
+function widgetMethods:SetCallback(name, fn)
+    self.callbacks[name] = fn
+    return self
+end
+
+-- Invoke a registered AceGUI callback the way the widget would
+-- (widget, event, ...). Returns false when nothing is registered.
+function widgetMethods:Fire(name, ...)
+    local fn = self.callbacks[name]
+    if not fn then return false end
+    fn(self, name, ...)
+    return true
+end
+
+function widgetMethods:AddChild(child)
+    self.children[#self.children + 1] = child
+    return self
+end
+
+-- Depth-first walk of a widget tree, newest-last (build order).
+function M.walkWidgets(widget, out)
+    out = out or {}
+    for _, child in ipairs(widget.children or {}) do
+        out[#out + 1] = child
+        M.walkWidgets(child, out)
+    end
+    return out
+end
 
 local function deepcopy(t)
     if type(t) ~= "table" then return t end
@@ -66,7 +259,18 @@ function M.newEnv()
     function chatFrame:AddMessage(msg) self.messages[#self.messages + 1] = msg end
     env.DEFAULT_CHAT_FRAME = chatFrame
 
-    env.CreateFrame      = function() return newFrame() end
+    -- Every frame the addon creates, in creation order, keyed by the global
+    -- name when it has one (the debug console windows).
+    local frames = { all = {}, byName = {} }
+    env._frames = frames
+
+    env.CreateFrame      = function(_, name)
+        local f = newFrame(name)
+        frames.all[#frames.all + 1] = f
+        if name then frames.byName[name] = f end
+        return f
+    end
+    env.UIParent         = newFrame("UIParent")
     env.InCombatLockdown = function() return false end
     -- Globals the on-screen debug console (core/DebugLog.lua) touches.
     env.date             = os.date
@@ -80,22 +284,53 @@ function M.newEnv()
     env.GetAddOnMetadata = function(_, key) return M.metadata[key] end
 
     env.StaticPopupDialogs = {}
-    env.StaticPopup_Show   = noop
-    env.GameTooltip        = newFrame()
+    env._popupsShown       = {}
+    env.StaticPopup_Show   = function(which) env._popupsShown[#env._popupsShown + 1] = which end
+    env.GameTooltip        = newFrame("GameTooltip")
     env.YES = "Yes"
     env.NO  = "No"
 
-    -- Settings deliberately omits RegisterCanvasLayoutCategory so
-    -- Config.lua's registerPanels() early-returns instead of building
-    -- AceGUI widgets we don't model.
-    env.Settings     = {}
+    -- ---- Settings API ------------------------------------------------
+    -- Modelled (unlike the pre-1.4 mock, which omitted it so registerPanels
+    -- early-returned) so settings/Panel.lua's registration path is exercised.
+    -- SettingsPanel stays nil: its category-tree internals are private API the
+    -- addon already pcall-guards, and OpenConfig's "could not auto-expand"
+    -- fallback is the branch worth covering.
+    local settings = { categories = {}, subcategories = {}, addonCategories = {}, opened = {} }
+    env._settings = settings
+
+    local function newCategory(name, frame)
+        local id = "cat:" .. name
+        return { name = name, frame = frame, GetID = function() return id end }
+    end
+
+    env.Settings = {
+        RegisterCanvasLayoutCategory = function(frame, name)
+            local cat = newCategory(name, frame)
+            settings.categories[#settings.categories + 1] = cat
+            return cat
+        end,
+        RegisterCanvasLayoutSubcategory = function(parent, frame, name)
+            local sub = newCategory(name, frame)
+            sub.parent = parent
+            settings.subcategories[#settings.subcategories + 1] = sub
+            return sub
+        end,
+        RegisterAddOnCategory = function(cat)
+            settings.addonCategories[#settings.addonCategories + 1] = cat
+        end,
+        OpenToCategory = function(id)
+            settings.opened[#settings.opened + 1] = id
+            return settings.openResult
+        end,
+    }
     env.SettingsPanel = nil
 
     -- Font objects referenced via _G.GameFont* — harmless placeholders.
     for _, fname in ipairs({
         "GameFontNormal", "GameFontNormalLarge", "GameFontNormalHuge",
         "GameFontHighlight", "GameFontDisable",
-    }) do env[fname] = newFrame() end
+    }) do env[fname] = newFrame(fname) end
 
     -- ---- LibStub + Ace3 fakes ---------------------------------------
     local libs   = {}
@@ -115,7 +350,12 @@ function M.newEnv()
                 object, name = {}, first
             end
             object.name = name
-            object.RegisterChatCommand = noop  -- AceConsole mixin
+            -- AceConsole mixin. Records the registrations so a suite can prove
+            -- both /pc and its /prettychat alias reach the dispatcher.
+            object.slashCommands = {}
+            object.RegisterChatCommand = function(self, cmd, handler)
+                self.slashCommands[cmd] = handler
+            end
             object.Printf              = noop
             -- AceConsole embeds a :Print mixin onto the object. Stamp a
             -- colliding printer (its |cff33ff99Name|r: tag) so the suite can
@@ -149,8 +389,17 @@ function M.newEnv()
     }
 
     libs["AceConsole-3.0"] = { RegisterChatCommand = noop }
-    libs["AceGUI-3.0"]     = {
-        Create = function() return newFrame() end,
+
+    -- AceGUI: records every widget it creates so a suite can walk the panel
+    -- tree that settings/Panel.lua built.
+    local created = {}
+    env._widgets = created
+    libs["AceGUI-3.0"] = {
+        Create = function(_, wtype)
+            local w = newWidget(wtype)
+            created[#created + 1] = w
+            return w
+        end,
         RegisterAsContainer = noop,
         RegisterAsWidget    = noop,
     }

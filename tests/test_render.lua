@@ -32,6 +32,56 @@ return function(ctx)
         t.truthy(e3, "bad conversion yields an error message")
     end)
 
+    test("each conversion class gets a correctly typed sample argument", function()
+        -- sampleArg types the placeholder per conversion: strings, integers,
+        -- floats and characters each have to satisfy string.format.
+        t.eq(render("%s"), "Sample", "%s takes a word")
+        t.eq(render("%d"), "42",     "%d takes an integer")
+        t.eq(render("%i"), "42",     "%i takes an integer")
+        t.eq(render("%u"), "42",     "%u takes an integer")
+        t.eq(render("%x"), "2a",     "%x takes an integer, rendered hex")
+        t.eq(render("%o"), "52",     "%o takes an integer, rendered octal")
+        t.eq(render("%c"), "A",      "%c takes a character code")
+        t.truthy(render("%f"):find("^1%.5"), "%f takes a float")
+        t.eq(render("%g"), "1.5",    "%g takes a float")
+        t.truthy(render("%e"):find("^1%.5"), "%e takes a float")
+    end)
+
+    test("upper-case conversions are typed from their lower-case form", function()
+        t.eq(render("%X"), "2A", "%X is an integer conversion too")
+        t.truthy(render("%E"):find("^1%.5"), "%E is a float conversion too")
+    end)
+
+    test("flags, width and precision are parsed, not mistaken for arguments", function()
+        t.eq(render("%05d"),   "00042",  "zero-padded width")
+        t.eq(render("%-6s|"),  "Sample|", "left-justified width")
+        t.eq(render("%.2f"),   "1.50",   "precision")
+        t.eq(render("%+d"),    "+42",    "sign flag")
+    end)
+
+    test("multiple conversions are filled in order", function()
+        t.eq(render("%s got %d for %s"), "Sample got 42 for Sample",
+            "each conversion gets its own argument, left to right")
+    end)
+
+    test("a format with no conversions renders as itself", function()
+        t.eq(render("no conversions here"), "no conversions here", "literal text passes through")
+        t.eq(render("100%% sure"), "100% sure", "an escape-only format still collapses")
+    end)
+
+    test("%% is not mistaken for a conversion next to a real one", function()
+        t.eq(render("%d%% of %s"), "42% of Sample",
+            "the escape is stripped before the conversions are counted")
+    end)
+
+    test("a non-string format is rejected like an empty one", function()
+        local r, e = render(42)
+        t.nilv(r, "a number is not a format string")
+        t.eq(e, "(empty format)", "and reports the same reason as an empty one")
+        local r2 = render({})
+        t.nilv(r2, "a table is not a format string either")
+    end)
+
     test("a real Blizzard-style default renders without error", function()
         local rows = inst.ns.Schema.RowsByCategory("Loot")
         local fmt

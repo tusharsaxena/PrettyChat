@@ -4,13 +4,33 @@ Contributor-facing verification guide. (Player-facing docs live in the root [REA
 
 ## Headless harness
 
-PrettyChat ships a headless test harness that runs under stock Lua 5.1 with no WoW client — it loads the addon sources into a mock WoW environment and exercises the schema, sample renderer, apply pipeline, migration runner, slash dispatcher, and debug console.
+PrettyChat ships a headless test harness that runs under stock Lua 5.1 with no WoW client — it loads the addon sources into a mock WoW environment and exercises the compat shim, constants, string helpers, locale manifest, defaults data, schema, sample renderer, apply pipeline and override engine, migration runner, addon lifecycle, debug console, slash dispatcher, and settings panel.
 
 ```sh
 lua tests/run.lua          # run every suite (exits non-zero on failure)
 lua tests/run.lua --list   # print the test-case inventory (runs nothing)
 luacheck .                 # static analysis (config in .luacheckrc)
 ```
+
+## How the harness works
+
+```
+tests/
+  run.lua            -- the runner + micro-framework; also the --list inventory mode
+  loader.lua         -- loads each source in TOC order and runs OnInitialize/OnEnable
+  wow_mock.lua       -- the WoW API mock builder (a fresh env per instance)
+  test_<module>.lua  -- one suite per module
+```
+
+- `run.lua` registers every suite, then runs each case under `pcall`; a case passes when its body neither errors nor trips an assertion.
+- `loader.lua` reproduces the `local addonName, ns = ...` header, loads the sources in TOC order, seeds every schema-registered Blizzard global with a recognisable `ORIG:<NAME>` value, and runs the AceAddon lifecycle. `ctx.loadAddon()` therefore returns a **fresh, fully-booted addon instance** (`{ env, ns, addon }`) — suites never share state.
+- `wow_mock.lua` stubs the Blizzard surface, LibStub/Ace3, the Settings API and AceGUI. Four pieces of fidelity are load-bearing and must not be simplified away:
+  - the AceAddon mock stamps AceConsole's colliding `:Print` mixin, so the tests exercise the real printer-reclaim path;
+  - frames resolve unknown **PascalCase** keys to a self-returning no-op but unknown lowercase keys to `nil` — addon-owned fields (`panel.defaultsBtn`, `frame.log`) are lowercase, and a blanket catch-all would silently invert every `if not …` guard;
+  - `Show()`/`Hide()` fire the OnShow/OnHide scripts and hooks, which is what makes the panel's lazy first-OnShow body build testable;
+  - the AceGUI mock records widget type, label, value, disabled state, callbacks and child order, so a suite can walk the panel tree and fire a widget callback (`widget:Fire("OnValueChanged", v)`).
+
+What the mocks deliberately do *not* model is layout: they answer "which widget, seeded from what, wired to which schema path", never where anything lands on screen. Rendering, fonts, skinning, taint and live chat stay in the [smoke-test suite](./smoke-tests.md).
 
 ## The gate
 

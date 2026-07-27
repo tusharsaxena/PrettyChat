@@ -84,12 +84,18 @@ return function(ctx)
     end)
 
     test("header toggle click flips state through the same seam", function()
+        -- Fire the button's real OnClick script rather than a copy of the
+        -- closure parked beside it, so a dropped SetScript wiring fails here
+        -- too — the header toggle and /pc debug on|off must stay one seam.
         ns.State.debug = false
         D:Show()
-        local click = D._toggleClickForTest
-        t.truthy(type(click) == "function", "header toggle click closure is exposed")
-        click(); t.eq(ns.State.debug, true,  "header click turns state on")
-        click(); t.eq(ns.State.debug, false, "second header click turns state off")
+        local btn = env._frames.byName["PrettyChatDebugWindow"].debugToggleBtn
+        t.truthy(btn, "the header toggle button was built")
+        t.eq(type(btn:GetScript("OnClick")), "function", "with an OnClick handler wired to it")
+        btn:FireScript("OnClick")
+        t.eq(ns.State.debug, true,  "header click turns state on")
+        btn:FireScript("OnClick")
+        t.eq(ns.State.debug, false, "second header click turns state off")
     end)
 
     test("ns.Debug is a no-op when off and appends one line when on", function()
@@ -118,8 +124,154 @@ return function(ctx)
             "no separate [Apply] line per settings change")
     end)
 
+    test("the console line and the copy buffer describe the same event", function()
+        -- FormatColored feeds the on-screen log; FormatPlain feeds the Copy
+        -- window. They must never drift apart in tag or message.
+        ns.State.debug = true
+        D:Clear()
+        ns.Debug("Loot", "item x%d", 3)
+        local plain = D.buffer[#D.buffer]
+        -- The console frame itself is private; read the lines it was given.
+        local console = env._frames.byName["PrettyChatDebugWindow"].log.messages
+        t.eq(#D.buffer, 1, "one buffered line")
+        t.truthy(plain:find("| %[Loot%] item x3$"), "the plain line carries tag + message")
+        t.truthy(console[#console]:find("%[Loot%]|r item x3$"),
+            "the console line carries the same tag + message, coloured")
+        ns.State.debug = false
+    end)
+
+    test("the plain buffer never carries colour escapes of its own", function()
+        ns.State.debug = true
+        D:Clear()
+        ns.Debug("Loot", "plain message")
+        t.falsy(D.buffer[1]:find("|c", 1, true), "no colour code is added to a plain line")
+        t.eq(D.FormatPlain("00:00:00", "Tag", "msg"), "00:00:00 | [Tag] msg",
+            "the plain formatter emits the bare separator, never an escape")
+        t.truthy(D.FormatColored("00:00:00", "Tag", "msg"):find("|cff", 1, true),
+            "while the console formatter does colour its line")
+        ns.State.debug = false
+    end)
+
+    test("ns.Debug neutralises a protected value inside its format args", function()
+        -- events-frames-taint-§8: a combat secret must not reach string.format.
+        ns.State.debug = true
+        D:Clear()
+        local secret = setmetatable({}, { __concat = function() error("secret") end })
+        local ok = pcall(ns.Debug, "Loot", "got %s", secret)
+        t.truthy(ok, "the sink never raises on a protected value")
+        t.truthy(D.buffer[1]:find("got <secret>", 1, true), "the value is replaced in place")
+        ns.State.debug = false
+    end)
+
+    test("ns.Debug passes a bare message through without formatting it", function()
+        ns.State.debug = true
+        D:Clear()
+        local ok = pcall(ns.Debug, "Loot", "100% done")
+        t.truthy(ok, "a lone %-carrying message is not run through string.format")
+        t.truthy(D.buffer[1]:find("100% done", 1, true), "and reaches the log verbatim")
+        ns.State.debug = false
+    end)
+
+    test("ns.Debug keeps argument types so numeric conversions still work", function()
+        ns.State.debug = true
+        D:Clear()
+        ns.Debug("Loot", "%d gold, %.1f%% rate, %s", 12, 2.5, "ok")
+        t.truthy(D.buffer[1]:find("12 gold, 2.5% rate, ok", 1, true),
+            "numbers survive the secret-safety pass as numbers")
+        ns.State.debug = false
+    end)
+
+    test("the buffer is capped and drops its oldest lines first", function()
+        D:Clear()
+        for i = 1, 520 do D:Add("Bulk", "line " .. i) end
+        t.eq(#D.buffer, 500, "the buffer holds at most MAX_BUFFER lines")
+        t.truthy(D.buffer[1]:find("line 21", 1, true), "the oldest lines were dropped")
+        t.truthy(D.buffer[#D.buffer]:find("line 520", 1, true), "the newest line is kept")
+    end)
+
+    test("Clear empties both the buffer and the console view", function()
+        D:Add("Loot", "before clear")
+        D:Clear()
+        t.eq(#D.buffer, 0, "the copy buffer is emptied")
+        t.eq(#env._frames.byName["PrettyChatDebugWindow"].log.messages, 0,
+            "and so is the on-screen log")
+    end)
+
+    test("the line counter reports buffered lines against the cap", function()
+        D:Clear()
+        D:Add("Loot", "one")
+        t.eq(env._frames.byName["PrettyChatDebugWindow"].lineCount.text, "1 / 500 lines",
+            "the status bar counts lines against MAX_BUFFER")
+    end)
+
+    test("the Copy window is filled with the plain-text buffer", function()
+        D:Clear()
+        D:Add("Loot", "first")
+        D:Add("Loot", "second")
+        D:ShowCopy()
+        local copy = env._frames.byName["PrettyChatDebugCopyWindow"]
+        t.truthy(copy, "the copy window is created on demand")
+        t.eq(copy.edit.text, table.concat(D.buffer, "\n"),
+            "it holds the whole buffer, newline-joined")
+        t.truthy(copy:IsShown(), "and it is shown")
+    end)
+
+    test("both console windows register for Esc-to-close", function()
+        local registered = {}
+        for _, name in ipairs(env.UISpecialFrames) do registered[name] = true end
+        t.truthy(registered["PrettyChatDebugWindow"], "the console closes on Esc")
+        t.truthy(registered["PrettyChatDebugCopyWindow"], "so does the copy window")
+    end)
+
+    test("Show, Hide and Toggle drive the window's visibility", function()
+        D:Hide()
+        t.falsy(D:IsShown(), "hidden reports false")
+        D:Toggle()
+        t.truthy(D:IsShown(), "toggle from hidden shows it")
+        D:Toggle()
+        t.falsy(D:IsShown(), "toggle again hides it")
+        D:Show()
+        t.truthy(D:IsShown(), "an explicit show reopens it")
+    end)
+
+    test("IsShown is false before the console has ever been built", function()
+        -- The window is created lazily on first use; the General-page checkbox
+        -- reads this before anything has opened it.
+        local fresh = ctx.loadAddon()
+        t.falsy(fresh.ns.DebugLog:IsShown(), "no frame yet means not shown")
+    end)
+
+    test("the header label tracks the session flag in the §5 state colours", function()
+        local header = env._frames.byName["PrettyChatDebugWindow"].debugToggle
+        D:SetEnabled(true)
+        t.eq(header.text, "Debug: ON", "the toggle reads ON while logging")
+        D:SetEnabled(false)
+        t.eq(header.text, "Debug: OFF", "and OFF once stopped")
+    end)
+
+    test("SessionSummary self-identifies the build, schema and profile", function()
+        local summary = D.SessionSummary()
+        t.truthy(summary:find("PrettyChat v" .. ctx.mock.metadata.Version, 1, true),
+            "addon name and version")
+        t.truthy(summary:find("schema v" .. tostring(addon.db.global.schemaVersion), 1, true),
+            "the live schema version")
+        t.truthy(summary:find("profile 'Default'", 1, true), "the active profile")
+    end)
+
+    test("disabling logging still writes its closing bracket line", function()
+        -- D:Add is ungated, so the "logging disabled" line lands after the flag
+        -- has already flipped off.
+        D:SetEnabled(true)
+        D:Clear()
+        D:SetEnabled(false)
+        t.eq(#D.buffer, 1, "exactly one line is written on disable")
+        t.truthy(D.buffer[1]:find("[Debug] logging disabled", 1, true), "the closing bracket")
+        t.falsy(ns.State.debug, "with the flag already off")
+    end)
+
     test("ResetAll emits one [Reset] summary carrying apply counts", function()
         -- A bulk reset bypasses the write seam, so it logs one [Reset] summary.
+        ns.State.debug = true
         D:Clear()
         addon:ResetAll()
         local resetJoined = table.concat(D.buffer, "\n")

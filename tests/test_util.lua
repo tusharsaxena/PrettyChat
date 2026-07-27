@@ -33,4 +33,41 @@ return function(ctx)
         t.falsy(U.IsConcatSafe(true), "booleans are not directly concat-safe")
         t.falsy(U.IsConcatSafe({}),   "tables are not concat-safe")
     end)
+
+    test("IsConcatSafe never raises on the value it is probing", function()
+        -- The whole point of probing with table.concat: `..` would itself raise.
+        local secret = setmetatable({}, { __concat = function() error("secret") end })
+        local ok, res = pcall(U.IsConcatSafe, secret)
+        t.truthy(ok, "the probe absorbs the raise")
+        t.eq(res, false, "and answers false")
+        -- nil probes as safe ({nil} is an empty table, which concatenates
+        -- fine); SafeToString short-circuits nil before it ever probes.
+        t.truthy(U.IsConcatSafe(nil), "nil passes the probe")
+        t.eq(U.SafeToString(nil), "nil", "but SafeToString handles it before probing")
+    end)
+
+    test("trim strips surrounding whitespace and is nil-safe", function()
+        t.eq(U.trim("  padded  "), "padded", "both ends")
+        t.eq(U.trim("lead   "),    "lead",   "trailing only")
+        t.eq(U.trim("   trail"),   "trail",  "leading only")
+        t.eq(U.trim("tight"),      "tight",  "nothing to strip")
+        t.eq(U.trim("\t mixed \t"), "mixed", "tabs count as whitespace")
+        t.eq(U.trim("   "),        "",       "whitespace-only collapses to empty")
+        t.eq(U.trim(""),           "",       "empty stays empty")
+        t.eq(U.trim(nil),          "",       "nil is treated as empty, not an error")
+    end)
+
+    test("trim keeps interior whitespace intact", function()
+        -- Slash arguments (`/pc set <path> <value>`) carry meaningful spaces.
+        t.eq(U.trim("  a  b  "), "a  b", "only the ends are touched")
+    end)
+
+    test("note and cmd wrap text in the documented slash colours", function()
+        local Color = ns.Const.Color
+        t.eq(U.note("body"), Color.white .. "body" .. Color.reset,
+            "note() renders body text white")
+        t.eq(U.cmd("/pc help"), Color.yellow .. "/pc help" .. Color.reset,
+            "cmd() renders command text in the schema-path yellow (slash-commands-§4)")
+        t.eq(U.note(""), Color.white .. Color.reset, "an empty string still terminates its colour")
+    end)
 end

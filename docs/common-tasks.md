@@ -80,7 +80,12 @@ One row in the `COMMANDS` table near the top of `settings/Slash.lua`:
     function(self, rest) yourFunctionBody(self, rest) end},
 ```
 
-The dispatcher and the help printer iterate the same table — no other edits needed. If your command needs the schema, guard with `if not schemaReady() then return end` (the same pattern the existing schema-touching commands use).
+The dispatcher and the help printer iterate the same table. If your command needs the schema, guard with `if not schemaReady() then return end` (the same pattern the existing schema-touching commands use).
+
+Two follow-ups the harness enforces:
+
+1. Wrap the description in `L[…]` **and** add that exact string to the enUS manifest in `locales/enUS.lua` — `test_locale` scans the sources for `L["…"]` call sites and fails on any that the manifest doesn't carry (and on any manifest entry nothing references).
+2. Run the gate. `test_slash` drives the real `/pc` entry point and asserts every line carries the `[PC]` tag, so a new verb that prints raw fails immediately. If you add or rename a **test case**, also regenerate `docs/test-cases.md` and update the README `Tests` badge in the same change (testing-§5).
 
 ## Adjust the per-string panel block layout
 
@@ -90,7 +95,9 @@ Each row is an AceGUI `SimpleGroup` with `Flow` layout containing two children a
 
 When you add or remove a widget, also update the block's `refresh()` closure so the new widget syncs from the DB on every mutation.
 
-## Verify a behavior change in-game
+## Verify a behavior change
+
+Two layers, in order. **Headless first:** `lua tests/run.lua` + `luacheck .` must both be green before any commit ([testing.md](./testing.md)). The suites are data-driven — a new format string or a new category is picked up and asserted automatically (`test_defaults` cross-checks the defaults table against the schema built on top of it), so most additions need no test edit. **Then in-game**, for what stock Lua can't reach:
 
 See [smoke-tests.md](./smoke-tests.md). The quick recipe at the top handles routine work; the full suite groups (Boot / Override pipeline / Settings panel / Slash / Cross-surface sync / Persistence) catch the rest. If you touched `OnEnable` / `ApplyStrings` / `settings/Schema.lua` / `settings/Panel.lua` / slash dispatch, that doc lists which test groups to run.
 
