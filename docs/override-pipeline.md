@@ -1,6 +1,6 @@
 # Override pipeline
 
-How Blizzard's chat lines become PrettyChat's reformatted output. The engine lives in `modules/Override.lua` (`ApplyStrings`, the enable predicates, `ResetCategory` / `ResetAll`); the pristine-values snapshot is taken in `core/PrettyChat.lua`'s `OnEnable`. It runs at `OnEnable` plus on every settings change.
+How Blizzard's chat lines become PrettyChat's reformatted output. The engine lives in `modules/Override.lua` (`ApplyStrings`, the enable predicates, `ResetString` / `ResetCategory` / `ResetAll`); the pristine-values snapshot is taken in `core/PrettyChat.lua`'s `OnEnable`. It runs at `OnEnable` plus on every settings change.
 
 ## Three steps
 
@@ -35,7 +35,7 @@ Runs once at addon load, after Blizzard's `GlobalStrings.lua` has populated `_G`
 ```lua
 function PrettyChat:OnEnable()
     self.originalStrings = {}
-    for cat, catData in pairs(ns.Defaults) do
+    for _, catData in pairs(ns.Defaults) do
         for globalName in pairs(catData.strings) do
             self.originalStrings[globalName] = _G[globalName]
         end
@@ -80,9 +80,9 @@ Runs from:
 
 - `OnEnable` — initial pass after the snapshot.
 - `Schema.Set` (every settings mutation) — `Schema.Set` calls `ApplyStrings` directly after the row's `set()` writes the DB. Row `set()` closures themselves are pure DB writes; they do not trigger `ApplyStrings` so a future `Schema.SetMany` / preset-load can apply once per batch.
-- `PrettyChat:ResetCategory(cat)` and `PrettyChat:ResetAll()` — both bypass `Schema.Set` (they zero out whole sub-tables, not write through a single row), so they call `ApplyStrings` and `Schema.NotifyPanelChange` themselves.
+- `PrettyChat:ResetString(cat, name)`, `PrettyChat:ResetCategory(cat)` and `PrettyChat:ResetAll()` — all three bypass `Schema.Set` (they clear stored entries wholesale rather than writing through a single row), so they call `ApplyStrings` and `Schema.NotifyPanelChange` themselves.
 
-`ApplyStrings` returns `(applied, restored)` counts rather than logging them itself, so each pass is summarised in **one** caller line (debug-logging-§8/§9): `[Reset] <cat|all> → applied N restored M` on a reset. A settings change logs only `[Set] <path> = <value>` at the write seam (§10) — the re-apply is implied and not re-echoed. `OnEnable` no longer logs a boot line (the session-only debug flag is off at load, so it would never render); the self-identifying `[Init]` summary rides the `DebugLog:SetEnabled` seam instead (debug-logging-§5). (Loot lines themselves never log: the addon hooks no events; it only swaps `_G[GLOBALNAME]`.)
+`ApplyStrings` returns `(applied, restored)` counts rather than logging them itself, so each pass is summarised in **one** caller line (debug-logging-§8/§9): `[Reset] <cat|Cat.NAME|all> → applied N restored M` on a reset. A settings change logs only `[Set] <path> = <value>` at the write seam (§10) — the re-apply is implied and not re-echoed. `OnEnable` no longer logs a boot line (the session-only debug flag is off at load, so it would never render); the self-identifying `[Init]` summary rides the `DebugLog:SetEnabled` seam instead (debug-logging-§5). (Loot lines themselves never log: the addon hooks no events; it only swaps `_G[GLOBALNAME]`.)
 
 Idempotent — calling it multiple times leaves `_G` in the same state.
 

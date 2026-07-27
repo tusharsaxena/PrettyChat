@@ -7,8 +7,8 @@ What's in scope, what's out, and the resolved decisions that shaped the contract
 - **GlobalString overrides** for system chat lines — loot, currency, money, reputation, experience, honor, tradeskill, and a small Misc bucket. Format strings come from `defaults/Defaults.lua`; per-string user overrides live in SavedVariables.
 - **Three enable layers** — addon-wide master toggle → per-category toggle → per-string toggle. Disabled strings revert to the captured Blizzard original at runtime.
 - **Settings panel** integrated into Blizzard's AddOns settings via canvas-layout subcategories, one sub-page per category (no right-pane tabs), with a virtual `General` sub-page for the master switch / Test / Reset all controls.
-- **Schema-driven slash CLI** (`/pc list / get / set / reset / resetall / test`) sharing one write path with the panel. Every panel-shaped operation is reachable from chat by dot path.
-- **Live per-string preview** in the panel — the rendered sample line appears under each string's edit row whenever the value differs from the default — and a `/pc test` / Test-button preview that walks every format regardless of enable state.
+- **Schema-driven slash CLI** (`/pc list / get / set / reset / resetall / test / debug`) sharing one write path with the panel. Every panel-shaped operation is reachable from chat by dot path.
+- **Live per-string preview** in the panel — a Preview EditBox on every string's block, always rendered, re-syncing on each commit — and a `/pc test` / Test-button preview that walks every format regardless of enable state.
 - **Compatibility with any chat UI** (default Blizzard, ElvUI, Glass, …) by overriding `_G[GLOBALNAME]` rather than hooking chat events.
 
 ## Out of scope
@@ -40,5 +40,5 @@ Decisions made during requirements review and v1.x.x — these are settled, not 
 ## Where the contract lives
 
 - User-facing behavior: [README.md](../README.md) — categories, slash command table, FAQ, troubleshooting.
-- Engineer working notes: [../CLAUDE.md](../CLAUDE.md) — hard rules, response style, working environment.
+- Engineer working notes: [agent-context.md](./agent-context.md) — hard rules, test gate, namespace table, working environment. The root [../CLAUDE.md](../CLAUDE.md) is the stub that points there and records the accepted standard deviations.
 - High-level architecture map: [ARCHITECTURE.md](./ARCHITECTURE.md).

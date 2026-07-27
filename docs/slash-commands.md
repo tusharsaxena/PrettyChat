@@ -91,7 +91,7 @@ The slash command itself is the assertion. In the panel, the per-category **Defa
 
 Two things you can't reach via `/pc`:
 
-- **Live sample of a saved value.** The panel's per-row sample line renders `ns.RenderSample(currentValue)` whenever your value differs from the default. Slash users get an equivalent dump *after* `/pc set` lands, via `/pc test` (which prints every format, not just the changed one).
+- **Live sample of a saved value.** The panel's per-row Preview EditBox always renders `ns.RenderSample(currentValue)` and re-syncs on every commit. Slash users get an equivalent dump *after* `/pc set` lands, via `/pc test` (which prints every format, not just the changed one — narrow it with `/pc test formatstring <NAME>`).
 - **Visual diff between Original and New.** The panel renders both side-by-side per row. Chat users would need `/pc get` against the format row plus an external GlobalStrings reference.
 
-The per-string **Reset** button (one click on the row when your value diverges from the default) and the per-category **Defaults** header button mirror what `/pc set <path> <default>` and `/pc reset <Category>` do — both surfaces are reachable from chat. These remaining gaps are by design — the panel is the editing surface, slash is for scripted / power-user workflows.
+The per-string **Reset** button (always visible on the row; `PrettyChat:ResetString`, clearing both the custom format and the disable flag) and the per-category **Defaults** header button mirror what `/pc set <path> <default>` and `/pc reset <Category>` do — both surfaces are reachable from chat. These remaining gaps are by design — the panel is the editing surface, slash is for scripted / power-user workflows.

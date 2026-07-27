@@ -152,7 +152,7 @@ The function:
 
 Test output ignores the master / per-category / per-string enable toggles — the preview is for *seeing what your formats look like*, not for verifying which ones are currently applied to live chat. The toggles only affect what `ApplyStrings` writes to live `_G[GLOBALNAME]`.
 
-`ns.RenderSample(fmt)` (also exposed from `modules/Override.lua`) is the single-string version used by the per-row sample label: returns `(rendered_string)` on success or `(nil, err)` on `string.format` failure.
+`ns.RenderSample(fmt)` (also exposed from `modules/Override.lua`) is the single-string version used by the per-row Preview EditBox: returns `(rendered_string)` on success or `(nil, err)` on `string.format` failure.
 
 ## Color palette
 

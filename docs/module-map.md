@@ -67,6 +67,7 @@ PrettyChat:OpenConfig()                -- Settings.OpenToCategory(self.optionsCa
 
 -- Override pipeline (modules/Override.lua — also see override-pipeline.md)
 PrettyChat:ApplyStrings()              -- writes enabled overrides to _G; restores originals for disabled ones
+PrettyChat:ResetString(category, globalName)  -- clears BOTH per-string dimensions (custom format + disable flag) + ApplyStrings + NotifyPanelChange
 PrettyChat:ResetCategory(category)     -- clears one category's overrides + ApplyStrings + NotifyPanelChange
 PrettyChat:ResetAll()                  -- clears every category + the addon-wide flag + ApplyStrings + NotifyPanelChange
 PrettyChat:Test(filter?)               -- prints a per-category Original-vs-Formatted block per string (ignores enable toggles); filter is nil | {kind="category", value=…} | {kind="formatstring", value=…}

@@ -51,7 +51,7 @@ You can turn any message type on or off, and change its wording and colors, from
 | `/pc` or `/pc help` | Show the command list in chat |
 | `/pc config` | Open the settings panel (won't open during combat) |
 | `/pc version` | Show the installed version |
-| `/pc list` | List every setting. Add a category to narrow it down, e.g. `/pc list Loot` |
+| `/pc list` | List every setting. Add a category to narrow it down, e.g. `/pc list Loot`. `/pc list category` shows the category names; `/pc list formatstring` shows every message's exact name |
 | `/pc get <setting>` | Show one setting's current value |
 | `/pc set <setting> <value>` | Change one setting, e.g. `/pc set Loot.enabled false` |
 | `/pc reset <category>` | Restore one category to PrettyChat's defaults |

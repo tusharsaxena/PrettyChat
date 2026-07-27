@@ -42,7 +42,7 @@ Modular layout (`core/`, `defaults/`, `locales/`, `modules/`, `settings/`) — t
 | `defaults/Profile.lua` | `ns.ProfileDefaults` | The AceDB `profile` defaults table (`{ profile = { categories = {} } }`); `OnInitialize` merges it with `ns.Database`'s `global` defaults before `AceDB:New`. |
 | `defaults/Defaults.lua` | `ns.Defaults` | Category → format-string default table (label + default per string; per-category `enabled`). |
 | `locales/enUS.lua` | `ns.L` | Localization table with English-key fallback (`__index` returns the key). Seeds the enUS UI-string manifest. |
-| `modules/Override.lua` | `ns.RenderSample` | The override engine — `ApplyStrings`, the enable-cascade predicates, `ResetCategory` / `ResetAll`, and the Test / sample renderer. |
+| `modules/Override.lua` | `ns.RenderSample` | The override engine — `ApplyStrings`, the enable-cascade predicates, `ResetString` / `ResetCategory` / `ResetAll`, and the Test / sample renderer. |
 | `settings/Schema.lua` | `ns.Schema` | Builds `rows`/`byPath` from `ns.Defaults`; single write path (`Schema.Set`), `Schema.FormatValue`, load-time path validator, cross-registered-global map. |
 | `settings/Slash.lua` | `ns.COMMANDS` | The `/pc` dispatcher — ordered `COMMANDS` table, `OnSlashCommand`, and every `list` / `get` / `set` / `reset` / `test` / `debug` handler. |
 | `settings/Panel.lua` | `ns.Config.RegisterPanels` | Canvas-layout parent + one sub-page per category; per-string editor rows. |

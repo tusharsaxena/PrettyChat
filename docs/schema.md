@@ -73,15 +73,16 @@ So writing a format back to its default value via `/pc set` or the panel acts as
 
 ## Reset semantics
 
-Two reset paths, both routed through `PrettyChat:Reset*` not directly through Schema:
+Three reset paths, all routed through `PrettyChat:Reset*` not directly through Schema:
 
+- **`PrettyChat:ResetString(category, globalName)`** clears **both** per-string dimensions for one string — the custom format (`strings[NAME]`) and the disable flag (`disabledStrings[NAME]`) — so it matches the full-reset semantics of the two below. Resetting only the format would leave a previously-disabled string half-reset. After clearing, calls `ApplyStrings` and `Schema.NotifyPanelChange(category)`.
 - **`PrettyChat:ResetCategory(category)`** clears one category's overrides. Special case: `category == "General"` clears `db.profile.enabled` back to `nil` (default true). After clearing, calls `ApplyStrings` and `Schema.NotifyPanelChange(category)`.
 - **`PrettyChat:ResetAll()`** clears `db.profile.enabled` *and* every entry in `db.profile.categories`. Calls `ApplyStrings` and `Schema.NotifyPanelChange(nil)` (every category).
 
 Both are reachable from:
 
-- The panel's per-category `Defaults` button (in the page header — no popup confirm) and the General sub-page's "Reset all to defaults" button (gated by the `PRETTYCHAT_RESET_ALL` StaticPopup).
-- `/pc reset <Category>` and `/pc resetall` (no in-chat confirmation — typing the command is itself the assertion).
+- The per-string `Reset` button on each panel row (`ResetString` — always visible, a no-op when the string is already at default), the panel's per-category `Defaults` button (in the page header — no popup confirm), and the General sub-page's "Reset all to defaults" button (gated by the `PRETTYCHAT_RESET_ALL` StaticPopup).
+- `/pc reset <Category>` and `/pc resetall` (no in-chat confirmation — typing the command is itself the assertion). `ResetString` has no slash equivalent; from chat, write the format back to its default (auto-clear) or use `/pc set <Cat>.<NAME>.enabled true`.
 
 ## SavedVariables shape
 
