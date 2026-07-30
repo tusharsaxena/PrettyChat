@@ -52,9 +52,9 @@ You can turn any message type on or off, and change its wording and colors, from
 | `/pc config` | Open the settings panel (won't open during combat) |
 | `/pc version` | Show the installed version |
 | `/pc list` | List every setting. Add a category to narrow it down, e.g. `/pc list Loot`. `/pc list category` shows the category names; `/pc list formatstring` shows every message's exact name |
-| `/pc get <setting>` | Show one setting's current value |
-| `/pc set <setting> <value>` | Change one setting, e.g. `/pc set Loot.enabled false` |
-| `/pc reset <category>` | Restore one category to PrettyChat's defaults |
+| `/pc get setting` | Show one setting's current value |
+| `/pc set setting value` | Change one setting, e.g. `/pc set Loot.enabled false` |
+| `/pc reset category` | Restore one category to PrettyChat's defaults |
 | `/pc resetall` | Restore everything to defaults |
 | `/pc test` | Preview how every message looks, before and after — works even while the addon is off |
 | `/pc debug` | Open the on-screen debug log window. `/pc debug on` / `off` start and stop logging (off by default) |
@@ -86,14 +86,14 @@ A few things worth knowing:
 - **The master switch always wins.** Turning off **Enable PrettyChat** (General page, or `/pc set General.enabled false`) restores every original message, whatever your other settings say. Your customizations are kept, just not applied.
 - **Three switches, checked in order:** master, then category, then the individual message. A message only uses your wording when all three are on.
 - **Editing wording and colors.** When you write your own version of a message, keep the little `%s` and `%d` placeholders — that's where the item name, amount, and so on get filled in. Drop or reorder one and the line will look broken, so copy the original as a starting point. (Editing from chat works too, but you have to double every `|` to `||`.)
-- **Getting back to defaults.** One message: its **Reset** button, or turn it off to restore the original. A whole category: the page's **Defaults** button, or `/pc reset <category>`. Everything: **Reset All to Defaults** on the General page, or `/pc resetall`.
+- **Getting back to defaults.** One message: its **Reset** button, or turn it off to restore the original. A whole category: the page's **Defaults** button, or `/pc reset category`. Everything: **Reset All to Defaults** on the General page, or `/pc resetall`.
 
 ## FAQ
 
 | Question | Answer |
 |----------|--------|
 | Does this work with ElvUI, Glass, or other chat addons? | Yes, with nothing to configure. PrettyChat changes the game's message templates before any chat window sees them, so whatever you use to display chat gets the tidy version automatically. |
-| Why do some lines still look like the default? | Something's switched off. Check the master switch, the category, and that specific message — `/pc list <category>` shows them all in one place. A switched-off message always shows its original. |
+| Why do some lines still look like the default? | Something's switched off. Check the master switch, the category, and that specific message — `/pc list category` shows them all in one place. A switched-off message always shows its original. |
 | I edited a message and now it looks broken. | Your version is missing or misusing the `%s` / `%d` placeholders. Copy the original wording from the panel and edit around the placeholders, or turn the message off to restore it. |
 | Can I change the colors? | Yes — the colors are part of the wording. Each message's text carries WoW color codes (`\|cffRRGGBB…\|r`), so recolor a line by editing those hex values right in its **New** box on the settings panel. There's no separate color picker. (Editing from chat works too, but you have to double every `\|` to `\|\|`.) |
 | How do I preview my edits without waiting for real loot? | Two ways, and both work even while the addon is switched off. On the settings panel, each message has a live **Preview** that updates as you type. From chat, `/pc test` prints a before/after sample of every message — add a category (`/pc test category Loot`) or one string (`/pc test formatstring LOOT_ITEM_SELF`) to narrow it down. |
@@ -105,9 +105,9 @@ A few things worth knowing:
 | Symptom | What to try |
 |---------|-------------|
 | Nothing changed after installing | Make sure it's switched on: check the master switch, the category, and the message (`/pc get General.enabled` should be `true`). Run `/pc test` — if the preview looks formatted but real chat doesn't, another addon is changing the same messages after PrettyChat. |
-| A message I edited looks broken | Your wording dropped or misused a `%s` / `%d` placeholder. Restore the category with `/pc reset <category>`, or copy the original from the panel and edit around the placeholders. |
+| A message I edited looks broken | Your wording dropped or misused a `%s` / `%d` placeholder. Restore the category with `/pc reset category`, or copy the original from the panel and edit around the placeholders. |
 | The settings panel won't open | Wait until you're fully loaded in, and note it won't open during combat. If the main page opens but a sub-page doesn't, click the sub-page's row in the settings list. |
-| I want a clean slate | One category: `/pc reset <category>`. Everything: `/pc resetall`, or **Reset All to Defaults** on the General page. |
+| I want a clean slate | One category: `/pc reset category`. Everything: `/pc resetall`, or **Reset All to Defaults** on the General page. |
 | I opened the debug console but it's empty | The window and logging are separate switches. Opening the window (`/pc debug`) doesn't start logging — turn logging on first with `/pc debug on`, or the **Debug** toggle inside the window, then reproduce the problem. Use **Copy** to lift the log into a bug report. |
 | I edited a crafting message and my change won't stick | A couple of strings (item and multi-item crafting results) live under both **Loot** and **Tradeskill**. They share one game template, so whichever of the two you edited last, after a `/reload` the **Tradeskill** version wins. Edit it in one place — the panel's Enable tooltip flags these shared strings. |
 
