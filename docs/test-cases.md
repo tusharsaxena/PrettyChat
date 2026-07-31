@@ -11,7 +11,7 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 - falls back when C_AddOns exists without the getter
 - returns nil (never errors) when neither surface exists
 - passes the addon name and key straight through
-- ns.version is seeded from the TOC through the shim
+- NS.version is seeded from the TOC through the shim
 
 ### test_constants.lua (8)
 
@@ -36,7 +36,7 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 
 ### test_locale.lua (7)
 
-- ns.L is published as a table
+- NS.L is published as a table
 - an unknown key falls back to itself verbatim
 - every seeded manifest entry is an identity mapping
 - the scan found the L call sites it is meant to guard
@@ -135,7 +135,7 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 
 ### test_database.lua (10)
 
-- ns.Database and the db.global namespace exist
+- NS.Database and the db.global namespace exist
 - a fresh DB is stamped at the current schema version
 - re-running migrations is idempotent
 - RunMigrations tolerates a db without a .global namespace
@@ -153,8 +153,8 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 - OnInitialize registers /pc and its /prettychat alias
 - OnEnable snapshots a Blizzard original for every registered global
 - OnEnable applies the overrides so live chat is rewritten at load
-- ns.Print prepends the cyan [PC] tag to every line
-- ns.Print neutralises a value the concat probe rejects
+- NS.Print prepends the cyan [PC] tag to every line
+- NS.Print neutralises a value the concat probe rejects
 - OpenConfig refuses during combat without touching the Settings API
 - OpenConfig opens the registered category out of combat
 - the auto-expand fallback notice is printed once per session
@@ -170,13 +170,13 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 - enable emits the [Init] session summary after the bracket
 - bare /pc debug toggles the window without changing the flag
 - header toggle click flips state through the same seam
-- ns.Debug is a no-op when off and appends one line when on
+- NS.Debug is a no-op when off and appends one line when on
 - Schema.Set emits one [Set] line with no separate [Apply] echo
 - the console line and the copy buffer describe the same event
 - the plain buffer never carries colour escapes of its own
-- ns.Debug neutralises a protected value inside its format args
-- ns.Debug passes a bare message through without formatting it
-- ns.Debug keeps argument types so numeric conversions still work
+- NS.Debug neutralises a protected value inside its format args
+- NS.Debug passes a bare message through without formatting it
+- NS.Debug keeps argument types so numeric conversions still work
 - the buffer is capped and drops its oldest lines first
 - Clear empties both the buffer and the console view
 - the line counter reports buffered lines against the cap
@@ -192,7 +192,7 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 ### test_slash.lua (39)
 
 - Schema.FormatValue formats bools and doubles pipes in strings
-- ns.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
+- NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
 - a bare /pc prints the help index
 - /pc help lists every command with its description
 - an unknown verb says so and then prints the help index

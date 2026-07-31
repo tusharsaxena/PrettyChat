@@ -10,8 +10,8 @@ return function(ctx)
     local t      = ctx.t
     local test   = ctx.test
     local inst   = ctx.loadAddon()
-    local ns     = inst.ns
-    local Schema = ns.Schema
+    local NS     = inst.NS
+    local Schema = NS.Schema
 
     local ORDER = Schema.CATEGORY_ORDER
 
@@ -24,19 +24,19 @@ return function(ctx)
 
     -- Flat { category, globalName, strData } list over the whole table.
     local entries = {}
-    for category, catData in pairs(ns.Defaults) do
+    for category, catData in pairs(NS.Defaults) do
         for globalName, strData in pairs(catData.strings or {}) do
             entries[#entries + 1] = { category, globalName, strData }
         end
     end
 
     test("the defaults table is non-empty and carries real entries", function()
-        t.truthy(next(ns.Defaults) ~= nil, "ns.Defaults is populated")
+        t.truthy(next(NS.Defaults) ~= nil, "NS.Defaults is populated")
         t.truthy(#entries > 50, "the reference data carries the full string surface")
     end)
 
     test("every defaults category appears in CATEGORY_ORDER", function()
-        for category in pairs(ns.Defaults) do
+        for category in pairs(NS.Defaults) do
             t.truthy(inOrder(category),
                 ("category %q is listed in CATEGORY_ORDER"):format(category))
         end
@@ -45,9 +45,9 @@ return function(ctx)
     test("every ordered category except the virtual General has backing data", function()
         for _, category in ipairs(ORDER) do
             if category == "General" then
-                t.nilv(ns.Defaults[category], "General is virtual — no defaults entry")
+                t.nilv(NS.Defaults[category], "General is virtual — no defaults entry")
             else
-                t.truthy(ns.Defaults[category],
+                t.truthy(NS.Defaults[category],
                     ("ordered category %q has a defaults entry"):format(category))
             end
         end
@@ -63,7 +63,7 @@ return function(ctx)
     end)
 
     test("every category declares a boolean enabled flag and a strings table", function()
-        for category, catData in pairs(ns.Defaults) do
+        for category, catData in pairs(NS.Defaults) do
             t.eq(type(catData.enabled), "boolean",
                 ("%s.enabled is a boolean"):format(category))
             t.eq(type(catData.strings), "table",
@@ -108,7 +108,7 @@ return function(ctx)
         -- A default whose conversions can't be filled would show as an error
         -- line in the panel preview and in /pc test for every user.
         for _, e in ipairs(entries) do
-            local rendered, err = ns.RenderSample(e[3].default)
+            local rendered, err = NS.RenderSample(e[3].default)
             t.truthy(rendered, ("%s.%s renders (%s)"):format(e[1], e[2], tostring(err)))
         end
     end)
@@ -126,7 +126,7 @@ return function(ctx)
         for globalName, cats in pairs(shared) do
             t.truthy(#cats > 1, globalName .. " is listed only because it is shared")
             for _, c in ipairs(cats) do
-                t.truthy(ns.Defaults[c] and ns.Defaults[c].strings[globalName],
+                t.truthy(NS.Defaults[c] and NS.Defaults[c].strings[globalName],
                     ("%s really is registered under %s"):format(globalName, c))
             end
         end
@@ -137,7 +137,7 @@ return function(ctx)
         -- registration. Any drift means Schema and Defaults disagree.
         local backedCategories = 0
         for _, c in ipairs(ORDER) do
-            if ns.Defaults[c] then backedCategories = backedCategories + 1 end
+            if NS.Defaults[c] then backedCategories = backedCategories + 1 end
         end
         local expected = 1 + backedCategories + (#entries * 2)
 

@@ -1,17 +1,17 @@
-local addonName, ns = ...
+local addonName, NS = ...
 
 local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 local AceGUI = LibStub("AceGUI-3.0")
 
-local Const  = ns.Const
+local Const  = NS.Const
 local Color  = Const.Color
-local Schema = ns.Schema
-local L      = ns.L
+local Schema = NS.Schema
+local L      = NS.L
 local CATEGORY_ORDER = Schema.CATEGORY_ORDER
 
 local PARENT_TITLE = "Ka0s Pretty Chat"
 
-local TOC_NOTES = ns.Compat.GetAddOnMetadata(addonName, "Notes") or ""
+local TOC_NOTES = NS.Compat.GetAddOnMetadata(addonName, "Notes") or ""
 
 local LOGO_PATH = "Interface\\AddOns\\" .. addonName
                   .. "\\media\\logos\\prettychat.logo.v2.tga"
@@ -355,9 +355,9 @@ local function buildGeneralBody(ctx)
     local enable = AceGUI:Create("CheckBox")
     enable:SetLabel(L["Enable PrettyChat"])
     enable:SetRelativeWidth(Const.BUTTON_PAIR_REL)
-    enable:SetValue(ns.Schema.Get("General.enabled") and true or false)
+    enable:SetValue(NS.Schema.Get("General.enabled") and true or false)
     enable:SetCallback("OnValueChanged", function(_, _, value)
-        ns.Schema.Set("General.enabled", value and true or false)
+        NS.Schema.Set("General.enabled", value and true or false)
     end)
     attachTooltip(enable, L["Enable PrettyChat"],
         L["Master switch for the addon. When off, all Blizzard originals are restored."])
@@ -366,10 +366,10 @@ local function buildGeneralBody(ctx)
     local debug = AceGUI:Create("CheckBox")
     debug:SetLabel(L["Debug console"])
     debug:SetRelativeWidth(Const.BUTTON_PAIR_REL)
-    debug:SetValue(ns.DebugLog and ns.DebugLog:IsShown() or false)
+    debug:SetValue(NS.DebugLog and NS.DebugLog:IsShown() or false)
     debug:SetCallback("OnValueChanged", function(_, _, value)
-        if not ns.DebugLog then return end
-        if value then ns.DebugLog:Show() else ns.DebugLog:Hide() end
+        if not NS.DebugLog then return end
+        if value then NS.DebugLog:Show() else NS.DebugLog:Hide() end
     end)
     attachTooltip(debug, L["Debug console"],
         L["Show or hide the on-screen debug console window. Logging on/off is separate — the window's own header toggle, or `/pc debug on|off`."])
@@ -403,8 +403,8 @@ local function buildGeneralBody(ctx)
     scroll:AddChild(row)
 
     return function()
-        enable:SetValue(ns.Schema.Get("General.enabled") and true or false)
-        debug:SetValue(ns.DebugLog and ns.DebugLog:IsShown() or false)
+        enable:SetValue(NS.Schema.Get("General.enabled") and true or false)
+        debug:SetValue(NS.DebugLog and NS.DebugLog:IsShown() or false)
     end
 end
 
@@ -459,7 +459,7 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
     enable:SetLabel(L["Enable"])
     enable:SetRelativeWidth(LEFT_W)
     enable:SetCallback("OnValueChanged", function(_, _, value)
-        ns.Schema.Set(enabledPath, value and true or false)
+        NS.Schema.Set(enabledPath, value and true or false)
     end)
 
     local enableTooltip =
@@ -486,7 +486,7 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
     origInput:SetLabel(L["Original"])
     origInput:SetRelativeWidth(RIGHT_W)
     origInput:SetDisabled(true)
-    local origValue = (ns.GlobalStrings and ns.GlobalStrings[globalName])
+    local origValue = (NS.GlobalStrings and NS.GlobalStrings[globalName])
                      or L["(original not available)"]
     origInput:SetText(origValue:gsub("|", "||"))
     attachTooltip(origInput, L["Original Format String"],
@@ -508,7 +508,7 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
     newInput:SetLabel(L["New"])
     newInput:SetRelativeWidth(RIGHT_W)
     newInput:SetCallback("OnEnterPressed", function(_, _, value)
-        ns.Schema.Set(formatPath, (value or ""):gsub("||", "|"))
+        NS.Schema.Set(formatPath, (value or ""):gsub("||", "|"))
     end)
     attachTooltip(newInput, L["New Format String"],
         L["Your replacement. Type `||` for a literal `|` (color codes use this)."])
@@ -547,7 +547,7 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
     -- widgets do NOT re-fire the user callbacks, so this is safe to call
     -- from within a callback chain.
     local function refresh()
-        local current = ns.Schema.Get(formatPath)
+        local current = NS.Schema.Get(formatPath)
         local addonEnabled = PrettyChat:IsAddonEnabled()
         local catEnabled   = PrettyChat:IsCategoryEnabled(category)
         local strEnabled   = PrettyChat:IsStringEnabled(category, globalName)
@@ -557,7 +557,7 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
         newInput:SetText((current or ""):gsub("|", "||"))
         newInput:SetDisabled(not (addonEnabled and catEnabled and strEnabled))
 
-        local rendered, err = ns.RenderSample(current)
+        local rendered, err = NS.RenderSample(current)
         previewInput:SetText(rendered or tostring(err))
     end
 
@@ -576,9 +576,9 @@ local function buildCategoryBody(ctx, category, catData)
     local catEnable = AceGUI:Create("CheckBox")
     catEnable:SetLabel("Enable " .. category)
     catEnable:SetFullWidth(true)
-    catEnable:SetValue(ns.Schema.Get(category .. ".enabled") and true or false)
+    catEnable:SetValue(NS.Schema.Get(category .. ".enabled") and true or false)
     catEnable:SetCallback("OnValueChanged", function(_, _, value)
-        ns.Schema.Set(category .. ".enabled", value and true or false)
+        NS.Schema.Set(category .. ".enabled", value and true or false)
     end)
     attachTooltip(catEnable, "Enable " .. category,
         "Enable or disable all " .. category .. " string overrides.")
@@ -596,7 +596,7 @@ local function buildCategoryBody(ctx, category, catData)
     end
 
     return function()
-        catEnable:SetValue(ns.Schema.Get(category .. ".enabled") and true or false)
+        catEnable:SetValue(NS.Schema.Get(category .. ".enabled") and true or false)
         for _, fn in ipairs(refreshers) do pcall(fn) end
     end
 end
@@ -649,7 +649,7 @@ local function buildParentBody(ctx)
     scroll:AddChild(alias)
     addSpacer(scroll, Const.ROW_VSPACER)
 
-    for _, entry in ipairs(ns.COMMANDS or {}) do
+    for _, entry in ipairs(NS.COMMANDS or {}) do
         local row = AceGUI:Create("Label")
         row:SetFullWidth(true)
         row:SetText(("%s/pc %s%s  %s—%s  %s"):format(
@@ -702,7 +702,7 @@ local function registerPanels()
                 Schema.RegisterRefresher(category, buildGeneralBody(catCtx))
             end)
         else
-            local catData = ns.Defaults[category]
+            local catData = NS.Defaults[category]
             -- Parked for ensureDefaultsButton to wire on first OnShow — the
             -- button does not exist yet at registration time.
             catCtx.panel.defaultsOnClick = function()
@@ -721,5 +721,5 @@ local function registerPanels()
     end
 end
 
-ns.Config = ns.Config or {}
-ns.Config.RegisterPanels = registerPanels
+NS.Config = NS.Config or {}
+NS.Config.RegisterPanels = registerPanels

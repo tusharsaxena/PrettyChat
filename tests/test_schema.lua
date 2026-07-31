@@ -11,7 +11,7 @@ return function(ctx)
     local t = ctx.t
     local test = ctx.test
     local inst   = ctx.loadAddon()
-    local Schema = inst.ns.Schema
+    local Schema = inst.NS.Schema
     local env    = inst.env
     local row    = firstFormatRow(Schema, "Loot")
 
@@ -71,7 +71,7 @@ return function(ctx)
 
         local catRow = Schema.FindByPath("Loot.enabled")
         t.eq(catRow.kind, "category_enabled", "<Category>.enabled is the category row")
-        t.eq(catRow.default, inst.ns.Defaults.Loot.enabled, "seeded from the defaults table")
+        t.eq(catRow.default, inst.NS.Defaults.Loot.enabled, "seeded from the defaults table")
 
         local enRow = Schema.FindByPath(row.category .. "." .. row.globalName .. ".enabled")
         t.eq(enRow.kind, "string_enabled", "<Category>.<GLOBAL>.enabled is the per-string toggle")

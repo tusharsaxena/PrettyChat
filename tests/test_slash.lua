@@ -5,11 +5,11 @@
 -- azure-group `list` colours. Most cases drive the real `/pc` entry point so
 -- the COMMANDS table and the dispatcher are exercised together.
 
-local function run(ns, addon, name, rest)
-    for _, e in ipairs(ns.COMMANDS) do
+local function run(NS, addon, name, rest)
+    for _, e in ipairs(NS.COMMANDS) do
         if e[1] == name then return e[3](addon, rest or "") end
     end
-    error("no '" .. name .. "' command in ns.COMMANDS")
+    error("no '" .. name .. "' command in NS.COMMANDS")
 end
 
 local function last(env) return env.DEFAULT_CHAT_FRAME.messages[#env.DEFAULT_CHAT_FRAME.messages] end
@@ -24,12 +24,12 @@ return function(ctx)
     local t     = ctx.t
     local test  = ctx.test
     local inst  = ctx.loadAddon()
-    local ns    = inst.ns
+    local NS    = inst.NS
     local addon = inst.addon
     local env   = inst.env
-    local C      = ns.Const.Color
-    local PREFIX = ns.PREFIX
-    local Schema = ns.Schema
+    local C      = NS.Const.Color
+    local PREFIX = NS.PREFIX
+    local Schema = NS.Schema
 
     -- Drive the real entry point, and return only the lines it emitted.
     local function slash(input)
@@ -58,14 +58,14 @@ return function(ctx)
             "||cffff0000%s||r", "string value doubles pipes so colour escapes show as text")
     end)
 
-    test("ns.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)", function()
-        -- architecture-§2 / anti-pattern #36: NewAddon is passed the ns table, so
-        -- AceConsole's :Print embed lands on ns and would clobber the cyan printer.
-        -- core/PrettyChat.lua reclaims ns.Print right after registration — assert it
+    test("NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)", function()
+        -- architecture-§2 / anti-pattern #36: NewAddon is passed the NS table, so
+        -- AceConsole's :Print embed lands on NS and would clobber the cyan printer.
+        -- core/PrettyChat.lua reclaims NS.Print right after registration — assert it
         -- still prepends the [PC] PREFIX, not AceConsole's |cff33ff99Name|r: tag.
-        ns.Print("hello")
+        NS.Print("hello")
         local line = last(env)
-        t.eq(line, PREFIX .. "hello", "ns.Print prepends the cyan [PC] prefix")
+        t.eq(line, PREFIX .. "hello", "NS.Print prepends the cyan [PC] prefix")
         t.falsy(line:find("|cff33ff99", 1, true), "AceConsole's embed did not win")
     end)
 
@@ -73,13 +73,13 @@ return function(ctx)
 
     test("a bare /pc prints the help index", function()
         local out = slash("")
-        t.truthy(#out > #ns.COMMANDS, "help emits a header plus one line per command")
+        t.truthy(#out > #NS.COMMANDS, "help emits a header plus one line per command")
         t.truthy(out[1]:find("slash commands", 1, true), "the header names the surface")
     end)
 
     test("/pc help lists every command with its description", function()
         local text = joined("help")
-        for _, entry in ipairs(ns.COMMANDS) do
+        for _, entry in ipairs(NS.COMMANDS) do
             t.truthy(text:find("/pc " .. entry[1], 1, true),
                 ("help lists /pc %s"):format(entry[1]))
             t.truthy(text:find(entry[2], 1, true),
@@ -91,7 +91,7 @@ return function(ctx)
     test("an unknown verb says so and then prints the help index", function()
         local out = slash("nonsense")
         t.truthy(out[1]:find("unknown command 'nonsense'", 1, true), "the verb is echoed back")
-        t.truthy(#out > #ns.COMMANDS, "and the help index follows")
+        t.truthy(#out > #NS.COMMANDS, "and the help index follows")
     end)
 
     test("the verb is lower-cased but the argument keeps its case", function()
@@ -107,7 +107,7 @@ return function(ctx)
     end)
 
     test("/pc version prints the tagged version line", function()
-        run(ns, addon, "version")
+        run(NS, addon, "version")
         t.eq(last(env), PREFIX .. "v" .. ctx.mock.metadata.Version,
             "/pc version prints the tagged version line")
     end)
@@ -121,7 +121,7 @@ return function(ctx)
     -- ---- get ------------------------------------------------------------
 
     test("/pc get echoes the gold-key/white-value FormatKV line", function()
-        run(ns, addon, "get", "General.enabled")
+        run(NS, addon, "get", "General.enabled")
         t.eq(last(env),
             PREFIX .. C.yellow .. "General.enabled" .. C.reset .. " = " .. C.white .. "true" .. C.reset,
             "/pc get echoes the gold-key/white-value FormatKV line")
@@ -204,7 +204,7 @@ return function(ctx)
     -- ---- list -----------------------------------------------------------
 
     test("/pc list prints the green header and azure category groups", function()
-        run(ns, addon, "list", "")
+        run(NS, addon, "list", "")
         t.truthy(has(env, C.listHead .. "Available settings" .. C.reset),
             "/pc list prints the green Available settings header")
         t.truthy(has(env, C.azure .. "[General]" .. C.reset),
@@ -234,7 +234,7 @@ return function(ctx)
     test("/pc list formatstring lists every Category.GLOBALNAME pair", function()
         local out = slash("list formatstring")
         local total = 0
-        for _, catData in pairs(ns.Defaults) do
+        for _, catData in pairs(NS.Defaults) do
             for _ in pairs(catData.strings) do total = total + 1 end
         end
         t.truthy(out[1]:find(("Format strings (%d)"):format(total), 1, true),
@@ -267,7 +267,7 @@ return function(ctx)
     test("/pc reset <Category> resets it and confirms", function()
         Schema.Set("Loot.enabled", false)
         local text = joined("reset loot")
-        t.eq(Schema.Get("Loot.enabled"), ns.Defaults.Loot.enabled, "the category is back to default")
+        t.eq(Schema.Get("Loot.enabled"), NS.Defaults.Loot.enabled, "the category is back to default")
         t.truthy(text:find("Loot reset to defaults", 1, true), "the canonical name is confirmed")
     end)
 
@@ -296,10 +296,10 @@ return function(ctx)
     -- ---- test -----------------------------------------------------------
 
     test("/pc test routes every line through the [PC] printer", function()
-        -- PC-35 / events-frames-taint-§8: Test() prints through ns.Print, never
+        -- PC-35 / events-frames-taint-§8: Test() prints through NS.Print, never
         -- straight to the chat frame, so every emitted line carries the [PC] tag.
         local before = #env.DEFAULT_CHAT_FRAME.messages
-        run(ns, addon, "test", "category Loot")
+        run(NS, addon, "test", "category Loot")
         local msgs = env.DEFAULT_CHAT_FRAME.messages
         t.truthy(#msgs > before, "/pc test emits output")
         local allTagged = true

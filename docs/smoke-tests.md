@@ -161,7 +161,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 #### T-28 — Edit + commit on Enter
 
-> Why: `newInput:SetCallback("OnEnterPressed", ...)` calls `ns.Schema.Set(formatPath, value:gsub("||", "|"))`.
+> Why: `newInput:SetCallback("OnEnterPressed", ...)` calls `NS.Schema.Set(formatPath, value:gsub("||", "|"))`.
 
 - Steps: open Loot. Pick `LOOT_ITEM_SELF`. Edit its New EditBox to a new value (e.g. add a leading `LOOT |` prefix). Press Enter.
 - Expected: the value commits. The Preview EditBox updates to show the new format rendered with sample args. Loot an item — the chat line uses the new format.
@@ -175,13 +175,13 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 #### T-29a — General-page Debug console checkbox (window visibility)
 
-> Why: the General page's **Debug console** checkbox shows/hides the console **window** only (`ns.DebugLog:Show()`/`:Hide()`, mirroring bare `/pc debug`); it must NOT change the debug logging flag. The window's OnShow/OnHide fire `NotifyPanelChange("General")` so the checkbox tracks visibility from any surface.
+> Why: the General page's **Debug console** checkbox shows/hides the console **window** only (`NS.DebugLog:Show()`/`:Hide()`, mirroring bare `/pc debug`); it must NOT change the debug logging flag. The window's OnShow/OnHide fire `NotifyPanelChange("General")` so the checkbox tracks visibility from any surface.
 
 - Setup: ensure debug logging is **on** first (`/pc debug on`) so the next steps can prove the checkbox leaves the flag alone.
 - Steps:
   1. `/pc config` → **General**. Note **Enable** and **Debug console** sit side by side on one row.
   2. Check **Debug console**. Expect: the console window **appears**. `/pc debug on` state is unchanged — the window header still reads `Debug: ON`, and no `debug logging ON/OFF` chat ack is printed by the checkbox.
-  3. Uncheck **Debug console**. Expect: the window **hides**. Logging flag still unchanged (`ns.Debug` output would still be captured if the window were reopened).
+  3. Uncheck **Debug console**. Expect: the window **hides**. Logging flag still unchanged (`NS.Debug` output would still be captured if the window were reopened).
   4. Re-check it, then close the window with its **×** button (or Esc). Expect: the General checkbox **unchecks itself live** (tracks the hide).
   5. `/pc debug` (bare) from chat to reopen the window. Expect: the checkbox **re-checks itself live**.
 - Failure mode: checking/unchecking prints a `debug logging ON/OFF` ack or flips the header toggle ⇒ the box is wrongly driving `SetEnabled` instead of `Show`/`Hide`. Checkbox doesn't track the ×/Esc/`/pc debug` ⇒ the OnShow/OnHide `NotifyPanelChange("General")` sync regressed.
@@ -299,7 +299,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 #### T-42 — Panel mutation reflects in `/pc get`
 
-> Why: panel widget callbacks call `ns.Schema.Set` exactly the same way `/pc set` does.
+> Why: panel widget callbacks call `NS.Schema.Set` exactly the same way `/pc set` does.
 
 - Steps: edit a value in the panel and press Enter. From chat: `/pc get` against the same path.
 - Expected: chat output shows the new value. Panel and slash share one write path.
@@ -376,7 +376,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 ### R — Reset standardization
 
-The four reset entry points — per-string **Reset** button, per-category **Defaults** button, `/pc reset <cat>`, `/pc resetall` — share one semantic: each wipes every dimension it owns (custom format *and* enable/disable flag), re-applies via `ApplyStrings`, re-syncs the panel via `NotifyPanelChange`, and emits a `ns.Debug("Reset", …)` summary.
+The four reset entry points — per-string **Reset** button, per-category **Defaults** button, `/pc reset <cat>`, `/pc resetall` — share one semantic: each wipes every dimension it owns (custom format *and* enable/disable flag), re-applies via `ApplyStrings`, re-syncs the panel via `NotifyPanelChange`, and emits a `NS.Debug("Reset", …)` summary.
 
 #### T-56 — Per-string Reset restores format AND enable state
 
@@ -397,7 +397,7 @@ The four reset entry points — per-string **Reset** button, per-category **Defa
 
 #### T-58 — Every reset emits a consistent debug summary
 
-> Why: all three reset methods bypass the `Schema.Set` `[Set]` seam (debug-logging-§8), so each carries its own `ns.Debug("Reset", …)` line with the material effect (`applied` / `restored` counts).
+> Why: all three reset methods bypass the `Schema.Set` `[Set]` seam (debug-logging-§8), so each carries its own `NS.Debug("Reset", …)` line with the material effect (`applied` / `restored` counts).
 
 - Setup: `/pc debug` to open the console and enable logging (toggle green).
 - Steps: trigger each reset once — a row Reset, a category **Defaults**, `/pc resetall`.

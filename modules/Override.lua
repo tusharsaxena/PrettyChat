@@ -1,21 +1,21 @@
-local addonName, ns = ...
+local addonName, NS = ...
 
 -- The override pipeline — PrettyChat's one feature module. Owns the enable-cascade
 -- predicates, the ApplyStrings engine that rewrites _G[GLOBALNAME], the reset paths, and
 -- the sample-render / Test engine. Methods hang off the shared PrettyChat AceAddon object
--- created in core/PrettyChat.lua; ns.RenderSample is published for the panel's Preview row.
+-- created in core/PrettyChat.lua; NS.RenderSample is published for the panel's Preview row.
 
 local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 
-local Color  = ns.Const.Color
-local note   = ns.Util.note
+local Color  = NS.Const.Color
+local note   = NS.Util.note
 
 function PrettyChat:GetStringValue(category, globalName)
     local catDB = self.db.profile.categories[category]
     if catDB and catDB.strings and catDB.strings[globalName] ~= nil then
         return catDB.strings[globalName]
     end
-    return ns.Defaults[category].strings[globalName].default
+    return NS.Defaults[category].strings[globalName].default
 end
 
 function PrettyChat:IsAddonEnabled()
@@ -29,7 +29,7 @@ function PrettyChat:IsCategoryEnabled(category)
     if catDB and catDB.enabled ~= nil then
         return catDB.enabled
     end
-    return ns.Defaults[category].enabled
+    return NS.Defaults[category].enabled
 end
 
 function PrettyChat:IsStringEnabled(category, globalName)
@@ -52,7 +52,7 @@ function PrettyChat:ApplyStrings()
     -- restored regardless of per-category / per-string state.
     --
     -- Iterate CATEGORY_ORDER (fixed order) and, within each category, a
-    -- SORTED name list rather than pairs(ns.Defaults) (PC-16). A handful
+    -- SORTED name list rather than pairs(NS.Defaults) (PC-16). A handful
     -- of globals are registered under more than one category (e.g.
     -- LOOT_ITEM_CREATED_SELF under Loot + Tradeskill); both write the same
     -- _G key, so the last category to run wins. Deterministic iteration
@@ -61,8 +61,8 @@ function PrettyChat:ApplyStrings()
     -- non-deterministic hash order.
     local addonEnabled = self:IsAddonEnabled()
     local applied, restored = 0, 0
-    for _, category in ipairs(ns.Schema.CATEGORY_ORDER) do
-        local catData = ns.Defaults[category]
+    for _, category in ipairs(NS.Schema.CATEGORY_ORDER) do
+        local catData = NS.Defaults[category]
         if catData and catData.strings then
             local names = {}
             for globalName in pairs(catData.strings) do
@@ -97,22 +97,22 @@ function PrettyChat:ResetCategory(category)
         self.db.profile.categories[category] = nil
     end
     local applied, restored = self:ApplyStrings()
-    if ns.Schema and ns.Schema.NotifyPanelChange then
-        ns.Schema.NotifyPanelChange(category)
+    if NS.Schema and NS.Schema.NotifyPanelChange then
+        NS.Schema.NotifyPanelChange(category)
     end
     -- Bulk mutation (debug-logging-§8): a reset bypasses the Schema.Set `[Set]` seam, so it
     -- carries its own summary with the material effect (how many strings reverted).
-    ns.Debug("Reset", "%s → applied %d restored %d", category, applied, restored)
+    NS.Debug("Reset", "%s → applied %d restored %d", category, applied, restored)
 end
 
 function PrettyChat:ResetAll()
     self.db.profile.enabled    = nil
     self.db.profile.categories = {}
     local applied, restored = self:ApplyStrings()
-    if ns.Schema and ns.Schema.NotifyPanelChange then
-        ns.Schema.NotifyPanelChange()  -- nil → all categories
+    if NS.Schema and NS.Schema.NotifyPanelChange then
+        NS.Schema.NotifyPanelChange()  -- nil → all categories
     end
-    ns.Debug("Reset", "all → applied %d restored %d", applied, restored)
+    NS.Debug("Reset", "all → applied %d restored %d", applied, restored)
 end
 
 -- Restore ONE string to its untouched default. A per-string reset must
@@ -127,12 +127,12 @@ function PrettyChat:ResetString(category, globalName)
         if catDB.disabledStrings then catDB.disabledStrings[globalName] = nil end
     end
     local applied, restored = self:ApplyStrings()
-    if ns.Schema and ns.Schema.NotifyPanelChange then
-        ns.Schema.NotifyPanelChange(category)
+    if NS.Schema and NS.Schema.NotifyPanelChange then
+        NS.Schema.NotifyPanelChange(category)
     end
     -- Bulk mutation (debug-logging-§8): bypasses the Schema.Set `[Set]` seam,
     -- so it carries its own summary with the material effect.
-    ns.Debug("Reset", "%s.%s → applied %d restored %d", category, globalName, applied, restored)
+    NS.Debug("Reset", "%s.%s → applied %d restored %d", category, globalName, applied, restored)
 end
 
 -- ---------------------------------------------------------------------
@@ -193,7 +193,7 @@ end
 -- Shared by `PrettyChat:Test()` and the per-string sample row in the
 -- settings panel — keeps both in lockstep on placeholder choices and
 -- positional-arg handling.
-function ns.RenderSample(fmt)
+function NS.RenderSample(fmt)
     if type(fmt) ~= "string" or fmt == "" then return nil, "(empty format)" end
     local args, n = buildSampleArgs(fmt)
     local ok, result = pcall(string.format, fmt, unpack(args, 1, n))
@@ -214,12 +214,12 @@ end
 -- The slash dispatch (runTest) is responsible for canonicalizing the
 -- value before calling — Test only does an equality check.
 --
--- Every line routes through ns.Print, so each carries the [PC] prefix and
+-- Every line routes through NS.Print, so each carries the [PC] prefix and
 -- the report stays visually distinct from real chat traffic interleaved with it.
 function PrettyChat:Test(filter)
-    ns.Print(note("sample of every format string (preview ignores enable toggles):"))
+    NS.Print(note("sample of every format string (preview ignores enable toggles):"))
     if not self:IsAddonEnabled() then
-        ns.Print(note("(addon is currently disabled — these formats aren't being applied to live chat)"))
+        NS.Print(note("(addon is currently disabled — these formats aren't being applied to live chat)"))
     end
 
     local labelName      = Color.green .. "Name: "      .. Color.reset
@@ -227,16 +227,16 @@ function PrettyChat:Test(filter)
     local labelFormatted = Color.green .. "Formatted: " .. Color.reset
 
     local function renderOrError(fmt)
-        local rendered, err = ns.RenderSample(fmt)
+        local rendered, err = NS.RenderSample(fmt)
         if rendered then return rendered, false end
         return Color.grey .. "(error: " .. tostring(err) .. ")" .. Color.reset, true
     end
 
     local printed, errored = 0, 0
     local emittedAny = false
-    for _, category in ipairs(ns.Schema.CATEGORY_ORDER) do
+    for _, category in ipairs(NS.Schema.CATEGORY_ORDER) do
         if not filter or filter.kind ~= "category" or filter.value == category then
-            local catData = ns.Defaults[category]
+            local catData = NS.Defaults[category]
             if catData and catData.strings and next(catData.strings) then
                 local sortedNames = {}
                 for globalName in pairs(catData.strings) do
@@ -248,21 +248,21 @@ function PrettyChat:Test(filter)
 
                 if #sortedNames > 0 then
                     emittedAny = true
-                    ns.Print(Color.gold .. "Category: " .. category .. Color.reset)
-                    ns.Print("")
+                    NS.Print(Color.gold .. "Category: " .. category .. Color.reset)
+                    NS.Print("")
 
                     for _, globalName in ipairs(sortedNames) do
-                        ns.Print(labelName .. globalName)
+                        NS.Print(labelName .. globalName)
 
                         local origFmt = (self.originalStrings and self.originalStrings[globalName]) or _G[globalName]
                         local origLine, origErr = renderOrError(origFmt)
-                        ns.Print(labelOriginal .. origLine)
+                        NS.Print(labelOriginal .. origLine)
 
                         local newFmt = self:GetStringValue(category, globalName)
                         local newLine, newErr = renderOrError(newFmt)
-                        ns.Print(labelFormatted .. newLine)
+                        NS.Print(labelFormatted .. newLine)
 
-                        ns.Print("")
+                        NS.Print("")
 
                         if newErr or origErr then
                             errored = errored + 1
@@ -276,7 +276,7 @@ function PrettyChat:Test(filter)
     end
 
     if not emittedAny then
-        ns.Print(note("(no matching strings)"))
+        NS.Print(note("(no matching strings)"))
         return
     end
 
@@ -285,5 +285,5 @@ function PrettyChat:Test(filter)
     if errored > 0 then
         footer = footer .. (", %d errored"):format(errored)
     end
-    ns.Print(note(footer .. ")"))
+    NS.Print(note(footer .. ")"))
 end

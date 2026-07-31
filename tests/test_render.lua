@@ -1,11 +1,11 @@
--- tests/test_render.lua — ns.RenderSample: positional args, %% escapes,
+-- tests/test_render.lua — NS.RenderSample: positional args, %% escapes,
 -- and string.format error surfacing.
 
 return function(ctx)
     local t = ctx.t
     local test = ctx.test
     local inst = ctx.loadAddon()
-    local render = inst.ns.RenderSample
+    local render = inst.NS.RenderSample
 
     test("renders basic %s + %d and collapses %% escapes", function()
         t.eq(render("%s got %d"), "Sample got 42", "basic %s + %d")
@@ -83,7 +83,7 @@ return function(ctx)
     end)
 
     test("a real Blizzard-style default renders without error", function()
-        local rows = inst.ns.Schema.RowsByCategory("Loot")
+        local rows = inst.NS.Schema.RowsByCategory("Loot")
         local fmt
         for _, row in ipairs(rows) do
             if row.kind == "string_format" then fmt = row.default break end

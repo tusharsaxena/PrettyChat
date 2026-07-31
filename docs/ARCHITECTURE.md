@@ -7,9 +7,9 @@ Orient-yourself map for **Ka0s Pretty Chat**. This file is the high-level index;
 A WoW addon that overrides Blizzard's `GlobalStrings.lua` format strings — `LOOT_ITEM_SELF`, `COMBATLOG_XPGAIN_*`, `FACTION_STANDING_INCREASED`, etc. — to reformat system chat lines (loot, currency, money, reputation, XP, honor, tradeskill, misc) into a color-coded `Category | Context | Source | +/- value` layout. WoW's chat code reads `_G[GLOBALNAME]` lazily on every line, so overrides take effect uniformly across any chat UI (default Blizzard, ElvUI, Glass, …) without per-message hooks. Eight format-bearing categories (81 strings total) are addressed via a flat schema + `/pc` slash CLI + a Blizzard-panel sub-page per category.
 
 ```
-defaults/Defaults.lua  ─▶ ns.Defaults (categories + format strings + per-cat enabled)
+defaults/Defaults.lua  ─▶ NS.Defaults (categories + format strings + per-cat enabled)
                     │
-                    ├─▶ settings/Schema.lua ─▶ ns.Schema  (rows[], byPath[], single write path)
+                    ├─▶ settings/Schema.lua ─▶ NS.Schema  (rows[], byPath[], single write path)
                     │                       │
                     │                       ├─▶ /pc set / get / list / reset   (settings/Slash.lua)
                     │                       └─▶ Panel widget get/set           (settings/Panel.lua)
@@ -20,7 +20,7 @@ defaults/Defaults.lua  ─▶ ns.Defaults (categories + format strings + per-cat
                           _G[GLOBALNAME]   ◀── WoW chat code reads lazily on every line
                                                 (no addon hooks, no per-message rewriting)
 
-GlobalStrings/   ─▶ ns.GlobalStrings (Blizzard reference, ~22,879 entries)
+GlobalStrings/   ─▶ NS.GlobalStrings (Blizzard reference, ~22,879 entries)
                        │
                        └─▶ settings/Panel.lua "Original Format String" disabled input
 ```
@@ -29,40 +29,40 @@ GlobalStrings/   ─▶ ns.GlobalStrings (Blizzard reference, ~22,879 entries)
 
 Modular layout (`core/`, `defaults/`, `locales/`, `modules/`, `settings/`) — the single Ka0s layout (`layout-§1`). Load order is `PrettyChat.toc` (dependency, not alphabetical): libraries first, then `locales/enUS → core/Compat → core/Constants → core/Namespace → core/State → core/Util → core/Database → core/DebugLog → core/PrettyChat → defaults/Profile → defaults/Defaults → GlobalStrings chunks → modules/Override → settings/Schema → settings/Slash → settings/Panel`.
 
-| Module | Publishes on `ns` | Role |
+| Module | Publishes on `NS` | Role |
 |--------|-------------------|------|
-| `core/Compat.lua` | `ns.Compat` | Version-shim seam. `Compat.GetAddOnMetadata` (C_AddOns vs legacy global). |
-| `core/Constants.lua` | `ns.Const`, `ns.PREFIX` | Panel layout constants, `Const.Color` palette (incl. `azure` / `listHead` slash-output codes), `Const.BUTTON_PAIR_REL`, `Const.FONT_MONO` (vendored JetBrains Mono path), and the shared cyan `[PC]` chat prefix. Side-effect-free. |
-| `core/Namespace.lua` | `ns.name`, `ns.version` | Identity bootstrap — records the addon name + version so any module can read them without re-querying the TOC. |
-| `core/State.lua` | `ns.State` | Session-only runtime state (`{ debug = false }`); never persisted, reset every reload/login. |
-| `core/Util.lua` | `ns.Util` | Pure string helpers `trim` / `note` / `cmd` (slash dispatcher) plus the secret-safe output helpers `SafeToString` / `IsConcatSafe` (events-frames-taint-§8) that the chat printer and debug sink route through. |
-| `core/Database.lua` | `ns.Database` | `SCHEMA_VERSION`, `global.schemaVersion` default, and `RunMigrations(db)` (empty migration set today). |
-| `core/DebugLog.lua` | `ns.DebugLog`, `ns.Debug` | On-screen debug console (monospace window) + the gated `ns.Debug(tag, fmt, …)` sink; the `SetEnabled` seam is the single owner of the session debug flag. |
-| `core/PrettyChat.lua` | `ns.Print` | AceAddon object (the `ns` table itself — passed to `:NewAddon`, architecture-§2) + lifecycle (`OnInitialize` / `OnEnable`), the secret-safe cyan `[PC]` chat printer (reclaimed after AceConsole's `:Print` embed), and the combat-gated `OpenConfig`. |
-| `defaults/Profile.lua` | `ns.ProfileDefaults` | The AceDB `profile` defaults table (`{ profile = { categories = {} } }`); `OnInitialize` merges it with `ns.Database`'s `global` defaults before `AceDB:New`. |
-| `defaults/Defaults.lua` | `ns.Defaults` | Category → format-string default table (label + default per string; per-category `enabled`). |
-| `locales/enUS.lua` | `ns.L` | Localization table with English-key fallback (`__index` returns the key). Seeds the enUS UI-string manifest. |
-| `modules/Override.lua` | `ns.RenderSample` | The override engine — `ApplyStrings`, the enable-cascade predicates, `ResetString` / `ResetCategory` / `ResetAll`, and the Test / sample renderer. |
-| `settings/Schema.lua` | `ns.Schema` | Builds `rows`/`byPath` from `ns.Defaults`; single write path (`Schema.Set`), `Schema.FormatValue`, load-time path validator, cross-registered-global map. |
-| `settings/Slash.lua` | `ns.COMMANDS` | The `/pc` dispatcher — ordered `COMMANDS` table, `OnSlashCommand`, and every `list` / `get` / `set` / `reset` / `test` / `debug` handler. |
-| `settings/Panel.lua` | `ns.Config.RegisterPanels` | Canvas-layout parent + one sub-page per category; per-string editor rows. |
+| `core/Compat.lua` | `NS.Compat` | Version-shim seam. `Compat.GetAddOnMetadata` (C_AddOns vs legacy global). |
+| `core/Constants.lua` | `NS.Const`, `NS.PREFIX` | Panel layout constants, `Const.Color` palette (incl. `azure` / `listHead` slash-output codes), `Const.BUTTON_PAIR_REL`, `Const.FONT_MONO` (vendored JetBrains Mono path), and the shared cyan `[PC]` chat prefix. Side-effect-free. |
+| `core/Namespace.lua` | `NS.name`, `NS.version` | Identity bootstrap — records the addon name + version so any module can read them without re-querying the TOC. |
+| `core/State.lua` | `NS.State` | Session-only runtime state (`{ debug = false }`); never persisted, reset every reload/login. |
+| `core/Util.lua` | `NS.Util` | Pure string helpers `trim` / `note` / `cmd` (slash dispatcher) plus the secret-safe output helpers `SafeToString` / `IsConcatSafe` (events-frames-taint-§8) that the chat printer and debug sink route through. |
+| `core/Database.lua` | `NS.Database` | `SCHEMA_VERSION`, `global.schemaVersion` default, and `RunMigrations(db)` (empty migration set today). |
+| `core/DebugLog.lua` | `NS.DebugLog`, `NS.Debug` | On-screen debug console (monospace window) + the gated `NS.Debug(tag, fmt, …)` sink; the `SetEnabled` seam is the single owner of the session debug flag. |
+| `core/PrettyChat.lua` | `NS.Print` | AceAddon object (the `NS` table itself — passed to `:NewAddon`, architecture-§2) + lifecycle (`OnInitialize` / `OnEnable`), the secret-safe cyan `[PC]` chat printer (reclaimed after AceConsole's `:Print` embed), and the combat-gated `OpenConfig`. |
+| `defaults/Profile.lua` | `NS.ProfileDefaults` | The AceDB `profile` defaults table (`{ profile = { categories = {} } }`); `OnInitialize` merges it with `NS.Database`'s `global` defaults before `AceDB:New`. |
+| `defaults/Defaults.lua` | `NS.Defaults` | Category → format-string default table (label + default per string; per-category `enabled`). |
+| `locales/enUS.lua` | `NS.L` | Localization table with English-key fallback (`__index` returns the key). Seeds the enUS UI-string manifest. |
+| `modules/Override.lua` | `NS.RenderSample` | The override engine — `ApplyStrings`, the enable-cascade predicates, `ResetString` / `ResetCategory` / `ResetAll`, and the Test / sample renderer. |
+| `settings/Schema.lua` | `NS.Schema` | Builds `rows`/`byPath` from `NS.Defaults`; single write path (`Schema.Set`), `Schema.FormatValue`, load-time path validator, cross-registered-global map. |
+| `settings/Slash.lua` | `NS.COMMANDS` | The `/pc` dispatcher — ordered `COMMANDS` table, `OnSlashCommand`, and every `list` / `get` / `set` / `reset` / `test` / `debug` handler. |
+| `settings/Panel.lua` | `NS.Config.RegisterPanels` | Canvas-layout parent + one sub-page per category; per-string editor rows. |
 
 Topic detail: [module-map.md](./module-map.md), [file-index.md](./file-index.md).
 
 ## Settings Schema
 
-`ns.Defaults` is the source data; `settings/Schema.lua` turns it into an ordered `rows` list keyed by dot path. Four row kinds:
+`NS.Defaults` is the source data; `settings/Schema.lua` turns it into an ordered `rows` list keyed by dot path. Four row kinds:
 
-- `General.enabled` — addon-wide master toggle (bool). `General` is a **virtual category** with no entry in `ns.Defaults`; stored as `db.profile.enabled` at the profile root.
+- `General.enabled` — addon-wide master toggle (bool). `General` is a **virtual category** with no entry in `NS.Defaults`; stored as `db.profile.enabled` at the profile root.
 - `<Category>.enabled` — per-category toggle (bool).
 - `<Category>.<GLOBALNAME>.enabled` — per-string toggle (bool).
 - `<Category>.<GLOBALNAME>.format` — per-string format string.
 
-Every mutation goes through `ns.Schema.Set(path, value)` — the **single write path** used by both `/pc set` and the panel widgets. Row `set()` closures are pure DB writes; `Schema.Set` runs `PrettyChat:ApplyStrings()` + `Schema.NotifyPanelChange()`. `string_format` rows **auto-clear** on a default match (a value equal to the default deletes the stored override). At load, `Schema.validation` records that every row path resolves to a backing default (loud `ns.Print` warn on any miss). Settings persist in `PrettyChatDB` via AceDB on a single shared Default profile; the `profile` defaults come from `defaults/Profile.lua` (`ns.ProfileDefaults`) and `db.global.schemaVersion` is stamped by `Database.RunMigrations`. Detail: [schema.md](./schema.md).
+Every mutation goes through `NS.Schema.Set(path, value)` — the **single write path** used by both `/pc set` and the panel widgets. Row `set()` closures are pure DB writes; `Schema.Set` runs `PrettyChat:ApplyStrings()` + `Schema.NotifyPanelChange()`. `string_format` rows **auto-clear** on a default match (a value equal to the default deletes the stored override). At load, `Schema.validation` records that every row path resolves to a backing default (loud `NS.Print` warn on any miss). Settings persist in `PrettyChatDB` via AceDB on a single shared Default profile; the `profile` defaults come from `defaults/Profile.lua` (`NS.ProfileDefaults`) and `db.global.schemaVersion` is stamped by `Database.RunMigrations`. Detail: [schema.md](./schema.md).
 
 ## Slash Commands
 
-`/pc` and `/prettychat` dispatch through one ordered `COMMANDS` table in `settings/Slash.lua` (help text is generated from the same table). Verbs: `help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `test`, `debug`. `ns.COMMANDS` is published so the parent panel renders the same list. Slash `list` / `get` / `set` output follows the mandated colour scheme (slash-commands-§5) via a shared `FormatKV` + `Schema.FormatValue`. Chat input requires `||` for a literal `|`. Detail: [slash-commands.md](./slash-commands.md).
+`/pc` and `/prettychat` dispatch through one ordered `COMMANDS` table in `settings/Slash.lua` (help text is generated from the same table). Verbs: `help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `test`, `debug`. `NS.COMMANDS` is published so the parent panel renders the same list. Slash `list` / `get` / `set` output follows the mandated colour scheme (slash-commands-§5) via a shared `FormatKV` + `Schema.FormatValue`. Chat input requires `||` for a literal `|`. Detail: [slash-commands.md](./slash-commands.md).
 
 ## Event Subscriptions
 
@@ -78,7 +78,7 @@ Every mutation goes through `ns.Schema.Set(path, value)` — the **single write 
 ## Known Limitations
 
 - **Retail only.** `## Interface: 120007` (Midnight / Retail). Classic / Classic Era untested.
-- **Snapshot is load-time.** `OnEnable` snapshots Blizzard originals only for strings mentioned in `ns.Defaults` (~81). Adding a new `globalName` needs a `/reload` for the snapshot to capture its pristine value.
+- **Snapshot is load-time.** `OnEnable` snapshots Blizzard originals only for strings mentioned in `NS.Defaults` (~81). Adding a new `globalName` needs a `/reload` for the snapshot to capture its pristine value.
 - **Cross-registered globals: last-writer-wins.** A global registered under two categories (e.g. `LOOT_ITEM_CREATED_SELF` under Loot + Tradeskill) resolves to the **last** category in `CATEGORY_ORDER` — now deterministic (PC-16), surfaced in the per-string tooltip.
 - **Positional format rendering is WoW-only.** `%n$s` specifiers rely on WoW's extended `string.format`; the headless test harness (stock Lua 5.1) can't render them and asserts graceful degradation instead.
 - **Single shared profile.** Per-character / per-realm profile scoping is not exposed.

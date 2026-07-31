@@ -51,11 +51,11 @@ return function(ctx)
     local t      = ctx.t
     local test   = ctx.test
     local inst   = ctx.loadAddon()
-    local ns     = inst.ns
+    local NS     = inst.NS
     local addon  = inst.addon
     local env    = inst.env
-    local Schema = ns.Schema
-    local L      = ns.L
+    local Schema = NS.Schema
+    local L      = NS.L
 
     -- OnEnable already ran registerPanels; each page builds its body on first
     -- OnShow, so the suite shows a page and then reads the widgets it created.
@@ -96,7 +96,7 @@ return function(ctx)
         local fresh = ctx.loadAddon()
         local before = #fresh.env._settings.categories
         fresh.env.Settings = {}          -- API present but without the registrars
-        local ok = pcall(fresh.ns.Config.RegisterPanels)
+        local ok = pcall(fresh.NS.Config.RegisterPanels)
         t.truthy(ok, "registerPanels never raises on an unsupported client")
         t.eq(#fresh.env._settings.categories, before, "and registers nothing")
     end)
@@ -124,7 +124,7 @@ return function(ctx)
 
     test("the master checkbox is seeded from the schema, not assumed true", function()
         local fresh = ctx.loadAddon()
-        fresh.ns.Schema.Set("General.enabled", false)
+        fresh.NS.Schema.Set("General.enabled", false)
         local mark = #fresh.env._widgets
         panelFrame(fresh.env, "General"):Show()
         local enable = byLabel(widgetsSince(fresh.env, mark), "CheckBox", L["Enable PrettyChat"])
@@ -147,24 +147,24 @@ return function(ctx)
 
     test("the Debug console checkbox drives the window, never the logging flag", function()
         local debugBox = byLabel(generalWidgets, "CheckBox", L["Debug console"])
-        ns.State.debug = false
+        NS.State.debug = false
 
         debugBox:Fire("OnValueChanged", true)
-        t.truthy(ns.DebugLog:IsShown(), "checking it shows the console window")
-        t.falsy(ns.State.debug, "showing the window does not start logging")
+        t.truthy(NS.DebugLog:IsShown(), "checking it shows the console window")
+        t.falsy(NS.State.debug, "showing the window does not start logging")
 
         debugBox:Fire("OnValueChanged", false)
-        t.falsy(ns.DebugLog:IsShown(), "unchecking hides it")
-        t.falsy(ns.State.debug, "hiding it does not touch the flag either")
+        t.falsy(NS.DebugLog:IsShown(), "unchecking hides it")
+        t.falsy(NS.State.debug, "hiding it does not touch the flag either")
     end)
 
     test("the checkbox re-syncs when the console is opened another way", function()
         -- The console notifies the General page on show/hide, so the box mirrors
         -- window state however it was toggled (/pc debug, the × button, Esc).
         local debugBox = byLabel(generalWidgets, "CheckBox", L["Debug console"])
-        ns.DebugLog:Show()
+        NS.DebugLog:Show()
         t.eq(debugBox.value, true, "opening the window ticks the box")
-        ns.DebugLog:Hide()
+        NS.DebugLog:Hide()
         t.eq(debugBox.value, false, "closing it unticks the box")
     end)
 
@@ -188,7 +188,7 @@ return function(ctx)
         t.eq(dialog.button1, env.YES, "accept button")
         t.eq(dialog.button2, env.NO, "decline button")
         dialog.OnAccept()
-        t.eq(Schema.Get("Loot.enabled"), ns.Defaults.Loot.enabled,
+        t.eq(Schema.Get("Loot.enabled"), NS.Defaults.Loot.enabled,
             "accepting runs the same ResetAll the slash command does")
     end)
 
@@ -214,14 +214,14 @@ return function(ctx)
 
     test("the Defaults button resets its own category only", function()
         local fresh = ctx.loadAddon()
-        fresh.ns.Schema.Set("Loot.enabled", false)
-        fresh.ns.Schema.Set("Money.enabled", false)
+        fresh.NS.Schema.Set("Loot.enabled", false)
+        fresh.NS.Schema.Set("Money.enabled", false)
         local panel = panelFrame(fresh.env, "Loot")
         panel:Show()
         panel.defaultsBtn:Fire("OnClick")
-        t.eq(fresh.ns.Schema.Get("Loot.enabled"), fresh.ns.Defaults.Loot.enabled,
+        t.eq(fresh.NS.Schema.Get("Loot.enabled"), fresh.NS.Defaults.Loot.enabled,
             "the page's own category is reset")
-        t.eq(fresh.ns.Schema.Get("Money.enabled"), false, "other categories are untouched")
+        t.eq(fresh.NS.Schema.Get("Money.enabled"), false, "other categories are untouched")
     end)
 
     -- ---- category sub-page + per-string rows ---------------------------
@@ -234,7 +234,7 @@ return function(ctx)
         lootBlocks  = stringBlocks(lootScroll)
 
         local strings = 0
-        for _ in pairs(ns.Defaults.Loot.strings) do strings = strings + 1 end
+        for _ in pairs(NS.Defaults.Loot.strings) do strings = strings + 1 end
 
         t.truthy(byLabel(lootWidgets, "CheckBox", "Enable Loot"), "the category master toggle")
         t.eq(#lootBlocks, strings, "one block per registered string")
@@ -243,10 +243,10 @@ return function(ctx)
 
     test("string blocks are built in sorted global-name order", function()
         local sorted = {}
-        for globalName in pairs(ns.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
+        for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
         table.sort(sorted)
         for i, globalName in ipairs(sorted) do
-            t.eq(lootBlocks[i].heading.text, ns.Defaults.Loot.strings[globalName].label,
+            t.eq(lootBlocks[i].heading.text, NS.Defaults.Loot.strings[globalName].label,
                 ("block %d is headed by %s's label"):format(i, globalName))
         end
     end)
@@ -282,7 +282,7 @@ return function(ctx)
 
     test("the per-string checkbox writes the string's enable path", function()
         local sorted = {}
-        for globalName in pairs(ns.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
+        for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
         table.sort(sorted)
         local globalName = sorted[1]
         local enable = lootBlocks[1].rows[1].children[1]
@@ -300,7 +300,7 @@ return function(ctx)
         -- The panel shows `||` for a literal pipe (the same convention /pc set
         -- accepts), so the stored format must be the single-pipe form.
         local sorted = {}
-        for globalName in pairs(ns.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
+        for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
         table.sort(sorted)
         local globalName = sorted[1]
         local newInput = lootBlocks[1].rows[2].children[2]
@@ -316,7 +316,7 @@ return function(ctx)
         local newInput = lootBlocks[1].rows[2].children[2]
         local preview  = lootBlocks[1].rows[3].children[2]
         newInput:Fire("OnEnterPressed", "You got %s x%d")
-        t.eq(preview.text, ns.RenderSample("You got %s x%d"), "preview matches the shared renderer")
+        t.eq(preview.text, NS.RenderSample("You got %s x%d"), "preview matches the shared renderer")
         t.eq(preview.text, "You got Sample x42", "with the documented placeholder values")
     end)
 
@@ -330,7 +330,7 @@ return function(ctx)
 
     test("the per-string Reset button restores both dimensions", function()
         local sorted = {}
-        for globalName in pairs(ns.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
+        for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
         table.sort(sorted)
         local globalName = sorted[1]
         local block = lootBlocks[1]
@@ -341,10 +341,10 @@ return function(ctx)
 
         t.truthy(addon:IsStringEnabled("Loot", globalName), "reset re-enables the string")
         t.eq(Schema.Get("Loot." .. globalName .. ".format"),
-            ns.Defaults.Loot.strings[globalName].default, "and restores the default format")
+            NS.Defaults.Loot.strings[globalName].default, "and restores the default format")
         t.eq(block.rows[1].children[1].value, true, "the checkbox re-syncs")
         t.eq(block.rows[2].children[2].text,
-            ns.Defaults.Loot.strings[globalName].default:gsub("|", "||"),
+            NS.Defaults.Loot.strings[globalName].default:gsub("|", "||"),
             "the New box re-syncs, pipe-doubled")
     end)
 
@@ -375,11 +375,11 @@ return function(ctx)
     test("a slash-command write re-syncs the open panel", function()
         -- The panel and /pc share one write path, so either surface updates the other.
         local sorted = {}
-        for globalName in pairs(ns.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
+        for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
         table.sort(sorted)
         local globalName = sorted[1]
 
-        ns.Schema.Set("Loot." .. globalName .. ".format", "FROM SLASH %s")
+        NS.Schema.Set("Loot." .. globalName .. ".format", "FROM SLASH %s")
         t.eq(lootBlocks[1].rows[2].children[2].text, "FROM SLASH %s",
             "the New box shows the value the slash command stored")
         addon:ResetAll()
@@ -392,7 +392,7 @@ return function(ctx)
         t.truthy(shared, "the defaults register at least one shared global")
 
         local sorted = {}
-        for globalName in pairs(ns.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
+        for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
         table.sort(sorted)
         local index
         for i, globalName in ipairs(sorted) do
@@ -421,7 +421,7 @@ return function(ctx)
         end
         local joined = table.concat(labels, "\n")
 
-        for _, entry in ipairs(ns.COMMANDS) do
+        for _, entry in ipairs(NS.COMMANDS) do
             t.truthy(joined:find("/pc " .. entry[1], 1, true),
                 ("the parent page lists /pc %s"):format(entry[1]))
             t.truthy(joined:find(entry[2], 1, true),

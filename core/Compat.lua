@@ -1,9 +1,9 @@
-local addonName, ns = ...
+local addonName, NS = ...
 
--- ns.Compat — thin shims over WoW API surfaces that have moved between
+-- NS.Compat — thin shims over WoW API surfaces that have moved between
 -- client versions, so the rest of the addon calls one stable entry point.
-ns.Compat = ns.Compat or {}
-local Compat = ns.Compat
+NS.Compat = NS.Compat or {}
+local Compat = NS.Compat
 
 -- GetAddOnMetadata moved from the _G global to the C_AddOns namespace in
 -- 10.1. Prefer the namespaced form; fall back to the legacy global on

@@ -1,13 +1,13 @@
-local addonName, ns = ...
+local addonName, NS = ...
 
--- ns.Database — SavedVariables schema version + migration runner.
+-- NS.Database — SavedVariables schema version + migration runner.
 --
 -- The addon's live settings are keyed by Blizzard GLOBALNAME constants,
 -- which are stable, so no migration is needed yet — the runner exists so
 -- a future storage-shape change (renamed key, restructured category
 -- table) has a versioned home instead of ad-hoc `if db.x then` patches.
-ns.Database = ns.Database or {}
-local Database = ns.Database
+NS.Database = NS.Database or {}
+local Database = NS.Database
 
 -- Bump when the stored shape changes AND add a migrations[N] entry that
 -- upgrades a DB at version N-1 to version N.
@@ -35,16 +35,16 @@ function Database.RunMigrations(db)
         local step = migrations[v]
         if step then
             local ok, err = pcall(step, db)
-            if not ok and ns.Print then
-                ns.Print("schema migration " .. v .. " failed: " .. tostring(err))
+            if not ok and NS.Print then
+                NS.Print("schema migration " .. v .. " failed: " .. tostring(err))
             end
             ran = ran + 1
         end
     end
     db.global.schemaVersion = Database.SCHEMA_VERSION
     -- Lifecycle trace (debug-logging-§8): only when a migration step actually ran.
-    if ran > 0 and ns.Debug then
-        ns.Debug("Migrate", "v%d→v%d (%d step%s)",
+    if ran > 0 and NS.Debug then
+        NS.Debug("Migrate", "v%d→v%d (%d step%s)",
             from, Database.SCHEMA_VERSION, ran, ran == 1 and "" or "s")
     end
 end

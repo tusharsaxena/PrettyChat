@@ -39,10 +39,10 @@ return function(ctx)
     local t      = ctx.t
     local test   = ctx.test
     local inst   = ctx.loadAddon()
-    local ns     = inst.ns
+    local NS     = inst.NS
     local addon  = inst.addon
     local env    = inst.env
-    local Schema = ns.Schema
+    local Schema = NS.Schema
 
     local row  = firstFormatRow(Schema, "Loot")
     local cat  = row.category
@@ -73,12 +73,12 @@ return function(ctx)
     end)
 
     test("IsCategoryEnabled falls back to the category's shipped default", function()
-        t.eq(addon:IsCategoryEnabled(cat), ns.Defaults[cat].enabled,
+        t.eq(addon:IsCategoryEnabled(cat), NS.Defaults[cat].enabled,
             "unset category follows the defaults table")
         Schema.Set(cat .. ".enabled", false)
         t.falsy(addon:IsCategoryEnabled(cat), "stored category flag wins")
         addon:ResetCategory(cat)
-        t.eq(addon:IsCategoryEnabled(cat), ns.Defaults[cat].enabled,
+        t.eq(addon:IsCategoryEnabled(cat), NS.Defaults[cat].enabled,
             "reset restores the shipped default")
     end)
 
@@ -122,7 +122,7 @@ return function(ctx)
         addon:ResetAll()
         local baseApplied = addon:ApplyStrings()
         local catStrings = 0
-        for _ in pairs(ns.Defaults[cat].strings) do catStrings = catStrings + 1 end
+        for _ in pairs(NS.Defaults[cat].strings) do catStrings = catStrings + 1 end
 
         Schema.Set(cat .. ".enabled", false)
         local applied, restored = addon:ApplyStrings()
@@ -176,7 +176,7 @@ return function(ctx)
             "exactly one category block for a category filter")
 
         local strings = 0
-        for _ in pairs(ns.Defaults[cat].strings) do strings = strings + 1 end
+        for _ in pairs(NS.Defaults[cat].strings) do strings = strings + 1 end
         t.eq(countMatching(out, "Name: "), strings, "one Name line per string in the category")
         t.eq(countMatching(out, "Original: "), strings, "one Original line per string")
         t.eq(countMatching(out, "Formatted: "), strings, "one Formatted line per string")
@@ -201,7 +201,7 @@ return function(ctx)
         local at = mark()
         addon:Test({ kind = "formatstring", value = g })
         local out = lines(env, at)
-        t.eq(countPlain(out, "Name: " .. ns.Const.Color.reset .. g), 1,
+        t.eq(countPlain(out, "Name: " .. NS.Const.Color.reset .. g), 1,
             "the filtered string is shown")
         t.truthy(out[#out]:find("1 string shown", 1, true),
             "the footer singularises for a single string")
@@ -223,7 +223,7 @@ return function(ctx)
         local out = lines(env, at)
         t.truthy(out[2]:find("addon is currently disabled", 1, true),
             "the disabled notice follows the header")
-        t.eq(countPlain(out, "Name: " .. ns.Const.Color.reset .. g), 1,
+        t.eq(countPlain(out, "Name: " .. NS.Const.Color.reset .. g), 1,
             "the preview ignores the enable toggles and still renders")
         addon:ResetAll()
     end)
@@ -244,7 +244,7 @@ return function(ctx)
         local at = mark()
         addon:Test()
         for _, line in ipairs(lines(env, at)) do
-            t.truthy(line:sub(1, #ns.PREFIX) == ns.PREFIX, "line carries the [PC] prefix")
+            t.truthy(line:sub(1, #NS.PREFIX) == NS.PREFIX, "line carries the [PC] prefix")
         end
     end)
 end

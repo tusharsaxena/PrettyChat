@@ -21,7 +21,7 @@ No code changes needed. The Schema row, panel widgets, slash-set parsing, Test p
 
 ## Add a new category
 
-Categories are top-level keys in `ns.Defaults`. Adding one requires:
+Categories are top-level keys in `NS.Defaults`. Adding one requires:
 
 1. **`defaults/Defaults.lua`** — add a top-level entry:
    ```lua
@@ -42,15 +42,15 @@ Categories are top-level keys in `ns.Defaults`. Adding one requires:
 3. (Optional) Add a category-color line to the [color palette](./settings-panel.md#color-palette) section of `docs/settings-panel.md` if you're introducing a new label color.
 4. `/reload`. The category appears as a sibling sub-page beneath "Ka0s Pretty Chat" in the addon list, the schema picks up its rows, and `/pc list YourCategory` works.
 
-No `settings/Panel.lua` edits — `buildCategoryBody` is generic and iterates whatever's in `ns.Defaults[category].strings`.
+No `settings/Panel.lua` edits — `buildCategoryBody` is generic and iterates whatever's in `NS.Defaults[category].strings`.
 
 ## Fix a broken format string
 
 A format string "breaks" when the panel-edited (or `/pc set`-edited) value's `%`-conversions don't match Blizzard's signature. Symptom: the chat line errors at `string.format` time, sometimes silently dropping the message, sometimes throwing a Lua error.
 
-1. Open the panel sub-page for the category and read the **Original Format String** disabled input for the affected key. That's Blizzard's exact signature (read from the addon-private `ns.GlobalStrings` — no `_G` global; PC-14).
+1. Open the panel sub-page for the category and read the **Original Format String** disabled input for the affected key. That's Blizzard's exact signature (read from the addon-private `NS.GlobalStrings` — no `_G` global; PC-14).
 2. Edit the **New Format String** input: keep every `%`-conversion (`%s`, `%d`, `%.1f`, `%2$s`, …) in the same order, but freely change surrounding text and `|cAARRGGBB...|r` color escapes.
-3. The Preview disabled `EditBox` (bottom-right of the block) renders the format with sample arguments substituted in via `ns.RenderSample` (which wraps `buildSampleArgs` from `modules/Override.lua`). It always reflects the saved value and updates after every commit (Enter). On `string.format` failure, the preview shows the error message instead.
+3. The Preview disabled `EditBox` (bottom-right of the block) renders the format with sample arguments substituted in via `NS.RenderSample` (which wraps `buildSampleArgs` from `modules/Override.lua`). It always reflects the saved value and updates after every commit (Enter). On `string.format` failure, the preview shows the error message instead.
 4. To revert: (a) click the per-string **Reset** button (bottom-left of the block — always visible, no-op when the value already equals the default — the simplest path); (b) set the format back to the PrettyChat default exactly — the auto-clear kicks in and removes the override (see [schema.md](./schema.md#auto-clear-on-default)); (c) disable the per-string Enable checkbox, which restores Blizzard's original via the snapshot path; or (d) the category page's header **Defaults** button (or `/pc reset <Category>`) to clear every override in that category.
 
 ## Edit the PrettyChat default for a string
@@ -91,7 +91,7 @@ Two follow-ups the harness enforces:
 
 The per-string block lives in `settings/Panel.lua`'s `buildStringRow(scroll, category, globalName, strData, refreshers)`. It renders a `Heading` followed by three Flow rows — Enable/Original, GLOBALNAME/New, Reset/Preview — and attaches a `refresh()` closure to `refreshers` so subsequent DB-mutations (`/pc set`, category toggle, Defaults click) re-sync this block's widgets.
 
-Each row is an AceGUI `SimpleGroup` with `Flow` layout containing two children at `LEFT_W = 0.4` / `RIGHT_W = 0.6` relative widths so the two columns align across rows. The right-column EditBoxes carry `:SetLabel("Original" / "New" / "Preview")`. Layout constants live in `ns.Const` (`STRING_VSPACER`, `ROW_VSPACER`); see [settings-panel.md](./settings-panel.md).
+Each row is an AceGUI `SimpleGroup` with `Flow` layout containing two children at `LEFT_W = 0.4` / `RIGHT_W = 0.6` relative widths so the two columns align across rows. The right-column EditBoxes carry `:SetLabel("Original" / "New" / "Preview")`. Layout constants live in `NS.Const` (`STRING_VSPACER`, `ROW_VSPACER`); see [settings-panel.md](./settings-panel.md).
 
 When you add or remove a widget, also update the block's `refresh()` closure so the new widget syncs from the DB on every mutation.
 

@@ -11,7 +11,7 @@ OnEnable                                            ApplyStrings (every settings
 snapshot Blizzard originals                          for each (category, globalName):
    self.originalStrings[NAME] = _G[NAME]               if addon-enabled
    for every (category, globalName) in                    AND category-enabled
-   ns.Defaults                                     AND string-enabled:
+   NS.Defaults                                     AND string-enabled:
                                                               _G[NAME] = user override OR PrettyChat default
                                                           else:
                                                               _G[NAME] = self.originalStrings[NAME]
@@ -35,7 +35,7 @@ Runs once at addon load, after Blizzard's `GlobalStrings.lua` has populated `_G`
 ```lua
 function PrettyChat:OnEnable()
     self.originalStrings = {}
-    for _, catData in pairs(ns.Defaults) do
+    for _, catData in pairs(NS.Defaults) do
         for globalName in pairs(catData.strings) do
             self.originalStrings[globalName] = _G[globalName]
         end
@@ -46,7 +46,7 @@ end
 
 This is the *only* chance to capture Blizzard's pristine values for the runtime "restore" path. Any later code that overrides `_G[GLOBALNAME]` (other addons, runtime patches) will be invisible to the snapshot.
 
-The snapshot only covers strings that exist in `ns.Defaults`. Adding a new `globalName` to `defaults/Defaults.lua` requires a `/reload` for the snapshot to pick it up — there's no incremental snapshot path.
+The snapshot only covers strings that exist in `NS.Defaults`. Adding a new `globalName` to `defaults/Defaults.lua` requires a `/reload` for the snapshot to pick it up — there's no incremental snapshot path.
 
 ## Apply — `ApplyStrings()`
 
@@ -56,8 +56,8 @@ function PrettyChat:ApplyStrings()
     -- Deterministic iteration (PC-16): fixed CATEGORY_ORDER, sorted names within each
     -- category, so a global registered under two categories resolves the same way every
     -- reload. (Elided here: applied/restored counters; ApplyStrings returns them.)
-    for _, category in ipairs(ns.Schema.CATEGORY_ORDER) do
-        local catData = ns.Defaults[category]
+    for _, category in ipairs(NS.Schema.CATEGORY_ORDER) do
+        local catData = NS.Defaults[category]
         if catData and catData.strings then
             local names = {}
             for globalName in pairs(catData.strings) do names[#names + 1] = globalName end
@@ -91,7 +91,7 @@ Idempotent — calling it multiple times leaves `_G` in the same state.
 Resolved on every `ApplyStrings` pass, in this order:
 
 1. **`General.enabled`** (addon-wide master). Stored at `db.profile.enabled` (not under `categories`). When false, **every** Blizzard original is restored regardless of per-category and per-string state — the master switch wins outright. Customizations stay in the database, just unapplied.
-2. **`<Category>.enabled`** (per-category). Stored at `db.profile.categories[Cat].enabled`. Falls back to the per-category default in `ns.Defaults[Cat].enabled` (always `true` today).
+2. **`<Category>.enabled`** (per-category). Stored at `db.profile.categories[Cat].enabled`. Falls back to the per-category default in `NS.Defaults[Cat].enabled` (always `true` today).
 3. **`<Category>.<GLOBALNAME>.enabled`** (per-string). Stored at `db.profile.categories[Cat].disabledStrings[NAME]`. Inverted: `disabledStrings[NAME] = true` means **disabled**; absent / nil means enabled.
 
 A string only renders with the user's format if all three are on. For any string that resolves to "disabled" at any layer, `ApplyStrings` writes the captured original back to `_G[GLOBALNAME]` — so a panel-flip from "on" to "off" immediately restores Blizzard's behavior for that string.
@@ -106,7 +106,7 @@ function PrettyChat:GetStringValue(category, globalName)
     if catDB and catDB.strings and catDB.strings[globalName] ~= nil then
         return catDB.strings[globalName]                   -- user override
     end
-    return ns.Defaults[category].strings[globalName].default   -- PrettyChat default
+    return NS.Defaults[category].strings[globalName].default   -- PrettyChat default
 end
 ```
 
@@ -120,7 +120,7 @@ Note this is the **PrettyChat default**, not the **Blizzard original**. The Bliz
 
 ## Known quirk: globals shared across categories
 
-`LOOT_ITEM_CREATED_SELF` and `LOOT_ITEM_CREATED_SELF_MULTIPLE` are registered under **both** `Loot` and `Tradeskill` in `ns.Defaults` (`defaults/Defaults.lua:39` and `defaults/Defaults.lua:329`). The schema builds two rows for each — `Loot.LOOT_ITEM_CREATED_SELF.format` and `Tradeskill.LOOT_ITEM_CREATED_SELF.format` — both addressing the same `_G[LOOT_ITEM_CREATED_SELF]`. `ApplyStrings` writes both, so **the category that iterates last wins**. Because `ApplyStrings` walks `ns.Schema.CATEGORY_ORDER` in fixed order (and a sorted name list within each category), that winner is **deterministic** (PC-16): `Tradeskill` comes after `Loot` in `CATEGORY_ORDER`, so the Tradeskill row wins on every `/reload` — not a coin-flip. `Schema.crossRegisteredGlobals` records the conflict and the per-string enable-checkbox tooltip surfaces it in-page.
+`LOOT_ITEM_CREATED_SELF` and `LOOT_ITEM_CREATED_SELF_MULTIPLE` are registered under **both** `Loot` and `Tradeskill` in `NS.Defaults` (`defaults/Defaults.lua:39` and `defaults/Defaults.lua:329`). The schema builds two rows for each — `Loot.LOOT_ITEM_CREATED_SELF.format` and `Tradeskill.LOOT_ITEM_CREATED_SELF.format` — both addressing the same `_G[LOOT_ITEM_CREATED_SELF]`. `ApplyStrings` writes both, so **the category that iterates last wins**. Because `ApplyStrings` walks `NS.Schema.CATEGORY_ORDER` in fixed order (and a sorted name list within each category), that winner is **deterministic** (PC-16): `Tradeskill` comes after `Loot` in `CATEGORY_ORDER`, so the Tradeskill row wins on every `/reload` — not a coin-flip. `Schema.crossRegisteredGlobals` records the conflict and the per-string enable-checkbox tooltip surfaces it in-page.
 
 In practice this means: editing the format on the **Loot** sub-page for one of these two globals is silently overwritten by the **Tradeskill** value on the next `ApplyStrings`. The two defaults *do* differ — Loot uses the red `Loot` label; Tradeskill uses the magenta `Tradeskill` label — so the visible result is the Tradeskill one, stably across reloads. It's still a footgun (edit the Tradeskill page, not the Loot page, for these two), which is why the tooltip warns about it.
 

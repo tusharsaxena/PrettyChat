@@ -4,11 +4,11 @@ return function(ctx)
     local t = ctx.t
     local test = ctx.test
     local inst = ctx.loadAddon()
-    local Database = inst.ns.Database
+    local Database = inst.NS.Database
     local db = inst.addon.db
 
-    test("ns.Database and the db.global namespace exist", function()
-        t.truthy(Database, "ns.Database exists")
+    test("NS.Database and the db.global namespace exist", function()
+        t.truthy(Database, "NS.Database exists")
         t.truthy(db.global, "db.global namespace provisioned")
     end)
 
@@ -68,10 +68,10 @@ return function(ctx)
     test("migrating emits no debug noise when nothing ran", function()
         -- debug-logging-§8: the lifecycle trace fires only when a step actually
         -- executed, so a normal login stays quiet.
-        inst.ns.State.debug = true
-        inst.ns.DebugLog:Clear()
+        inst.NS.State.debug = true
+        inst.NS.DebugLog:Clear()
         Database.RunMigrations(db)
-        t.eq(#inst.ns.DebugLog.buffer, 0, "a no-op migration logs nothing")
-        inst.ns.State.debug = false
+        t.eq(#inst.NS.DebugLog.buffer, 0, "a no-op migration logs nothing")
+        inst.NS.State.debug = false
     end)
 end

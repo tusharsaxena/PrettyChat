@@ -1,6 +1,6 @@
 # Slash commands
 
-`/pc` and `/prettychat` are aliases for the same dispatcher (`PrettyChat:OnSlashCommand`). All chat output from the addon is prefixed with the cyan `[PC]` tag via `ns.Print`.
+`/pc` and `/prettychat` are aliases for the same dispatcher (`PrettyChat:OnSlashCommand`). All chat output from the addon is prefixed with the cyan `[PC]` tag via `NS.Print`.
 
 This doc covers: the dispatch shape, the full command reference, and the `||` ↔ `|` chat-input escape that bites users on `/pc set` for format strings.
 
@@ -12,7 +12,7 @@ This doc covers: the dispatch shape, the full command reference, and the `||` �
 local COMMANDS = {
     {"help",     "...", function(self) printHelp(self) end},
     {"config",   "...", function(self) self:OpenConfig() end},
-    {"version",  "...", function() ns.Print("v" .. VERSION) end},
+    {"version",  "...", function() NS.Print("v" .. VERSION) end},
     {"list",     "...", function(self, rest) listSettings(self, rest) end},
     {"get",      "...", function(self, rest) getSetting(self, rest) end},
     {"set",      "...", function(self, rest) setSetting(self, rest) end},
@@ -33,24 +33,24 @@ Unknown commands and the empty input fall back to `printHelp`.
 
 | Command | Effect |
 |---------|--------|
-| `/pc` / `/pc help` | Print the help index via `ns.Print`. Header line includes the addon version (`v<VERSION>`, read from TOC `## Version:` at file load via `ns.Compat.GetAddOnMetadata` — C_AddOns with a legacy-global fallback). |
+| `/pc` / `/pc help` | Print the help index via `NS.Print`. Header line includes the addon version (`v<VERSION>`, read from TOC `## Version:` at file load via `NS.Compat.GetAddOnMetadata` — C_AddOns with a legacy-global fallback). |
 | `/pc config` | Open the Blizzard settings panel to the parent page and auto-expand the addon's sub-category tree so every per-category sub-page (Loot, Currency, …) is visible in the left rail without clicking the disclosure arrow. **Refuses during combat** (`InCombatLockdown()`) — Blizzard's category-switch is protected and would taint the panel. Prints a notice and stops if combat is active. |
-| `/pc version` | Print `v<version>` via `ns.Print`. |
+| `/pc version` | Print `v<version>` via `NS.Print`. |
 | `/pc list` | List every setting and its current value, grouped by category (~170 lines). Output follows the mandated colour scheme (slash-commands-§5): a green "Available settings" header, azure `[Category]` group headers, and gold-key `=` white-value rows via the shared `FormatKV` + `Schema.FormatValue`. With ~170 rows the output is long, but it's the only way the slash UI reaches parity with the panel (which exposes a toggle and a format edit-box per string). |
 | `/pc list <Category>` | Filter to one category. Case-insensitive (`/pc list loot` works). Prints the category toggle + every per-string `.enabled` and `.format` row. Unknown categories print the valid list. |
 | `/pc list category` | Reserved sub-keyword: print every category name in alphabetical order, with a count header. The two reserved keywords (`category`, `formatstring`) are intercepted **before** the category-name path — neither is a valid category name, so the lookup is unambiguous. |
 | `/pc list formatstring` | Reserved sub-keyword: print every `Category.GLOBALNAME` pair, sorted by category then by global name, with a count header. Useful for finding the exact case-sensitive name to pass to `/pc test formatstring <NAME>` or `/pc set <Cat>.<NAME>.format ...`. |
 | `/pc get <path>` | Print one row's current value as the single-line `path = value` form (e.g. `/pc get Loot.LOOT_ITEM_SELF.enabled` or `/pc get General.enabled`), via the shared `FormatKV` + `Schema.FormatValue`. |
-| `/pc set <path> <value>` | Write one row through `ns.Schema.Set`, then echo the stored value back in the same `path = value` form. `bool` accepts `true/false/on/off/yes/no/1/0`; `string` consumes the rest of the line literally. For `string_format` rows, setting `<value>` to the row's PrettyChat default clears the override (see [schema.md](./schema.md#auto-clear-on-default)). |
+| `/pc set <path> <value>` | Write one row through `NS.Schema.Set`, then echo the stored value back in the same `path = value` form. `bool` accepts `true/false/on/off/yes/no/1/0`; `string` consumes the rest of the line literally. For `string_format` rows, setting `<value>` to the row's PrettyChat default clears the override (see [schema.md](./schema.md#auto-clear-on-default)). |
 | `/pc reset <Category>` | Clear all overrides for one category (case-insensitive name). For `General`, clears the addon-wide enabled override back to default (true). |
 | `/pc resetall` | Clear every category's overrides AND the addon-wide enabled flag. |
 | `/pc test` / `/pc test all` | Print a per-category Original-vs-Formatted diff for every format string. Output ignores enable toggles (same action as the General page's Test button). See [settings-panel.md](./settings-panel.md#the-test-preview). |
 | `/pc test category <name>` | Filter the diff to one category. Case-insensitive name with the same unambiguous-prefix lookup as `/pc reset` (`Schema.ResolveCategory`). |
-| `/pc test formatstring <NAME>` | Filter the diff to a single global. Input is uppercased then validated against `ns.Defaults`. Globals registered under more than one category (e.g. `LOOT_ITEM_CREATED_SELF`) print under each — both registrations are shown. |
-| `/pc debug` / `/pc debug on` / `/pc debug off` | Drive the on-screen debug console (`core/DebugLog.lua`). **Bare `/pc debug` toggles the console window** (the session logging state is unchanged) so capture can run with the window closed and be opened after the fact. `on` / `off` set the session logging flag `ns.State.debug` (default off, never persisted) through the single `ns.DebugLog:SetEnabled(on)` seam. Gates `ns.Debug(tag, fmt, …)`, which is a zero-alloc no-op when off and otherwise appends to the console. |
+| `/pc test formatstring <NAME>` | Filter the diff to a single global. Input is uppercased then validated against `NS.Defaults`. Globals registered under more than one category (e.g. `LOOT_ITEM_CREATED_SELF`) print under each — both registrations are shown. |
+| `/pc debug` / `/pc debug on` / `/pc debug off` | Drive the on-screen debug console (`core/DebugLog.lua`). **Bare `/pc debug` toggles the console window** (the session logging state is unchanged) so capture can run with the window closed and be opened after the fact. `on` / `off` set the session logging flag `NS.State.debug` (default off, never persisted) through the single `NS.DebugLog:SetEnabled(on)` seam. Gates `NS.Debug(tag, fmt, …)`, which is a zero-alloc no-op when off and otherwise appends to the console. |
 | unknown command | Print the help index (with an "unknown command" warning first). |
 
-Output is colored: yellow (`|cffffff00`) for command names via the shared `ns.Util.cmd()` helper, white (`|cffffffff`) for explanatory notes via `ns.Util.note()`. The header line includes the version banner.
+Output is colored: yellow (`|cffffff00`) for command names via the shared `NS.Util.cmd()` helper, white (`|cffffffff`) for explanatory notes via `NS.Util.note()`. The header line includes the version banner.
 
 ## Edit-box pipe escaping
 
@@ -60,9 +60,9 @@ WoW chat input interprets `|c…|r` as inline color escapes the moment the user 
 /pc set Loot.LOOT_ITEM_SELF.format ||cffff0000Loot||r | ||cff93c47dYou||r | + %s
 ```
 
-The settings panel's format input box wraps this internally — `settings/Panel.lua`'s edit-box `get` does `:gsub("|", "||")` and `set` does `:gsub("||", "|")`, so users see double-escaped strings while editing but `ns.Schema` always stores raw single-`|` format strings. `/pc set` users have to type `||` themselves; the slash command body does **no** un-escaping.
+The settings panel's format input box wraps this internally — `settings/Panel.lua`'s edit-box `get` does `:gsub("|", "||")` and `set` does `:gsub("||", "|")`, so users see double-escaped strings while editing but `NS.Schema` always stores raw single-`|` format strings. `/pc set` users have to type `||` themselves; the slash command body does **no** un-escaping.
 
-`/pc get` output renders with colors applied (single `|` is sent through `ns.Print` → `DEFAULT_CHAT_FRAME:AddMessage`, which interprets the escapes).
+`/pc get` output renders with colors applied (single `|` is sent through `NS.Print` → `DEFAULT_CHAT_FRAME:AddMessage`, which interprets the escapes).
 
 This is why the settings panel is the recommended editing surface for format strings — the `||` boundary is hostile to direct chat editing. `/pc set` is a power-user path.
 
@@ -73,15 +73,15 @@ Each command body is a small file-local function in `settings/Slash.lua`:
 | Function | Responsibility |
 |----------|----------------|
 | `printHelp(self)` | Iterate `COMMANDS` and print one yellow-name + white-description line per row. Header includes the version banner. |
-| `listSettings(self, rest)` | First two reserved sub-keywords are intercepted before category resolution: `category` prints a sorted list of category names, `formatstring` prints every `Category.GLOBALNAME` pair sorted by category then by name. If `rest` is empty: print a green "Available settings" header, then every category in `CATEGORY_ORDER` order under an azure `[Category]` group header. Else: resolve `rest` via `ns.Schema.ResolveCategory` and print only that category. Each row is a gold-path `=` white-value line via the shared `FormatKV(row.path, Schema.FormatValue(row, Schema.Get(row.path)))` — no trailing colons, string values with `|` doubled to `||`. |
-| `getSetting(self, rest)` | Parse `<path>`, look up via `ns.Schema.FindByPath`, print the single-line `FormatKV(path, Schema.FormatValue(...))` form. Errors with `"setting not found"` for unknowns. |
-| `setSetting(self, rest)` | Parse `<path> <value>`, look up the row, parse the value to the row's declared type (`bool` accepts seven aliases, `string` consumes the rest of the line), then call `ns.Schema.Set(path, newVal)`. Echoes the stored value back (read via `ns.Schema.Get`, rendered through `FormatKV` + `Schema.FormatValue`) so any coercion is reflected. |
+| `listSettings(self, rest)` | First two reserved sub-keywords are intercepted before category resolution: `category` prints a sorted list of category names, `formatstring` prints every `Category.GLOBALNAME` pair sorted by category then by name. If `rest` is empty: print a green "Available settings" header, then every category in `CATEGORY_ORDER` order under an azure `[Category]` group header. Else: resolve `rest` via `NS.Schema.ResolveCategory` and print only that category. Each row is a gold-path `=` white-value line via the shared `FormatKV(row.path, Schema.FormatValue(row, Schema.Get(row.path)))` — no trailing colons, string values with `|` doubled to `||`. |
+| `getSetting(self, rest)` | Parse `<path>`, look up via `NS.Schema.FindByPath`, print the single-line `FormatKV(path, Schema.FormatValue(...))` form. Errors with `"setting not found"` for unknowns. |
+| `setSetting(self, rest)` | Parse `<path> <value>`, look up the row, parse the value to the row's declared type (`bool` accepts seven aliases, `string` consumes the rest of the line), then call `NS.Schema.Set(path, newVal)`. Echoes the stored value back (read via `NS.Schema.Get`, rendered through `FormatKV` + `Schema.FormatValue`) so any coercion is reflected. |
 | `runReset(self, rest)` | Resolve `<Category>` and call `PrettyChat:ResetCategory(matched)`. No in-chat confirmation — the command itself is the assertion. |
 | `runResetAll(self)` | Call `PrettyChat:ResetAll()`. No in-chat confirmation. |
-| `runTest(self, rest)` | Parse the first whitespace-separated token. Empty or `all` → `PrettyChat:Test()` (every string). `category <name>` → resolve via `Schema.ResolveCategory`, then `Test({kind="category", value=matched})`. `formatstring <NAME>` → uppercase input, validate against `ns.Defaults`, then `Test({kind="formatstring", value=upper})`. Bad sub-token prints a four-line usage. |
-| `runDebug(self, rest)` | Bare / `toggle` → `ns.DebugLog:Toggle()` (show/hide the console window, logging state unchanged). `on` / `off` → `ns.DebugLog:SetEnabled(true/false)` (session logging flag). Other input prints a `usage:` hint. |
+| `runTest(self, rest)` | Parse the first whitespace-separated token. Empty or `all` → `PrettyChat:Test()` (every string). `category <name>` → resolve via `Schema.ResolveCategory`, then `Test({kind="category", value=matched})`. `formatstring <NAME>` → uppercase input, validate against `NS.Defaults`, then `Test({kind="formatstring", value=upper})`. Bad sub-token prints a four-line usage. |
+| `runDebug(self, rest)` | Bare / `toggle` → `NS.DebugLog:Toggle()` (show/hide the console window, logging state unchanged). `on` / `off` → `NS.DebugLog:SetEnabled(true/false)` (session logging flag). Other input prints a `usage:` hint. |
 
-`schemaReady()` guards each schema-touching command — prints `"schema not ready yet"` if `ns.Schema` hasn't loaded (shouldn't happen in practice given the TOC load order, but cheap to check).
+`schemaReady()` guards each schema-touching command — prints `"schema not ready yet"` if `NS.Schema` hasn't loaded (shouldn't happen in practice given the TOC load order, but cheap to check).
 
 ## Why no chat-side confirm popup for resets
 
@@ -91,7 +91,7 @@ The slash command itself is the assertion. In the panel, the per-category **Defa
 
 Two things you can't reach via `/pc`:
 
-- **Live sample of a saved value.** The panel's per-row Preview EditBox always renders `ns.RenderSample(currentValue)` and re-syncs on every commit. Slash users get an equivalent dump *after* `/pc set` lands, via `/pc test` (which prints every format, not just the changed one — narrow it with `/pc test formatstring <NAME>`).
+- **Live sample of a saved value.** The panel's per-row Preview EditBox always renders `NS.RenderSample(currentValue)` and re-syncs on every commit. Slash users get an equivalent dump *after* `/pc set` lands, via `/pc test` (which prints every format, not just the changed one — narrow it with `/pc test formatstring <NAME>`).
 - **Visual diff between Original and New.** The panel renders both side-by-side per row. Chat users would need `/pc get` against the format row plus an external GlobalStrings reference.
 
 The per-string **Reset** button (always visible on the row; `PrettyChat:ResetString`, clearing both the custom format and the disable flag) and the per-category **Defaults** header button mirror what `/pc set <path> <default>` and `/pc reset <Category>` do — both surfaces are reachable from chat. These remaining gaps are by design — the panel is the editing surface, slash is for scripted / power-user workflows.

@@ -1,6 +1,6 @@
-local addonName, ns = ...
+local addonName, NS = ...
 
--- ns.L — localization table with English-key fallback. Keys ARE the
+-- NS.L — localization table with English-key fallback. Keys ARE the
 -- enUS strings, so a missing translation returns the key verbatim: any
 -- unwrapped or untranslated string still renders in English (zero
 -- behaviour change on enUS). Translators add locale files that assign
@@ -13,7 +13,7 @@ local addonName, ns = ...
 local L = setmetatable({}, {
     __index = function(_, k) return k end,
 })
-ns.L = L
+NS.L = L
 
 -- enUS manifest (identity mappings — documents the translatable surface).
 local enUS = {

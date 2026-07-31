@@ -1,6 +1,6 @@
-local addonName, ns = ...
-ns.DebugLog = ns.DebugLog or {}
-local D = ns.DebugLog
+local addonName, NS = ...
+NS.DebugLog = NS.DebugLog or {}
+local D = NS.DebugLog
 local frame
 
 -- ON/OFF state colours (debug-logging-§5): the chat ack and the title-bar toggle MUST use
@@ -8,9 +8,9 @@ local frame
 local COL_ON_HEX,  COL_OFF_HEX = "|cff40ff40", "|cffff4040"
 local COL_ON_RGB,  COL_OFF_RGB = { 0.25, 1.00, 0.25 }, { 1.00, 0.25, 0.25 }  -- 40ff40 / ff4040
 
--- On-screen debug console (Ka0s standard, debug-logging). Debug output (ns.Debug) renders
+-- On-screen debug console (Ka0s standard, debug-logging). Debug output (NS.Debug) renders
 -- here in a monospace font instead of spamming the chat frame. Session-only: the enabled
--- flag lives in ns.State.debug and resets on every reload/login (debug-logging-§5).
+-- flag lives in NS.State.debug and resets on every reload/login (debug-logging-§5).
 
 -- Plain-text mirror of the log (no colour codes), for the Copy window. Capped like the log.
 D.buffer = D.buffer or {}
@@ -67,8 +67,8 @@ end
 -- /pc debug, the close button, Esc). Guarded: settings/ loads after core/,
 -- and this only fires at runtime once a refresher is registered.
 local function notifyPanelVisibility()
-    if ns.Schema and ns.Schema.NotifyPanelChange then
-        ns.Schema.NotifyPanelChange("General")
+    if NS.Schema and NS.Schema.NotifyPanelChange then
+        NS.Schema.NotifyPanelChange("General")
     end
 end
 
@@ -123,7 +123,7 @@ local function EnsureFrame()
     toggleBtn:SetScript("OnEnter", function() toggleFS:SetTextColor(1, 0.82, 0) end)
     toggleBtn:SetScript("OnLeave", function() D:RefreshHeader() end)
     toggleBtn:SetScript("OnClick", function()
-        D:SetEnabled(not (ns.State and ns.State.debug))
+        D:SetEnabled(not (NS.State and NS.State.debug))
     end)
     frame.debugToggle = toggleFS
     frame.debugToggleBtn = toggleBtn
@@ -133,7 +133,7 @@ local function EnsureFrame()
     -- Right inset clears the scrollbar gutter; bottom inset clears the status bar
     -- (and keeps the newest line's descenders off the window border).
     log:SetPoint("BOTTOMRIGHT", -(BAR_W + 8), STATUS_H + 4)
-    log:SetFont(ns.Const.FONT_MONO, 10, "")
+    log:SetFont(NS.Const.FONT_MONO, 10, "")
     log:SetJustifyH("LEFT")
     log:SetFading(false)
     log:SetMaxLines(MAX_BUFFER)
@@ -189,7 +189,7 @@ local function EnsureFrame()
 
     local lineCount = frame:CreateFontString(nil, "OVERLAY")
     lineCount:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 3)
-    lineCount:SetFont(ns.Const.FONT_MONO, 10, "")
+    lineCount:SetFont(NS.Const.FONT_MONO, 10, "")
     lineCount:SetJustifyH("RIGHT")
     lineCount:SetTextColor(0.6, 0.6, 0.62)
     frame.lineCount = lineCount
@@ -232,7 +232,7 @@ function D:Add(tag, msg)
     local ts = date("%H:%M:%S")
     -- Secret-safe sink (events-frames-taint-§8): neutralise the message before
     -- it reaches the console/buffer so a combat-protected value can't taint it.
-    msg = ns.Util.SafeToString(msg)
+    msg = NS.Util.SafeToString(msg)
     f.log:AddMessage(D.FormatColored(ts, tag, msg))
     D.buffer[#D.buffer + 1] = D.FormatPlain(ts, tag, msg)
     if #D.buffer > MAX_BUFFER then table.remove(D.buffer, 1) end
@@ -311,7 +311,7 @@ local function EnsureCopyFrame()
 
     local edit = CreateFrame("EditBox", nil, scroll)
     edit:SetMultiLine(true)
-    edit:SetFont(ns.Const.FONT_MONO, 10, "")
+    edit:SetFont(NS.Const.FONT_MONO, 10, "")
     edit:SetAutoFocus(false)
     edit:SetWidth(510)
     edit:SetScript("OnEscapePressed", function(self) self:ClearFocus(); copyFrame:Hide() end)
@@ -351,8 +351,8 @@ end
 -- a not-yet-ready db can't error. All values are plain (no combat-secret risk), so direct
 -- formatting is safe.
 function D.SessionSummary()
-    local name    = ns.name or "PrettyChat"
-    local version = ns.version or "?"
+    local name    = NS.name or "PrettyChat"
+    local version = NS.version or "?"
     local schema, profile = "?", "?"
     local addon = LibStub("AceAddon-3.0"):GetAddon("PrettyChat", true)
     local db = addon and addon.db
@@ -372,16 +372,16 @@ end
 -- this so the chat ack and the header label stay consistent. Session-only (debug-logging-§5).
 function D:SetEnabled(on)
     on = not not on
-    ns.State.debug = on
+    NS.State.debug = on
     D:RefreshHeader()
     -- Colour-coded chat ack (debug-logging-§5): the state word is ON green / OFF red,
     -- matching the header toggle, through the shared [PC] printer (never a raw print or a
     -- hand-written tag).
     local word = on and (COL_ON_HEX .. "ON|r") or (COL_OFF_HEX .. "OFF|r")
-    ns.Print("debug logging " .. word)
+    NS.Print("debug logging " .. word)
     -- Bracket every session with a console line at both ends. Write through D:Add rather
-    -- than ns.Debug so the "disabled" line still lands after ns.State.debug has flipped off
-    -- (ns.Debug is gated on the flag, D:Add is not).
+    -- than NS.Debug so the "disabled" line still lands after NS.State.debug has flipped off
+    -- (NS.Debug is gated on the flag, D:Add is not).
     D:Add("Debug", on and "logging enabled" or "logging disabled")
     -- On enable, a self-identifying [Init] session summary immediately after the bracket
     -- (debug-logging-§5/§8): which build, which schema, which profile. Raw D:Add (not the
@@ -394,15 +394,15 @@ end
 
 function D:RefreshHeader()
     if not (frame and frame.debugToggle) then return end
-    local on = ns.State and ns.State.debug
+    local on = NS.State and NS.State.debug
     frame.debugToggle:SetText(on and "Debug: ON" or "Debug: OFF")
     local rgb = on and COL_ON_RGB or COL_OFF_RGB
     frame.debugToggle:SetTextColor(rgb[1], rgb[2], rgb[3])
 end
 
 -- Global debug sink. No-op (zero alloc) when debug is off; otherwise appends to the console.
-function ns.Debug(tag, fmt, ...)
-    if not (ns.State and ns.State.debug) then return end
+function NS.Debug(tag, fmt, ...)
+    if not (NS.State and NS.State.debug) then return end
     local msg = fmt
     local n = select("#", ...)
     if n > 0 then
@@ -412,7 +412,7 @@ function ns.Debug(tag, fmt, ...)
         local args = {}
         for i = 1, n do
             local v = select(i, ...)
-            if v == nil or type(v) == "boolean" or ns.Util.IsConcatSafe(v) then
+            if v == nil or type(v) == "boolean" or NS.Util.IsConcatSafe(v) then
                 args[i] = v
             else
                 args[i] = "<secret>"

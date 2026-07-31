@@ -1,11 +1,11 @@
-local addonName, ns = ...
+local addonName, NS = ...
 
--- ns.Util — tiny pure string helpers shared by the slash dispatcher (settings/Slash.lua)
+-- NS.Util — tiny pure string helpers shared by the slash dispatcher (settings/Slash.lua)
 -- and any other module. Kept here so the colour-wrap helpers have a single home instead
--- of being re-declared per file. Loads after Constants so ns.Const.Color exists.
-ns.Util = ns.Util or {}
-local Util  = ns.Util
-local Color = ns.Const.Color
+-- of being re-declared per file. Loads after Constants so NS.Const.Color exists.
+NS.Util = NS.Util or {}
+local Util  = NS.Util
+local Color = NS.Const.Color
 
 -- Trim leading/trailing whitespace; nil-safe.
 function Util.trim(s)
@@ -24,7 +24,7 @@ end
 
 -- Secret-safe output helpers (events-frames-taint-§8). A Blizzard combat
 -- "secret" raises when it hits a `..` concatenation or string.format, which
--- would break the shared chat printer (ns.Print) or the debug sink (ns.Debug).
+-- would break the shared chat printer (NS.Print) or the debug sink (NS.Debug).
 -- IsConcatSafe probes concatenability with table.concat — NEVER `..`, which
 -- would itself raise on a secret — so string/number pass and everything else
 -- (including bools, which Lua also refuses to `..`) does not. SafeToString

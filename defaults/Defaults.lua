@@ -1,6 +1,6 @@
-local addonName, ns = ...
+local addonName, NS = ...
 
-ns.Defaults = {
+NS.Defaults = {
     Loot = {
         enabled = true,
         strings = {

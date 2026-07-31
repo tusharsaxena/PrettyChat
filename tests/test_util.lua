@@ -1,4 +1,4 @@
--- tests/test_util.lua — ns.Util secret-safe output helpers (events-frames-taint-§8).
+-- tests/test_util.lua — NS.Util secret-safe output helpers (events-frames-taint-§8).
 -- A Blizzard combat "secret" raises when it hits `..` / string.format, so the shared
 -- printer and debug sink route values through these: IsConcatSafe probes with
 -- table.concat (never `..`, which would itself raise on a secret); SafeToString
@@ -7,8 +7,8 @@
 return function(ctx)
     local t    = ctx.t
     local test = ctx.test
-    local ns   = ctx.loadAddon().ns
-    local U    = ns.Util
+    local NS   = ctx.loadAddon().NS
+    local U    = NS.Util
 
     test("SafeToString renders scalars and nil verbatim", function()
         t.eq(U.SafeToString("hi"),  "hi",    "string passes through")
@@ -63,7 +63,7 @@ return function(ctx)
     end)
 
     test("note and cmd wrap text in the documented slash colours", function()
-        local Color = ns.Const.Color
+        local Color = NS.Const.Color
         t.eq(U.note("body"), Color.white .. "body" .. Color.reset,
             "note() renders body text white")
         t.eq(U.cmd("/pc help"), Color.yellow .. "/pc help" .. Color.reset,

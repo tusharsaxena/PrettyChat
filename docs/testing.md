@@ -23,7 +23,7 @@ tests/
 ```
 
 - `run.lua` registers every suite, then runs each case under `pcall`; a case passes when its body neither errors nor trips an assertion.
-- `loader.lua` reproduces the `local addonName, ns = ...` header, loads the sources in TOC order, seeds every schema-registered Blizzard global with a recognisable `ORIG:<NAME>` value, and runs the AceAddon lifecycle. `ctx.loadAddon()` therefore returns a **fresh, fully-booted addon instance** (`{ env, ns, addon }`) — suites never share state.
+- `loader.lua` reproduces the `local addonName, NS = ...` header, loads the sources in TOC order, seeds every schema-registered Blizzard global with a recognisable `ORIG:<NAME>` value, and runs the AceAddon lifecycle. `ctx.loadAddon()` therefore returns a **fresh, fully-booted addon instance** (`{ env, NS, addon }`) — suites never share state.
 - `wow_mock.lua` stubs the Blizzard surface, LibStub/Ace3, the Settings API and AceGUI. Four pieces of fidelity are load-bearing and must not be simplified away:
   - the AceAddon mock stamps AceConsole's colliding `:Print` mixin, so the tests exercise the real printer-reclaim path;
   - frames resolve unknown **PascalCase** keys to a self-returning no-op but unknown lowercase keys to `nil` — addon-owned fields (`panel.defaultsBtn`, `frame.log`) are lowercase, and a blanket catch-all would silently invert every `if not …` guard;

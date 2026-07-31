@@ -1,14 +1,14 @@
-local addonName, ns = ...
+local addonName, NS = ...
 
 local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 
 local Schema = {}
-ns.Schema = Schema
+NS.Schema = Schema
 
--- Display order shared with Config.lua. Iterating ns.Defaults via
+-- Display order shared with Config.lua. Iterating NS.Defaults via
 -- pairs() would give a non-deterministic order; this keeps `/pc list`
 -- and the addon-list left rail in sync. "General" is a virtual category
--- (no entry in ns.Defaults) that hosts addon-wide settings —
+-- (no entry in NS.Defaults) that hosts addon-wide settings —
 -- listed first so it sits at the top of the addon list.
 local CATEGORY_ORDER = {
     "General",
@@ -65,7 +65,7 @@ local function buildCategoryRow(category)
         kind     = "category_enabled",
         type     = "bool",
         label    = category .. " category",
-        default  = (ns.Defaults[category] and ns.Defaults[category].enabled) and true or false,
+        default  = (NS.Defaults[category] and NS.Defaults[category].enabled) and true or false,
         get      = function() return PrettyChat:IsCategoryEnabled(category) end,
         set      = function(v)
             PrettyChat:EnsureCategoryDB(category).enabled = v and true or false
@@ -102,7 +102,7 @@ local function buildStringRows(category, globalName, strData)
         set        = function(v)
             local catDB = PrettyChat:EnsureCategoryDB(category)
             if not catDB.strings then catDB.strings = {} end
-            if v == ns.Defaults[category].strings[globalName].default then
+            if v == NS.Defaults[category].strings[globalName].default then
                 catDB.strings[globalName] = nil
             else
                 catDB.strings[globalName] = v
@@ -111,13 +111,13 @@ local function buildStringRows(category, globalName, strData)
     })
 end
 
--- Build the schema once at file load. ns.Defaults is populated by
+-- Build the schema once at file load. NS.Defaults is populated by
 -- Defaults.lua (loaded earlier by the TOC) and the addon object exists
 -- (PrettyChat.lua's :NewAddon call ran), so closures bind to live values.
 buildAddonEnabledRow()
 
 for _, category in ipairs(CATEGORY_ORDER) do
-    local catData = ns.Defaults[category]
+    local catData = NS.Defaults[category]
     if catData then
         buildCategoryRow(category)
 
@@ -133,7 +133,7 @@ for _, category in ipairs(CATEGORY_ORDER) do
     end
 end
 
--- Globals that ns.Defaults registers under more than one category
+-- Globals that NS.Defaults registers under more than one category
 -- (today: LOOT_ITEM_CREATED_SELF and LOOT_ITEM_CREATED_SELF_MULTIPLE
 -- under both Loot and Tradeskill). Each registration produces a separate
 -- string_format row, both writing the same _G[GLOBALNAME] in
@@ -159,7 +159,7 @@ end
 
 -- ---------------------------------------------------------------------
 -- Load-time integrity check (§4.5 / PC-15). Every row's path must
--- resolve to a backing default in ns.Defaults, so drift between the
+-- resolve to a backing default in NS.Defaults, so drift between the
 -- schema and the defaults surfaces loudly at load instead of as a silent
 -- nil at runtime. The checked/failed counts are stashed on Schema for
 -- the test harness to assert.
@@ -170,10 +170,10 @@ local function resolveBackingDefault(row)
         return true                        -- General virtual master toggle
     end
     if row.kind == "category_enabled" then
-        return ns.Defaults[row.category] ~= nil
+        return NS.Defaults[row.category] ~= nil
     end
     -- string_enabled / string_format both back onto a per-string default.
-    local cat = ns.Defaults[row.category]
+    local cat = NS.Defaults[row.category]
     return (cat and cat.strings and cat.strings[row.globalName] ~= nil) and true or false
 end
 
@@ -183,8 +183,8 @@ for _, r in ipairs(rows) do
     if not resolveBackingDefault(r) then
         Schema.validation.failed = Schema.validation.failed + 1
         Schema.validation.misses[#Schema.validation.misses + 1] = r.path
-        if ns.Print then
-            ns.Print("schema: unresolved path (no backing default): " .. tostring(r.path))
+        if NS.Print then
+            NS.Print("schema: unresolved path (no backing default): " .. tostring(r.path))
         end
     end
 end
@@ -256,7 +256,7 @@ function Schema.Set(path, value)
     -- The single settings-change trace (debug-logging-§10): logged once here, at the write
     -- seam, as `[Set] <path> = <value>` (shared value formatter, so it reads like /pc get).
     -- ApplyStrings' re-apply is an implied consequence and is deliberately not re-echoed.
-    ns.Debug("Set", "%s = %s", path, Schema.FormatValue(row, value))
+    NS.Debug("Set", "%s = %s", path, Schema.FormatValue(row, value))
     return true
 end
 

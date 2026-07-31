@@ -21,8 +21,8 @@ exclude_files = {
 }
 
 -- Ace3 methods take self/event params the addon does not always use;
--- `addonName` is the standard `local addonName, ns = ...` idiom, kept for
--- consistency even in files that only use `ns`.
+-- `addonName` is the standard `local addonName, NS = ...` idiom, kept for
+-- consistency even in files that only use `NS`.
 ignore = { "212/self", "212/event", "211/addonName" }
 
 -- Writable globals the addon owns.

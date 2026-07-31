@@ -7,17 +7,17 @@ return function(ctx)
     local t     = ctx.t
     local test  = ctx.test
     local inst  = ctx.loadAddon()
-    local ns    = inst.ns
+    local NS    = inst.NS
     local addon = inst.addon
     local env   = inst.env
-    local Color = ns.Const.Color
+    local Color = NS.Const.Color
 
     local function last() return env.DEFAULT_CHAT_FRAME.messages[#env.DEFAULT_CHAT_FRAME.messages] end
 
     test("the addon object and the bootstrap namespace are one table", function()
-        -- architecture-§2: ns IS the AceAddon object, so modules can hang
+        -- architecture-§2: NS IS the AceAddon object, so modules can hang
         -- methods off either name and reach the same table.
-        t.eq(addon, ns, "GetAddon returns the ns table itself")
+        t.eq(addon, NS, "GetAddon returns the NS table itself")
         t.eq(addon.name, "PrettyChat", "the addon registered under its folder name")
     end)
 
@@ -25,7 +25,7 @@ return function(ctx)
         t.truthy(addon.db, "the DB is created")
         t.eq(type(addon.db.profile.categories), "table",
             "profile defaults supplied the categories table")
-        t.eq(addon.db.global.schemaVersion, ns.Database.SCHEMA_VERSION,
+        t.eq(addon.db.global.schemaVersion, NS.Database.SCHEMA_VERSION,
             "global defaults supplied the schema version, migrated to current")
     end)
 
@@ -37,7 +37,7 @@ return function(ctx)
 
     test("OnEnable snapshots a Blizzard original for every registered global", function()
         local registered = 0
-        for _, catData in pairs(ns.Defaults) do
+        for _, catData in pairs(NS.Defaults) do
             for globalName in pairs(catData.strings) do
                 registered = registered + 1
                 t.eq(addon.originalStrings[globalName], "ORIG:" .. globalName,
@@ -49,25 +49,25 @@ return function(ctx)
 
     test("OnEnable applies the overrides so live chat is rewritten at load", function()
         local row
-        for _, r in ipairs(ns.Schema.RowsByCategory("Loot")) do
+        for _, r in ipairs(NS.Schema.RowsByCategory("Loot")) do
             if r.kind == "string_format" then row = r break end
         end
         t.eq(env[row.globalName], row.default,
             "the shipped default is already in _G after OnEnable")
     end)
 
-    test("ns.Print prepends the cyan [PC] tag to every line", function()
-        ns.Print("plain message")
-        t.eq(last(), ns.PREFIX .. "plain message", "the tag is prepended verbatim")
+    test("NS.Print prepends the cyan [PC] tag to every line", function()
+        NS.Print("plain message")
+        t.eq(last(), NS.PREFIX .. "plain message", "the tag is prepended verbatim")
     end)
 
-    test("ns.Print neutralises a value the concat probe rejects", function()
+    test("NS.Print neutralises a value the concat probe rejects", function()
         -- events-frames-taint-§8: a combat "secret" must never reach the
         -- output path. The printer routes through Util.SafeToString.
         local secret = setmetatable({}, { __concat = function() error("secret") end })
-        local ok = pcall(ns.Print, secret)
+        local ok = pcall(NS.Print, secret)
         t.truthy(ok, "printing a protected value never raises")
-        t.eq(last(), ns.PREFIX .. "<secret>", "the value is replaced by the placeholder")
+        t.eq(last(), NS.PREFIX .. "<secret>", "the value is replaced by the placeholder")
     end)
 
     test("OpenConfig refuses during combat without touching the Settings API", function()

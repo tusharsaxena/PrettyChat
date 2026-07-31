@@ -1,7 +1,7 @@
-local addonName, ns = ...
+local addonName, NS = ...
 
-ns.Const = ns.Const or {}
-local Const = ns.Const
+NS.Const = NS.Const or {}
+local Const = NS.Const
 
 -- Horizontal padding from the panel's left and right edges to its
 -- header / divider / body content. Single value used for both edges so
@@ -64,9 +64,9 @@ Const.Color = {
 }
 
 -- Shared cyan [PC] chat tag. Single source for every module's chat
--- output — ns.Print prepends it. Cyan is the addon's brand mark.
+-- output — NS.Print prepends it. Cyan is the addon's brand mark.
 Const.PREFIX = Const.Color.cyan .. "[PC]" .. Const.Color.reset .. " "
-ns.PREFIX    = Const.PREFIX
+NS.PREFIX    = Const.PREFIX
 
 -- Monospace font for the on-screen debug console (debug-logging-§2). Vendored under
 -- media/fonts/ (JetBrains Mono, OFL) rather than depending on a user-installed font, and

@@ -11,7 +11,7 @@ return function(ctx)
     local t = ctx.t
     local test = ctx.test
     local inst   = ctx.loadAddon()
-    local Schema = inst.ns.Schema
+    local Schema = inst.NS.Schema
     local env    = inst.env
 
     local row = firstFormatRow(Schema, "Loot")
@@ -99,7 +99,7 @@ return function(ctx)
         inst.addon:ResetAll()
         local snapshot = {}
         for _, category in ipairs(Schema.CATEGORY_ORDER) do
-            for globalName in pairs((inst.ns.Defaults[category] or {}).strings or {}) do
+            for globalName in pairs((inst.NS.Defaults[category] or {}).strings or {}) do
                 snapshot[globalName] = env[globalName]
             end
         end

@@ -340,7 +340,7 @@ function M.newEnv()
 
     libs["AceAddon-3.0"] = {
         -- Real AceAddon:NewAddon([object,] name, ...mixins). If the first arg is
-        -- a table it IS the addon object (the ns table, architecture-§2);
+        -- a table it IS the addon object (the NS table, architecture-§2);
         -- otherwise a fresh object is created and the first arg is the name.
         NewAddon = function(_, first, ...)
             local object, name
@@ -359,7 +359,7 @@ function M.newEnv()
             object.Printf              = noop
             -- AceConsole embeds a :Print mixin onto the object. Stamp a
             -- colliding printer (its |cff33ff99Name|r: tag) so the suite can
-            -- prove core/PrettyChat.lua reclaims ns.Print after registration
+            -- prove core/PrettyChat.lua reclaims NS.Print after registration
             -- (anti-pattern #36).
             object.Print = function(_, msg)
                 chatFrame:AddMessage("|cff33ff99" .. tostring(name) .. "|r: " .. tostring(msg))

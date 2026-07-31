@@ -9,8 +9,8 @@ return function(ctx)
     local t     = ctx.t
     local test  = ctx.test
     local inst  = ctx.loadAddon()
-    local ns    = inst.ns
-    local Const = ns.Const
+    local NS    = inst.NS
+    local Const = NS.Const
     local C     = Const.Color
 
     test("every colour escape is a well-formed |cRRGGBB code", function()
@@ -41,7 +41,7 @@ return function(ctx)
     test("the [PC] chat tag is cyan-wrapped and trailing-spaced", function()
         t.eq(Const.PREFIX, C.cyan .. "[PC]" .. C.reset .. " ",
             "PREFIX is the cyan [PC] tag plus one separating space")
-        t.eq(ns.PREFIX, Const.PREFIX, "ns.PREFIX aliases Const.PREFIX (one source)")
+        t.eq(NS.PREFIX, Const.PREFIX, "NS.PREFIX aliases Const.PREFIX (one source)")
     end)
 
     test("layout constants are positive numbers", function()

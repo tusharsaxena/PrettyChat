@@ -4,7 +4,7 @@
 -- order and runs the AceAddon lifecycle (OnInitialize + OnEnable), so
 -- each call returns a fully-booted, isolated addon instance:
 --
---   { env = <mock _G>, ns = <addon namespace>, addon = <AceAddon obj> }
+--   { env = <mock _G>, NS = <addon namespace>, addon = <AceAddon obj> }
 --
 -- Before OnEnable, every schema-registered Blizzard global is seeded with
 -- a recognisable pristine value ("ORIG:<NAME>") so the "restore on
@@ -34,7 +34,7 @@ local SOURCES = {
 return function(root, mock)
     return function()
         local env = mock.newEnv()
-        local ns  = {}
+        local NS  = {}
         local addonName = "PrettyChat"
 
         for _, rel in ipairs(SOURCES) do
@@ -47,7 +47,7 @@ return function(root, mock)
                     error(("loadfile(%s) failed: %s"):format(rel, tostring(err)))
                 end
                 setfenv(chunk, env)
-                chunk(addonName, ns)
+                chunk(addonName, NS)
             end
         end
 
@@ -56,10 +56,10 @@ return function(root, mock)
 
         -- Seed pristine Blizzard originals for every registered global so
         -- the snapshot in OnEnable captures them.
-        if ns.Schema and ns.Schema.CATEGORY_ORDER then
+        if NS.Schema and NS.Schema.CATEGORY_ORDER then
             local seen = {}
-            for _, cat in ipairs(ns.Schema.CATEGORY_ORDER) do
-                for _, row in ipairs(ns.Schema.RowsByCategory(cat)) do
+            for _, cat in ipairs(NS.Schema.CATEGORY_ORDER) do
+                for _, row in ipairs(NS.Schema.RowsByCategory(cat)) do
                     if row.globalName and not seen[row.globalName] then
                         seen[row.globalName] = true
                         env[row.globalName] = "ORIG:" .. row.globalName
@@ -70,6 +70,6 @@ return function(root, mock)
 
         if addon.OnEnable then addon:OnEnable() end
 
-        return { env = env, ns = ns, addon = addon }
+        return { env = env, NS = NS, addon = addon }
     end
 end

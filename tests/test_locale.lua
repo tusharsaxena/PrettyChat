@@ -1,4 +1,4 @@
--- tests/test_locale.lua — locales/enUS.lua. `ns.L` is an identity table with an
+-- tests/test_locale.lua — locales/enUS.lua. `NS.L` is an identity table with an
 -- English-key fallback, so a missing translation can never blank a string; the
 -- seeded manifest is the authoritative list of the addon's translatable surface
 -- (localization-§1). The drift cases below scan the real sources for `L["…"]`
@@ -29,8 +29,8 @@ return function(ctx)
     local t    = ctx.t
     local test = ctx.test
     local inst = ctx.loadAddon()
-    local ns   = inst.ns
-    local L    = ns.L
+    local NS   = inst.NS
+    local L    = NS.L
 
     -- Every `L["…"]` literal in the addon's own sources, mapped to the file
     -- it was found in.
@@ -44,9 +44,9 @@ return function(ctx)
         end
     end
 
-    test("ns.L is published as a table", function()
-        t.truthy(L, "ns.L exists")
-        t.eq(type(L), "table", "ns.L is a table")
+    test("NS.L is published as a table", function()
+        t.truthy(L, "NS.L exists")
+        t.eq(type(L), "table", "NS.L is a table")
     end)
 
     test("an unknown key falls back to itself verbatim", function()
@@ -90,7 +90,7 @@ return function(ctx)
     test("every slash-command description is localized", function()
         -- The COMMANDS table is the single source for /pc help AND the parent
         -- panel's command list, so its descriptions must be translatable.
-        for _, entry in ipairs(ns.COMMANDS) do
+        for _, entry in ipairs(NS.COMMANDS) do
             t.truthy(rawget(L, entry[2]) ~= nil,
                 ("description for /pc %s is in the manifest"):format(entry[1]))
         end
