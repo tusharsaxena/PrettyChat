@@ -112,7 +112,6 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     input_path = os.path.join(script_dir, "GlobalStrings.lua")
     output_dir = script_dir
-    toc_path = os.path.join(script_dir, "GlobalStrings.toc")
 
     if not os.path.exists(input_path):
         print(f"Error: {input_path} not found", file=sys.stderr)
@@ -167,40 +166,21 @@ def main():
         letter_range = "".join(letters)
 
         with open(filepath, "w", encoding="utf-8", newline="\n") as f:
-            # Populate the addon-private ns.GlobalStrings (PC-14). Under the
-            # main PrettyChat.toc load, `...` yields PrettyChat's namespace;
-            # under the dormant LoadOnDemand sub-addon it yields that
-            # sub-addon's own (harmless) namespace.
-            f.write("local _, ns = ...\n")
-            f.write("ns.GlobalStrings = ns.GlobalStrings or {}\n")
+            # Populate the addon-private NS.GlobalStrings (PC-14). `...` yields
+            # PrettyChat's namespace under the only load path there is — the
+            # chunk list in PrettyChat.toc.
+            f.write("local _, NS = ...\n")
+            f.write("NS.GlobalStrings = NS.GlobalStrings or {}\n")
             for key, value in items:
-                f.write(f'ns.GlobalStrings["{key}"] = "{value}"\n')
+                f.write(f'NS.GlobalStrings["{key}"] = "{value}"\n')
 
         print(f"  {filename} [{letter_range}]: {len(items)} entries")
         chunk_filenames.append(filename)
         total_written += len(items)
 
-    # Update TOC file
-    if os.path.exists(toc_path):
-        with open(toc_path, "r", encoding="utf-8") as f:
-            lines = f.readlines()
-
-        # Keep header lines (## directives and blank lines before file list)
-        header = []
-        for line in lines:
-            stripped = line.strip()
-            if stripped.startswith("##") or stripped == "":
-                header.append(line)
-            else:
-                break
-
-        with open(toc_path, "w", encoding="utf-8", newline="\n") as f:
-            for line in header:
-                f.write(line)
-            for filename in chunk_filenames:
-                f.write(filename + "\n")
-
-        print(f"\nUpdated {os.path.basename(toc_path)} with {len(chunk_filenames)} chunk files")
+    # The chunk list lives in PrettyChat.toc (the only TOC that loads these
+    # files). If NUM_CHUNKS ever changes, update that list by hand.
+    print(f"\nWrote {len(chunk_filenames)} chunk files — check PrettyChat.toc's # GlobalStrings list matches")
 
     print(f"\nTotal entries written: {total_written}")
     if total_written != len(entries):

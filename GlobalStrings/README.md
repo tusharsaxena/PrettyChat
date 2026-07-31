@@ -1,17 +1,13 @@
 # GlobalStrings
 
-A searchable copy of Blizzard's GlobalStrings (~22,879 entries), split into 10 chunk files. The chunks populate the addon-private `ns.GlobalStrings` table (each chunk begins `local _, ns = ...; ns.GlobalStrings = ns.GlobalStrings or {}`).
+A searchable copy of Blizzard's GlobalStrings (~22,879 entries), split into 10 chunk files. The chunks populate the addon-private `NS.GlobalStrings` table (each chunk begins `local _, NS = ...; NS.GlobalStrings = NS.GlobalStrings or {}`).
 
-The chunks are loaded by **two** different TOCs — see [../docs/global-strings.md](../docs/global-strings.md) for the dual-load story. In short:
-
-- `PrettyChat.toc` loads `GlobalStrings_001.lua` … `GlobalStrings_010.lua` *eagerly at addon startup* so the Settings panel can show originals without an explicit load step.
-- `GlobalStrings/GlobalStrings.toc` packages the same chunks as a separate `LoadOnDemand: 1` sub-addon (`PrettyChat - GlobalStrings`); `GlobalStringSearch.lua`'s `EnsureLoaded()` calls `LoadAddOn("GlobalStrings")` but the call is effectively idempotent given the eager load above.
+`PrettyChat.toc` loads `GlobalStrings_001.lua` … `GlobalStrings_010.lua` *eagerly at addon startup* so the Settings panel can show originals without an explicit load step. That is the only load path — see [../docs/global-strings.md](../docs/global-strings.md) for the history of the removed LoadOnDemand sub-addon.
 
 ## Files
 
 - `GlobalStrings.lua` — Full Blizzard reference (~1.6 MB, source file, not loaded by any TOC; only used as input to `split_globalstrings.py`)
 - `GlobalStrings_001.lua` ... `GlobalStrings_010.lua` — Chunk files split by first letter of key
-- `GlobalStrings.toc` — LoadOnDemand sub-addon TOC
 - `split_globalstrings.py` — Python script to regenerate chunk files from `GlobalStrings.lua`
 
 ## split_globalstrings.py
@@ -30,9 +26,10 @@ python3 GlobalStrings/split_globalstrings.py
 
 1. Prints letter distribution and target entries per chunk
 2. Computes 10 balanced groups of consecutive letters using a greedy algorithm
-3. Writes chunk files as `ns.GlobalStrings["KEY"] = "value"` assignments (with a `local _, ns = ...` header)
+3. Writes chunk files as `NS.GlobalStrings["KEY"] = "value"` assignments (with a `local _, NS = ...` header)
 4. Cleans up old `GlobalStrings_*.lua` files before writing new ones
-5. Updates `GlobalStrings.toc` with the new file list
+
+The chunk list lives in `PrettyChat.toc`'s `# GlobalStrings` section. The splitter does not rewrite it — if the chunk count ever changes, update that list by hand.
 
 ### When to re-run
 

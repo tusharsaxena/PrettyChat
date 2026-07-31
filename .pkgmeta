@@ -1,12 +1,31 @@
 # Packaging manifest for the BigWigs/CurseForge packager.
 # Libraries stay vendored under libs/ — no externals are pulled.
+
 package-as: PrettyChat
 
+enable-nolib-creation: no
+
 ignore:
-  - docs
-  - tests
   - .luacheckrc
   - .gitignore
   - .gitattributes
+  - docs        # holds docs/audits/ and docs/reviews/ too — all dev-only
+  - tests
+  - _dev
   - "*.bak"
-  - TODO.md
+
+  # Generated-data source assets. Only the GlobalStrings_0NN.lua chunks are
+  # loaded at runtime (PrettyChat.toc's # GlobalStrings section); the ~1.6 MB
+  # Blizzard dump and the splitter that turns it into those chunks are
+  # build-time-only inputs and would otherwise ship to every player.
+  - GlobalStrings/GlobalStrings.lua
+  - GlobalStrings/split_globalstrings.py
+  - GlobalStrings/README.md
+
+  # Project-page art, served from the CurseForge CDN — never downloaded by a
+  # player. Only the .tga logo is loadable at runtime (settings/Panel.lua);
+  # WoW cannot read .png or .jpg at all, so the master .png and the .jpg
+  # render exist purely for the project page and for regenerating the .tga.
+  - media/screenshots
+  - media/logos/*.png
+  - media/logos/*.jpg
