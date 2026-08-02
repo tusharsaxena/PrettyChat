@@ -15,7 +15,7 @@ badge and any count quoted in the docs must agree with it.
 - libs/LibKa0s is byte-identical to the sibling library checkout, where present
 - tests/_kit is byte-identical to the sibling library checkout, where present
 
-### test_libka0s.lua (20)
+### test_libka0s.lua (26)
 
 - the locale-table matcher catches both offending spellings and clears the legal one
 - no seam file hands a LibKa0s descriptor the addon-wide locale table
@@ -34,6 +34,12 @@ badge and any count quoted in the docs must agree with it.
 - every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh trio
 - the settings panel refuses to render under combat rather than drawing half a page
 - with Options absent the schema still loads whole — the measured stub set
+- the dispatcher renders prose, not its own SCREAMING_SNAKE keys
+- the COMMANDS table is the positional shape the library reads
+- the format hook doubles pipes without re-implementing the value formatter
+- the parse hook keeps a whole free-text value, spaces and all
+- both convergences are adopted, in bytes
+- with Slash absent the host verbs survive and the schema CLI says why
 - with LibKa0s absent the addon still loads and still prints, saying so once
 - the shared cause clause names the addon and where the library should be
 - the degraded secret guard still neutralises a protected value
@@ -224,7 +230,7 @@ badge and any count quoted in the docs must agree with it.
 - disabling logging still writes its closing bracket line
 - ResetAll emits one [Reset] summary carrying apply counts
 
-### test_slash.lua (39)
+### test_slash.lua (42)
 
 - Schema.FormatValue formats bools and doubles pipes in strings
 - NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
@@ -244,8 +250,10 @@ badge and any count quoted in the docs must agree with it.
 - /pc set rejects an unparseable bool without touching the value
 - /pc set stores a format string and echoes the stored value
 - /pc set echoes the value the DB actually kept, not the input
-- /pc set with no path, and with no value, both print usage
+- /pc set with no path prints usage, and with no value refuses by path
 - /pc set on an unknown path reports it as not found
+- /pc set keeps the whole remainder, spaces and all
+- /pc set and /pc get round-trip a pipe through the || escape
 - /pc list prints the green header and azure category groups
 - /pc list emits every schema row exactly once
 - /pc list category lists the category names alphabetically
@@ -253,9 +261,10 @@ badge and any count quoted in the docs must agree with it.
 - /pc list <Category> narrows to that category's rows
 - /pc list resolves a category case-insensitively and by prefix
 - /pc list on an unknown category lists the valid ones
-- /pc reset <Category> resets it and confirms
-- /pc reset with no argument prints usage and the valid categories
-- /pc reset on an unknown category changes nothing
+- /pc reset takes a schema PATH and resets exactly that setting
+- /pc reset <Category> answers with the deprecation and both replacements
+- /pc reset with no argument prints the library's usage line
+- /pc reset on a name that is neither path nor category reports not found
 - /pc resetall clears every override and confirms
 - /pc test routes every line through the [PC] printer
 - /pc test and /pc test all preview the whole surface
@@ -297,7 +306,7 @@ badge and any count quoted in the docs must agree with it.
 - a master-toggle change refreshes every built page, not just its own
 - a slash-command write re-syncs the open panel
 - a cross-registered string warns about the shared Blizzard global
-- the parent page lists every slash command from the same source
+- the parent page lists every slash command through the one row formatter
 - the parent page shows the TOC tagline
 
 ## Totals
@@ -305,7 +314,7 @@ badge and any count quoted in the docs must agree with it.
 | Suite | Cases |
 |-------|------:|
 | test_harness.lua | 6 |
-| test_libka0s.lua | 20 |
+| test_libka0s.lua | 26 |
 | test_compat.lua | 8 |
 | test_constants.lua | 8 |
 | test_util.lua | 7 |
@@ -318,6 +327,6 @@ badge and any count quoted in the docs must agree with it.
 | test_database.lua | 10 |
 | test_lifecycle.lua | 11 |
 | test_debuglog.lua | 25 |
-| test_slash.lua | 39 |
+| test_slash.lua | 42 |
 | test_panel.lua | 31 |
-| **Total** | **246** |
+| **Total** | **255** |

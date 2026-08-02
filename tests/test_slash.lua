@@ -7,7 +7,7 @@
 
 local function run(NS, addon, name, rest)
     for _, e in ipairs(NS.COMMANDS) do
-        if e[1] == name then return e[3](addon, rest or "") end
+        if e[1] == name then return e[3](rest or "") end
     end
     error("no '" .. name .. "' command in NS.COMMANDS")
 end
@@ -121,18 +121,25 @@ end)
 -- ---- get ------------------------------------------------------------
 
 test("/pc get echoes the gold-key/white-value FormatKV line", function()
+    -- Same four mandated colours (slash-commands-§5), rendered by the library's one
+    -- FormatKV rather than a private copy. The hex CASE changed with the handover —
+    -- lowercase ffffff00 to uppercase FFFFFF00 — which the client does not
+    -- distinguish and a byte comparison does, so it is pinned as the library's.
     run(NS, addon, "get", "General.enabled")
-    t.eq(last(env),
-        PREFIX .. C.yellow .. "General.enabled" .. C.reset .. " = " .. C.white .. "true" .. C.reset,
-        "/pc get echoes the gold-key/white-value FormatKV line")
+    local slashLib = env.LibStub("LibKa0s-Slash-1.0", true)
+    t.eq(last(env), PREFIX .. slashLib.FormatKV("General.enabled", "true"),
+        "/pc get echoes the shared gold-key/white-value pair")
+    t.eq(last(env), PREFIX .. "|cFFFFFF00General.enabled|r = |cFFFFFFFFtrue|r",
+        "and those are the bytes it renders")
 end)
 
 test("/pc get with no path prints usage", function()
-    t.truthy(joined("get"):find("usage: ", 1, true), "the usage line is printed")
+    t.truthy(joined("get"):find("Usage: /pc get <path>", 1, true),
+        "the library's usage line names this addon's own slash")
 end)
 
 test("/pc get on an unknown path reports it as not found", function()
-    t.truthy(joined("get Nope.nope"):find("setting not found: 'Nope.nope'", 1, true),
+    t.truthy(joined("get Nope.nope"):find("Setting not found: Nope.nope", 1, true),
         "the unknown path is echoed back")
 end)
 
@@ -164,17 +171,18 @@ end)
 test("/pc set rejects an unparseable bool without touching the value", function()
     Schema.Set("General.enabled", true)
     local text = joined("set General.enabled maybe")
-    t.truthy(text:find("invalid bool 'maybe'", 1, true), "the bad word is echoed back")
+    t.truthy(text:find("Invalid value for General.enabled", 1, true),
+        "the refusal names the path rather than the input")
     t.truthy(text:find("expected true/false/on/off/1/0/yes/no", 1, true),
-        "the accepted spellings are listed")
+        "and the indented reason lists the accepted spellings")
     t.eq(Schema.Get("General.enabled"), true, "the stored value is unchanged")
 end)
 
 test("/pc set stores a format string and echoes the stored value", function()
     local out = slash("set " .. formatPath .. " CUSTOM %s here")
     t.eq(Schema.Get(formatPath), "CUSTOM %s here", "the whole remainder is the value")
-    t.eq(out[#out],
-        PREFIX .. C.yellow .. formatPath .. C.reset .. " = " .. C.white .. "CUSTOM %s here" .. C.reset,
+    local slashLib = env.LibStub("LibKa0s-Slash-1.0", true)
+    t.eq(out[#out], PREFIX .. slashLib.FormatKV(formatPath, "CUSTOM %s here"),
         "the echo is a FormatKV line reading back from the DB")
 end)
 
@@ -189,16 +197,38 @@ test("/pc set echoes the value the DB actually kept, not the input", function()
         "and the echo still shows the effective value")
 end)
 
-test("/pc set with no path, and with no value, both print usage", function()
-    t.truthy(joined("set"):find("usage: ", 1, true), "no path prints usage")
+test("/pc set with no path prints usage, and with no value refuses by path", function()
+    t.truthy(joined("set"):find("Usage: /pc set <path> <value>", 1, true),
+        "no path at all prints the library's usage line")
+    -- A path with no value is a PARSE failure rather than a usage error now: the
+    -- value reaches the descriptor's parser, which refuses an empty string.
     local text = joined("set " .. formatPath)
-    t.truthy(text:find("usage: ", 1, true), "a string row with no value prints usage")
-    t.truthy(text:find(formatPath, 1, true), "and the usage names the path")
+    t.truthy(text:find("Invalid value for " .. formatPath, 1, true), "the refusal names the path")
+    t.truthy(text:find("expected a value", 1, true), "with the indented reason")
+    t.eq(Schema.Get(formatPath), formatRow.default, "and nothing was written")
 end)
 
 test("/pc set on an unknown path reports it as not found", function()
-    t.truthy(joined("set Nope.nope true"):find("setting not found", 1, true),
+    t.truthy(joined("set Nope.nope true"):find("Setting not found: Nope.nope", 1, true),
         "an unknown path is rejected before any write")
+end)
+
+test("/pc set keeps the whole remainder, spaces and all", function()
+    -- The lib-level parser splits on whitespace and a string row takes args[1], so
+    -- every format string in this addon would store its first WORD. The descriptor's
+    -- `parse` hook is the sanctioned seam for that (slash-commands-§6).
+    slash("set " .. formatPath .. " You receive loot: %s")
+    t.eq(Schema.Get(formatPath), "You receive loot: %s", "the spaces survived")
+end)
+
+test("/pc set and /pc get round-trip a pipe through the || escape", function()
+    -- get doubles pipes so colour escapes read as text; set halves them back, so a
+    -- value copied out of one and pasted into the other stores what it displayed.
+    slash("set " .. formatPath .. " ||cffff0000Custom|| %s")
+    t.eq(Schema.Get(formatPath), "|cffff0000Custom| %s", "the doubled pipes collapsed on the way in")
+    t.truthy(joined("get " .. formatPath):find("||cffff0000Custom|| %s", 1, true),
+        "and are re-doubled on the way out")
+    slash("set " .. formatPath .. " " .. formatRow.default)
 end)
 
 -- ---- list -----------------------------------------------------------
@@ -264,24 +294,42 @@ end)
 
 -- ---- reset ----------------------------------------------------------
 
-test("/pc reset <Category> resets it and confirms", function()
+test("/pc reset takes a schema PATH and resets exactly that setting", function()
+    -- Convergence #1 (slash-commands-§2): `reset` is path-scoped collection-wide.
+    Schema.Set("Loot.enabled", false)
+    Schema.Set(formatPath, "CUSTOM %s")
+    local text = joined("reset Loot.enabled")
+    t.eq(Schema.Get("Loot.enabled"), NS.Defaults.Loot.enabled, "the named row is back to default")
+    t.eq(Schema.Get(formatPath), "CUSTOM %s", "and only that row — its neighbours are untouched")
+    t.truthy(text:find("|cFFFFFF00Loot.enabled|r", 1, true), "the reset echoes the stored value")
+    Schema.Set(formatPath, formatRow.default)
+end)
+
+test("/pc reset <Category> answers with the deprecation and both replacements", function()
+    -- The old form still PARSES as something, so it must not be answered with
+    -- "Setting not found: Loot" — that tells a user their category is gone rather
+    -- than that the verb changed. Shipped with a message, not silently.
     Schema.Set("Loot.enabled", false)
     local text = joined("reset loot")
-    t.eq(Schema.Get("Loot.enabled"), NS.Defaults.Loot.enabled, "the category is back to default")
-    t.truthy(text:find("Loot reset to defaults", 1, true), "the canonical name is confirmed")
+    t.eq(Schema.Get("Loot.enabled"), false, "the old form no longer resets anything")
+    t.truthy(text:find("now takes a setting PATH, not a category", 1, true),
+        "the change itself is named")
+    t.truthy(text:find("/pc reset <path>", 1, true), "the per-setting replacement is offered")
+    t.truthy(text:find("Defaults", 1, true), "so is the per-category one")
+    t.truthy(text:find("/pc resetall", 1, true), "and the global one")
+    Schema.Set("Loot.enabled", NS.Defaults.Loot.enabled)
 end)
 
-test("/pc reset with no argument prints usage and the valid categories", function()
-    local text = joined("reset")
-    t.truthy(text:find("usage: ", 1, true), "usage is printed")
-    t.truthy(text:find(table.concat(Schema.CATEGORY_ORDER, ", "), 1, true),
-        "with the category list")
+test("/pc reset with no argument prints the library's usage line", function()
+    t.truthy(joined("reset"):find("Usage: /pc reset <path>", 1, true),
+        "usage names this addon's own slash and the path form")
 end)
 
-test("/pc reset on an unknown category changes nothing", function()
+test("/pc reset on a name that is neither path nor category reports not found", function()
     Schema.Set("Loot.enabled", false)
-    t.truthy(joined("reset zzz"):find("unknown category 'zzz'", 1, true), "rejected by name")
-    t.eq(Schema.Get("Loot.enabled"), false, "no category was reset")
+    t.truthy(joined("reset zzz"):find("Setting not found: zzz", 1, true), "rejected by name")
+    t.eq(Schema.Get("Loot.enabled"), false, "and nothing was reset")
+    Schema.Set("Loot.enabled", NS.Defaults.Loot.enabled)
 end)
 
 test("/pc resetall clears every override and confirms", function()

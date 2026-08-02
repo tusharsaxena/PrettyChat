@@ -56,6 +56,7 @@ local addon  = inst.addon
 local env    = inst.env
 local Schema = NS.Schema
 local L      = NS.L
+local C      = NS.Const.Color
 
 -- OnEnable already ran registerPanels; each page builds its body on first
 -- OnShow, so the suite shows a page and then reads the widgets it created.
@@ -462,7 +463,7 @@ end)
 
 -- ---- parent page ----------------------------------------------------
 
-test("the parent page lists every slash command from the same source", function()
+test("the parent page lists every slash command through the one row formatter", function()
     local mark = #env._widgets
     parentPanel:Show()
     local widgets = widgetsSince(env, mark)
@@ -481,6 +482,20 @@ test("the parent page lists every slash command from the same source", function(
     end
     t.truthy(joined:find("/prettychat is an alias for /pc", 1, true), "the alias is documented")
     t.truthy(byLabel(widgets, "Heading", L["Slash Commands"]), "under a Slash Commands heading")
+
+    -- Convergence #2. The panel row and the chat help row are now ONE formatter,
+    -- differing only in the chat form's two-space indent — where this page used to
+    -- carry double spaces around the dash, an explicitly white-wrapped dash and a
+    -- bare description. Asserted as bytes, because the whole point is that the two
+    -- surfaces can no longer drift.
+    local slashLib = env.LibStub("LibKa0s-Slash-1.0", true)
+    local first = NS.COMMANDS[1]
+    local expected = slashLib.FormatRow("/pc " .. first[1], first[2])
+    t.truthy(joined:find(expected, 1, true), "the row is lib.FormatRow's output verbatim")
+    t.eq(NS.SlashCommands:HelpRows()[1], "  " .. expected,
+        "and the chat form is the same row plus its two-space indent")
+    t.falsy(joined:find("|r  " .. C.white, 1, true),
+        "the old double-spaced, white-wrapped dash is gone")
 end)
 
 test("the parent page shows the TOC tagline", function()

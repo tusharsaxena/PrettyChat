@@ -60,7 +60,7 @@ local enUS = {
     "List settings — `/pc list [<Category> | category | formatstring]`",
     "Print a setting's current value — `/pc get <path>`",
     "Set a setting — `/pc set <path> <value>` (try /pc list)",
-    "Reset a category to defaults — `/pc reset <Category>`",
+    "Reset one setting to its default — `/pc reset <path>`",
     "Reset every category to addon defaults",
     "Print sample chat lines — `/pc test [all | category <name> | formatstring <NAME>]`",
     "Debug console — `/pc debug` shows it; `on`/`off` toggle logging",

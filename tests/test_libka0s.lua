@@ -19,6 +19,14 @@ local inst = ctx.loadAddon()
 local NS   = inst.NS
 local env  = inst.env
 
+-- Drive `/pc get <path>` and return the line it emitted, so the format hook is
+-- asserted through the real verb rather than by calling the closure directly.
+local function joinedGet(path)
+    local msgs = inst.env.DEFAULT_CHAT_FRAME.messages
+    NS.SlashCommands:OnSlash("get " .. path)
+    return msgs[#msgs]
+end
+
 local function readFile(rel)
     local fh = io.open(ctx.root .. "/" .. rel, "r")
     if not fh then return nil end
@@ -33,6 +41,7 @@ local SEAM_FILES = {
     "core/CoreSetup.lua",
     "core/DebugLogSetup.lua",
     "settings/OptionsSetup.lua",
+    "settings/Slash.lua",
 }
 
 -- ── the `L` trap: the matcher, and the matcher's own test ───────────────────
@@ -53,11 +62,17 @@ local SEAM_FILES = {
 local function localeTableOffenders(source)
     local hits = {}
     for line in (source or ""):gmatch("[^\r\n]+") do
-        local rest = line:match("[,{%s]L%s*=%s*NS%.L(.*)$") or line:match("^L%s*=%s*NS%.L(.*)$")
-        -- `NS.L[` / `NS.L.` is an INDEX into the table, not the table, so it is a
-        -- value taken from the locale table and is fine.
-        if rest and not rest:match("^[%[%.]") and not rest:match("^%s*and%f[%s]") then
-            hits[#hits + 1] = line:match("^%s*(.-)%s*$")
+        -- `local L = NS.L` is the file-scope binding every seam needs for its own
+        -- `L["…"]` call sites, not a descriptor field. Excluded by SPELLING rather
+        -- than by hoping the pattern misses it, and driven in the matcher's own case
+        -- below so the exclusion cannot quietly widen into a hole.
+        if not line:match("^%s*local%s+L%s*=") then
+            local rest = line:match("[,{%s]L%s*=%s*NS%.L(.*)$") or line:match("^L%s*=%s*NS%.L(.*)$")
+            -- `NS.L[` / `NS.L.` is an INDEX into the table, not the table, so it is a
+            -- value taken from the locale table and is fine.
+            if rest and not rest:match("^[%[%.]") and not rest:match("^%s*and%f[%s]") then
+                hits[#hits + 1] = line:match("^%s*(.-)%s*$")
+            end
         end
     end
     return hits
@@ -71,6 +86,7 @@ test("the locale-table matcher catches both offending spellings and clears the l
         '    L = NS.L or { LIST_HEADER = "x" },',
         '    L = NS.L and { LIST_HEADER = NS.L["Available settings"] } or nil,',
         '    L = { LIST_HEADER = NS.L["Available settings"] },',
+        'local L       = NS.L',
     }, "\n"))
     t.eq(#offenders, 2, "exactly the two offending spellings are flagged")
     t.truthy(offenders[1]:find("L = NS.L,", 1, true), "the bare table is caught")
@@ -378,6 +394,106 @@ test("with Options absent the schema still loads whole — the measured stub set
     local src = readFile("settings/OptionsSetup.lua")
     t.falsy(src:find("0%.492"), "no host copy of BUTTON_PAIR_REL")
     t.falsy(src:find("SetRelativeWidth", 1, true), "no host copy of a widget maker")
+end)
+
+-- ── LibKa0s-Slash-1.0 ──────────────────────────────────────────────────────
+
+test("the dispatcher renders prose, not its own SCREAMING_SNAKE keys", function()
+    -- The `L` trap, rendered half, on the module whose strings a user sees most.
+    local header = NS.SlashCommands:HelpHeader()
+    t.truthy(header, "the help header exists to be read at all")   -- non-vacuity
+    t.falsy(header:match("^[A-Z][A-Z0-9_]+$"), "it is prose, not HELP_HEADER")
+    t.truthy(header:find("slash commands", 1, true), "and it is the library's resolved English")
+
+    local lines = NS.SlashCommands:BuildListLines()
+    t.truthy(#lines > 1, "the list renders rows to assert on")
+    for _, key in ipairs({ "LIST_HEADER", "LIST_GROUP", "LIST_EMPTY" }) do
+        t.falsy(table.concat(lines, "\n"):find(key, 1, true),
+            "no raw " .. key .. " reached the listing")
+    end
+    t.eq(lines[1], "|cff33ff99Available settings|r", "the header is the mandated green string")
+end)
+
+test("the COMMANDS table is the positional shape the library reads", function()
+    -- A table of NAMED fields is silently invisible to the dispatcher: every verb
+    -- becomes unknown and the help block renders empty (slash-commands-§3).
+    for i, entry in ipairs(NS.COMMANDS) do
+        t.eq(type(entry[1]), "string", ("COMMANDS[%d][1] is the verb"):format(i))
+        t.eq(type(entry[2]), "string", ("COMMANDS[%d][2] is the description"):format(i))
+        t.eq(type(entry[3]), "function", ("COMMANDS[%d][3] is the handler"):format(i))
+        t.nilv(entry.name, ("COMMANDS[%d] carries no named `name` field"):format(i))
+    end
+end)
+
+test("the format hook doubles pipes without re-implementing the value formatter", function()
+    -- Slash minor 5's `format` hook, applied to a row type the library CAN already
+    -- render. Everything it does not own falls through to lib.FormatValue, including
+    -- the empty-string case, which this addon rendered as nothing before adopting.
+    local slashLib = env.LibStub("LibKa0s-Slash-1.0", true)
+    local row = NS.Schema.FindByPath("Loot.LOOT_ITEM_SELF.format")
+    NS.Schema.Set(row.path, "|cffff0000Red|r %s")
+    t.truthy(joinedGet(row.path):find("||cffff0000Red||r %s", 1, true),
+        "a stored pipe renders doubled so the escape reads as text")
+
+    NS.Schema.Set(row.path, "")
+    t.truthy(joinedGet(row.path):find(slashLib.STRINGS.NONE, 1, true),
+        "an empty string renders as the library's (none), per slash-commands-§5")
+    NS.Schema.Set(row.path, row.default)
+
+    local boolRow = NS.Schema.FindByPath("General.enabled")
+    t.truthy(joinedGet(boolRow.path):find("= |cFFFFFFFFtrue|r", 1, true),
+        "and a bool still renders through the library untouched")
+end)
+
+test("the parse hook keeps a whole free-text value, spaces and all", function()
+    -- The gap it exists for: lib.ParseValue splits the remainder on whitespace and a
+    -- string row takes args[1]. Driven through the REAL verb, not the hook directly.
+    local row = NS.Schema.FindByPath("Loot.LOOT_ITEM_SELF.format")
+    NS.SlashCommands:OnSlash("set " .. row.path .. " You receive loot: %s")
+    t.eq(NS.Schema.Get(row.path), "You receive loot: %s", "the whole remainder was stored")
+    NS.Schema.Set(row.path, row.default)
+end)
+
+test("both convergences are adopted, in bytes", function()
+    -- reset takes a PATH (slash-commands-§2), and the landing page renders through
+    -- the one row formatter (slash-commands-§4). Both are user-visible removals, so
+    -- both are pinned here as well as in their own suites.
+    local slashLib = env.LibStub("LibKa0s-Slash-1.0", true)
+    t.eq(type(NS.SlashCommands.CliReset), "function",
+        "the path-scoped reset is the library's, not a host page-scoped one")
+    t.eq(type(NS.SlashCommands.LandingRows), "function", "LandingRows is what the panel renders")
+    -- The old page-scoped body is gone from the source, not merely unreachable.
+    local src = readFile("settings/Slash.lua")
+    t.truthy(src:find("Sl:CliReset(rest)", 1, true), "`reset` delegates to the library's verb")
+    t.falsy(src:find("self:ResetCategory", 1, true), "and no page-scoped reset survives beside it")
+    local first = NS.COMMANDS[1]
+    t.eq(NS.SlashCommands:LandingRows()[1], slashLib.FormatRow("/pc " .. first[1], first[2]),
+        "the landing row is the shared formatter, un-indented")
+    t.eq(NS.SlashCommands:HelpRows()[1], "  " .. NS.SlashCommands:LandingRows()[1],
+        "and the chat row is the same bytes plus two spaces")
+end)
+
+test("with Slash absent the host verbs survive and the schema CLI says why", function()
+    local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    local msgs = bare.env.DEFAULT_CHAT_FRAME.messages
+
+    -- A host verb never went to the library, so it still works.
+    bare.NS.State.debug = false
+    bare.addon:OnSlashCommand("debug on")
+    t.truthy(bare.NS.State.debug, "/pc debug on still flips the session flag")
+
+    -- A schema verb names the missing library rather than going quiet.
+    local before = #msgs
+    bare.addon:OnSlashCommand("list")
+    t.truthy(#msgs > before, "/pc list answers")
+    t.truthy(msgs[#msgs]:find(bare.NS.LIBKA0S_MISSING ..
+        ", so the settings CLI is unavailable.", 1, true),
+        "through the shared cause clause")
+
+    -- And the stub re-implements none of the library's rendering.
+    local src = readFile("settings/Slash.lua")
+    t.falsy(src:find("cFFFFFF00", 1, true), "no copied row/key colour codes in the seam")
+    t.falsy(src:find("cFFFFFFFF", 1, true), "either of them")
 end)
 
 -- ── the degraded install ───────────────────────────────────────────────────

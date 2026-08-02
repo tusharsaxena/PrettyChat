@@ -345,12 +345,17 @@ local function buildParentBody(ctx)
     scroll:AddChild(alias)
     H.AddSpacer(scroll, H.ROW_VSPACER)
 
-    for _, entry in ipairs(NS.COMMANDS or {}) do
+    -- Convergence #2: the landing page and the chat help index render the same
+    -- COMMANDS table through the SAME formatter, differing only in indentation
+    -- (slash-commands-§4). This page used to carry its own — double spaces either
+    -- side of the em dash, the dash explicitly white-wrapped, the description bare —
+    -- which is the silent drift between settings/Panel.lua and settings/Slash.lua
+    -- that every addon in the collection had. Collapsing it changes what a user
+    -- sees: single spaces, no colour span on the dash, and a white description.
+    for _, line in ipairs(NS.SlashCommands.LandingRows()) do
         local row = AceGUI:Create("Label")
         row:SetFullWidth(true)
-        row:SetText(("%s/pc %s%s  %s—%s  %s"):format(
-            Color.yellow, entry[1], Color.reset,
-            Color.white, Color.reset, entry[2]))
+        row:SetText(line)
         scroll:AddChild(row)
     end
 end

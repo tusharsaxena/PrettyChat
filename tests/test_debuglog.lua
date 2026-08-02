@@ -4,7 +4,7 @@
 
 local function debugCmd(NS, addon, rest)
     for _, entry in ipairs(NS.COMMANDS) do
-        if entry[1] == "debug" then return entry[3](addon, rest) end
+        if entry[1] == "debug" then return entry[3](rest) end
     end
     error("no debug command in NS.COMMANDS")
 end
