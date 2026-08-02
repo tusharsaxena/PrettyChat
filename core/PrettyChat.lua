@@ -7,21 +7,13 @@ local addonName, NS = ...
 
 -- Pass the NS table as the AceAddon object (architecture-§2) so the addon
 -- object and the bootstrap namespace are one table. AceConsole's :Print embed
--- therefore lands on NS and would clobber the cyan printer, so NS.Print is
--- reclaimed immediately below, AFTER registration (anti-pattern #36). Keep this
--- order: NewAddon first, printer definition second.
+-- therefore lands on NS and clobbers the cyan printer — which is why
+-- core/CoreSetup.lua, the file that builds that printer from LibKa0s-Core-1.0,
+-- is the very next entry in the TOC and reclaims the name (anti-pattern #36).
+-- Keep that order: NewAddon here, the reclaim immediately after.
 local PrettyChat = LibStub("AceAddon-3.0"):NewAddon(NS, addonName, "AceConsole-3.0")
 
-local Color  = NS.Const.Color
-local PREFIX = NS.PREFIX
-
--- Cyan [PC] chat printer — the single seam every module prints through (no raw
--- print()). Reclaims NS.Print from AceConsole's embed (see above) and routes the
--- message through the secret-safe stringifier (events-frames-taint-§8) so a
--- combat-protected value can never taint the output path.
-function NS.Print(msg)
-    DEFAULT_CHAT_FRAME:AddMessage(PREFIX .. NS.Util.SafeToString(msg))
-end
+local Color = NS.Const.Color
 
 function PrettyChat:OnInitialize()
     -- Start from the profile defaults (defaults/Profile.lua) and merge

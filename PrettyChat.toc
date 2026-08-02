@@ -31,8 +31,9 @@ core\Namespace.lua
 core\State.lua
 core\Util.lua
 core\Database.lua
-core\DebugLog.lua
 core\PrettyChat.lua
+core\CoreSetup.lua
+core\DebugLog.lua
 
 # Defaults (data tables — must precede settings\Schema.lua)
 defaults\Profile.lua

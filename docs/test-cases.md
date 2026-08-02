@@ -15,6 +15,18 @@ badge and any count quoted in the docs must agree with it.
 - libs/LibKa0s is byte-identical to the sibling library checkout, where present
 - tests/_kit is byte-identical to the sibling library checkout, where present
 
+### test_libka0s.lua (9)
+
+- the locale-table matcher catches both offending spellings and clears the legal one
+- no seam file hands a LibKa0s descriptor the addon-wide locale table
+- Core cannot express the L trap — the tripwire that stands in for a rendered case
+- the secret-safe pair on NS.Util IS Core's, not a host copy beside it
+- the [PC] printer renders the same bytes it did before Core owned it
+- the printer is reclaimed from AceConsole's embed, not merely defined
+- with LibKa0s absent the addon still loads and still prints, saying so once
+- the shared cause clause names the addon and where the library should be
+- the degraded secret guard still neutralises a protected value
+
 ### test_compat.lua (8)
 
 - Compat.GetAddOnMetadata is published on the namespace
@@ -282,6 +294,7 @@ badge and any count quoted in the docs must agree with it.
 | Suite | Cases |
 |-------|------:|
 | test_harness.lua | 6 |
+| test_libka0s.lua | 9 |
 | test_compat.lua | 8 |
 | test_constants.lua | 8 |
 | test_util.lua | 7 |
@@ -296,4 +309,4 @@ badge and any count quoted in the docs must agree with it.
 | test_debuglog.lua | 25 |
 | test_slash.lua | 39 |
 | test_panel.lua | 30 |
-| **Total** | **226** |
+| **Total** | **235** |
