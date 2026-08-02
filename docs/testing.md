@@ -34,7 +34,7 @@ What the mocks deliberately do *not* model is layout: they answer "which widget,
 
 ## The gate
 
-Both `lua tests/run.lua` and `luacheck .` must be green before any commit. The suites register named `test(name, fn)` cases; the `Tests` badge in the README badge row shows the pass/total.
+Both `lua tests/run.lua` and `luacheck .` must be green before any commit. Lint config is `.luacheckrc` (`std=lua51`; excludes `libs/`, `GlobalStrings/`, `tests/`, `docs/audits`, `docs/reviews`). The suites register named `test(name, fn)` cases; the `Tests` badge in the README badge row shows the pass/total.
 
 ## Test-case inventory & badge sync (`testing-§5`)
 

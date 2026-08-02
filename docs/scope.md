@@ -40,5 +40,4 @@ Decisions made during requirements review and v1.x.x — these are settled, not 
 ## Where the contract lives
 
 - User-facing behavior: [README.md](../README.md) — categories, slash command table, FAQ, troubleshooting.
-- Engineer working notes: [agent-context.md](./agent-context.md) — hard rules, test gate, namespace table, working environment. The root [../CLAUDE.md](../CLAUDE.md) is the stub that points there and records the accepted standard deviations.
-- High-level architecture map: [ARCHITECTURE.md](./ARCHITECTURE.md).
+- Engineer context: [ARCHITECTURE.md](./ARCHITECTURE.md) — design overview, module map, namespace publishing table, invariants, working environment, doc index. How to verify: [testing.md](./testing.md). The root [../CLAUDE.md](../CLAUDE.md) is the stub that points there and records the accepted standard deviations.

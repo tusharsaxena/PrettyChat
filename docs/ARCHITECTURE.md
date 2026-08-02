@@ -49,6 +49,40 @@ Modular layout (`core/`, `defaults/`, `locales/`, `modules/`, `settings/`) — t
 
 Topic detail: [module-map.md](./module-map.md), [file-index.md](./file-index.md).
 
+## Namespace publishing pattern
+
+Every file opens with `local addonName, NS = ...` — the addon-wide namespace table WoW passes to each chunk. Modules publish their public surface onto `NS`; nothing is exported through a global. The addon object **is** that same `NS` table (`core/PrettyChat.lua` passes `NS` to `:NewAddon`, architecture-§2), so the AceAddon methods hang off it and `LibStub("AceAddon-3.0"):GetAddon("PrettyChat")` returns the very same table.
+
+| Member | Set by | Used by |
+|--------|--------|---------|
+| `NS.Compat` | `core/Compat.lua` | `core/Namespace.lua`, `settings/Slash.lua`, `settings/Panel.lua` (metadata access) |
+| `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `core/Util.lua`, `core/DebugLog.lua`, `core/PrettyChat.lua`, `settings/Panel.lua`, `settings/Slash.lua` (layout/palette/prefix) |
+| `NS.name` / `NS.version` | `core/Namespace.lua` | identity bootstrap (published for any module) |
+| `NS.State` | `core/State.lua` | `core/DebugLog.lua`, `settings/Slash.lua` (session-only `debug` flag; reset every reload/login) |
+| `NS.Util` | `core/Util.lua` | `settings/Slash.lua`, `core/DebugLog.lua`, `core/PrettyChat.lua` (`trim` / `note` / `cmd` string helpers; secret-safe `SafeToString` / `IsConcatSafe`) |
+| `NS.Database` | `core/Database.lua` | `core/PrettyChat.lua` (`OnInitialize` merges defaults + runs migrations) |
+| `NS.DebugLog` / `NS.Debug` | `core/DebugLog.lua` | every file (on-screen debug console + gated `NS.Debug` sink; `SetEnabled` seam driven by `/pc debug`) |
+| `NS.Print` | `core/PrettyChat.lua` | every file (secret-safe cyan `[PC]` chat-output chokepoint) |
+| `NS.ProfileDefaults` | `defaults/Profile.lua` | `core/PrettyChat.lua` (`OnInitialize` merges it with `NS.Database.defaults` for `AceDB:New`) |
+| `NS.Defaults` | `defaults/Defaults.lua` | `settings/Schema.lua`, `modules/Override.lua`, `settings/Slash.lua`, `settings/Panel.lua` |
+| `NS.L` | `locales/enUS.lua` | `settings/Panel.lua`, `settings/Slash.lua` (UI strings) |
+| `NS.GlobalStrings` | `GlobalStrings/` chunks | `settings/Panel.lua` (Original Format String display) |
+| `NS.RenderSample` | `modules/Override.lua` | `settings/Panel.lua` (per-string Preview) |
+| `NS.Schema` | `settings/Schema.lua` | `settings/Slash.lua` (slash), `settings/Panel.lua` (widgets) |
+| `NS.COMMANDS` | `settings/Slash.lua` | `settings/Panel.lua` (parent page slash list) |
+| `NS.Config.RegisterPanels()` | `settings/Panel.lua` | `core/PrettyChat.lua` (`OnEnable`) |
+
+## Invariants
+
+Break one of these and the addon misbehaves in ways no test or lint will name.
+
+- **Single write path.** Every settings mutation goes through `NS.Schema.Set(path, value)` — panel widget callbacks (`settings/Panel.lua`) and `/pc set` (`settings/Slash.lua`) alike. Never write `db.profile.categories[…]` directly from outside a row's `set()` closure; only the single path runs `PrettyChat:ApplyStrings()` and `Schema.NotifyPanelChange()`, and it is what keeps panel and slash from drifting.
+- **Master toggle wins.** With `General.enabled` false, `ApplyStrings` restores every Blizzard original regardless of per-category and per-string state. Three enable layers, evaluated in order: addon → category → per-string ([override-pipeline.md](./override-pipeline.md)).
+- **Format-specifier signatures must match Blizzard's.** Each Blizzard string has a fixed signature (`%s`, `%d`, `%.1f`, `%2$s`, …); a replacement must consume the same conversions in the same order or `string.format` errors at runtime. Copy the signature from the panel's left (Original) edit box.
+- **Overrides only ever happen in `ApplyStrings`, and the snapshot only in `OnEnable`.** `OnEnable` runs after Blizzard has populated `_G`, and its pre-override snapshot (iterating `NS.Defaults` deterministically) is the one chance to capture pristine values for the runtime restore-on-disable path. Never assign `_G[GLOBALNAME]` from anywhere but `ApplyStrings`, which walks `CATEGORY_ORDER` plus sorted names so cross-registered globals resolve deterministically (documented last-writer).
+- **All chat output goes through `NS.Print`; all developer logging through `NS.Debug`.** `NS.Print` (`core/PrettyChat.lua`) prepends the cyan `NS.PREFIX` (`|cff00ffff[PC]|r `) — **no raw `print(...)` and no direct `DEFAULT_CHAT_FRAME:AddMessage`** anywhere, including `Test()` in `modules/Override.lua`, whose every body line is prefixed. `NS.Debug(tag, fmt, …)` is a zero-alloc no-op while off, gated on the session-only `NS.State.debug` flag whose single owner is `NS.DebugLog:SetEnabled(on)` (`/pc debug on|off`, the console header toggle). Console **visibility** is a separate concern (`:Show()` / `:Hide()` / `:Toggle()` / `:IsShown()`, bare `/pc debug` and the General-page checkbox); the window's OnShow/OnHide fire `Schema.NotifyPanelChange("General")` so the checkbox tracks it. `SetEnabled` prints the colour-coded ack, writes the `[Debug] logging enabled|disabled` bracket, and on enable appends the one-line `[Init]` session summary (`PrettyChat v<ver>, schema v<n>, profile '<key>'`) — the visible boot summary, since the flag is off at login. Traces are **one gated line per event, never per string**: `[Init]`, `[Migrate]` (`core/Database.lua`, only when a step runs), `[Set] <path> = <value>` (`Schema.Set`, the single settings-change seam — no `[Apply]` re-echo), `[Reset]` (`modules/Override.lua`, with apply counts), `[Config]` (`OpenConfig` — opened/refused/blocked). `ApplyStrings` returns `(applied, restored)` and stays silent so its caller emits the summary.
+- **User-facing strings go through `NS.L`.** `locales/enUS.lua` exports an English-key metatable (missing keys fall back to the key). Wrap new static UI strings in `L["…"]` and add them to the enUS manifest.
+
 ## Settings Schema
 
 `NS.Defaults` is the source data; `settings/Schema.lua` turns it into an ordered `rows` list keyed by dot path. Four row kinds:
@@ -90,3 +124,28 @@ Vendored under `libs/` (the BigWigs packager pulls nothing — no `externals`): 
 ## Testing
 
 Headless harness under `tests/` (stock Lua 5.1, no client): `lua tests/run.lua` + `luacheck .`. Suites register named `test(name, fn)` cases; `lua tests/run.lua --list` prints the generated case inventory ([test-cases.md](./test-cases.md), testing-§5) — the authoritative pass count, mirrored by the README `tests` badge. Manual in-game validation: [smoke-tests.md](./smoke-tests.md). Full verification guide and the commit gate: [testing.md](./testing.md).
+
+## Working environment
+
+- **Dual-path WSL.** `/home/tushar/GIT/prettychat/` and `/mnt/d/Profile/Users/Tushar/Documents/GIT/prettychat/` are the same repo via symlink.
+- **`.gitattributes`** forces CRLF on disk for all text files — hence the `--strip-trailing-cr` in the inventory diff ([testing.md](./testing.md)).
+- **`.gitignore`** covers OS/editor cruft and `.claude/`. `libs/` is tracked (vendored Ace3), as are `GlobalStrings/`, `media/`, all `.lua` source, `tests/`, `.luacheckrc` and `.pkgmeta`.
+- **Case-insensitive `/mnt/d`.** `libs/` was renamed from `Libs/` on disk; with `core.ignorecase=true`, recording a case flip in git needs `git mv -f Libs libs` even though the working tree already reads lowercase.
+
+## Doc index
+
+Topic-specific detail lives in `docs/`. Read on demand.
+
+| Topic | File |
+|-------|------|
+| How to verify: harness, lint, the commit gate | [testing.md](./testing.md) |
+| In/out scope + resolved decisions | [scope.md](./scope.md) |
+| Per-file responsibility map | [file-index.md](./file-index.md) |
+| Module roles + public APIs | [module-map.md](./module-map.md) |
+| Snapshot → ApplyStrings → restore + 3-layer enable order | [override-pipeline.md](./override-pipeline.md) |
+| Schema row kinds + single write path + auto-clear + AceDB shape | [schema.md](./schema.md) |
+| Canvas-layout panel framework | [settings-panel.md](./settings-panel.md) |
+| `COMMANDS` table + full command reference | [slash-commands.md](./slash-commands.md) |
+| Dual-load story + splitter script | [global-strings.md](./global-strings.md) |
+| Recipes (add string/category, fix a format) | [common-tasks.md](./common-tasks.md) |
+| Quick recipe + full smoke-test suite | [smoke-tests.md](./smoke-tests.md) |

@@ -31,15 +31,11 @@ When in doubt, treat standard conformance as a hard requirement and ask.
 
 ## Before touching code
 
-Read **[docs/agent-context.md](./docs/agent-context.md)** — the full working brief: hard rules (single write path, master toggle, `NS.L` localization, cyan `[PC]` prefix), the namespace publishing table, and the test gate. Design overview + invariants live in **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**; user-facing reference in **[README.md](./README.md)**.
+Read the docs — start with **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** (what this addon is: module map, namespace publishing table, invariants, working environment, doc index), then **[docs/testing.md](./docs/testing.md)** (how to verify), then the topic-detail docs it indexes. User-facing reference: **[README.md](./README.md)**.
 
 ## Non-negotiable guardrails
 
-- **Standards compliance — flag every deviation.** This addon conforms to the Ka0s WoW Addon Standard (linked above); new work must stay conformant. **If any change would deviate from the standard — a new file loose at the repo root instead of under its `core/`/`settings/`/… folder, a TOC field out of canonical order, a skipped test gate, a non-standard naming choice, anything — do NOT silently proceed. Stop and flag the deviation to the user**, and let them decide which of two things it is:
-  1. **an accepted deviation** — the addon intentionally diverges; record it as a documented bullet in this file (like the layout-§1 / toc-file-§1 exceptions above), *or*
-  2. **a signal the standard itself should change** — raise it against the [WowAddonStandards](https://github.com/tusharsaxena/WowAddonStandards) repo so the standard definition is updated.
-
-  Never resolve the choice yourself, and never quietly conform-or-diverge without surfacing it.
+- **Code invariants (detail in ARCHITECTURE).** Settings mutate only through `NS.Schema.Set`; `_G[GLOBALNAME]` is assigned only in `ApplyStrings`; all chat output goes through `NS.Print` (no raw `print`) and all gated logging through `NS.Debug`; user-facing strings go through `NS.L`.
 - **Test gate.** After every change, `lua tests/run.lua` must be green and `luacheck .` clean.
 - **Keep the test-case inventory & badge in sync (`testing-§5`).** When the suite changes — a case added/removed/renamed or the pass count moves (i.e. whenever a failing test is resolved) — regenerate `docs/test-cases.md` via `lua tests/run.lua --list` **and** update the README `Tests` badge count **in the same change**, not as a follow-up. `docs/test-cases.md` is generated (never hand-edited) and is the authoritative pass count.
 - **Static README badges track their source of truth (`documentation-§1`).** The `[WoW]` and `[Tests]` badges are static shields.io images that go stale silently: `[WoW]` ↔ TOC `## Interface:` (they MUST show the same number — bump both together on every client-patch bump); `[Tests]` ↔ the regenerated `docs/test-cases.md` total (rule above). Update the badge in the **same change** that moves its source, never as a follow-up.
