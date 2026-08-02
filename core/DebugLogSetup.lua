@@ -45,12 +45,21 @@ if not lib then
     -- ours and a user who types `/pc debug on` must not be told nothing happened.
     -- What is lost is the window, and the stub says so once, honestly.
     local missing = NS.LIBKA0S_MISSING .. ", so the debug console window is unavailable."
-    local announced = false
-    local function sayOnce()
-        if announced then return end
-        announced = true
-        if NS.Print then NS.Print(missing) end
+
+    -- ONE announce per ENTRY POINT. A single shared token is spent by whichever
+    -- path the user happens to take first — `/pc debug on` burns it, and then the
+    -- very next `/pc debug`, which is the verb that actually asks for the WINDOW,
+    -- says nothing at all. Each surface that silently does less than it looks like
+    -- it does explains itself once.
+    local function announcer()
+        local said = false
+        return function()
+            if said then return end
+            said = true
+            if NS.Print then NS.Print(missing) end
+        end
     end
+    local sayOnEnable, sayOnWindow, sayOnCopy = announcer(), announcer(), announcer()
 
     -- No formatters here, deliberately. Nothing in the addon calls them — they exist
     -- only inside the library's own Add — and hand-copying the exact strings whose
@@ -61,13 +70,13 @@ if not lib then
         Add             = function() end,
         Debug           = function() end,
         Clear           = function() end,
-        Show            = function() sayOnce() end,
+        Show            = function() sayOnWindow() end,
         Hide            = function() end,
-        Toggle          = function() sayOnce() end,
+        Toggle          = function() sayOnWindow() end,
         IsShown         = function() return false end,
         IsEnabled       = function() return (NS.State and NS.State.debug) and true or false end,
         RefreshHeader   = function() end,
-        ShowCopy        = function() sayOnce() end,
+        ShowCopy        = function() sayOnCopy() end,
         UpdateScrollBar = function() end,
         UpdateStatus    = function() end,
         BufferSize      = function() return 0 end,
@@ -82,14 +91,14 @@ if not lib then
             if NS.Print then
                 NS.Print("debug logging " .. (on and "|cff40ff40ON|r" or "|cffff4040OFF|r"))
             end
-            if on then sayOnce() end
+            if on then sayOnEnable() end
         end,
         ConsoleCheckbox = function()
             return {
                 label   = "Debug console",
                 tooltip = missing,
                 get     = function() return false end,
-                set     = function() sayOnce() end,
+                set     = function() sayOnWindow() end,
             }
         end,
     }

@@ -76,11 +76,13 @@ See [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patc
 One row in the `COMMANDS` table near the top of `settings/Slash.lua`:
 
 ```lua
-{"yourverb", "Description shown in /pc help",
-    function(self, rest) yourFunctionBody(self, rest) end},
+{"yourverb", L["Description shown in /pc help"],
+    function(rest) yourFunctionBody(rest) end},
 ```
 
-The dispatcher and the help printer iterate the same table. If your command needs the schema, guard with `if not schemaReady() then return end` (the same pattern the existing schema-touching commands use).
+Positional triple, and the handler takes **`rest` alone** — `LibKa0s-Slash-1.0` dispatches with `entry[3](rest)`. A table of named fields is silently invisible to it: every verb becomes unknown and the help block renders empty.
+
+The dispatcher, the help printer and the settings landing page all read the same table. If your command needs the schema, guard with `if not schemaReady() then return end` (the same pattern the existing schema-touching commands use).
 
 Two follow-ups the harness enforces:
 
@@ -91,7 +93,7 @@ Two follow-ups the harness enforces:
 
 The per-string block lives in `settings/Panel.lua`'s `buildStringRow(scroll, category, globalName, strData, refreshers)`. It renders a `Heading` followed by three Flow rows — Enable/Original, GLOBALNAME/New, Reset/Preview — and attaches a `refresh()` closure to `refreshers` so subsequent DB-mutations (`/pc set`, category toggle, Defaults click) re-sync this block's widgets.
 
-Each row is an AceGUI `SimpleGroup` with `Flow` layout containing two children at `LEFT_W = 0.4` / `RIGHT_W = 0.6` relative widths so the two columns align across rows. The right-column EditBoxes carry `:SetLabel("Original" / "New" / "Preview")`. Layout constants live in `NS.Const` (`STRING_VSPACER`, `ROW_VSPACER`); see [settings-panel.md](./settings-panel.md).
+Each row is an AceGUI `SimpleGroup` with `Flow` layout containing two children at `LEFT_W = 0.4` / `RIGHT_W = 0.6` relative widths so the two columns align across rows. The right-column EditBoxes carry `:SetLabel("Original" / "New" / "Preview")`. `STRING_VSPACER` is this block's own and lives in `NS.Const`; the shared spacing it sits beside (`ROW_VSPACER`, `SECTION_HEADING_H`) is read off `NS.Helpers`, because the library owns the layout constants now (options-ui-§8). See [settings-panel.md](./settings-panel.md).
 
 When you add or remove a widget, also update the block's `refresh()` closure so the new widget syncs from the DB on every mutation.
 

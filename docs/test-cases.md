@@ -12,8 +12,8 @@ badge and any count quoted in the docs must agree with it.
 - every derived path exists on disk and no libs/ path leaked in
 - the vendored load list is every file of LibKa0s.xml, in XML order
 - every LibKa0s major actually registered in the loaded environment
-- libs/LibKa0s is byte-identical to the sibling library checkout, where present
-- tests/_kit is byte-identical to the sibling library checkout, where present
+- libs/LibKa0s is the LibKa0s release the README says this addon bundles
+- tests/_kit is the test kit that shipped with that release
 
 ### test_libka0s.lua (26)
 

@@ -311,10 +311,23 @@ local function buildParentBody(ctx)
     logoGroup:SetFullWidth(true)
     logoGroup:SetHeight(LOGO_SIZE)
 
-    local logoTex = logoGroup.frame:CreateTexture(nil, "ARTWORK")
+    -- Created ONCE PER FRAME, and stashed on it. This body used to run exactly once
+    -- per session behind a `rendered` flag; under the library's renderer it runs
+    -- again whenever the page is re-shown after being flagged dirty. A Texture is
+    -- not an AceGUI child, so ReleaseChildren does not take it with it — and AceGUI
+    -- POOLS the SimpleGroup's frame, so an un-owned Texture rides that frame into
+    -- whichever widget acquires it next, in this addon or another. Re-texturing the
+    -- one we already put there is both correct and free.
+    local logoTex = logoGroup.frame.pcLogo
+    if not logoTex then
+        logoTex = logoGroup.frame:CreateTexture(nil, "ARTWORK")
+        logoGroup.frame.pcLogo = logoTex
+    end
     logoTex:SetTexture(LOGO_PATH)
     logoTex:SetSize(LOGO_SIZE, LOGO_SIZE)
+    logoTex:ClearAllPoints()
     logoTex:SetPoint("TOPLEFT", logoGroup.frame, "TOPLEFT", 0, 0)
+    logoTex:Show()
     scroll:AddChild(logoGroup)
     H.AddSpacer(scroll, H.ROW_VSPACER)
 

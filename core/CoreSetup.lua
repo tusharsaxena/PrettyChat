@@ -70,6 +70,17 @@ if not lib then
         end
         DEFAULT_CHAT_FRAME:AddMessage(NS.PREFIX .. Util.SafeToString(msg))
     end
+
+    -- Published on BOTH paths, not just the library one. Nothing calls it today,
+    -- which is exactly why it would go unnoticed: the first caller added later
+    -- would work in every install that has the library and be nil in the one this
+    -- branch exists for.
+    function NS.Format(fmt, ...)
+        if select("#", ...) == 0 then return NS.Print(fmt) end
+        local parts = {}
+        for i = 1, select("#", ...) do parts[i] = Util.SafeToString((select(i, ...))) end
+        NS.Print(Util.SafeToString(fmt):format(unpack(parts)))
+    end
     return
 end
 

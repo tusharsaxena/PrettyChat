@@ -92,14 +92,14 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 #### T-20 — `/pc config` lands on the parent landing page
 
-> Why: `OpenConfig` calls `Settings.OpenToCategory(self.optionsCategoryID)` against the parent ID.
+> Why: `OpenConfig` delegates to `LibKa0s-Options-1.0`'s `OpenOptionsPanel`, which calls `Settings.OpenToCategory` against the parent category it registered.
 
 - Steps: `/pc config`.
 - Expected: panel opens with "Ka0s Pretty Chat" selected in the left rail and the parent landing page visible (logo + tagline + slash command list). The page header reads `Ka0s Pretty Chat` (no breadcrumb prefix).
 
 #### T-21 — Sub-category tree auto-expands
 
-> Why: `expandMainCategory(self.optionsCategory)` walks `SettingsPanel:GetCategoryList():GetCategoryEntry(cat):SetExpanded(true)` inside `pcall`.
+> Why: the library's own `expandMainCategory` walks `SettingsPanel:GetCategoryList():GetCategoryEntry(cat):SetExpanded(true)` inside `pcall`. It reports nothing when the private API moves (`LIBKA0S-04`), so this test is the only thing that would notice.
 
 - Steps: starting from the closed addon list, `/pc config`.
 - Expected: the left rail shows every sub-page (`General`, `Loot`, `Currency`, `Money`, `Reputation`, `Experience`, `Honor`, `Tradeskill`, `Misc`) without the user clicking the disclosure arrow.
@@ -107,11 +107,11 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 #### T-22 — Sub-page header breadcrumb
 
-> Why: `buildHeader` builds sub-page titles as `PARENT_TITLE .. sep .. title` where `sep = " |A:common-icon-forwardarrow:16:16|a "` — an inline-atlas chevron, not a font glyph.
+> Why: the library's `CreatePanel` builds sub-page titles as `parentTitle .. BREADCRUMB_SEP .. title`, where `BREADCRUMB_SEP` is `" |A:common-icon-forwardarrow:16:16|a "` — an inline-atlas chevron, not a font glyph, so it renders the same regardless of font or locale fallback.
 
 - Steps: open each sub-page in turn.
 - Expected: page header reads `Ka0s Pretty Chat ▸ Loot`, `Ka0s Pretty Chat ▸ Currency`, etc., with the separator visibly rendered as a small gold right-arrow texture (not as a literal `▸` character or pipe). Atlas divider underneath in the same gold as the title.
-- Failure mode: separator appears as raw escape text `|A:common-icon-forwardarrow:16:16|a`, or as a missing-texture box. Cause: the atlas was retired in a client patch. Swap the atlas name in `settings/Panel.lua`'s `sep` local to `NPE_RightClick` or `chevron-collapse`.
+- Failure mode: separator appears as raw escape text `|A:common-icon-forwardarrow:16:16|a`, or as a missing-texture box. Cause: the atlas was retired in a client patch. The separator is `BREADCRUMB_SEP` in `libs/LibKa0s/Options.lua` — a value shared by every Ka0s panel, so a change belongs upstream in `../LibKa0s`, never in the vendored copy.
 
 #### T-23 — Per-string block layout
 
@@ -145,7 +145,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 #### T-26 — Per-category Defaults button (header)
 
-> Why: `catCtx.defaultsBtn:SetCallback("OnClick", ...)` calls `PrettyChat:ResetCategory(category)` directly — no popup.
+> Why: the page parks `ctx.panel.defaultsOnClick = function() PrettyChat:ResetCategory(category) end`, the library wires it onto the button it builds on first `OnShow`, and the canvas's `OnDefault` forwards to the same body — no popup.
 
 - Setup: edit one Loot format and disable one Loot string via the panel.
 - Steps: click **Defaults** in the Loot page header.

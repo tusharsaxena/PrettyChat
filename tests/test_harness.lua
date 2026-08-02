@@ -86,44 +86,85 @@ test("every LibKa0s major actually registered in the loaded environment", functi
     end
 end)
 
--- The manual `diff -r`, mechanical (testing-§11). A vendored copy that has forked
--- from ../LibKa0s is the one state the whole vendoring discipline forbids, and
--- both copies keep working while they drift, so nothing else can see it. Raw
--- bytes, read whole, with NO line-ending normalisation: this repo pins
--- `* text=auto eol=crlf`, and a check that normalised could not see a copy that
--- arrived through a normalising path.
+-- The manual `diff -r`, mechanical (testing-§11) — but asked as the question a
+-- CONSUMER actually needs answered, which is not the one the library repo's own
+-- kit-sync test asks.
 --
--- The sibling checkout is a developer convenience rather than a build input, so
--- these two cases can only run where it is present. That is the ONE place they
--- are allowed to go quiet, and it is stated in the case name rather than hidden:
--- a missing sibling means the check did not look, and the release path is covered
--- by the four explicit diffs in docs/testing.md. Once the folder IS there, a
--- missing or differing file FAILS.
-local function assertVendorSync(shipDir, localDir, names, label)
+-- There, both copies live in one repo and comparing working trees is right. Here
+-- the other copy is a separate checkout that a maintainer may legitimately be
+-- editing: LibKa0s can be mid-release, several commits and a pile of uncommitted
+-- work ahead of anything it has tagged. Diffing against its WORKING TREE would
+-- redden this suite for upstream progress that this addon has not adopted and
+-- should not adopt — and the natural "fix" for that red is to re-vendor
+-- uncommitted work, shipping bytes that exist at no ref anybody can check out.
+--
+-- So the comparison is against the RELEASED TAG this addon says it bundles, read
+-- out of the README's own provenance line. That is the adoption report's first
+-- question — *is what this consumer is running actually what the library
+-- shipped?* — and it is answerable, and it is immune to upstream work in flight.
+--
+-- One normalisation, and only one: `git show` hands back the stored blob, which is
+-- LF, while the working tree is CRLF because `.gitattributes` pins
+-- `* text=auto eol=crlf`. Stripping CR from the working-tree side compares the
+-- file to the blob it round-trips to. Nothing else is normalised — a real fork in
+-- content still fails.
+
+--- The version the README claims to bundle. Read rather than hardcoded: a
+--- provenance line and a vendored payload that disagree is precisely the drift
+--- this pair exists to catch, so the claim has to be an INPUT to the check.
+local function bundledVersion()
+    local readme = readFile("README.md") or ""
+    return readme:match("Bundles %[LibKa0s%]%b() (v[%d%.]+)")
+end
+
+local function gitShow(ref)
+    local pipe = io.popen(('git -C "%s/../LibKa0s" show "%s" 2>/dev/null')
+        :format(ctx.root, ref), "r")
+    if not pipe then return nil end
+    local body = pipe:read("*a")
+    pipe:close()
+    if body == "" then return nil end
+    return body
+end
+
+local function assertVendorSync(tag, subdir, localDir, names, label)
     for _, name in ipairs(names) do
-        local a = readFile(shipDir .. "/" .. name)
-        local b = readFile(localDir .. "/" .. name)
-        t.truthy(a ~= nil, ("%s carries %s"):format(label, name))
-        t.truthy(b ~= nil, ("the vendored copy carries %s"):format(name))
-        t.eq(b, a, ("%s is byte-identical to %s's copy"):format(name, label))
+        local shipped = gitShow(("%s:%s/%s"):format(tag, subdir, name))
+        local vendored = readFile(localDir .. "/" .. name)
+        t.truthy(shipped ~= nil, ("%s %s carries %s"):format(label, tag, name))
+        t.truthy(vendored ~= nil, ("the vendored copy carries %s"):format(name))
+        -- CR stripped from the working-tree side only; see the header.
+        t.eq((vendored or ""):gsub("\r\n", "\n"), shipped,
+            ("%s matches %s at %s"):format(name, label, tag))
     end
 end
 
-test("libs/LibKa0s is byte-identical to the sibling library checkout, where present", function()
-    local ship = ctx.root .. "/../LibKa0s/LibKa0s"
-    if not readFile(ship .. "/Core.lua") then return end
+--- Present only where the sibling checkout is. That is the ONE place this pair may
+--- go quiet — a missing sibling means the check did not look — and it is said in
+--- the case name rather than hidden. Where the folder IS there, a missing tag, a
+--- missing file or a content difference all FAIL.
+local function siblingTag()
+    if not gitShow("HEAD:LibKa0s/Core.lua") then return nil end   -- no sibling checkout
+    local version = bundledVersion()
+    t.truthy(version, "README.md carries a `Bundles [LibKa0s](...) vX.Y.Z (MIT).` provenance line")
+    return version
+end
+
+test("libs/LibKa0s is the LibKa0s release the README says this addon bundles", function()
+    local tag = siblingTag()
+    if not tag then return end
     local names = { "LibKa0s.xml", "LICENSE" }
     for _, rel in ipairs(ctx.loadAddon.libFiles) do
         names[#names + 1] = rel:match("([^/]+)$")
     end
-    assertVendorSync(ship, ctx.root .. "/libs/LibKa0s", names, "the ship folder")
+    assertVendorSync(tag, "LibKa0s", ctx.root .. "/libs/LibKa0s", names, "the library repo")
 end)
 
-test("tests/_kit is byte-identical to the sibling library checkout, where present", function()
-    local ship = ctx.root .. "/../LibKa0s/testkit"
-    if not readFile(ship .. "/framework.lua") then return end
+test("tests/_kit is the test kit that shipped with that release", function()
+    local tag = siblingTag()
+    if not tag then return end
     -- README.md included: the file that actually diverged in this collection WAS a
     -- README, so a check restricted to *.lua would have caught nothing.
-    assertVendorSync(ship, ctx.root .. "/tests/_kit",
-        { "README.md", "framework.lua", "loader.lua", "mock_base.lua" }, "testkit/")
+    assertVendorSync(tag, "testkit", ctx.root .. "/tests/_kit",
+        { "README.md", "framework.lua", "loader.lua", "mock_base.lua" }, "the library repo")
 end)

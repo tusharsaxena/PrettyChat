@@ -53,7 +53,8 @@ NS.PREFIX    = Const.PREFIX
 
 -- Monospace font for the on-screen debug console (debug-logging-§2). Vendored under
 -- media/fonts/ (JetBrains Mono, OFL) rather than depending on a user-installed font, and
--- applied via this direct path in core/DebugLog.lua. LibSharedMedia registration is
+-- handed to LibKa0s-DebugLog-1.0 as the console descriptor's `font` (core/DebugLogSetup.lua),
+-- which applies it to the log, the line counter and the copy box. LibSharedMedia registration is
 -- intentionally omitted: PrettyChat ships no font-picker consumer, so the path constant
 -- alone suffices — a documented SHOULD-deviation from debug-logging-§2.
 Const.FONT_MONO = "Interface\\AddOns\\PrettyChat\\media\\fonts\\JetBrainsMono-Regular.ttf"

@@ -209,21 +209,40 @@ function Schema.Get(path)
     return row.get()
 end
 
--- Single, type-aware, schema-driven value formatter (Ka0s standard, slash-commands-§5).
--- Shared by `/pc list` rows and the `/pc get` / `/pc set` echo so the two surfaces can
--- never diverge. PrettyChat has two row types: bool → `true`/`false`; string → the raw
--- format string with `|` doubled to `||` so its embedded colour escapes render as literal
--- text (the same `||`-for-literal-pipe convention `/pc set` accepts as input) instead of
--- colouring the chat line.
+-- THE value formatter, and there is exactly one of it (slash-commands-§5: the value
+-- formatter and the coloured `key = value` helper are one shared pair, and an addon
+-- MUST NOT wrap either in a private variant).
+--
+-- It lives here, beside the rows it renders, rather than in settings/Slash.lua,
+-- because it has two consumers that are not both CLI surfaces: every `list` / `get` /
+-- `set` / `reset` echo, which reaches it as the Slash descriptor's `format` hook, and
+-- the `[Set] <path> = <value>` debug trace at the write seam below
+-- (debug-logging-§10). Two implementations would let a settings value read one way in
+-- chat and another in the console log — for the same stored value, at the same
+-- instant.
+--
+-- The rendering itself is `LibKa0s-Slash-1.0`'s; what is ours is the one thing it
+-- cannot know: a Blizzard format string is full of `|c…|r` colour escapes, and printed
+-- raw they COLOUR the line instead of appearing in it. Doubling is WoW's own escape
+-- for a literal pipe, and it is the same convention the panel's New box shows and
+-- accepts, so a value round-trips between the three surfaces unchanged.
+local slashLib = LibStub and LibStub("LibKa0s-Slash-1.0", true)
+
 function Schema.FormatValue(row, v)
+    if slashLib then
+        local out = slashLib.FormatValue(row, v)
+        if type(v) == "string" and v ~= "" then
+            out = out:gsub("|", "||")
+        end
+        return out
+    end
+    -- Library absent. The [Set] trace still has to say something, and this is the
+    -- pre-library rendering rather than a copy of the library's — no colour codes,
+    -- no `key = value` shape, just the value.
     if v == nil then return "nil" end
     local vtype = row and row.type or type(v)
-    if vtype == "bool" or type(v) == "boolean" then
-        return tostring(v)
-    end
-    if type(v) == "string" then
-        return (v:gsub("|", "||"))
-    end
+    if vtype == "bool" or type(v) == "boolean" then return tostring(v) end
+    if type(v) == "string" then return (v:gsub("|", "||")) end
     return tostring(v)
 end
 

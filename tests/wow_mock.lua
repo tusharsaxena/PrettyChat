@@ -42,13 +42,14 @@
 --                               AddMessage from the metatable and keeps nothing,
 --                               which would silence every chat assertion in the suite.
 --   7.  Settings              — records categories / subcategories / addonCategories
---                               and OpenToCategory calls with a settable result, so
---                               OpenConfig's "could not open" branch is reachable.
+--                               and OpenToCategory calls, so a suite can assert WHICH
+--                               category the panel-open asked for, and how many times.
 --                               The base records only the last main panel.
 --   8.  SettingsPanel = nil   — the base ships a stub frame whose metatable answers
---                               every PascalCase key with a self-returning function,
---                               so `expandMainCategory`'s pcall would SUCCEED and its
---                               one-time grey fallback notice would be unreachable.
+--                               every PascalCase key with a self-returning function, so
+--                               the library's private category-tree walk would appear to
+--                               SUCCEED against a stub rather than take the guarded
+--                               fallback a live client can actually hit.
 --   9.  AceAddon              — adds GetAddon (three PrettyChat files call it) and
 --                               records RegisterChatCommand, which the base no-ops.
 --  10.  AceGUI Create         — adds `:Fire(name, ...)` beside the base's `__fire`

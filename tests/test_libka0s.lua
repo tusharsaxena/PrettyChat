@@ -259,10 +259,17 @@ test("with DebugLog absent the console degrades but the flag and the ack survive
         ", so the debug console window is unavailable.", 1, true),
         "and the window's absence is explained through the shared cause clause")
 
+    -- ONCE PER ENTRY POINT, not once for the whole seam. `/pc debug on` above has
+    -- already spent the enable surface's announce; the WINDOW is a different thing
+    -- the stub silently does not do, so the first request for it says so — and only
+    -- the first. A single shared token would make every later `/pc debug` a silent
+    -- no-op, which is the failure this shape exists to avoid.
     local before = #msgs
     bare.NS.DebugLog:Toggle()
+    t.eq(#msgs, before + 1, "the first request for the window explains its absence")
     bare.NS.DebugLog:Show()
-    t.eq(#msgs, before, "the notice is not repeated on every later attempt")
+    bare.NS.DebugLog:Toggle()
+    t.eq(#msgs, before + 1, "and never again after that")
 
     -- The stub must NOT re-implement the line format (debug-logging-§3/§7).
     t.nilv(bare.NS.DebugLog.FormatPlain, "the stub carries no plain formatter")
@@ -317,6 +324,22 @@ test("NS.Helpers IS the library instance, decorated in place", function()
         t.eq(type(NS.Helpers[member]), "function", "the instance carries " .. member)
     end
     t.eq(#NS.Helpers.__pages(), #NS.Schema.CATEGORY_ORDER, "every page builder ran")
+
+    -- The member list above survives a copy-across table intact, so on its own it
+    -- asserts nothing the case name claims. THIS is the identity check: swap a
+    -- member out on NS.Helpers and see whether the LIBRARY's own caller picks the
+    -- swap up. RenderRows resolves RenderField off the instance at call time, so it
+    -- does exactly when NS.Helpers is the instance, and does not when it is a copy.
+    local realRenderField, seen = NS.Helpers.RenderField, 0
+    NS.Helpers.RenderField = function(...) seen = seen + 1; return realRenderField(...) end
+    local ok, err = pcall(function()
+        local pageCtx = NS.Helpers.__panelFor("Loot")
+        NS.Helpers.RenderRows(pageCtx, { NS.Schema.FindByPath("Loot.enabled") })
+    end)
+    NS.Helpers.RenderField = realRenderField
+    t.truthy(ok, "the render ran: " .. tostring(err))
+    t.truthy(seen > 0,
+        "the library's own RenderRows reached the member we swapped — NS.Helpers IS the instance")
 end)
 
 test("every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh trio", function()
@@ -324,11 +347,17 @@ test("every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh t
     -- defaults control is the one that silently does nothing when OnDefault is
     -- missing — while the header Defaults button beside it keeps working and looks
     -- equivalent to the user. This addon shipped without all three before adopting.
+    -- rawget, and it is the whole assertion. A mock frame answers EVERY unmodelled
+    -- PascalCase key from its metatable with a self-returning function, so a plain
+    -- `type(panel.OnCommit) == "function"` is true whether or not the library ever
+    -- stamped anything — two of the three assertions here could not fail, on a case
+    -- whose own comment claims they are the coverage. The library's own suite uses
+    -- rawget for exactly this hazard, and so does this repo's locale drift check.
     for _, pageCtx in ipairs(NS.Helpers.__panels()) do
         local panel = pageCtx.panel
-        t.eq(type(panel.OnCommit), "function", "OnCommit is stamped")
-        t.eq(type(panel.OnRefresh), "function", "OnRefresh is stamped")
-        t.eq(type(panel.OnDefault), "function", "OnDefault is stamped")
+        t.eq(type(rawget(panel, "OnCommit")), "function", "OnCommit is really stamped")
+        t.eq(type(rawget(panel, "OnRefresh")), "function", "OnRefresh is really stamped")
+        t.eq(type(rawget(panel, "OnDefault")), "function", "OnDefault is really stamped")
     end
 
     -- And OnDefault FORWARDS rather than being an assignment taken at build time:
@@ -389,6 +418,21 @@ test("with Options absent the schema still loads whole — the measured stub set
     bare.NS.Helpers.RestoreAllDefaults()
     t.eq(bare.NS.Schema.Get("Loot.enabled"), bare.NS.Defaults.Loot.enabled,
         "reset-everything still works with no panel at all (options-ui-§1)")
+
+    -- EVERY lost verb names the missing library (slash-commands-§1) — including the
+    -- one the user actually types. CreateOptionsPanel is called automatically from
+    -- OnEnable, so a single announce token shared across the seam is always spent
+    -- before `/pc config` is ever reached, and the verb is then a silent no-op for
+    -- the whole session. Driven through the real verb, after the load-time notice
+    -- has already been emitted, because that is the only ordering that fails.
+    local before = #msgs
+    bare.addon:OnSlashCommand("config")
+    t.eq(#msgs, before + 1, "/pc config answers rather than going silently nowhere")
+    t.truthy(msgs[#msgs]:find(bare.NS.LIBKA0S_MISSING ..
+        ", so the settings panel is unavailable.", 1, true),
+        "and it names the missing library through the shared cause clause")
+    bare.addon:OnSlashCommand("config")
+    t.eq(#msgs, before + 1, "said once for that surface, not on every attempt")
 
     -- And the stub carries no copy of the library's layout constants or makers.
     local src = readFile("settings/OptionsSetup.lua")

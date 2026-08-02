@@ -35,7 +35,7 @@ Public surfaces are exposed on `NS`:
 | Member | Set by | Used by |
 |--------|--------|---------|
 | `NS.Compat` | `core/Compat.lua` | `core/Namespace.lua`, `settings/Slash.lua`, `settings/Panel.lua` (`Compat.GetAddOnMetadata` — C_AddOns vs legacy global) |
-| `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `settings/Panel.lua` (padding / header height / spacers / `Color` palette / `BUTTON_PAIR_REL`); `settings/Slash.lua` (slash-output `Color` codes); `core/Util.lua` (colour-wrap helpers); `core/DebugLogSetup.lua` (`FONT_MONO`); `core/PrettyChat.lua` (`Color` palette; `NS.PREFIX` = shared cyan `[PC]` tag read by `NS.Print`) |
+| `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `settings/Panel.lua` (`Color` palette, `STRING_VSPACER`, the landing page's own section spacers); `settings/Slash.lua` (slash-output `Color` codes); `core/Util.lua` (colour-wrap helpers); `core/DebugLogSetup.lua` (`FONT_MONO`); `core/CoreSetup.lua` (`NS.PREFIX` = the shared cyan `[PC]` tag, passed to the printer as a function so a later change is not frozen out) |
 | `NS.name` / `NS.version` | `core/Namespace.lua` | identity bootstrap (records addon name + TOC version so no module re-queries the TOC) |
 | `NS.State` | `core/State.lua` | `core/DebugLogSetup.lua`, `settings/Slash.lua` (session-only `debug` flag; `{ debug = false }`, reset every reload/login) |
 | `NS.Util` | `core/Util.lua` | `settings/Slash.lua`, `core/DebugLogSetup.lua`, `core/PrettyChat.lua` (`trim` / `note` / `cmd` string helpers; secret-safe `SafeToString` / `IsConcatSafe`) |
@@ -48,7 +48,9 @@ Public surfaces are exposed on `NS`:
 | `NS.GlobalStrings` | `GlobalStrings/` chunks | `settings/Panel.lua` ("Original Format String" display) |
 | `NS.Schema` | `settings/Schema.lua` | `settings/Slash.lua` (slash dispatch), `settings/Panel.lua` (every widget get/set; registers a per-sub-page refresh closure via `Schema.RegisterRefresher` on first `OnShow`) |
 | `NS.RenderSample(fmt)` | `modules/Override.lua` | `settings/Panel.lua` (per-string Preview EditBox) |
-| `NS.COMMANDS` | `settings/Slash.lua` | `settings/Panel.lua` (parent page's slash-command list — keeps panel and `/pc help` in lockstep with one source) |
+| `NS.COMMANDS` / `NS.SlashCommands` | `settings/Slash.lua` | `settings/Panel.lua` renders `NS.SlashCommands.LandingRows()` on the landing page — the SAME formatter the chat help uses, so the two surfaces cannot drift (`LIBKA0S-11`) |
+| `NS.LIBKA0S_MISSING` | `core/CoreSetup.lua` | `core/DebugLogSetup.lua`, `settings/OptionsSetup.lua`, `settings/Slash.lua` — the shared cause clause each degraded seam appends its own consequence to |
+| `NS.Helpers` | `settings/OptionsSetup.lua` | `settings/Panel.lua` (the `LibKa0s-Options-1.0` instance itself, decorated in place), `settings/Schema.lua` (`RefreshScalars`), `core/PrettyChat.lua` (`OpenOptionsPanel`) |
 | `NS.Config.RegisterPanels()` | `settings/Panel.lua` | `core/PrettyChat.lua` (`OnEnable` calls it after the snapshot/`ApplyStrings` pair, replacing the old `PLAYER_LOGIN` bootstrap frame) |
 
 The addon object **is** the `NS` table itself — `core/PrettyChat.lua` passes `NS` to `:NewAddon` (architecture-§2), so its `AceAddon-3.0` methods hang off `NS`. Other files reach it via `LibStub("AceAddon-3.0"):GetAddon("PrettyChat")`, which returns that same table.
@@ -63,7 +65,7 @@ The object is registered in `core/PrettyChat.lua`; its methods hang off that sha
 -- Lifecycle (core/PrettyChat.lua)
 PrettyChat:OnInitialize()              -- AceDB, slash registration ("/pc" + "/prettychat")
 PrettyChat:OnEnable()                  -- snapshot Blizzard originals → ApplyStrings → RegisterPanels
-PrettyChat:OpenConfig()                -- Settings.OpenToCategory(self.optionsCategoryID); then expandMainCategory(self.optionsCategory) walks SettingsPanel:GetCategoryList():GetCategoryEntry(cat):SetExpanded(true) in pcall to unfold the sub-tree
+PrettyChat:OpenConfig()                -- a one-line delegate to NS.Helpers.OpenOptionsPanel(); the library owns the combat gate, the OpenToCategory call and the pcall'd left-tree expansion
 
 -- Override pipeline (modules/Override.lua — also see override-pipeline.md)
 PrettyChat:ApplyStrings()              -- writes enabled overrides to _G; restores originals for disabled ones
@@ -101,10 +103,11 @@ NS.Schema.crossRegisteredGlobals               -- map of globalName → {Cat1, C
 NS.Schema.CATEGORY_ORDER                       -- canonical display order (also drives /pc list, panel left-rail)
 ```
 
-### `NS.Print` (`core/PrettyChat.lua`)
+### `NS.Print` / `NS.Format` (`core/CoreSetup.lua`)
 
 ```lua
-NS.Print(msg)   -- DEFAULT_CHAT_FRAME:AddMessage(PREFIX .. NS.Util.SafeToString(msg))   PREFIX built from NS.Const.Color.cyan
+NS.Print(...)          -- LibKa0s-Core-1.0's printer: NS.PREFIX, sep = "", space-joined secret-safe args
+NS.Format(fmt, ...)    -- the same line, through string.format over pre-stringified args
 ```
 
 The single chokepoint for addon chat output. Use this, not raw `print()` or `self:Print()`, so the prefix and color stay uniform across files.

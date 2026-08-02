@@ -35,12 +35,25 @@ if not lib then
     -- So everything here is a no-op or one honest line, and NOTHING copies a widget
     -- maker, the flow engine, the header or a layout constant (anti-pattern #47).
     local missing = NS.LIBKA0S_MISSING .. ", so the settings panel is unavailable."
-    local announced = false
-    local function sayOnce()
-        if announced then return end
-        announced = true
-        if NS.Print then NS.Print(missing) end
+
+    -- ONE announce per ENTRY POINT, not one for the whole seam. CreateOptionsPanel
+    -- is called automatically from PrettyChat:OnEnable, so a single shared token is
+    -- always spent at login — and `/pc config`, the one path a user actually asks
+    -- for, would then be a silent no-op for the rest of the session. That is worse
+    -- than saying it twice: slash-commands-§1 requires every lost verb to NAME the
+    -- missing library rather than go quiet.
+    --
+    -- The load-time notice still fires once; the user-initiated verb answers the
+    -- first time it is used, and once only thereafter.
+    local function announcer()
+        local said = false
+        return function()
+            if said then return end
+            said = true
+            if NS.Print then NS.Print(missing) end
+        end
     end
+    local sayAtLoad, sayOnConfig = announcer(), announcer()
 
     NS.Helpers = {
         CreatePanel          = function() return { refreshers = {} } end,
@@ -64,8 +77,8 @@ if not lib then
         __pages              = function() return {} end,
         __panels             = function() return {} end,
         __panelFor           = function() return nil end,
-        CreateOptionsPanel   = function() sayOnce() end,
-        OpenOptionsPanel     = function() sayOnce() end,
+        CreateOptionsPanel   = function() sayAtLoad() end,
+        OpenOptionsPanel     = function() sayOnConfig() end,
         -- Kept REAL even though it is call-time (options-ui-§1 SHOULD): a user whose
         -- panel will not open is exactly the user who needs "reset everything", and
         -- the schema loaded fine, so the reset still works with no panel at all.

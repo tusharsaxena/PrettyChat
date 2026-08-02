@@ -15,7 +15,13 @@ local addonName, NS = ...
 local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 
 local L       = NS.L
-local VERSION = NS.Compat.GetAddOnMetadata(addonName, "Version") or "?"
+-- TOC metadata first so it cannot drift from the packaged manifest, then the
+-- in-code constant (slash-commands-§3) — NS.version, which core/Namespace.lua sets
+-- from the same metadata with its own literal fallback. A bare "?" here would make
+-- `/pc version` answer with a question mark on the one client where the metadata
+-- shim comes back empty, which is precisely when a user is being asked what version
+-- they are running.
+local VERSION = NS.Compat.GetAddOnMetadata(addonName, "Version") or NS.version or "?"
 local Color   = NS.Const.Color
 local cmd     = NS.Util.cmd
 local note    = NS.Util.note
@@ -120,26 +126,12 @@ if not lib then
     NS.SlashCommands = Sl
 else
 
--- The `||`-for-literal-pipe convention, applied to a row type the library CAN
--- already render — which is what the `format` hook (Slash minor 5) is for.
---
--- Every value in this schema is either a bool or a Blizzard format string, and a
--- format string is full of `|c…|r` colour escapes. Printed raw they COLOUR the chat
--- line instead of appearing in it, so `/pc get Loot.LOOT_ITEM_SELF.format` would
--- show a coloured fragment rather than the text the user is trying to edit. Doubling
--- is WoW's own escape for a literal pipe, and it is the same convention the panel's
--- New box shows and accepts.
---
--- Delegating to lib.FormatValue first rather than reimplementing it is deliberate:
--- the empty-string case (which renders as "(none)" per slash-commands-§5, and did
--- not before this addon adopted) and every non-string type stay the library's.
-function formatValue(row, stored)
-    local out = lib.FormatValue(row, stored)
-    if type(stored) == "string" and stored ~= "" then
-        out = out:gsub("|", "||")
-    end
-    return out
-end
+-- The `format` hook (Slash minor 5), applied to a row type the library CAN already
+-- render. Its body is `NS.Schema.FormatValue` and NOT a second copy of it: the same
+-- renderer serves every CLI echo here and the `[Set]` debug trace at the write seam,
+-- so a settings value cannot read one way in chat and another in the console log
+-- (slash-commands-§5, debug-logging-§10). See the comment on it in settings/Schema.lua.
+formatValue = function(row, stored) return NS.Schema.FormatValue(row, stored) end
 
 -- The counterpart, and the reason it exists is a genuine gap in the lib-level
 -- parser rather than an exotic row type: lib.ParseValue splits the remainder on
