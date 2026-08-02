@@ -29,17 +29,17 @@ end
 
 | Element | How |
 |---------|-----|
-| Title FontString | `GameFontNormalHuge`, anchored TOPLEFT at `(PANEL_PADDING_X, -PANEL_HEADER_TOP)` |
+| Title FontString | `GameFontNormalHuge`, anchored TOPLEFT at `(PADDING_X, -HEADER_TOP)` |
 | Atlas divider | `Options_HorizontalDivider`, full-width minus padding, tinted with `titleFS:GetTextColor()` so future theme retunes follow |
-| Defaults button (optional) | AceGUI `Button`, anchored TOPRIGHT at `(-PANEL_PADDING_X, -PANEL_HEADER_TOP)`, width `PANEL_DEFAULTS_W` |
+| Defaults button (optional) | AceGUI `Button`, anchored TOPRIGHT at `(-PADDING_X, -HEADER_TOP)`, width `DEFAULTS_W` |
 
 The parent page renders its title plain (`"Ka0s Pretty Chat"`) via `opts.isMain = true`. Sub-pages prefix the title to read as a breadcrumb: `"Ka0s Pretty Chat ▸ Loot"`. The chevron is an inline-atlas escape (` |A:common-icon-forwardarrow:16:16|a `) so it renders as a real texture, not a font glyph — font-agnostic and locale-safe. If a future client retires the atlas, swap to `NPE_RightClick` or `chevron-collapse` (same escape syntax, just the atlas name changes). The Blizzard left-tree label always stays unprefixed (driven by `panel.name`) so the indented tree doesn't repeat the parent name.
 
-All layout dimensions live in `core/Constants.lua` (`NS.Const.PANEL_PADDING_X`, `PANEL_HEADER_TOP`, `PANEL_HEADER_HEIGHT`, `PANEL_DEFAULTS_W`, `SECTION_TOP_SPACER`, `SECTION_BOTTOM_SPACER`, `SECTION_HEADING_H`, `ROW_VSPACER`, `STRING_VSPACER`).
+All panel layout dimensions live in **`LibKa0s-Options-1.0`'s `LAYOUT` table**, not in this addon — options-ui-§8 forbids a host copy, because every Ka0s panel renders identically only if every panel reads one set of values, and a host copy is the copy that goes stale. Where `settings/Panel.lua` needs one for a widget it draws itself it reads it off the instance (`NS.Helpers.ROW_VSPACER`, `NS.Helpers.SECTION_HEADING_H`, `NS.Helpers.BUTTON_PAIR_REL`). `core/Constants.lua` keeps only `SECTION_TOP_SPACER` / `SECTION_BOTTOM_SPACER` (the landing page's own body, which is the host's half) and `STRING_VSPACER` (the bespoke 40/60 editor, which the library has no equivalent for).
 
 ## Always-visible scrollbar
 
-`patchAlwaysShowScrollbar(scroll)` rebinds the AceGUI ScrollFrame's `FixScroll` so:
+`NS.Helpers.PatchAlwaysShowScrollbar(scroll)` — the library's `OptionsScroll.lua`, applied automatically by `EnsureScroll` — rebinds the AceGUI ScrollFrame's `FixScroll` so:
 
 - The scrollbar (and its 20 px right-side gutter) is shown on every page, regardless of overflow. Short pages (General) and long pages (Loot, 19 strings) line up at the same right edge.
 - When content fits, the thumb parks at the top, the scrollbar greys out, and mousewheel input is inert. When content overflows, the upstream FixScroll logic runs unchanged.

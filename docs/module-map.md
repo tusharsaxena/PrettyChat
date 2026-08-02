@@ -35,12 +35,12 @@ Public surfaces are exposed on `NS`:
 | Member | Set by | Used by |
 |--------|--------|---------|
 | `NS.Compat` | `core/Compat.lua` | `core/Namespace.lua`, `settings/Slash.lua`, `settings/Panel.lua` (`Compat.GetAddOnMetadata` — C_AddOns vs legacy global) |
-| `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `settings/Panel.lua` (padding / header height / spacers / `Color` palette / `BUTTON_PAIR_REL`); `settings/Slash.lua` (slash-output `Color` codes); `core/Util.lua` (colour-wrap helpers); `core/DebugLog.lua` (`FONT_MONO`); `core/PrettyChat.lua` (`Color` palette; `NS.PREFIX` = shared cyan `[PC]` tag read by `NS.Print`) |
+| `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `settings/Panel.lua` (padding / header height / spacers / `Color` palette / `BUTTON_PAIR_REL`); `settings/Slash.lua` (slash-output `Color` codes); `core/Util.lua` (colour-wrap helpers); `core/DebugLogSetup.lua` (`FONT_MONO`); `core/PrettyChat.lua` (`Color` palette; `NS.PREFIX` = shared cyan `[PC]` tag read by `NS.Print`) |
 | `NS.name` / `NS.version` | `core/Namespace.lua` | identity bootstrap (records addon name + TOC version so no module re-queries the TOC) |
-| `NS.State` | `core/State.lua` | `core/DebugLog.lua`, `settings/Slash.lua` (session-only `debug` flag; `{ debug = false }`, reset every reload/login) |
-| `NS.Util` | `core/Util.lua` | `settings/Slash.lua`, `core/DebugLog.lua`, `core/PrettyChat.lua` (`trim` / `note` / `cmd` string helpers; secret-safe `SafeToString` / `IsConcatSafe`) |
+| `NS.State` | `core/State.lua` | `core/DebugLogSetup.lua`, `settings/Slash.lua` (session-only `debug` flag; `{ debug = false }`, reset every reload/login) |
+| `NS.Util` | `core/Util.lua` | `settings/Slash.lua`, `core/DebugLogSetup.lua`, `core/PrettyChat.lua` (`trim` / `note` / `cmd` string helpers; secret-safe `SafeToString` / `IsConcatSafe`) |
 | `NS.Database` | `core/Database.lua` | `core/PrettyChat.lua` (`OnInitialize` merges `global.schemaVersion` defaults + runs `RunMigrations`) |
-| `NS.DebugLog` / `NS.Debug(tag, fmt, …)` | `core/DebugLog.lua` | every file (on-screen debug console; `NS.Debug` gated on session-only `NS.State.debug`, routed to the console, driven by `/pc debug` through the `DebugLog:SetEnabled` seam) |
+| `NS.DebugLog` / `NS.Debug(tag, fmt, …)` | `core/DebugLogSetup.lua` | every file (on-screen debug console; `NS.Debug` gated on session-only `NS.State.debug`, routed to the console, driven by `/pc debug` through the `DebugLog:SetEnabled` seam) |
 | `NS.Print(msg)` | `core/PrettyChat.lua` | every file (cyan `[PC]` chat-output chokepoint) |
 | `NS.ProfileDefaults` | `defaults/Profile.lua` | `core/PrettyChat.lua` (`OnInitialize` merges it with `NS.Database.defaults` for `AceDB:New`) |
 | `NS.Defaults` | `defaults/Defaults.lua` | `settings/Schema.lua`, `modules/Override.lua`, `settings/Slash.lua`, `settings/Panel.lua` (category → format-string defaults) |
@@ -123,7 +123,7 @@ The single chokepoint for addon chat output. Use this, not raw `print()` or `sel
 6. `core/State.lua` — populates `NS.State` (`{ debug = false }`, session-only).
 7. `core/Util.lua` — populates `NS.Util` (`trim` / `note` / `cmd` + secret-safe `SafeToString` / `IsConcatSafe`; reads `NS.Const.Color`, so it loads after Constants).
 8. `core/Database.lua` — populates `NS.Database` (`SCHEMA_VERSION`, `global` defaults, `RunMigrations`).
-9. `core/DebugLog.lua` — populates `NS.DebugLog` (the on-screen console) + `NS.Debug` (gated sink). Reads `NS.State` / `NS.Util` / `NS.Const.FONT_MONO`.
+9. `core/DebugLogSetup.lua` — populates `NS.DebugLog` (the on-screen console) + `NS.Debug` (gated sink). Reads `NS.State` / `NS.Util` / `NS.Const.FONT_MONO`.
 10. `core/PrettyChat.lua` — creates the AceAddon object **from the `NS` table** (`:NewAddon(NS, …)`, architecture-§2), reclaims the secret-safe `NS.Print` after AceConsole's `:Print` embed, merges `NS.ProfileDefaults` + `NS.Database.defaults` + runs migrations in `OnInitialize`, registers slash commands, owns `OpenConfig`. **Every later file reaches the addon object via** `LibStub("AceAddon-3.0"):GetAddon("PrettyChat")` (which returns `NS`).
 11. `defaults/Profile.lua` — populates `NS.ProfileDefaults` (the AceDB `profile` defaults table).
 12. `defaults/Defaults.lua` — populates `NS.Defaults`.

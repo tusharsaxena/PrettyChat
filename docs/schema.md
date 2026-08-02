@@ -38,7 +38,7 @@ The `NS.Debug("Set", …)` line is the single settings-change trace (debug-loggi
 Both surfaces go through the same row's `set()`:
 
 - **Panel widget callbacks** in `settings/Panel.lua` call `NS.Schema.Set(path, val)`.
-- **`/pc set`** (in `settings/Slash.lua`'s `setSetting`) parses the value to the row's declared type, then calls `NS.Schema.Set(path, newVal)`.
+- **`/pc set`** goes through `LibKa0s-Slash-1.0`'s `CliSet`, which parses the value through the descriptor's `parse` hook and then calls `NS.Schema.Set(path, newVal)`.
 
 Row `set()` closures are pure DB writes — they do **not** run `ApplyStrings` or `NotifyPanelChange` themselves. Both side effects live in `Schema.Set` so a future `Schema.SetMany` / preset-load can apply once per batch instead of N times. Callers must therefore never invoke `row.set(value)` directly; always go through `Schema.Set`.
 
@@ -82,7 +82,7 @@ Three reset paths, all routed through `PrettyChat:Reset*` not directly through S
 Both are reachable from:
 
 - The per-string `Reset` button on each panel row (`ResetString` — always visible, a no-op when the string is already at default), the panel's per-category `Defaults` button (in the page header — no popup confirm), and the General sub-page's "Reset all to defaults" button (gated by the `PRETTYCHAT_RESET_ALL` StaticPopup).
-- `/pc reset <Category>` and `/pc resetall` (no in-chat confirmation — typing the command is itself the assertion). `ResetString` has no slash equivalent; from chat, write the format back to its default (auto-clear) or use `/pc set <Cat>.<NAME>.enabled true`.
+- `/pc reset <path>` (one row, through `Schema.ApplyDefault` → the single write seam) and `/pc resetall` (no in-chat confirmation — typing the command is itself the assertion). Category-scoped reset is the settings page's **Defaults** button; `/pc reset` has taken a path rather than a category since `LIBKA0S-10`.
 
 ## SavedVariables shape
 
