@@ -32,6 +32,7 @@ end
 local SEAM_FILES = {
     "core/CoreSetup.lua",
     "core/DebugLogSetup.lua",
+    "settings/OptionsSetup.lua",
 }
 
 -- ── the `L` trap: the matcher, and the matcher's own test ───────────────────
@@ -264,6 +265,121 @@ test("with DebugLog absent the console degrades but the flag and the ack survive
     t.eq(type(bare.NS.DebugLog.buffer), "table", "and carries the raw buffer")
 end)
 
+-- ── LibKa0s-Options-1.0 ────────────────────────────────────────────────────
+
+test("Options cannot express the L trap either — its own, different tripwire", function()
+    -- The Core tripwire's two halves do NOT both transfer here. Options.lua DOES
+    -- ship a STRINGS table, so asserting `lib.STRINGS` is absent would fail on a
+    -- module that is behaving correctly. What holds is the source half alone: the
+    -- module reads no descriptor `L`, so a rendered assertion against a descriptor
+    -- override would be a case that cannot fail. It passes today and goes red the
+    -- day Options grows one — which is the moment it matters most, because the
+    -- settings panel is where a raw SCREAMING_SNAKE key is most visible.
+    local opts = env.LibStub("LibKa0s-Options-1.0", true)
+    t.truthy(opts, "Options registered")
+    t.truthy(type(opts.STRINGS) == "table", "and it DOES ship STRINGS, unlike Core")
+
+    for _, rel in ipairs({ "libs/LibKa0s/Options.lua", "libs/LibKa0s/OptionsWidgets.lua",
+                           "libs/LibKa0s/OptionsScroll.lua" }) do
+        local src = readFile(rel)
+        t.truthy(src, rel .. " is readable")
+        t.falsy(src:find("d%.L%f[^%w_]"), rel .. " reads no descriptor L")
+    end
+end)
+
+test("NS.Helpers IS the library instance, decorated in place", function()
+    -- options-ui-§1: never a fresh table that copies members across. A copy-across
+    -- gives a page helper added later something the library's own callers do not
+    -- see, and gives a suite that swaps a member out to spy on it the wrong one.
+    for _, member in ipairs({ "CreatePanel", "EnsureDefaultsButton", "EnsureScroll",
+                              "ClearScroll", "AddSpacer", "Section", "AttachTooltip",
+                              "InlineButtonPair", "RenderField", "SessionCheckbox",
+                              "RenderRows", "RenderSchema", "RenderGrid", "SetRenderer",
+                              "RegisterOptionsPage", "CreateOptionsPanel",
+                              "OpenOptionsPanel", "RefreshAllPanels", "RefreshScalars",
+                              "__panels", "__panelFor" }) do
+        t.eq(type(NS.Helpers[member]), "function", "the instance carries " .. member)
+    end
+    t.eq(#NS.Helpers.__pages(), #NS.Schema.CATEGORY_ORDER, "every page builder ran")
+end)
+
+test("every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh trio", function()
+    -- options-ui-§1 MUST. The Settings window calls all three, and the FOOTER
+    -- defaults control is the one that silently does nothing when OnDefault is
+    -- missing — while the header Defaults button beside it keeps working and looks
+    -- equivalent to the user. This addon shipped without all three before adopting.
+    for _, pageCtx in ipairs(NS.Helpers.__panels()) do
+        local panel = pageCtx.panel
+        t.eq(type(panel.OnCommit), "function", "OnCommit is stamped")
+        t.eq(type(panel.OnRefresh), "function", "OnRefresh is stamped")
+        t.eq(type(panel.OnDefault), "function", "OnDefault is stamped")
+    end
+
+    -- And OnDefault FORWARDS rather than being an assignment taken at build time:
+    -- every host parks defaultsOnClick after CreatePanel returns.
+    local loot = NS.Helpers.__panelFor("Loot")
+    NS.Schema.Set("Loot.enabled", false)
+    loot.panel.OnDefault()
+    t.eq(NS.Schema.Get("Loot.enabled"), NS.Defaults.Loot.enabled,
+        "the footer control reaches the same body the header button does")
+end)
+
+test("the settings panel refuses to render under combat rather than drawing half a page", function()
+    -- The Blizzard AddOns sidebar reaches a panel without going through
+    -- OpenOptionsPanel, so its combat guard is bypassed on exactly the path a user
+    -- is most likely to take mid-fight. SetRenderer puts a second guard on the
+    -- render itself; without adopting SetRenderer this addon had none.
+    local fresh = ctx.loadAddon({
+        mock = function(m) m.InCombatLockdown = function() return true end end,
+    })
+    local panel
+    for _, sub in ipairs(fresh.env._settings.subcategories) do
+        if sub.name == "Loot" then panel = sub.frame end
+    end
+    panel:Show()
+
+    -- The header Defaults button IS built — EnsureDefaultsButton runs ahead of the
+    -- guard, deliberately, so the control exists on a page the user can see. What
+    -- must not happen is the BODY: no scroll container, and therefore none of the
+    -- ~50 per-string blocks a Loot render would create.
+    local pageCtx = fresh.NS.Helpers.__panelFor("Loot")
+    t.nilv(pageCtx.scroll, "the page body was never built under lockdown")
+    t.eq(#pageCtx.refreshers, 0, "so nothing registered a refresher either")
+    local msgs = fresh.env.DEFAULT_CHAT_FRAME.messages
+    t.truthy(msgs[#msgs]:find("cannot open settings during combat", 1, true),
+        "and the refusal is surfaced, in the canonical wording")
+end)
+
+test("with Options absent the schema still loads whole — the measured stub set", function()
+    -- options-ui-§1's degradation rule is LOAD-COMPLETING rather than
+    -- member-answering, and the member set it requires MUST be determined by
+    -- MEASUREMENT: delete a member, load with the library absent, and compare the
+    -- resulting schema row count against a full load. PrettyChat's measured set is
+    -- EMPTY — nothing reaches NS.Helpers at file load — and these two numbers
+    -- agreeing is the only thing standing between that claim and a silent half-load.
+    local full = #NS.Schema.AllRows()
+    local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    t.truthy(full > 100, "the full load really does build a large schema")
+    t.eq(#bare.NS.Schema.AllRows(), full,
+        "the library-absent load builds exactly the same rows")
+    t.eq(bare.NS.Schema.validation.failed, 0, "and every one of them still resolves")
+
+    -- The panel is gone, said once, and the global reset still works without it.
+    local msgs = bare.env.DEFAULT_CHAT_FRAME.messages
+    t.truthy(table.concat(msgs, "\n"):find(
+        bare.NS.LIBKA0S_MISSING .. ", so the settings panel is unavailable.", 1, true),
+        "the panel's absence is explained through the shared cause clause")
+    bare.NS.Schema.Set("Loot.enabled", false)
+    bare.NS.Helpers.RestoreAllDefaults()
+    t.eq(bare.NS.Schema.Get("Loot.enabled"), bare.NS.Defaults.Loot.enabled,
+        "reset-everything still works with no panel at all (options-ui-§1)")
+
+    -- And the stub carries no copy of the library's layout constants or makers.
+    local src = readFile("settings/OptionsSetup.lua")
+    t.falsy(src:find("0%.492"), "no host copy of BUTTON_PAIR_REL")
+    t.falsy(src:find("SetRelativeWidth", 1, true), "no host copy of a widget maker")
+end)
+
 -- ── the degraded install ───────────────────────────────────────────────────
 
 test("with LibKa0s absent the addon still loads and still prints, saying so once", function()
@@ -278,17 +394,29 @@ test("with LibKa0s absent the addon still loads and still prints, saying so once
         t.nilv(bare.env.LibStub(major, true), major .. " is absent rather than half-wired")
     end
 
+    -- The notice rides the FIRST line the addon prints, whichever that is — on this
+    -- load it is settings/OptionsSetup.lua's own "settings panel is unavailable"
+    -- line, emitted from OnEnable. So the assertion is on the transcript as a whole:
+    -- said exactly once, and said before anything else.
     local msgs = bare.env.DEFAULT_CHAT_FRAME.messages
+    local notice = bare.NS.PREFIX .. bare.NS.LIBKA0S_MISSING ..
+        "; running on reduced built-in fallbacks."
+    local function noticeCount()
+        local n = 0
+        for _, line in ipairs(msgs) do if line == notice then n = n + 1 end end
+        return n
+    end
+    t.eq(msgs[1], notice,
+        "the notice rides the first line printed, in the shared cause clause's wording")
+    t.eq(noticeCount(), 1, "and is said exactly once")
+
     local before = #msgs
     bare.NS.Print("first line")
-    t.eq(msgs[before + 1], bare.NS.PREFIX .. bare.NS.LIBKA0S_MISSING ..
-        "; running on reduced built-in fallbacks.",
-        "the notice rides the first line printed, in the shared cause clause's wording")
-    t.eq(msgs[before + 2], bare.NS.PREFIX .. "first line", "and the line itself still lands")
-
     bare.NS.Print("second line")
-    t.eq(#msgs, before + 3, "the notice is said once, not stapled to every line")
-    t.eq(msgs[before + 3], bare.NS.PREFIX .. "second line", "the second line is just the line")
+    t.eq(#msgs, before + 2, "later lines are just the lines")
+    t.eq(msgs[before + 1], bare.NS.PREFIX .. "first line", "the first one lands verbatim")
+    t.eq(msgs[before + 2], bare.NS.PREFIX .. "second line", "and so does the second")
+    t.eq(noticeCount(), 1, "the notice is never stapled to another line")
 end)
 
 test("the shared cause clause names the addon and where the library should be", function()

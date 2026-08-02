@@ -87,27 +87,28 @@ test("OpenConfig opens the registered category out of combat", function()
     local opens = #env._settings.opened
     addon:OpenConfig()
     t.eq(#env._settings.opened, opens + 1, "Settings.OpenToCategory was called once")
-    t.eq(env._settings.opened[#env._settings.opened], addon.optionsCategoryID,
-        "it opened the category the panel registration recorded")
+    t.eq(env._settings.opened[#env._settings.opened],
+        env._settings.categories[1]:GetID(),
+        "it opened the ID of the category the library registered")
 end)
 
-test("the auto-expand fallback notice is printed once per session", function()
-    -- SettingsPanel is private API and absent here, so expandMainCategory
-    -- fails; the user gets one grey hint, never a per-open stream.
-    addon._expandWarned = nil
-    addon:OpenConfig()
-    t.truthy(last():find("could not auto-expand", 1, true), "the first open hints")
-    local after = #env.DEFAULT_CHAT_FRAME.messages
-    addon:OpenConfig()
-    t.eq(#env.DEFAULT_CHAT_FRAME.messages, after, "the second open prints nothing")
-end)
-
-test("OpenConfig reports a category Blizzard refused to open", function()
+test("OpenConfig is silent on the paths the library does not report", function()
+    -- Two host diagnostics went with the old hand-written body, deliberately
+    -- (docs/pending/LEDGER.md, LIBKA0S-04): a grey notice on an explicit `false`
+    -- from Settings.OpenToCategory, and a one-time hint when the private
+    -- category-tree expansion could not run. Keeping either would have meant a
+    -- second open path around the library's combat gate, which options-ui-§2
+    -- forbids outright. Pinned as SILENCE so the decision is visible here rather
+    -- than only in the ledger, and so re-adding a second open path fails.
+    local before = #env.DEFAULT_CHAT_FRAME.messages
     env._settings.openResult = false
     addon:OpenConfig()
     env._settings.openResult = nil
-    t.truthy(last():find("could not open settings panel", 1, true),
-        "an explicit false from OpenToCategory is surfaced")
+    t.eq(#env.DEFAULT_CHAT_FRAME.messages, before,
+        "a refused open says nothing rather than being reported twice")
+    addon:OpenConfig()
+    t.eq(#env.DEFAULT_CHAT_FRAME.messages, before,
+        "and neither does a failed sub-tree expansion")
 end)
 
 test("OpenConfig is a silent no-op when the Settings API is unavailable", function()

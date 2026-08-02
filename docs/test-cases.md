@@ -15,7 +15,7 @@ badge and any count quoted in the docs must agree with it.
 - libs/LibKa0s is byte-identical to the sibling library checkout, where present
 - tests/_kit is byte-identical to the sibling library checkout, where present
 
-### test_libka0s.lua (15)
+### test_libka0s.lua (20)
 
 - the locale-table matcher catches both offending spellings and clears the legal one
 - no seam file hands a LibKa0s descriptor the addon-wide locale table
@@ -29,6 +29,11 @@ badge and any count quoted in the docs must agree with it.
 - the console's print and safeToString are call-time forwarders, not captures
 - NS.Debug is the instance's bare sink, bound not wrapped
 - with DebugLog absent the console degrades but the flag and the ack survive
+- Options cannot express the L trap either — its own, different tripwire
+- NS.Helpers IS the library instance, decorated in place
+- every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh trio
+- the settings panel refuses to render under combat rather than drawing half a page
+- with Options absent the schema still loads whole — the measured stub set
 - with LibKa0s absent the addon still loads and still prints, saying so once
 - the shared cause clause names the addon and where the library should be
 - the degraded secret guard still neutralises a protected value
@@ -50,9 +55,9 @@ badge and any count quoted in the docs must agree with it.
 - the slash-commands-§5 mandated palette is exact
 - the brand colours are distinct from the mandated palette
 - the [PC] chat tag is cyan-wrapped and trailing-spaced
-- layout constants are positive numbers
-- the header block leaves room between title and divider
-- the button-pair width stays under half so the pair shares one row
+- the host's own layout constants are positive numbers
+- no host copy of a library layout constant has grown back
+- the library publishes the layout constants a host page needs
 - FONT_MONO points inside the addon's own media folder
 
 ### test_util.lua (7)
@@ -177,7 +182,7 @@ badge and any count quoted in the docs must agree with it.
 - the runner stamps the current version even with no steps to run
 - migrating emits no debug noise when nothing ran
 
-### test_lifecycle.lua (12)
+### test_lifecycle.lua (11)
 
 - the addon object and the bootstrap namespace are one table
 - OnInitialize provisions both AceDB namespaces
@@ -188,8 +193,7 @@ badge and any count quoted in the docs must agree with it.
 - NS.Print neutralises a value the concat probe rejects
 - OpenConfig refuses during combat without touching the Settings API
 - OpenConfig opens the registered category out of combat
-- the auto-expand fallback notice is printed once per session
-- OpenConfig reports a category Blizzard refused to open
+- OpenConfig is silent on the paths the library does not report
 - OpenConfig is a silent no-op when the Settings API is unavailable
 
 ### test_debuglog.lua (25)
@@ -262,12 +266,13 @@ badge and any count quoted in the docs must agree with it.
 - /pc debug rejects an argument that is neither on, off, nor a toggle
 - every slash line carries the cyan [PC] tag
 
-### test_panel.lua (30)
+### test_panel.lua (31)
 
 - registration builds the parent category and one sub-page per category
-- the addon records the category handle OpenConfig needs
+- the panel registry holds one ctx per page, reachable by page key
 - sub-page frames start hidden and unbuilt
 - registration is a no-op on a client without the canvas Settings API
+- a second CreateOptionsPanel is a no-op, not a second Blizzard category
 - the General page builds its controls on first show
 - a second show does not rebuild the page
 - the master checkbox is seeded from the schema, not assumed true
@@ -300,7 +305,7 @@ badge and any count quoted in the docs must agree with it.
 | Suite | Cases |
 |-------|------:|
 | test_harness.lua | 6 |
-| test_libka0s.lua | 15 |
+| test_libka0s.lua | 20 |
 | test_compat.lua | 8 |
 | test_constants.lua | 8 |
 | test_util.lua | 7 |
@@ -311,8 +316,8 @@ badge and any count quoted in the docs must agree with it.
 | test_apply.lua | 10 |
 | test_override.lua | 17 |
 | test_database.lua | 10 |
-| test_lifecycle.lua | 12 |
+| test_lifecycle.lua | 11 |
 | test_debuglog.lua | 25 |
 | test_slash.lua | 39 |
-| test_panel.lua | 30 |
-| **Total** | **241** |
+| test_panel.lua | 31 |
+| **Total** | **246** |

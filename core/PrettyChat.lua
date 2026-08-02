@@ -13,8 +13,6 @@ local addonName, NS = ...
 -- Keep that order: NewAddon here, the reclaim immediately after.
 local PrettyChat = LibStub("AceAddon-3.0"):NewAddon(NS, addonName, "AceConsole-3.0")
 
-local Color = NS.Const.Color
-
 function PrettyChat:OnInitialize()
     -- Start from the profile defaults (defaults/Profile.lua) and merge
     -- Database's `global` defaults (schemaVersion) so AceDB provisions both
@@ -57,54 +55,19 @@ function PrettyChat:OnEnable()
     -- seam instead (debug-logging-§5/§8).
 end
 
--- Expand the parent category in the Blizzard Settings left tree so
--- every sub-page is visible. Wrapped in pcall: SettingsPanel internals
--- (CategoryList, GetCategoryEntry, SetExpanded) are private API and
--- could shift between patches; if any call goes missing we return false
--- so OpenConfig can surface a one-time grey notice rather than silently
--- absorbing the regression.
-local function expandMainCategory(cat)
-    if not (cat and SettingsPanel) then return false end
-    local ok, expanded = pcall(function()
-        local list = SettingsPanel.GetCategoryList
-            and SettingsPanel:GetCategoryList()
-            or SettingsPanel.CategoryList
-        if not (list and list.GetCategoryEntry) then return false end
-        local entry = list:GetCategoryEntry(cat)
-        if entry and entry.SetExpanded then
-            entry:SetExpanded(true)
-            return true
-        end
-        return false
-    end)
-    return ok and expanded
-end
-
+-- The panel-open is LibKa0s-Options-1.0's, and this is a one-line delegate rather
+-- than a second implementation beside it — options-ui-§2 is explicit that the
+-- combat gate lives INSIDE the panel-open function so every caller is gated, and
+-- that a host MUST NOT wire a second, un-gated open path around it. The library's
+-- version refuses under lockdown with the same grey notice this addon printed
+-- (byte for byte — Color.grey IS |cffaaaaaa), logs through the descriptor's debug
+-- hook, and does the same private-API category-tree expansion inside a pcall.
+--
+-- Two host diagnostics were dropped with the old body, both deliberately and both
+-- recorded in docs/pending/LEDGER.md: the "could not open settings panel" line on
+-- a false return from Settings.OpenToCategory, and the one-time "could not
+-- auto-expand the sub-tree" notice. The library reports neither, and inventing a
+-- second open path to keep them is the thing options-ui-§2 forbids.
 function PrettyChat:OpenConfig()
-    -- Combat guard lives here (not just in the slash dispatcher) so any
-    -- programmatic caller — other addons, a /run script, future internal
-    -- code paths — is also gated. Settings.OpenToCategory triggers the
-    -- protected category-switch code; calling it under combat lockdown
-    -- taints the panel for the rest of the session, so we refuse with a
-    -- grey notice rather than deferring (Ka0s standard, options-ui-§2).
-    if InCombatLockdown and InCombatLockdown() then
-        NS.Print(Color.grey .. "cannot open settings during combat — Blizzard's category-switch is protected" .. Color.reset)
-        NS.Debug("Config", "refused (in combat)")
-        return
-    end
-    if not (Settings and Settings.OpenToCategory) or not self.optionsCategoryID then
-        NS.Debug("Config", "unavailable (Settings API / category not ready)")
-        return
-    end
-    local opened = Settings.OpenToCategory(self.optionsCategoryID)
-    if opened == false then
-        NS.Print(Color.grey .. "could not open settings panel — category not registered" .. Color.reset)
-        NS.Debug("Config", "blocked (category not registered)")
-        return
-    end
-    NS.Debug("Config", "opened")
-    if not expandMainCategory(self.optionsCategory) and not self._expandWarned then
-        self._expandWarned = true
-        NS.Print(Color.grey .. "(could not auto-expand the Pretty Chat sub-tree — click the parent row to expand)" .. Color.reset)
-    end
+    NS.Helpers.OpenOptionsPanel()
 end

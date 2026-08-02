@@ -49,7 +49,12 @@ local function buildAddonEnabledRow()
         category = "General",
         kind     = "addon_enabled",
         type     = "bool",
-        label    = "Enable PrettyChat",
+        label    = NS.L["Enable PrettyChat"],
+        -- The tooltip BODY lives on the row, not in the page builder: this row is
+        -- drawn by LibKa0s-Options-1.0's checkbox maker, which reads `tooltip`
+        -- (options-ui, "Row fields the flow engine reads"). A builder-side tooltip
+        -- would be a second source for the same text.
+        tooltip  = NS.L["Master switch for the addon. When off, all Blizzard originals are restored."],
         default  = true,
         get      = function() return PrettyChat:IsAddonEnabled() end,
         set      = function(v)
@@ -64,7 +69,8 @@ local function buildCategoryRow(category)
         category = category,
         kind     = "category_enabled",
         type     = "bool",
-        label    = category .. " category",
+        label    = "Enable " .. category,
+        tooltip  = "Enable or disable all " .. category .. " string overrides.",
         default  = (NS.Defaults[category] and NS.Defaults[category].enabled) and true or false,
         get      = function() return PrettyChat:IsCategoryEnabled(category) end,
         set      = function(v)
@@ -234,6 +240,18 @@ function Schema.RegisterRefresher(category, fn)
 end
 
 function Schema.NotifyPanelChange(category)
+    -- Two refresher registries coexist here on purpose, and this is the one place
+    -- that has to know about both. The per-string editor is a bespoke three-row
+    -- block the library's flow engine cannot express, so its widgets register
+    -- through Schema.refreshers below; every widget the library's own makers built
+    -- registered on its panel's ctx.refreshers instead. RefreshScalars is the
+    -- in-place tier — refreshers only, no rebuild — which is exactly right for a
+    -- value write, and it re-reads rather than writing, so it cannot recurse back
+    -- into Schema.Set.
+    if NS.Helpers and NS.Helpers.RefreshScalars then
+        NS.Helpers.RefreshScalars()
+    end
+
     if category == "General" or category == nil then
         for _, fn in pairs(Schema.refreshers) do pcall(fn) end
         return
@@ -258,6 +276,29 @@ function Schema.Set(path, value)
     -- ApplyStrings' re-apply is an implied consequence and is deliberately not re-echoed.
     NS.Debug("Set", "%s = %s", path, Schema.FormatValue(row, value))
     return true
+end
+
+-- Every row, in DECLARATION order — which is the order `/pc list` prints and the
+-- order the settings tree shows, so the two can never disagree. Returned as the
+-- live table rather than a copy: callers iterate it, and a per-call copy of ~350
+-- rows on every `list` would be a real cost for no safety nobody asked for.
+function Schema.AllRows()
+    return rows
+end
+
+-- Restore ONE row to its default, through the same single write seam a panel
+-- checkbox and a slash `set` take, so the debug line, the re-apply and the panel
+-- refresh are identical on all three paths.
+--
+-- Deliberately NOT the implementation behind the per-category Defaults button or
+-- `/pc resetall`. Both of those are bulk: driving them row by row through here
+-- would run ApplyStrings once per row (~350 passes over ~170 globals) and emit one
+-- [Set] line per row into a 500-line console buffer, which is exactly the per-item
+-- spam debug-logging-§9 forbids. PrettyChat:ResetCategory and PrettyChat:ResetAll
+-- stay the bulk implementations, each one pass and one summary line.
+function Schema.ApplyDefault(row)
+    if not row then return false end
+    return Schema.Set(row.path, row.default)
 end
 
 function Schema.RowsByCategory(category)

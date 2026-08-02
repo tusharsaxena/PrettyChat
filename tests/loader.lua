@@ -69,12 +69,18 @@ return function(root, mockModule)
     --- opts.skip = { "<relative path>", ... } omits those files, which is how the
     --- degraded-install cases load the addon with the library genuinely ABSENT
     --- rather than by hand-stubbing the namespace member under test (testing-§8).
+    ---
+    --- opts.mock = function(mocks) end runs against the fresh environment BEFORE any
+    --- source is loaded, for the client-shape scenarios a post-hoc assignment cannot
+    --- reach — an older client with no canvas Settings registrars, say, where what
+    --- matters is what the addon does at load and at OnEnable rather than afterwards.
     local function build(opts)
         opts = opts or {}
         local skipSet = {}
         for _, rel in ipairs(opts.skip or {}) do skipSet[rel] = true end
 
         local mocks = mockModule()
+        if type(opts.mock) == "function" then opts.mock(mocks) end
         local env   = Loader.makeEnv(mocks)
         local NS    = {}
         local addonName = "PrettyChat"

@@ -79,10 +79,21 @@ test("registration builds the parent category and one sub-page per category", fu
     end
 end)
 
-test("the addon records the category handle OpenConfig needs", function()
-    t.truthy(addon.optionsCategory, "the category object is stashed")
-    t.eq(addon.optionsCategoryID, env._settings.categories[1]:GetID(),
-        "the ID matches the registered parent")
+test("the panel registry holds one ctx per page, reachable by page key", function()
+    -- The category handle used to be stashed on the addon for OpenConfig to read;
+    -- OpenConfig delegates to the library now and the handle is the library's own
+    -- business. What a host (and this suite) still needs is a handle on a live ctx,
+    -- which is what the __panelFor test seam exists for.
+    t.nilv(addon.optionsCategoryID, "the host no longer keeps a copy of the ID")
+    t.eq(#NS.Helpers.__panels(), #Schema.CATEGORY_ORDER + 1,
+        "one ctx per sub-page, plus the landing page")
+    for _, category in ipairs(Schema.CATEGORY_ORDER) do
+        local pageCtx = NS.Helpers.__panelFor(category)
+        t.truthy(pageCtx, category .. " has a registered ctx")
+        t.eq(pageCtx.panel.titleText,
+            "Ka0s Pretty Chat |A:common-icon-forwardarrow:16:16|a " .. category,
+            category .. " renders the shared breadcrumb header")
+    end
 end)
 
 test("sub-page frames start hidden and unbuilt", function()
@@ -93,12 +104,28 @@ test("sub-page frames start hidden and unbuilt", function()
 end)
 
 test("registration is a no-op on a client without the canvas Settings API", function()
-    local fresh = ctx.loadAddon()
-    local before = #fresh.env._settings.categories
-    fresh.env.Settings = {}          -- API present but without the registrars
+    -- Built with the registrars missing from the START, not stripped afterwards:
+    -- the library's CreateOptionsPanel is idempotent, so a post-hoc assignment plus
+    -- a second call would return at the "already built" guard and the case would
+    -- pass without ever reaching the branch it names.
+    local fresh = ctx.loadAddon({
+        mock = function(m) m.Settings = {} end,   -- API present, registrars absent
+    })
+    t.eq(#fresh.env._settings.categories, 0, "no canvas category was registered")
+    t.eq(#fresh.env._settings.subcategories, 0, "and no sub-pages either")
     local ok = pcall(fresh.NS.Config.RegisterPanels)
-    t.truthy(ok, "registerPanels never raises on an unsupported client")
-    t.eq(#fresh.env._settings.categories, before, "and registers nothing")
+    t.truthy(ok, "and calling it again never raises on such a client")
+end)
+
+test("a second CreateOptionsPanel is a no-op, not a second Blizzard category", function()
+    -- The call is public and cheap to reach twice (a login plus a profile change).
+    -- Re-running it would register a SECOND category for the same addon and append a
+    -- second ctx per page, permanently doubling the refresh fan-out.
+    local before  = #env._settings.categories
+    local panels  = #NS.Helpers.__panels()
+    NS.Config.RegisterPanels()
+    t.eq(#env._settings.categories, before, "still exactly one parent category")
+    t.eq(#NS.Helpers.__panels(), panels, "and no duplicate page contexts")
 end)
 
 -- ---- General sub-page ---------------------------------------------
@@ -113,7 +140,12 @@ test("the General page builds its controls on first show", function()
     t.truthy(byLabel(generalWidgets, "CheckBox", L["Debug console"]), "Debug console checkbox")
     t.truthy(byLabel(generalWidgets, "Button", L["Test"]), "Test button")
     t.truthy(byLabel(generalWidgets, "Button", L["Reset all to defaults"]), "Reset-all button")
-    t.truthy(Schema.refreshers["General"], "the page registered its refresher")
+    -- Every widget on this page is library-made, so their refreshers live on the
+    -- page's ctx rather than in Schema.refreshers. General is the only page with no
+    -- bespoke widgets at all.
+    t.nilv(Schema.refreshers["General"], "no host refresher is registered for it")
+    t.truthy(#NS.Helpers.__panelFor("General").refreshers > 0,
+        "the library registered a refresher per widget it built")
 end)
 
 test("a second show does not rebuild the page", function()
