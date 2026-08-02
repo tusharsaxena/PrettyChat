@@ -115,22 +115,24 @@ The single chokepoint for addon chat output. Use this, not raw `print()` or `sel
 
 `PrettyChat.toc` is the source of truth. Order is dependency, not alphabetical:
 
-1. Ace3 libraries — LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0. (`AceConfig-3.0` was removed from `libs/` — no live consumer; re-vendor it if a future feature needs it.)
+1. Libraries — LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, then **`libs\LibKa0s\LibKa0s.xml`** (after Ace3, library-stack-§7), which pulls in Core → DebugLog → Slash → Options → OptionsWidgets → OptionsScroll → Perf → PerfPanel. (`AceConfig-3.0` was removed from `libs/` — no live consumer; re-vendor it if a future feature needs it.)
 2. `locales/enUS.lua` — populates `NS.L` (English-key metatable + enUS manifest). Loads first among addon files (toc-file-§5 section order); it only builds `NS.L` and has no earlier-load dependency.
 3. `core/Compat.lua` — populates `NS.Compat` (metadata shim). Side-effect-free; the first `core/` file, so any later file can call it.
-4. `core/Constants.lua` — populates `NS.Const` + `NS.PREFIX` with panel layout constants, the `Color` palette (incl. the slash-output `azure` / `listHead` codes and `FONT_MONO`), and the cyan tag. Side-effect-free.
+4. `core/Constants.lua` — populates `NS.Const` + `NS.PREFIX` with the `Color` palette (incl. the slash-output `azure` / `listHead` codes), the landing page's own section spacers, `STRING_VSPACER` and `FONT_MONO`, and the cyan tag. Carries **no** panel layout constants — those are the Options module's `LAYOUT` table (options-ui-§8). Side-effect-free.
 5. `core/Namespace.lua` — populates `NS.name` / `NS.version` from the TOC (reads `NS.Compat`, so it loads after it).
 6. `core/State.lua` — populates `NS.State` (`{ debug = false }`, session-only).
-7. `core/Util.lua` — populates `NS.Util` (`trim` / `note` / `cmd` + secret-safe `SafeToString` / `IsConcatSafe`; reads `NS.Const.Color`, so it loads after Constants).
+7. `core/Util.lua` — populates `NS.Util` with `trim` / `note` / `cmd` (reads `NS.Const.Color`, so it loads after Constants). The secret-safe pair arrives on the same table from `core/CoreSetup.lua` below.
 8. `core/Database.lua` — populates `NS.Database` (`SCHEMA_VERSION`, `global` defaults, `RunMigrations`).
-9. `core/DebugLogSetup.lua` — populates `NS.DebugLog` (the on-screen console) + `NS.Debug` (gated sink). Reads `NS.State` / `NS.Util` / `NS.Const.FONT_MONO`.
-10. `core/PrettyChat.lua` — creates the AceAddon object **from the `NS` table** (`:NewAddon(NS, …)`, architecture-§2), reclaims the secret-safe `NS.Print` after AceConsole's `:Print` embed, merges `NS.ProfileDefaults` + `NS.Database.defaults` + runs migrations in `OnInitialize`, registers slash commands, owns `OpenConfig`. **Every later file reaches the addon object via** `LibStub("AceAddon-3.0"):GetAddon("PrettyChat")` (which returns `NS`).
-11. `defaults/Profile.lua` — populates `NS.ProfileDefaults` (the AceDB `profile` defaults table).
-12. `defaults/Defaults.lua` — populates `NS.Defaults`.
-13. `GlobalStrings/GlobalStrings_001.lua` … `_010.lua` — populates `NS.GlobalStrings` eagerly so the panel can resolve "Original" values without an explicit load step.
-14. `modules/Override.lua` — attaches the override engine to the addon object (`ApplyStrings`, enable-cascade predicates, `ResetCategory` / `ResetAll`, `Test`) and defines `NS.RenderSample`.
-15. `settings/Schema.lua` — builds `rows` / `byPath` from `NS.Defaults` (which is loaded earlier) and runs the load-time path validator. Closures bind to live values.
-16. `settings/Slash.lua` — defines the `/pc` dispatcher (`NS.COMMANDS`, `OnSlashCommand`, and the per-verb handlers). Loads after Schema so its `list` / `get` / `set` handlers can reach `NS.Schema`.
-17. `settings/Panel.lua` — exposes `NS.Config.RegisterPanels`. Called from `PrettyChat:OnEnable`, it registers the parent canvas-layout category + one sub-page per category. Defers AceGUI body rendering until each panel's first `OnShow`; that `OnShow` calls `NS.Schema.RegisterRefresher(category, refreshFn)` so `Schema.NotifyPanelChange` can re-sync the page after a write.
+9. `core/PrettyChat.lua` — creates the AceAddon object **from the `NS` table** (`:NewAddon(NS, …)`, architecture-§2), merges `NS.ProfileDefaults` + `NS.Database.defaults` + runs migrations in `OnInitialize`, registers slash commands, and delegates `OpenConfig` to the library's combat-gated panel-open. **Every later file reaches the addon object via** `LibStub("AceAddon-3.0"):GetAddon("PrettyChat")` (which returns `NS`).
+10. `core/CoreSetup.lua` — the `LibKa0s-Core-1.0` seam. Populates `NS.LIBKA0S_MISSING`, `NS.Print` / `NS.Format` and `NS.Util.SafeToString` / `IsConcatSafe`. **This position is load-bearing at both ends**: it must follow `core/PrettyChat.lua`, because AceConsole's `:Print` embed lands on `NS` during `:NewAddon` and this file's last two lines reclaim the name (anti-pattern #36); and it must precede `settings/Schema.lua`, the only load-time `NS.Print` caller.
+11. `core/DebugLogSetup.lua` — the `LibKa0s-DebugLog-1.0` seam. Populates `NS.DebugLog` (the library's console instance) + `NS.Debug` (its gated sink, bound bare). Reads `NS.State` / `NS.Util` / `NS.Const.FONT_MONO` / `NS.Print`, so it follows all four (debug-logging-§1).
+12. `defaults/Profile.lua` — populates `NS.ProfileDefaults` (the AceDB `profile` defaults table).
+13. `defaults/Defaults.lua` — populates `NS.Defaults`.
+14. `GlobalStrings/GlobalStrings_001.lua` … `_010.lua` — populates `NS.GlobalStrings` eagerly so the panel can resolve "Original" values without an explicit load step.
+15. `modules/Override.lua` — attaches the override engine to the addon object (`ApplyStrings`, enable-cascade predicates, `ResetCategory` / `ResetAll`, `Test`) and defines `NS.RenderSample`.
+16. `settings/Schema.lua` — builds `rows` / `byPath` from `NS.Defaults` (which is loaded earlier) and runs the load-time path validator. Closures bind to live values.
+17. `settings/OptionsSetup.lua` — the `LibKa0s-Options-1.0` seam. Populates `NS.Helpers` (the instance itself). After `settings/Schema.lua`, whose `Get`/`Set`/`RowsByCategory` the descriptor reads, and before `settings/Panel.lua`, which takes it as a file-scope upvalue and registers its pages at file load (options-ui-§1).
+18. `settings/Slash.lua` — the `COMMANDS` table and the `LibKa0s-Slash-1.0` descriptor, publishing `NS.COMMANDS` and `NS.SlashCommands`. After Schema so the descriptor's `get`/`set`/`findRow`/`allRows` can reach it.
+19. `settings/Panel.lua` — the three page bodies. Registers each page with `NS.Helpers.RegisterOptionsPage` at file load and declares it with `SetRenderer`, which owns the first-`OnShow` deferral, the every-`OnShow` Defaults button and the combat refusal. Exposes `NS.Config.RegisterPanels` (the library's `CreateOptionsPanel`, called from `PrettyChat:OnEnable`) and `NS.Config.BuildMain`. Its bespoke per-string blocks register through `NS.Schema.RegisterRefresher`; every library-made widget registers on its page's own ctx. After `settings/Slash.lua`, because the landing page renders `NS.SlashCommands.LandingRows()`.
 
 If you add a new file, put it in the right place in `PrettyChat.toc`.
