@@ -15,7 +15,7 @@ badge and any count quoted in the docs must agree with it.
 - libs/LibKa0s is byte-identical to the sibling library checkout, where present
 - tests/_kit is byte-identical to the sibling library checkout, where present
 
-### test_libka0s.lua (9)
+### test_libka0s.lua (15)
 
 - the locale-table matcher catches both offending spellings and clears the legal one
 - no seam file hands a LibKa0s descriptor the addon-wide locale table
@@ -23,6 +23,12 @@ badge and any count quoted in the docs must agree with it.
 - the secret-safe pair on NS.Util IS Core's, not a host copy beside it
 - the [PC] printer renders the same bytes it did before Core owned it
 - the printer is reclaimed from AceConsole's embed, not merely defined
+- the console descriptor seeds the frame globals and the title we mean
+- the console renders prose, not its own SCREAMING_SNAKE keys
+- the console's two formatters still render the bytes the copy buffer expects
+- the console's print and safeToString are call-time forwarders, not captures
+- NS.Debug is the instance's bare sink, bound not wrapped
+- with DebugLog absent the console degrades but the flag and the ack survive
 - with LibKa0s absent the addon still loads and still prints, saying so once
 - the shared cause clause names the addon and where the library should be
 - the degraded secret guard still neutralises a protected value
@@ -294,7 +300,7 @@ badge and any count quoted in the docs must agree with it.
 | Suite | Cases |
 |-------|------:|
 | test_harness.lua | 6 |
-| test_libka0s.lua | 9 |
+| test_libka0s.lua | 15 |
 | test_compat.lua | 8 |
 | test_constants.lua | 8 |
 | test_util.lua | 7 |
@@ -309,4 +315,4 @@ badge and any count quoted in the docs must agree with it.
 | test_debuglog.lua | 25 |
 | test_slash.lua | 39 |
 | test_panel.lua | 30 |
-| **Total** | **235** |
+| **Total** | **241** |

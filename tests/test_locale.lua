@@ -6,17 +6,6 @@
 -- unwrapped new string, or a manifest entry left behind by a deleted one,
 -- surfaces here instead of at a translator's desk.
 
--- Sources that may reference L (locales/ itself seeds the table, so it is
--- excluded — its `L[s] = s` loop is the seeding, not a call site).
-local L_CONSUMERS = {
-    "core/PrettyChat.lua",
-    "core/DebugLog.lua",
-    "modules/Override.lua",
-    "settings/Schema.lua",
-    "settings/Slash.lua",
-    "settings/Panel.lua",
-}
-
 local function readFile(path)
     local fh = io.open(path, "r")
     if not fh then return nil end
@@ -32,15 +21,29 @@ local inst = ctx.loadAddon()
 local NS   = inst.NS
 local L    = NS.L
 
+-- Sources that may reference L, DERIVED from the TOC rather than hand-listed. A
+-- hand-maintained list goes stale silently in the direction that matters: a file
+-- renamed or added is simply never scanned, and the drift cases below then report
+-- green over a surface they never looked at. locales/ itself is excluded — its
+-- `L[s] = s` loop is the seeding, not a call site — and so is the generated
+-- GlobalStrings/ dump, which carries no user-facing prose.
+local L_CONSUMERS = {}
+for _, rel in ipairs(ctx.loadAddon.tocFiles) do
+    if not rel:find("^locales/") and not rel:find("^GlobalStrings/") then
+        L_CONSUMERS[#L_CONSUMERS + 1] = rel
+    end
+end
+
 -- Every `L["…"]` literal in the addon's own sources, mapped to the file
 -- it was found in.
 local callSites = {}
 for _, rel in ipairs(L_CONSUMERS) do
-    local body = readFile(ctx.root .. "/" .. rel)
-    if body then
-        for key in body:gmatch('L%[%s*"(.-)"%s*%]') do
-            callSites[key] = callSites[key] or rel
-        end
+    -- Hard assert rather than a tolerant skip: a source the scan cannot open is a
+    -- surface it did not look at, and a drift check that goes quiet when it cannot
+    -- look is worse than no check. (test_harness.lua pins existence separately.)
+    local body = assert(readFile(ctx.root .. "/" .. rel), rel .. " is unreadable")
+    for key in body:gmatch('L%[%s*"(.-)"%s*%]') do
+        callSites[key] = callSites[key] or rel
     end
 end
 

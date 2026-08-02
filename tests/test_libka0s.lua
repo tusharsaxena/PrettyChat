@@ -31,6 +31,7 @@ end
 -- globbed so a new seam is a deliberate addition to this list, not a silent one.
 local SEAM_FILES = {
     "core/CoreSetup.lua",
+    "core/DebugLogSetup.lua",
 }
 
 -- ── the `L` trap: the matcher, and the matcher's own test ───────────────────
@@ -143,6 +144,124 @@ test("the printer is reclaimed from AceConsole's embed, not merely defined", fun
     t.falsy(msgs[#msgs]:find("|r:", 1, true), "no AceConsole trailing colon")
     t.truthy(msgs[#msgs]:find("^" .. NS.PREFIX:gsub("([%|%[%]%(%)%.%%%+%-%*%?%^%$])", "%%%1")),
         "the cyan [PC] tag leads the line")
+end)
+
+-- ── LibKa0s-DebugLog-1.0 ───────────────────────────────────────────────────
+
+test("the console descriptor seeds the frame globals and the title we mean", function()
+    -- The descriptor is not readable after :New returns, so these are the two
+    -- things it produced that ARE: the frame names, and the composed title. Both
+    -- match what the hand-written console used, which is what makes the swap
+    -- invisible to a user's muscle memory and to /framestack.
+    NS.DebugLog:Show()
+    local win = env._frames.byName["PrettyChatDebugWindow"]
+    t.truthy(win, "the console window carries the addon-seeded global name")
+    t.eq(win.titleText, "Pretty Chat \226\128\148 Debug",
+        "the library composed <title> + its own em-dash Debug suffix")
+    NS.DebugLog:ShowCopy()
+    t.truthy(env._frames.byName["PrettyChatDebugCopyWindow"], "so does the copy window")
+    t.truthy(env._frames.byName["PrettyChatDebugCopyScroll"], "and its named scroll frame")
+    NS.DebugLog:Hide()
+end)
+
+test("the console renders prose, not its own SCREAMING_SNAKE keys", function()
+    -- The `L` trap, rendered half. A resolved string is prose; an unresolved one is
+    -- the key, and no English label is SCREAMING_SNAKE_CASE. Read back off the REAL
+    -- FontString the library built, not off a value handed to the assertion — a case
+    -- that guards on `if label then` passes vacuously when the accessor is missing.
+    NS.DebugLog:Show()
+    local win = env._frames.byName["PrettyChatDebugWindow"]
+    NS.DebugLog:SetEnabled(true)
+    local header = win.debugToggle.text
+    t.truthy(header, "the header label exists to be read at all")   -- non-vacuity
+    t.eq(header, "Debug: ON", "and it is the library's resolved English")
+    t.falsy(header:match("^[A-Z][A-Z0-9_]+$"), "not a raw locale key")
+    NS.DebugLog:SetEnabled(false)
+    t.eq(win.debugToggle.text, "Debug: OFF", "the other arm resolves too")
+
+    t.truthy(win.lineCount.text, "the line counter renders")
+    t.falsy(win.lineCount.text:match("^[A-Z][A-Z0-9_]+$"), "not the LINES key")
+    t.truthy(win.lineCount.text:find("/ 500 lines", 1, true), "it is the formatted counter")
+
+    local spec = NS.DebugLog:ConsoleCheckbox()
+    t.falsy(spec.label:match("^[A-Z][A-Z0-9_]+$"), "the checkbox label is prose")
+    t.falsy(spec.tooltip:match("^[A-Z][A-Z0-9_]+$"), "so is its tooltip")
+    t.truthy(spec.tooltip:find("/pc debug", 1, true),
+        "and the tooltip names this addon's slash, from the descriptor")
+    NS.DebugLog:Hide()
+end)
+
+test("the console's two formatters still render the bytes the copy buffer expects", function()
+    -- They changed hands; nothing about the rendered line may change with them.
+    t.eq(NS.DebugLog.FormatPlain("15:04:43", "Loot", "item x2"), "15:04:43 | [Loot] item x2")
+    t.eq(NS.DebugLog.FormatColored("15:04:43", "Loot", "item x2"),
+        "|cff6f8faf15:04:43|r || |cffc9a66b[Loot]|r item x2")
+    -- And the instance's copy is the lib-level one, not a second implementation.
+    local dl = env.LibStub("LibKa0s-DebugLog-1.0", true)
+    t.eq(NS.DebugLog.FormatPlain, dl.FormatPlain, "FormatPlain is the library's function")
+    t.eq(NS.DebugLog.FormatColored, dl.FormatColored, "FormatColored is the library's function")
+end)
+
+test("the console's print and safeToString are call-time forwarders, not captures", function()
+    -- debug-logging-§1 makes this a MUST, and it is one of the few rules a
+    -- behavioural case genuinely cannot reach here: core/CoreSetup.lua loads BEFORE
+    -- this seam, so `print = NS.Print` would capture the already-reclaimed printer
+    -- and work perfectly — today. It breaks the day the TOC order moves, which is
+    -- exactly the change nobody re-tests. So the guard is on the source, where the
+    -- difference is visible.
+    local src = readFile("core/DebugLogSetup.lua")
+    t.truthy(src, "core/DebugLogSetup.lua is readable")
+    t.truthy(src:find("print%s*=%s*function%(line%)%s*NS%.Print%(line%)%s*end"),
+        "print is a thin forwarder")
+    t.truthy(src:find("safeToString%s*=%s*function%(v%)%s*return NS%.Util%.SafeToString%(v%)%s*end"),
+        "safeToString is a thin forwarder")
+    t.falsy(src:find("print%s*=%s*NS%.Print%s*,"), "print is not a captured reference")
+    t.falsy(src:find("safeToString%s*=%s*NS%.Util%.SafeToString%s*,"),
+        "safeToString is not a captured reference either")
+end)
+
+test("NS.Debug is the instance's bare sink, bound not wrapped", function()
+    -- A wrapper would work and would also be a second place the gate could be
+    -- forgotten; debug-logging-§4 requires the bare binding.
+    t.eq(NS.Debug, NS.DebugLog.Debug, "NS.Debug IS the instance's Debug")
+end)
+
+test("with DebugLog absent the console degrades but the flag and the ack survive", function()
+    -- Loaded with the library genuinely missing. NS.State.debug is the ADDON's, so
+    -- `/pc debug on` must still flip it and still acknowledge; what is lost is the
+    -- window, said once (debug-logging-§7).
+    local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    local msgs = bare.env.DEFAULT_CHAT_FRAME.messages
+    bare.NS.State.debug = false
+
+    bare.NS.DebugLog:SetEnabled(true)
+    t.truthy(bare.NS.State.debug, "the session flag still flips")
+    local joined = table.concat(msgs, "\n")
+    t.truthy(joined:find("debug logging |cff40ff40ON|r", 1, true), "the colour-coded ack still lands")
+    t.truthy(joined:find(bare.NS.LIBKA0S_MISSING ..
+        ", so the debug console window is unavailable.", 1, true),
+        "and the window's absence is explained through the shared cause clause")
+
+    local before = #msgs
+    bare.NS.DebugLog:Toggle()
+    bare.NS.DebugLog:Show()
+    t.eq(#msgs, before, "the notice is not repeated on every later attempt")
+
+    -- The stub must NOT re-implement the line format (debug-logging-§3/§7).
+    t.nilv(bare.NS.DebugLog.FormatPlain, "the stub carries no plain formatter")
+    t.nilv(bare.NS.DebugLog.FormatColored, "and no coloured one")
+    local src = readFile("core/DebugLogSetup.lua")
+    t.falsy(src:find("6f8faf", 1, true), "nor the console's colour codes anywhere in the seam")
+    t.falsy(src:find("c9a66b", 1, true), "either of them")
+
+    -- Every member the addon actually calls has to answer.
+    for _, member in ipairs({ "Add", "Debug", "Clear", "Show", "Hide", "Toggle", "IsShown",
+                              "IsEnabled", "SetEnabled", "RefreshHeader", "ShowCopy",
+                              "UpdateScrollBar", "UpdateStatus", "SessionSummary",
+                              "ConsoleCheckbox" }) do
+        t.eq(type(bare.NS.DebugLog[member]), "function", "the stub answers " .. member)
+    end
+    t.eq(type(bare.NS.DebugLog.buffer), "table", "and carries the raw buffer")
 end)
 
 -- ── the degraded install ───────────────────────────────────────────────────
