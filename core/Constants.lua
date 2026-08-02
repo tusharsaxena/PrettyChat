@@ -3,43 +3,26 @@ local addonName, NS = ...
 NS.Const = NS.Const or {}
 local Const = NS.Const
 
--- Horizontal padding from the panel's left and right edges to its
--- header / divider / body content. Single value used for both edges so
--- the layout stays symmetric.
-Const.PANEL_PADDING_X     = 16
+-- The panel layout constants that used to live here — PANEL_PADDING_X,
+-- PANEL_HEADER_TOP, PANEL_HEADER_HEIGHT, PANEL_DEFAULTS_W, BUTTON_PAIR_REL,
+-- SECTION_HEADING_H and ROW_VSPACER — are gone, and MUST NOT come back.
+-- They are LibKa0s-Options-1.0's `LAYOUT` table now, and options-ui-§8 is
+-- explicit about why: every Ka0s panel renders identically because every panel
+-- reads ONE set of values, and a host copy is the copy that goes stale. Where
+-- settings/Panel.lua needs one for a widget it draws itself, it reads it off the
+-- instance (`NS.Helpers.ROW_VSPACER`, `NS.Helpers.SECTION_HEADING_H`).
+--
+-- The two below stay, because neither is the library's.
 
--- Vertical inset of the title (and the per-panel "Defaults" button next
--- to it) from the top of the panel. Roughly half the height of the
--- GameFontNormalHuge title glyph so the header doesn't crowd the
--- panel's top edge.
-Const.PANEL_HEADER_TOP    = 20
-
--- Distance from the top of the panel to the divider underneath the
--- title. Sits in lockstep with PANEL_HEADER_TOP so the title-to-divider
--- gap (and divider-to-body gap below it) stay unchanged when the header
--- block is repositioned vertically.
-Const.PANEL_HEADER_HEIGHT = 54
-
--- Width of the per-panel "Defaults" button in the header.
-Const.PANEL_DEFAULTS_W    = 110
-
--- Relative width for a pair of cell-filling side-by-side buttons in a
--- Flow-layout row. Slightly under 0.5 so AceGUI's inter-widget padding
--- doesn't wrap the second button onto a new line.
-Const.BUTTON_PAIR_REL     = 0.492
-
--- AceGUI Heading widget height + breathing-room spacers above and
--- below it. Skipped above the first heading on a page (the page header
--- already provides whitespace).
+-- The spacers around a section heading. These belong to the landing page's own
+-- body, which is the host's half of the panel (options-ui-§5), and the library's
+-- flow engine applies its own internally.
 Const.SECTION_TOP_SPACER    = 10
 Const.SECTION_BOTTOM_SPACER = 6
-Const.SECTION_HEADING_H     = 26
-
--- Vertical gap between consecutive widget rows inside a panel.
-Const.ROW_VSPACER = 8
 
 -- Per-string entry — vertical gap that bottoms each string entry and
--- keeps adjacent strings from butting against each other.
+-- keeps adjacent strings from butting against each other. Specific to the
+-- bespoke 40/60 editor in settings/Panel.lua; the library has no equivalent.
 Const.STRING_VSPACER = 14
 
 -- Single source for the chat-color escapes used across PrettyChat.lua
@@ -70,7 +53,8 @@ NS.PREFIX    = Const.PREFIX
 
 -- Monospace font for the on-screen debug console (debug-logging-§2). Vendored under
 -- media/fonts/ (JetBrains Mono, OFL) rather than depending on a user-installed font, and
--- applied via this direct path in core/DebugLog.lua. LibSharedMedia registration is
+-- handed to LibKa0s-DebugLog-1.0 as the console descriptor's `font` (core/DebugLogSetup.lua),
+-- which applies it to the log, the line counter and the copy box. LibSharedMedia registration is
 -- intentionally omitted: PrettyChat ships no font-picker consumer, so the path constant
 -- alone suffices — a documented SHOULD-deviation from debug-logging-§2.
 Const.FONT_MONO = "Interface\\AddOns\\PrettyChat\\media\\fonts\\JetBrainsMono-Regular.ttf"

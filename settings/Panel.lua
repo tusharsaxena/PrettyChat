@@ -1,313 +1,32 @@
 local addonName, NS = ...
 
+-- settings/Panel.lua — the three page BODIES, and nothing else.
+--
+-- The canvas factory, the header and its breadcrumb, the lazily-built Defaults
+-- button, the AceGUI ScrollFrame with its always-shown-scrollbar patch, the
+-- tooltip helper, the spacer helper, the page registry, the panel-open with its
+-- combat gate and the refresh fan-out all live in LibKa0s-Options-1.0 now and are
+-- reached through NS.Helpers (settings/OptionsSetup.lua). What is left here is the
+-- part that is genuinely PrettyChat's: what each of its three kinds of page draws.
+--
+-- Two of the three are the library's own shapes. The third is not, and that is the
+-- documented deviation this file has carried since PC-23 — see buildStringRow.
+
 local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 local AceGUI = LibStub("AceGUI-3.0")
 
+local H      = NS.Helpers
 local Const  = NS.Const
 local Color  = Const.Color
 local Schema = NS.Schema
 local L      = NS.L
 local CATEGORY_ORDER = Schema.CATEGORY_ORDER
 
-local PARENT_TITLE = "Ka0s Pretty Chat"
-
 local TOC_NOTES = NS.Compat.GetAddOnMetadata(addonName, "Notes") or ""
 
 local LOGO_PATH = "Interface\\AddOns\\" .. addonName
                   .. "\\media\\logos\\prettychat.logo.v2.tga"
 local LOGO_SIZE = 300
-
--- ---------------------------------------------------------------------
--- Tooltip helper — works on AceGUI widgets (via SetCallback) and plain
--- frames (via HookScript). Anchors on widget.frame for AceGUI widgets.
--- ---------------------------------------------------------------------
-
-local function attachTooltip(widget, label, tooltip)
-    if not widget then return end
-    local anchor = widget.frame or widget
-    if not anchor then return end
-
-    local function show()
-        if not GameTooltip then return end
-        GameTooltip:SetOwner(anchor, "ANCHOR_RIGHT")
-        if label and label ~= "" then
-            GameTooltip:SetText(label, 1, 1, 1)
-        end
-        if tooltip and tooltip ~= "" then
-            GameTooltip:AddLine(tooltip, nil, nil, nil, true)
-        end
-        GameTooltip:Show()
-    end
-    local function hide() if GameTooltip then GameTooltip:Hide() end end
-
-    if widget.SetCallback then
-        widget:SetCallback("OnEnter", show)
-        widget:SetCallback("OnLeave", hide)
-    elseif widget.HookScript then
-        widget:HookScript("OnEnter", show)
-        widget:HookScript("OnLeave", hide)
-    end
-end
-
--- ---------------------------------------------------------------------
--- Always-visible scrollbar patch — keeps the right-edge gutter reserved
--- whether or not content overflows so every sub-page lines up at the
--- same x. Restores stock behaviour on widget release so the AceGUI pool
--- isn't polluted for other addons that re-acquire the same instance.
--- Mirrors KickCD's Helpers.PatchAlwaysShowScrollbar.
---
--- Reaches into AceGUI ScrollFrame internals: `scrollframe`, `scrollbar`,
--- `content` (with `original_width`), `localstatus`, `scrollBarShown`,
--- `updateLock`, `FixScroll`, `MoveScroll`, `OnRelease`. If a future
--- AceGUI release renames or restructures any of these, this patch will
--- silently stop reserving the gutter (or in the worst case error in
--- FixScroll) — that's the field list to diff against on upgrade.
--- Verified against AceGUI-3.0 r1308 (KickCD's bundled copy).
--- ---------------------------------------------------------------------
-
-local function patchAlwaysShowScrollbar(scroll)
-    if not scroll or scroll._pcAlwaysScrollbar then return end
-    scroll._pcAlwaysScrollbar = true
-
-    local origFixScroll  = scroll.FixScroll
-    local origMoveScroll = scroll.MoveScroll
-    local origOnRelease  = scroll.OnRelease
-
-    local scrollbar = scroll.scrollbar
-    local thumb     = scrollbar and scrollbar.GetThumbTexture and scrollbar:GetThumbTexture() or nil
-    local sbName    = scrollbar and scrollbar.GetName and scrollbar:GetName() or nil
-    local upBtn     = sbName and _G[sbName .. "ScrollUpButton"]   or nil
-    local downBtn   = sbName and _G[sbName .. "ScrollDownButton"] or nil
-
-    local currentEnabled
-    local function setEnabled(want)
-        if currentEnabled == want then return end
-        currentEnabled = want
-        if not scrollbar then return end
-        if want then
-            if scrollbar.Enable then scrollbar:Enable() end
-            if thumb and thumb.SetVertexColor then thumb:SetVertexColor(1, 1, 1, 1) end
-            if upBtn   and upBtn.Enable   then upBtn:Enable()   end
-            if downBtn and downBtn.Enable then downBtn:Enable() end
-        else
-            scrollbar:SetValue(0)
-            if scrollbar.Disable then scrollbar:Disable() end
-            if thumb and thumb.SetVertexColor then thumb:SetVertexColor(0.5, 0.5, 0.5, 0.6) end
-            if upBtn   and upBtn.Disable   then upBtn:Disable()   end
-            if downBtn and downBtn.Disable then downBtn:Disable() end
-        end
-    end
-
-    scroll.scrollBarShown = true
-    if scrollbar then scrollbar:Show() end
-    if scroll.scrollframe then
-        scroll.scrollframe:SetPoint("BOTTOMRIGHT", -20, 0)
-    end
-    if scroll.content and scroll.content.original_width then
-        scroll.content.width = scroll.content.original_width - 20
-    end
-
-    scroll.FixScroll = function(self)
-        if self.updateLock then return end
-        self.updateLock = true
-
-        if not self.scrollBarShown then
-            self.scrollBarShown = true
-            self.scrollbar:Show()
-            self.scrollframe:SetPoint("BOTTOMRIGHT", -20, 0)
-            if self.content.original_width then
-                self.content.width = self.content.original_width - 20
-            end
-        end
-
-        local status = self.status or self.localstatus
-        local height, viewheight =
-            self.scrollframe:GetHeight(), self.content:GetHeight()
-        local offset = status.offset or 0
-
-        if viewheight < height + 2 then
-            setEnabled(false)
-            self.scrollbar:SetValue(0)
-            self.scrollframe:SetVerticalScroll(0)
-            status.offset = 0
-        else
-            setEnabled(true)
-            local value = (offset / (viewheight - height) * 1000)
-            if value > 1000 then value = 1000 end
-            self.scrollbar:SetValue(value)
-            self:SetScroll(value)
-            if value < 1000 then
-                self.content:ClearAllPoints()
-                self.content:SetPoint("TOPLEFT",  0, offset)
-                self.content:SetPoint("TOPRIGHT", 0, offset)
-                status.offset = offset
-            end
-        end
-        self.updateLock = nil
-    end
-
-    scroll.MoveScroll = function(self, value)
-        if currentEnabled == false then return end
-        if origMoveScroll then return origMoveScroll(self, value) end
-    end
-
-    scroll.OnRelease = function(self)
-        self.FixScroll  = origFixScroll
-        self.MoveScroll = origMoveScroll
-        self.OnRelease  = origOnRelease
-        self._pcAlwaysScrollbar = nil
-        currentEnabled  = nil
-        if thumb and thumb.SetVertexColor then thumb:SetVertexColor(1, 1, 1, 1) end
-        if scrollbar and scrollbar.Enable then scrollbar:Enable() end
-        if upBtn   and upBtn.Enable   then upBtn:Enable()   end
-        if downBtn and downBtn.Enable then downBtn:Enable() end
-        if origOnRelease then origOnRelease(self) end
-    end
-end
-
--- ---------------------------------------------------------------------
--- Header (title + Defaults button + atlas divider)
--- ---------------------------------------------------------------------
-
-local function buildHeader(panel, title, opts)
-    -- Sub-pages render with a "Ka0s Pretty Chat ▸ <Page>" breadcrumb.
-    -- The separator is an inline atlas (not a glyph) so it renders the
-    -- same regardless of the active FontString font / locale fallback.
-    -- The parent page opts in to the unprefixed form via opts.isMain
-    -- (otherwise it would read "Ka0s Pretty Chat ▸ Ka0s Pretty Chat").
-    -- The Blizzard left-tree label is driven by panel.name in
-    -- createPanel and stays unprefixed so the tree indents under the
-    -- parent without visual repetition.
-    local displayTitle = title
-    if not opts.isMain then
-        local sep = " |A:common-icon-forwardarrow:16:16|a "
-        displayTitle = PARENT_TITLE .. sep .. title
-    end
-
-    local titleFS = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
-    titleFS:SetPoint("TOPLEFT", panel, "TOPLEFT",
-                     Const.PANEL_PADDING_X, -Const.PANEL_HEADER_TOP)
-    titleFS:SetText(displayTitle)
-
-    local divider = panel:CreateTexture(nil, "ARTWORK")
-    divider:SetAtlas("Options_HorizontalDivider", true)
-    divider:SetPoint("TOPLEFT",  panel, "TOPLEFT",
-                     Const.PANEL_PADDING_X, -Const.PANEL_HEADER_HEIGHT)
-    divider:SetPoint("TOPRIGHT", panel, "TOPRIGHT",
-                     -Const.PANEL_PADDING_X, -Const.PANEL_HEADER_HEIGHT)
-    divider:SetVertexColor(titleFS:GetTextColor())
-
-    -- The Defaults button is NOT built here — only the intent to have one is
-    -- recorded. buildHeader runs at registration time (OnInitialize), which is
-    -- too early; ensureDefaultsButton below builds it on first OnShow and
-    -- explains why.
-    panel.wantsDefaultsButton = opts.defaultsButton and true or false
-    panel.defaultsTooltip     = opts.defaultsTooltip
-
-    return titleFS, divider
-end
-
--- ---------------------------------------------------------------------
--- Defaults button — created lazily, on the panel's FIRST OnShow.
---
--- It stays an AceGUI Button (options-ui-§5), but *when* it is created matters
--- as much as *what* creates it. AceGUI is a SHARED library: UI-skinning addons
--- restyle its widgets by hooking RegisterAsWidget, so any widget created before
--- that hook is installed keeps Blizzard's stock UI-Panel-Button-Up art — the red
--- stone button — for the rest of the session, while everything created after it
--- comes out skinned.
---
--- registerPanels() runs during OnInitialize (ADDON_LOADED), i.e. mid-load, so
--- building the button there is a race against every other addon's load order:
--- it looks correct only for as long as PrettyChat happens to load after the
--- skinner. Rename the folder, or install a skin, and the identical code renders
--- a red button. Deferring creation to first OnShow removes the race outright —
--- by then every addon has loaded. Do NOT "simplify" this back into buildHeader.
---
--- Idempotent: safe to call on every OnShow.
--- ---------------------------------------------------------------------
-
-local function ensureDefaultsButton(panel)
-    if not panel or panel.defaultsBtn or not panel.wantsDefaultsButton then return end
-
-    local defaultsBtn = AceGUI:Create("Button")
-    defaultsBtn:SetText(L["Defaults"])
-    defaultsBtn:SetWidth(Const.PANEL_DEFAULTS_W)
-    defaultsBtn.frame:SetParent(panel)
-    defaultsBtn.frame:ClearAllPoints()
-    defaultsBtn.frame:SetPoint("TOPRIGHT", panel, "TOPRIGHT",
-                               -Const.PANEL_PADDING_X, -Const.PANEL_HEADER_TOP)
-    defaultsBtn.frame:Show()
-    attachTooltip(defaultsBtn, "Defaults", panel.defaultsTooltip)
-
-    -- The click handler is registered at panel-registration time, long before the
-    -- button exists, so it is parked on the panel and wired up here.
-    if panel.defaultsOnClick then
-        defaultsBtn:SetCallback("OnClick", panel.defaultsOnClick)
-    end
-
-    panel.defaultsBtn = defaultsBtn
-end
-
--- ---------------------------------------------------------------------
--- Panel + scroll
--- ---------------------------------------------------------------------
-
--- The Settings API registers panels by frame object (RegisterCanvasLayout*),
--- and the display label comes from panel.name below — so these frames need no
--- global name. Created anonymous to keep them off _G (Ka0s §4.1).
-local function createPanel(title, opts)
-    opts = opts or {}
-    local panel = CreateFrame("Frame", nil)
-    panel.name = title
-    panel:Hide()
-
-    local titleFS, divider = buildHeader(panel, title, opts)
-    panel.title   = titleFS
-    panel.divider = divider
-
-    local body = CreateFrame("Frame", nil, panel)
-    body:SetPoint("TOPLEFT",     panel, "TOPLEFT",     0, -(Const.PANEL_HEADER_HEIGHT + 8))
-    body:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, 0)
-    panel.body = body
-
-    return { panel = panel, body = body, scroll = nil }
-end
-
-local function ensureScroll(ctx)
-    if ctx.scroll then return ctx.scroll end
-    local scroll = AceGUI:Create("ScrollFrame")
-    scroll:SetLayout("List")
-    scroll.frame:SetParent(ctx.body)
-    scroll.frame:ClearAllPoints()
-    scroll.frame:SetPoint("TOPLEFT",     ctx.body, "TOPLEFT",      Const.PANEL_PADDING_X - 4, -8)
-    scroll.frame:SetPoint("BOTTOMRIGHT", ctx.body, "BOTTOMRIGHT", -(Const.PANEL_PADDING_X + 12), 8)
-    scroll.frame:Show()
-
-    -- AceGUI's ScrollFrame normally has its width/height driven by a parent
-    -- AceGUI container; we anchor it to a Blizzard frame instead, so the
-    -- OnWidthSet/OnHeightSet callbacks never fire and content.width stays
-    -- nil. Forward sizes manually + re-run DoLayout on resize.
-    scroll.frame:SetScript("OnSizeChanged", function(_, w, h)
-        if scroll.OnWidthSet  then scroll:OnWidthSet(w)  end
-        if scroll.OnHeightSet then scroll:OnHeightSet(h) end
-        if scroll.DoLayout    then scroll:DoLayout()     end
-        if scroll.FixScroll   then scroll:FixScroll()    end
-    end)
-
-    patchAlwaysShowScrollbar(scroll)
-    ctx.scroll = scroll
-    return scroll
-end
-
-local function addSpacer(scroll, height)
-    local sp = AceGUI:Create("SimpleGroup")
-    sp:SetLayout(nil)
-    sp:SetFullWidth(true)
-    sp:SetHeight(height)
-    scroll:AddChild(sp)
-    return sp
-end
 
 -- ---------------------------------------------------------------------
 -- Reset-all popup. The OnAccept body lives in PrettyChat:ResetAll so the
@@ -326,13 +45,20 @@ StaticPopupDialogs["PRETTYCHAT_RESET_ALL"] = {
 }
 
 -- ---------------------------------------------------------------------
--- General sub-page — addon-wide controls. Master Enable + Test +
--- Reset All. Returns a refresh closure so external mutators (slash)
--- re-sync visible widget state.
+-- General sub-page — addon-wide controls: the master Enable, the console
+-- visibility checkbox, and the Test / Reset-all pair.
+--
+-- Drawn entirely through the library. The master toggle is a schema row, so
+-- it goes through the flow engine; the console checkbox is NOT a setting and
+-- must never become one, so it arrives as the right half of that row through
+-- the pairWith seam, wired to LibKa0s-DebugLog-1.0's ConsoleCheckbox() data
+-- contract rather than to a path.
 -- ---------------------------------------------------------------------
 
 local function buildGeneralBody(ctx)
-    local scroll = ensureScroll(ctx)
+    H.ClearScroll(ctx)
+    local scroll = H.EnsureScroll(ctx)
+    if not scroll then return end
 
     local desc = AceGUI:Create("Label")
     desc:SetFullWidth(true)
@@ -341,71 +67,33 @@ local function buildGeneralBody(ctx)
         desc.label:SetFontObject(_G.GameFontHighlight)
     end
     scroll:AddChild(desc)
-    addSpacer(scroll, Const.ROW_VSPACER)
+    H.AddSpacer(scroll, H.ROW_VSPACER)
 
-    -- Enable (master switch, persisted) and Debug console sit side by side on
-    -- one Flow row. The Debug console box is NOT schema-backed and does NOT
-    -- touch the debug logging flag: it only shows/hides the console window
-    -- (mirroring bare `/pc debug`). Logging on/off is a separate concern,
-    -- owned by the window's own header toggle and `/pc debug on|off`.
-    local toggleRow = AceGUI:Create("SimpleGroup")
-    toggleRow:SetLayout("Flow")
-    toggleRow:SetFullWidth(true)
+    -- The console box mirrors the WINDOW's visibility and never touches the
+    -- logging flag; the two are separate controls and a user who closes the
+    -- console does not expect capture to stop. Both facts are the library's, in
+    -- the checkbox spec it hands over — including the tooltip, which composes
+    -- this addon's own slash from the console descriptor.
+    local pairWith = {
+        ["General.enabled"] = function(pairCtx, rowGroup)
+            H.SessionCheckbox(pairCtx, rowGroup, 0.5, NS.DebugLog:ConsoleCheckbox())
+        end,
+    }
+    H.RenderRows(ctx, { Schema.FindByPath("General.enabled") }, nil, pairWith)
 
-    local enable = AceGUI:Create("CheckBox")
-    enable:SetLabel(L["Enable PrettyChat"])
-    enable:SetRelativeWidth(Const.BUTTON_PAIR_REL)
-    enable:SetValue(NS.Schema.Get("General.enabled") and true or false)
-    enable:SetCallback("OnValueChanged", function(_, _, value)
-        NS.Schema.Set("General.enabled", value and true or false)
-    end)
-    attachTooltip(enable, L["Enable PrettyChat"],
-        L["Master switch for the addon. When off, all Blizzard originals are restored."])
-    toggleRow:AddChild(enable)
-
-    local debug = AceGUI:Create("CheckBox")
-    debug:SetLabel(L["Debug console"])
-    debug:SetRelativeWidth(Const.BUTTON_PAIR_REL)
-    debug:SetValue(NS.DebugLog and NS.DebugLog:IsShown() or false)
-    debug:SetCallback("OnValueChanged", function(_, _, value)
-        if not NS.DebugLog then return end
-        if value then NS.DebugLog:Show() else NS.DebugLog:Hide() end
-    end)
-    attachTooltip(debug, L["Debug console"],
-        L["Show or hide the on-screen debug console window. Logging on/off is separate — the window's own header toggle, or `/pc debug on|off`."])
-    toggleRow:AddChild(debug)
-
-    scroll:AddChild(toggleRow)
-    addSpacer(scroll, Const.ROW_VSPACER)
-
-    local row = AceGUI:Create("SimpleGroup")
-    row:SetLayout("Flow")
-    row:SetFullWidth(true)
-
-    local testBtn = AceGUI:Create("Button")
-    testBtn:SetText(L["Test"])
-    testBtn:SetRelativeWidth(Const.BUTTON_PAIR_REL)
-    testBtn:SetCallback("OnClick", function() PrettyChat:Test() end)
-    attachTooltip(testBtn, L["Test"],
-        L["Print a sample of every active format string to chat so you can see what real loot/currency/XP messages will look like."])
-    row:AddChild(testBtn)
-
-    local resetAllBtn = AceGUI:Create("Button")
-    resetAllBtn:SetText(L["Reset all to defaults"])
-    resetAllBtn:SetRelativeWidth(Const.BUTTON_PAIR_REL)
-    resetAllBtn:SetCallback("OnClick", function()
-        StaticPopup_Show("PRETTYCHAT_RESET_ALL")
-    end)
-    attachTooltip(resetAllBtn, L["Reset all to defaults"],
-        L["Reset every category and string to its default value."])
-    row:AddChild(resetAllBtn)
-
-    scroll:AddChild(row)
-
-    return function()
-        enable:SetValue(NS.Schema.Get("General.enabled") and true or false)
-        debug:SetValue(NS.DebugLog and NS.DebugLog:IsShown() or false)
-    end
+    H.InlineButtonPair(ctx,
+        {
+            text    = L["Test"],
+            tooltip = L["Print a sample of every active format string to chat so you can see what real loot/currency/XP messages will look like."],
+            onClick = function() PrettyChat:Test() end,
+        },
+        {
+            text    = L["Reset all to defaults"],
+            tooltip = L["Reset every category and string to its default value."],
+            -- Through the popup, never straight to the reset: this is the
+            -- destructive path and its confirmation is the guard.
+            onClick = function() StaticPopup_Show("PRETTYCHAT_RESET_ALL") end,
+        })
 end
 
 -- ---------------------------------------------------------------------
@@ -415,22 +103,25 @@ end
 --   GLOBALNAME (grey)     | New       [editable EditBox]
 --   [Reset]               | Preview   [disabled EditBox, color rendered]
 --
--- Two-column 40/60 split. This is a deliberate deviation from the
--- standard's §6.6 schema-driven 50/50 grid (PC-23): the per-string
--- editor is a domain-specific three-row control (Enable/caption/Reset in
--- the narrow left column; Original/New/Preview edit boxes in the wide
--- right column), not a row of independent settings. The right column
--- holds full format strings with colour escapes and needs the extra
--- width to be legible; a 50/50 grid would truncate them. The narrow left
--- column only ever holds a checkbox, a short GLOBALNAME caption, and a
--- Reset button, all of which fit comfortably.
+-- Two-column 40/60 split, drawn by hand rather than by the library's flow
+-- engine. This is the documented deviation from options-ui-§6's 50/50 grid
+-- (PC-23), and adopting LibKa0s-Options-1.0 did not change the reasoning: the
+-- block is a domain-specific three-row CONTROL, not a row of independent
+-- settings. The right column holds full format strings with their colour
+-- escapes and needs the extra width to stay legible; the left column only ever
+-- holds a checkbox, a short GLOBALNAME caption and a Reset button.
 --
--- Reset button is always visible and restores BOTH per-string dimensions
--- (custom format + enable state) to default via PrettyChat:ResetString,
--- matching the category/all resets (a no-op when already at default).
--- The Preview EditBox uses InputBoxTemplate,
--- whose backing FontString renders WoW `|c…|r` color escapes, so the
--- rendered sample shows with its formatting intact.
+-- RenderGrid is the library's caller-driven sibling of RenderRows and was
+-- re-checked here before this was written: it lays items out two per row at
+-- HALF (0.5) or full width and offers no third ratio, so it cannot express
+-- 40/60 either. The makers are still used for what they fit — the category's
+-- own Enable row above these blocks goes through RenderField — and
+-- AttachTooltip, AddSpacer and EnsureScroll are the library's throughout.
+--
+-- Reset restores BOTH per-string dimensions (custom format + enable state) via
+-- PrettyChat:ResetString, matching the category/all resets. The Preview EditBox
+-- uses InputBoxTemplate, whose backing FontString renders WoW `|c…|r` colour
+-- escapes, so the rendered sample shows with its formatting intact.
 -- ---------------------------------------------------------------------
 
 local LEFT_W  = 0.4
@@ -444,7 +135,7 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
     local heading = AceGUI:Create("Heading")
     heading:SetText(strData.label)
     heading:SetFullWidth(true)
-    heading:SetHeight(Const.SECTION_HEADING_H)
+    heading:SetHeight(H.SECTION_HEADING_H)
     if heading.label and heading.label.SetFontObject and _G.GameFontNormalLarge then
         heading.label:SetFontObject(_G.GameFontNormalLarge)
     end
@@ -479,7 +170,7 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
                 .. Color.reset
         end
     end
-    attachTooltip(enable, L["Enable"], enableTooltip)
+    H.AttachTooltip(enable, L["Enable"], enableTooltip)
     row1:AddChild(enable)
 
     local origInput = AceGUI:Create("EditBox")
@@ -489,7 +180,7 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
     local origValue = (NS.GlobalStrings and NS.GlobalStrings[globalName])
                      or L["(original not available)"]
     origInput:SetText(origValue:gsub("|", "||"))
-    attachTooltip(origInput, L["Original Format String"],
+    H.AttachTooltip(origInput, L["Original Format String"],
         L["Blizzard's original format. Read-only."])
     row1:AddChild(origInput)
     scroll:AddChild(row1)
@@ -510,7 +201,7 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
     newInput:SetCallback("OnEnterPressed", function(_, _, value)
         NS.Schema.Set(formatPath, (value or ""):gsub("||", "|"))
     end)
-    attachTooltip(newInput, L["New Format String"],
+    H.AttachTooltip(newInput, L["New Format String"],
         L["Your replacement. Type `||` for a literal `|` (color codes use this)."])
     row2:AddChild(newInput)
     scroll:AddChild(row2)
@@ -526,7 +217,7 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
     resetBtn:SetCallback("OnClick", function()
         PrettyChat:ResetString(category, globalName)
     end)
-    attachTooltip(resetBtn, L["Reset"],
+    H.AttachTooltip(resetBtn, L["Reset"],
         L["Restore this string to its default."])
     row3:AddChild(resetBtn)
 
@@ -534,12 +225,12 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
     previewInput:SetLabel(L["Preview"])
     previewInput:SetRelativeWidth(RIGHT_W)
     previewInput:SetDisabled(true)
-    attachTooltip(previewInput, L["Preview"],
+    H.AttachTooltip(previewInput, L["Preview"],
         L["The current format rendered with sample arguments."])
     row3:AddChild(previewInput)
     scroll:AddChild(row3)
 
-    addSpacer(scroll, Const.STRING_VSPACER)
+    H.AddSpacer(scroll, Const.STRING_VSPACER)
 
     -- Refresh closure: re-syncs every widget in this block from the DB.
     -- Called on category-level changes (Enable toggled, Defaults pressed,
@@ -566,24 +257,22 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
 end
 
 -- ---------------------------------------------------------------------
--- Category sub-page — Enable toggle + per-string rows.
+-- Category sub-page — the category's own Enable row, then one per-string
+-- block. The Enable row is a schema row and goes through the library's
+-- checkbox maker at full width; the blocks below it are bespoke.
 -- ---------------------------------------------------------------------
 
 local function buildCategoryBody(ctx, category, catData)
-    local scroll = ensureScroll(ctx)
+    H.ClearScroll(ctx)
+    local scroll = H.EnsureScroll(ctx)
+    if not scroll then return end
     local refreshers = {}
 
-    local catEnable = AceGUI:Create("CheckBox")
-    catEnable:SetLabel("Enable " .. category)
-    catEnable:SetFullWidth(true)
-    catEnable:SetValue(NS.Schema.Get(category .. ".enabled") and true or false)
-    catEnable:SetCallback("OnValueChanged", function(_, _, value)
-        NS.Schema.Set(category .. ".enabled", value and true or false)
-    end)
-    attachTooltip(catEnable, "Enable " .. category,
-        "Enable or disable all " .. category .. " string overrides.")
-    scroll:AddChild(catEnable)
-    addSpacer(scroll, Const.ROW_VSPACER * 2)
+    -- relativeWidth nil => full width. The category toggle governs everything
+    -- below it, so it reads as a page-level switch rather than as the left half
+    -- of a pair.
+    H.RenderField(ctx, Schema.FindByPath(category .. ".enabled"), scroll, nil)
+    H.AddSpacer(scroll, H.ROW_VSPACER * 2)
 
     local sortedNames = {}
     for globalName in pairs(catData.strings) do
@@ -595,18 +284,25 @@ local function buildCategoryBody(ctx, category, catData)
         buildStringRow(scroll, category, globalName, catData.strings[globalName], refreshers)
     end
 
-    return function()
-        catEnable:SetValue(NS.Schema.Get(category .. ".enabled") and true or false)
+    -- The bespoke blocks are invisible to the library's ctx.refreshers, so they
+    -- register through the schema's own dispatch. Schema.NotifyPanelChange drives
+    -- both registries; see the comment there.
+    Schema.RegisterRefresher(category, function()
         for _, fn in ipairs(refreshers) do pcall(fn) end
-    end
+    end)
 end
 
 -- ---------------------------------------------------------------------
--- Parent page — logo + tagline + slash-command list. Read-only.
+-- Landing page — logo + tagline + slash-command list. Read-only, and the
+-- host's half of the panel by design (options-ui-§5): the logo and the
+-- command list are the two things about a Ka0s landing page that are
+-- genuinely per-addon.
 -- ---------------------------------------------------------------------
 
 local function buildParentBody(ctx)
-    local scroll = ensureScroll(ctx)
+    H.ClearScroll(ctx)
+    local scroll = H.EnsureScroll(ctx)
+    if not scroll then return end
 
     -- Logo at native size, anchored TOPLEFT in a full-width SimpleGroup
     -- so AceGUI's List layout left-aligns it regardless of panel width.
@@ -615,12 +311,25 @@ local function buildParentBody(ctx)
     logoGroup:SetFullWidth(true)
     logoGroup:SetHeight(LOGO_SIZE)
 
-    local logoTex = logoGroup.frame:CreateTexture(nil, "ARTWORK")
+    -- Created ONCE PER FRAME, and stashed on it. This body used to run exactly once
+    -- per session behind a `rendered` flag; under the library's renderer it runs
+    -- again whenever the page is re-shown after being flagged dirty. A Texture is
+    -- not an AceGUI child, so ReleaseChildren does not take it with it — and AceGUI
+    -- POOLS the SimpleGroup's frame, so an un-owned Texture rides that frame into
+    -- whichever widget acquires it next, in this addon or another. Re-texturing the
+    -- one we already put there is both correct and free.
+    local logoTex = logoGroup.frame.pcLogo
+    if not logoTex then
+        logoTex = logoGroup.frame:CreateTexture(nil, "ARTWORK")
+        logoGroup.frame.pcLogo = logoTex
+    end
     logoTex:SetTexture(LOGO_PATH)
     logoTex:SetSize(LOGO_SIZE, LOGO_SIZE)
+    logoTex:ClearAllPoints()
     logoTex:SetPoint("TOPLEFT", logoGroup.frame, "TOPLEFT", 0, 0)
+    logoTex:Show()
     scroll:AddChild(logoGroup)
-    addSpacer(scroll, Const.ROW_VSPACER)
+    H.AddSpacer(scroll, H.ROW_VSPACER)
 
     if TOC_NOTES ~= "" then
         local tagline = AceGUI:Create("Label")
@@ -630,96 +339,85 @@ local function buildParentBody(ctx)
             tagline.label:SetFontObject(_G.GameFontHighlight)
         end
         scroll:AddChild(tagline)
-        addSpacer(scroll, Const.SECTION_TOP_SPACER)
+        H.AddSpacer(scroll, Const.SECTION_TOP_SPACER)
     end
 
     local heading = AceGUI:Create("Heading")
     heading:SetFullWidth(true)
-    heading:SetHeight(Const.SECTION_HEADING_H)
+    heading:SetHeight(H.SECTION_HEADING_H)
     heading:SetText(L["Slash Commands"])
     if heading.label and heading.label.SetFontObject and _G.GameFontNormalLarge then
         heading.label:SetFontObject(_G.GameFontNormalLarge)
     end
     scroll:AddChild(heading)
-    addSpacer(scroll, Const.SECTION_BOTTOM_SPACER)
+    H.AddSpacer(scroll, Const.SECTION_BOTTOM_SPACER)
 
     local alias = AceGUI:Create("Label")
     alias:SetFullWidth(true)
     alias:SetText(Color.grey .. L["/prettychat is an alias for /pc"] .. Color.reset)
     scroll:AddChild(alias)
-    addSpacer(scroll, Const.ROW_VSPACER)
+    H.AddSpacer(scroll, H.ROW_VSPACER)
 
-    for _, entry in ipairs(NS.COMMANDS or {}) do
+    -- Convergence #2: the landing page and the chat help index render the same
+    -- COMMANDS table through the SAME formatter, differing only in indentation
+    -- (slash-commands-§4). This page used to carry its own — double spaces either
+    -- side of the em dash, the dash explicitly white-wrapped, the description bare —
+    -- which is the silent drift between settings/Panel.lua and settings/Slash.lua
+    -- that every addon in the collection had. Collapsing it changes what a user
+    -- sees: single spaces, no colour span on the dash, and a white description.
+    for _, line in ipairs(NS.SlashCommands.LandingRows()) do
         local row = AceGUI:Create("Label")
         row:SetFullWidth(true)
-        row:SetText(("%s/pc %s%s  %s—%s  %s"):format(
-            Color.yellow, entry[1], Color.reset,
-            Color.white, Color.reset, entry[2]))
+        row:SetText(line)
         scroll:AddChild(row)
     end
 end
 
 -- ---------------------------------------------------------------------
--- Registration
+-- Page registration
+--
+-- Each page registers its builder at FILE LOAD; the library drains the queue at
+-- CreateOptionsPanel time, after the DB is ready. Each builder creates its
+-- canvas, declares how the page renders itself through SetRenderer — which owns
+-- the first-OnShow deferral, the every-OnShow Defaults button and the combat
+-- refusal — and hands the frame to Blizzard.
 -- ---------------------------------------------------------------------
 
-local function registerPanels()
-    if not (Settings and Settings.RegisterCanvasLayoutCategory
-            and Settings.RegisterCanvasLayoutSubcategory
-            and Settings.RegisterAddOnCategory) then
-        return
-    end
-
-    -- Parent page
-    local parentCtx = createPanel(PARENT_TITLE, { isMain = true })
-    local parentRendered = false
-    parentCtx.panel:SetScript("OnShow", function()
-        if parentRendered then return end
-        parentRendered = true
-        buildParentBody(parentCtx)
-    end)
-
-    local mainCategory = Settings.RegisterCanvasLayoutCategory(parentCtx.panel, PARENT_TITLE)
-    Settings.RegisterAddOnCategory(mainCategory)
-    PrettyChat.optionsCategory   = mainCategory
-    PrettyChat.optionsCategoryID = mainCategory:GetID()
-
-    -- Sub-pages
-    for _, category in ipairs(CATEGORY_ORDER) do
-        local catCtx = createPanel(category, {
-            defaultsButton  = (category ~= "General"),
-            defaultsTooltip = (category ~= "General")
+for _, category in ipairs(CATEGORY_ORDER) do
+    H.RegisterOptionsPage(category, category, function(mainCategory)
+        local isGeneral = (category == "General")
+        local ctx = H.CreatePanel(nil, category, {
+            pageKey         = category,
+            defaultsButton  = not isGeneral,
+            defaultsTooltip = (not isGeneral)
                 and ("Reset all " .. category .. " strings to defaults.")
                 or nil,
         })
 
-        local rendered = false
-        if category == "General" then
-            catCtx.panel:SetScript("OnShow", function()
-                ensureDefaultsButton(catCtx.panel)
-                if rendered then return end
-                rendered = true
-                Schema.RegisterRefresher(category, buildGeneralBody(catCtx))
-            end)
+        if isGeneral then
+            H.SetRenderer(ctx, buildGeneralBody)
         else
             local catData = NS.Defaults[category]
-            -- Parked for ensureDefaultsButton to wire on first OnShow — the
-            -- button does not exist yet at registration time.
-            catCtx.panel.defaultsOnClick = function()
-                PrettyChat:ResetCategory(category)
-            end
-            catCtx.panel:SetScript("OnShow", function()
-                ensureDefaultsButton(catCtx.panel)
-                if rendered or not catData then return end
-                rendered = true
-                Schema.RegisterRefresher(category, buildCategoryBody(catCtx, category, catData))
+            if not catData then return nil end
+            -- Parked for the library to wire onto the Defaults button on first
+            -- OnShow, and forwarded to by the panel's OnDefault so the Settings
+            -- window's own footer control reaches the same body (options-ui-§1).
+            --
+            -- PrettyChat:ResetCategory rather than the library's row-by-row
+            -- RestoreDefaults: it wipes the category's table and re-applies in ONE
+            -- pass with ONE [Reset] summary line, where the row-by-row form would
+            -- run ApplyStrings once per row and emit one [Set] line per row into a
+            -- 500-line console buffer (debug-logging-§9).
+            ctx.panel.defaultsOnClick = function() PrettyChat:ResetCategory(category) end
+            H.SetRenderer(ctx, function(pageCtx)
+                buildCategoryBody(pageCtx, category, catData)
             end)
         end
 
-        Settings.RegisterCanvasLayoutSubcategory(
-            mainCategory, catCtx.panel, category)
-    end
+        return Settings.RegisterCanvasLayoutSubcategory(mainCategory, ctx.panel, category)
+    end)
 end
 
 NS.Config = NS.Config or {}
-NS.Config.RegisterPanels = registerPanels
+NS.Config.BuildMain      = buildParentBody
+NS.Config.RegisterPanels = function() H.CreateOptionsPanel() end

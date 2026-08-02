@@ -1,6 +1,48 @@
 # Test Cases
 
-_Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > docs/test-cases.md`._
+The full inventory of every headless test case in this repo, grouped by the suite file it
+lives in. The `## Totals` table below is the **authoritative pass count** — the README test
+badge and any count quoted in the docs must agree with it.
+
+**Generated — do not hand-edit.** Regenerate with `lua tests/run.lua --list > docs/test-cases.md`.
+
+### test_harness.lua (6)
+
+- the runner fed the loader exactly the TOC's files, in the TOC's order
+- every derived path exists on disk and no libs/ path leaked in
+- the vendored load list is every file of LibKa0s.xml, in XML order
+- every LibKa0s major actually registered in the loaded environment
+- libs/LibKa0s is the LibKa0s release the README says this addon bundles
+- tests/_kit is the test kit that shipped with that release
+
+### test_libka0s.lua (26)
+
+- the locale-table matcher catches both offending spellings and clears the legal one
+- no seam file hands a LibKa0s descriptor the addon-wide locale table
+- Core cannot express the L trap — the tripwire that stands in for a rendered case
+- the secret-safe pair on NS.Util IS Core's, not a host copy beside it
+- the [PC] printer renders the same bytes it did before Core owned it
+- the printer is reclaimed from AceConsole's embed, not merely defined
+- the console descriptor seeds the frame globals and the title we mean
+- the console renders prose, not its own SCREAMING_SNAKE keys
+- the console's two formatters still render the bytes the copy buffer expects
+- the console's print and safeToString are call-time forwarders, not captures
+- NS.Debug is the instance's bare sink, bound not wrapped
+- with DebugLog absent the console degrades but the flag and the ack survive
+- Options cannot express the L trap either — its own, different tripwire
+- NS.Helpers IS the library instance, decorated in place
+- every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh trio
+- the settings panel refuses to render under combat rather than drawing half a page
+- with Options absent the schema still loads whole — the measured stub set
+- the dispatcher renders prose, not its own SCREAMING_SNAKE keys
+- the COMMANDS table is the positional shape the library reads
+- the format hook doubles pipes without re-implementing the value formatter
+- the parse hook keeps a whole free-text value, spaces and all
+- both convergences are adopted, in bytes
+- with Slash absent the host verbs survive and the schema CLI says why
+- with LibKa0s absent the addon still loads and still prints, saying so once
+- the shared cause clause names the addon and where the library should be
+- the degraded secret guard still neutralises a protected value
 
 ### test_compat.lua (8)
 
@@ -19,9 +61,9 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 - the slash-commands-§5 mandated palette is exact
 - the brand colours are distinct from the mandated palette
 - the [PC] chat tag is cyan-wrapped and trailing-spaced
-- layout constants are positive numbers
-- the header block leaves room between title and divider
-- the button-pair width stays under half so the pair shares one row
+- the host's own layout constants are positive numbers
+- no host copy of a library layout constant has grown back
+- the library publishes the layout constants a host page needs
 - FONT_MONO points inside the addon's own media folder
 
 ### test_util.lua (7)
@@ -146,7 +188,7 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 - the runner stamps the current version even with no steps to run
 - migrating emits no debug noise when nothing ran
 
-### test_lifecycle.lua (12)
+### test_lifecycle.lua (11)
 
 - the addon object and the bootstrap namespace are one table
 - OnInitialize provisions both AceDB namespaces
@@ -157,8 +199,7 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 - NS.Print neutralises a value the concat probe rejects
 - OpenConfig refuses during combat without touching the Settings API
 - OpenConfig opens the registered category out of combat
-- the auto-expand fallback notice is printed once per session
-- OpenConfig reports a category Blizzard refused to open
+- OpenConfig is silent on the paths the library does not report
 - OpenConfig is a silent no-op when the Settings API is unavailable
 
 ### test_debuglog.lua (25)
@@ -189,7 +230,7 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 - disabling logging still writes its closing bracket line
 - ResetAll emits one [Reset] summary carrying apply counts
 
-### test_slash.lua (39)
+### test_slash.lua (42)
 
 - Schema.FormatValue formats bools and doubles pipes in strings
 - NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
@@ -209,8 +250,10 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 - /pc set rejects an unparseable bool without touching the value
 - /pc set stores a format string and echoes the stored value
 - /pc set echoes the value the DB actually kept, not the input
-- /pc set with no path, and with no value, both print usage
+- /pc set with no path prints usage, and with no value refuses by path
 - /pc set on an unknown path reports it as not found
+- /pc set keeps the whole remainder, spaces and all
+- /pc set and /pc get round-trip a pipe through the || escape
 - /pc list prints the green header and azure category groups
 - /pc list emits every schema row exactly once
 - /pc list category lists the category names alphabetically
@@ -218,9 +261,10 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 - /pc list <Category> narrows to that category's rows
 - /pc list resolves a category case-insensitively and by prefix
 - /pc list on an unknown category lists the valid ones
-- /pc reset <Category> resets it and confirms
-- /pc reset with no argument prints usage and the valid categories
-- /pc reset on an unknown category changes nothing
+- /pc reset takes a schema PATH and resets exactly that setting
+- /pc reset <Category> answers with the deprecation and both replacements
+- /pc reset with no argument prints the library's usage line
+- /pc reset on a name that is neither path nor category reports not found
 - /pc resetall clears every override and confirms
 - /pc test routes every line through the [PC] printer
 - /pc test and /pc test all preview the whole surface
@@ -231,12 +275,13 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 - /pc debug rejects an argument that is neither on, off, nor a toggle
 - every slash line carries the cyan [PC] tag
 
-### test_panel.lua (30)
+### test_panel.lua (31)
 
 - registration builds the parent category and one sub-page per category
-- the addon records the category handle OpenConfig needs
+- the panel registry holds one ctx per page, reachable by page key
 - sub-page frames start hidden and unbuilt
 - registration is a no-op on a client without the canvas Settings API
+- a second CreateOptionsPanel is a no-op, not a second Blizzard category
 - the General page builds its controls on first show
 - a second show does not rebuild the page
 - the master checkbox is seeded from the schema, not assumed true
@@ -251,7 +296,7 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 - a category page builds a toggle plus one block per string
 - string blocks are built in sorted global-name order
 - each block is the documented three-row 40/60 editor
-- the read-only Original row degrades when the reference dump is absent
+- the read-only Original row shows the reference string, or degrades without it
 - the per-string checkbox writes the string's enable path
 - the New edit box unescapes || to | before storing
 - the Preview box renders the live format with sample arguments
@@ -261,13 +306,15 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 - a master-toggle change refreshes every built page, not just its own
 - a slash-command write re-syncs the open panel
 - a cross-registered string warns about the shared Blizzard global
-- the parent page lists every slash command from the same source
+- the parent page lists every slash command through the one row formatter
 - the parent page shows the TOC tagline
 
 ## Totals
 
 | Suite | Cases |
 |-------|------:|
+| test_harness.lua | 6 |
+| test_libka0s.lua | 26 |
 | test_compat.lua | 8 |
 | test_constants.lua | 8 |
 | test_util.lua | 7 |
@@ -278,8 +325,8 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 | test_apply.lua | 10 |
 | test_override.lua | 17 |
 | test_database.lua | 10 |
-| test_lifecycle.lua | 12 |
+| test_lifecycle.lua | 11 |
 | test_debuglog.lua | 25 |
-| test_slash.lua | 39 |
-| test_panel.lua | 30 |
-| **Total** | **220** |
+| test_slash.lua | 42 |
+| test_panel.lua | 31 |
+| **Total** | **255** |

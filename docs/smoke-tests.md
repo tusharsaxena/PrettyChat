@@ -92,14 +92,14 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 #### T-20 — `/pc config` lands on the parent landing page
 
-> Why: `OpenConfig` calls `Settings.OpenToCategory(self.optionsCategoryID)` against the parent ID.
+> Why: `OpenConfig` delegates to `LibKa0s-Options-1.0`'s `OpenOptionsPanel`, which calls `Settings.OpenToCategory` against the parent category it registered.
 
 - Steps: `/pc config`.
 - Expected: panel opens with "Ka0s Pretty Chat" selected in the left rail and the parent landing page visible (logo + tagline + slash command list). The page header reads `Ka0s Pretty Chat` (no breadcrumb prefix).
 
 #### T-21 — Sub-category tree auto-expands
 
-> Why: `expandMainCategory(self.optionsCategory)` walks `SettingsPanel:GetCategoryList():GetCategoryEntry(cat):SetExpanded(true)` inside `pcall`.
+> Why: the library's own `expandMainCategory` walks `SettingsPanel:GetCategoryList():GetCategoryEntry(cat):SetExpanded(true)` inside `pcall`. It reports nothing when the private API moves (`LIBKA0S-04`), so this test is the only thing that would notice.
 
 - Steps: starting from the closed addon list, `/pc config`.
 - Expected: the left rail shows every sub-page (`General`, `Loot`, `Currency`, `Money`, `Reputation`, `Experience`, `Honor`, `Tradeskill`, `Misc`) without the user clicking the disclosure arrow.
@@ -107,11 +107,11 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 #### T-22 — Sub-page header breadcrumb
 
-> Why: `buildHeader` builds sub-page titles as `PARENT_TITLE .. sep .. title` where `sep = " |A:common-icon-forwardarrow:16:16|a "` — an inline-atlas chevron, not a font glyph.
+> Why: the library's `CreatePanel` builds sub-page titles as `parentTitle .. BREADCRUMB_SEP .. title`, where `BREADCRUMB_SEP` is `" |A:common-icon-forwardarrow:16:16|a "` — an inline-atlas chevron, not a font glyph, so it renders the same regardless of font or locale fallback.
 
 - Steps: open each sub-page in turn.
 - Expected: page header reads `Ka0s Pretty Chat ▸ Loot`, `Ka0s Pretty Chat ▸ Currency`, etc., with the separator visibly rendered as a small gold right-arrow texture (not as a literal `▸` character or pipe). Atlas divider underneath in the same gold as the title.
-- Failure mode: separator appears as raw escape text `|A:common-icon-forwardarrow:16:16|a`, or as a missing-texture box. Cause: the atlas was retired in a client patch. Swap the atlas name in `settings/Panel.lua`'s `sep` local to `NPE_RightClick` or `chevron-collapse`.
+- Failure mode: separator appears as raw escape text `|A:common-icon-forwardarrow:16:16|a`, or as a missing-texture box. Cause: the atlas was retired in a client patch. The separator is `BREADCRUMB_SEP` in `libs/LibKa0s/Options.lua` — a value shared by every Ka0s panel, so a change belongs upstream in `../LibKa0s`, never in the vendored copy.
 
 #### T-23 — Per-string block layout
 
@@ -145,7 +145,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 #### T-26 — Per-category Defaults button (header)
 
-> Why: `catCtx.defaultsBtn:SetCallback("OnClick", ...)` calls `PrettyChat:ResetCategory(category)` directly — no popup.
+> Why: the page parks `ctx.panel.defaultsOnClick = function() PrettyChat:ResetCategory(category) end`, the library wires it onto the button it builds on first `OnShow`, and the canvas's `OnDefault` forwards to the same body — no popup.
 
 - Setup: edit one Loot format and disable one Loot string via the panel.
 - Steps: click **Defaults** in the Loot page header.
@@ -251,13 +251,13 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 - Steps: `/pc set Loot.LOOT_ITEM_SELF.format ||cff00ff00CustomLoot||r %s`. Then loot an item.
 - Expected: format saves (echo confirms). The loot line displays `CustomLoot` in green followed by the item link.
 
-#### T-35 — `/pc reset <Category>`
+#### T-35 — `/pc reset <path>`
 
-> Why: `runReset` resolves the category and calls `ResetCategory`, clearing every override in that category.
+> Why: `reset` is path-scoped collection-wide since the LibKa0s adoption (`LIBKA0S-10`); the category-scoped form is the settings page's **Defaults** button. The full breaking-change walk is T-93.
 
 - Setup: edit two Loot formats, disable one Loot string.
-- Steps: `/pc reset loot`.
-- Expected: chat output `Loot reset to defaults`. `/pc list Loot` shows everything at default.
+- Steps: `/pc reset Loot.LOOT_ITEM_SELF.format`.
+- Expected: chat echoes `Loot.LOOT_ITEM_SELF.format = <the default, pipe-doubled>`. `/pc list Loot` shows that one row at default and the **others still edited** — the point of a path-scoped reset.
 
 #### T-36 — `/pc resetall`
 
@@ -454,9 +454,162 @@ Validates the 2026-07-17 media audit conclusion in-game: every font, texture, an
 | Touched `settings/Panel.lua` | Quick recipe + S + X + M groups |
 | Touched slash command surface in `settings/Slash.lua` | Quick recipe + L + X groups |
 | Touched the reset paths (`ResetString` / `ResetCategory` / `ResetAll` in `modules/Override.lua`, or a Reset/Defaults button) | Quick recipe + R group |
-| Touched `core/DebugLog.lua`, `media/`, or panel chrome (fonts/textures/borders) | Quick recipe + M group |
+| Touched `core/DebugLogSetup.lua`, `media/`, or panel chrome (fonts/textures/borders) | Quick recipe + M + K groups |
+| Re-vendored `libs/LibKa0s/`, or touched any of the four seam files | Quick recipe + **K group** |
 | Pre-release / pre-tag | Full suite |
 | Post WoW client patch | Full suite + regenerate `GlobalStrings/` per [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patch) |
+
+## K — LibKa0s adoption
+
+Everything in this group is invisible to the headless suite by construction: a rendered
+`SCREAMING_SNAKE` key is a perfectly good string, a window's border only reads as wrong beside one
+that has both lines, and a degraded install is a state the loader can only simulate.
+
+Run the whole group after re-vendoring `libs/LibKa0s/`, after any change to the four seam files, or
+before tagging.
+
+#### T-90 — The degraded install: nothing errors, and the reason is said once
+
+**Why:** four seams degrade rather than error, and each explains the same absence through one shared
+cause clause. A user with a broken install must be told *why* once and *what* per surface — not a Lua
+error, and not the same sentence stapled to every line.
+
+**Setup:** exit the client. Rename `Interface/AddOns/PrettyChat/libs/LibKa0s` to `libs/_LibKa0s`.
+
+**Steps:**
+1. Launch, log in, and watch for Lua errors (`/console scriptErrors 1`, or BugSack).
+2. Read the first `[PC]` line the addon prints.
+3. `/pc list` — read the whole output.
+4. `/pc debug on`, then `/pc debug` .
+5. `/pc config`.
+6. `/pc resetall`.
+
+**Expected:**
+- **Zero** Lua errors at load or on any of the above.
+- The **first** line printed is exactly:
+  `[PC] The LibKa0s library is missing from this installation of Ka0s Pretty Chat (expected in libs/LibKa0s); running on reduced built-in fallbacks.`
+  — and that sentence appears **exactly once** for the whole session, not per line. Compare it word
+  for word against the same line from another Ka0s addon with its library removed; the clause before
+  the semicolon must be identical apart from the addon name.
+- `/pc list` prints `…(expected in libs/LibKa0s), so the settings CLI is unavailable.` — one line,
+  not a half-rendered listing.
+- `/pc debug on` still prints the colour-coded `debug logging ON` ack and still flips the flag; the
+  window's absence is reported once with `…, so the debug console window is unavailable.`
+- `/pc config` reports `…, so the settings panel is unavailable.`
+- **`/pc resetall` still works** — the schema loaded fine, and a user whose panel will not open is
+  exactly the user who needs "reset everything" (options-ui-§1).
+- `/pc help`, `/pc version` and `/pc test` all still work: those verbs never went to the library.
+
+**Then rename the folder back and `/reload` before continuing.**
+
+#### T-91 — No raw locale key is on screen anywhere
+
+**Why:** the `L` trap. A module handed the addon's locale table renders raw `SCREAMING_SNAKE` keys in
+place of English — for every key at once, and only in game, because a synthesised key *is* a string
+and no headless assertion can tell the difference. Current vendored copies resolve overrides with
+`rawget` and are safe, but this is the check that would have caught a shipped one.
+
+**Steps:** walk every surface and read every label:
+1. `/pc config` — the landing page and all nine sub-pages, including each page's **Defaults** button.
+2. `/pc debug` — the console: the title bar, the `Debug: ON`/`Debug: OFF` toggle, the Copy and Clear
+   buttons, the `N / 500 lines` counter, and the Copy window's own title.
+3. The General page's **Debug console** checkbox — hover it and read the tooltip.
+4. `/pc help`, `/pc list`, `/pc get General.enabled`, `/pc set General.enabled maybe`,
+   `/pc reset nonsense`.
+
+**Expected:** not one string on screen matches `^[A-Z][A-Z0-9_]+$`. Specifically **not**
+`DEFAULTS_LABEL`, `DEBUG_ON`, `DEBUG_OFF`, `CLEAR`, `COPY`, `COPY_TITLE`, `LINES`,
+`CHECKBOX_LABEL`, `CHECKBOX_TOOLTIP`, `LIST_HEADER`, `LIST_GROUP`, `HELP_HEADER`, `NOT_FOUND`,
+`INVALID`, `USAGE_GET`, `USAGE_SET`, `USAGE_RESET`, `ERR_BOOL` or `ERR_STRING`.
+
+#### T-92 — The console wears the Ka0s window edge
+
+**Why:** the console's skin changed hands (`LIBKA0S-03`). standalone-windows-§2 makes the edge
+normative, and the failure mode is one that reads fine in a screenshot taken on its own — a
+single-line border only looks wrong beside a window that has both lines.
+
+**Steps:** `/pc debug`, then open a second Ka0s addon's debug console beside it.
+
+**Expected:**
+- A **hard black 1px outer border** with a **lighter grey 1px line just inside it** — two lines, not
+  one. Background `0.06, 0.06, 0.08` at 92% alpha.
+- The window title (`Pretty Chat — Debug`) renders **gold**; the divider under the title bar is
+  **grey**, not black.
+- The × is the thin 18×18 glyph, and it is the **same** × the other addon's console wears.
+- Click **Copy** — the copy window wears the identical edge.
+- Side by side, the two consoles should be indistinguishable apart from their titles. Anything that
+  differs is the finding.
+
+#### T-93 — `/pc reset` takes a path, and the old form explains itself
+
+**Why:** convergence #1 is a **breaking** change to a verb this addon has shipped since 1.0
+(`LIBKA0S-10`). The old form still parses as something, so it must not be answered with
+"Setting not found".
+
+**Steps:**
+1. `/pc set Loot.enabled false`
+2. `/pc reset Loot.enabled`
+3. `/pc set Loot.enabled false` again, then `/pc reset Loot`
+4. `/pc reset loot` (lower case), and `/pc reset Curr` (an unambiguous prefix)
+5. `/pc reset zzz`
+
+**Expected:**
+- (2) resets **only** that row and echoes `Loot.enabled = true`.
+- (3) resets **nothing**, and prints three lines: that `reset` now takes a PATH not a category, the
+  `/pc reset <path>` replacement with a pointer to `/pc list Loot`, and the **Defaults** button plus
+  `/pc resetall` as the category- and global-scoped replacements.
+- (4) behaves the same for both spellings — the deprecation resolves the category name the way
+  `/pc list` does.
+- (5) is a plain `Setting not found: zzz`; it is neither a path nor a category, so there is nothing
+  to deprecate.
+
+#### T-94 — Category reset still exists, on both entry points
+
+**Why:** the capability moved rather than disappearing, and a settings button and a slash verb
+reaching the same body are **two** paths. A check that only clicks the button proves nothing about
+the other one.
+
+**Steps:**
+1. On the **Loot** page, uncheck two messages and edit one format. Click the header **Defaults**
+   button.
+2. Repeat, but this time use the Blizzard Settings window's **own footer defaults control** rather
+   than the header button.
+3. Repeat once more, and use `/pc resetall`.
+
+**Expected:** all three restore Loot to defaults. (2) is the one that regressed silently before the
+adoption — this addon shipped without `OnDefault` on its canvas frames, so the footer control did
+nothing while the header button beside it worked.
+
+#### T-95 — Nothing moved
+
+**Why:** ~233 lines of panel scaffolding changed hands. The parity question is not "does it work" but
+"is anything different", and anything that looks different is the finding.
+
+**Steps:** open `/pc config` and compare against a screenshot taken before the adoption.
+
+**Expected — unchanged:** the breadcrumb `Ka0s Pretty Chat ▸ <Page>` with its inline arrow atlas;
+the title in `GameFontNormalHuge` with the gold divider tinted to it; the **Defaults** button top
+right at the same inset; the scrollbar gutter reserved on every page, short or long, with the bar
+greyed and inert where the content fits; the per-string 40/60 blocks.
+
+**Expected — deliberately different:** the General page's two checkboxes sit at a true 50/50 rather
+than 0.492 (label-inset controls, so the honest half is correct); the landing page's command rows
+have **single** spaces around the em dash, no colour span on the dash itself, and a white
+description.
+
+#### T-96 — The panel refuses to render under combat, from the sidebar too
+
+**Why:** the Blizzard AddOns sidebar reaches a panel without going through the panel-open, so its
+combat guard is bypassed on exactly the path a user is most likely to take mid-fight. This addon had
+no guard on the render path before adopting.
+
+**Steps:** pull a target. While in combat:
+1. `/pc config`
+2. Open the Settings window from the game menu and click **Ka0s Pretty Chat** in the AddOns list.
+
+**Expected:** (1) refuses with the grey
+`cannot open settings during combat — Blizzard's category-switch is protected` and does not open.
+(2) closes the Settings window and prints the same line, rather than drawing a half-built page.
 
 ## Reporting a failure
 

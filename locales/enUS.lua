@@ -9,6 +9,17 @@ local addonName, NS = ...
 -- The seeded block below is the authoritative manifest of the addon's
 -- user-facing string surface — every string wrapped in `L[...]` at a
 -- call site appears here.
+--
+-- Three entries LEFT this manifest when the addon adopted LibKa0s: "Defaults"
+-- (the options header button), "Debug console" and its tooltip (the console
+-- visibility checkbox). Those strings are the library's now — lib.STRINGS on
+-- LibKa0s-Options-1.0 and LibKa0s-DebugLog-1.0 — and are therefore no longer
+-- translatable from this folder. That is a real, if small, narrowing of the
+-- translatable surface, and it is deliberate rather than an oversight: the
+-- library ships no locale files, so a translator restores them by passing a
+-- PLAIN table of just those keys as the module's descriptor `L`, in
+-- core/DebugLogSetup.lua and settings/OptionsSetup.lua — never NS.L itself
+-- (see LibKa0s's README, "The `L` trap"). Recorded at LIBKA0S-05.
 
 local L = setmetatable({}, {
     __index = function(_, k) return k end,
@@ -26,9 +37,6 @@ local enUS = {
     "Reset all to defaults",
     "Reset every category and string to its default value.",
     "Reset every category and string to defaults?",
-    "Defaults",
-    "Debug console",
-    "Show or hide the on-screen debug console window. Logging on/off is separate — the window's own header toggle, or `/pc debug on|off`.",
     -- Per-string row
     "Enable",
     "Use the rewritten format for this message. When unchecked, Blizzard's original is used.",
@@ -52,7 +60,7 @@ local enUS = {
     "List settings — `/pc list [<Category> | category | formatstring]`",
     "Print a setting's current value — `/pc get <path>`",
     "Set a setting — `/pc set <path> <value>` (try /pc list)",
-    "Reset a category to defaults — `/pc reset <Category>`",
+    "Reset one setting to its default — `/pc reset <path>`",
     "Reset every category to addon defaults",
     "Print sample chat lines — `/pc test [all | category <name> | formatstring <NAME>]`",
     "Debug console — `/pc debug` shows it; `on`/`off` toggle logging",

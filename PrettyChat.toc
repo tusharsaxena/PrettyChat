@@ -19,6 +19,7 @@ libs\AceAddon-3.0\AceAddon-3.0.xml
 libs\AceDB-3.0\AceDB-3.0.xml
 libs\AceConsole-3.0\AceConsole-3.0.xml
 libs\AceGUI-3.0\AceGUI-3.0.xml
+libs\LibKa0s\LibKa0s.xml
 
 # Locales (locale table — no earlier-load dependency; toc-file-§5 section order)
 locales\enUS.lua
@@ -30,8 +31,9 @@ core\Namespace.lua
 core\State.lua
 core\Util.lua
 core\Database.lua
-core\DebugLog.lua
 core\PrettyChat.lua
+core\CoreSetup.lua
+core\DebugLogSetup.lua
 
 # Defaults (data tables — must precede settings\Schema.lua)
 defaults\Profile.lua
@@ -54,5 +56,6 @@ modules\Override.lua
 
 # Settings (last — depend on everything else being initialized)
 settings\Schema.lua
+settings\OptionsSetup.lua
 settings\Slash.lua
 settings\Panel.lua

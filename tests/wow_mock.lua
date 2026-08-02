@@ -1,46 +1,91 @@
 -- tests/wow_mock.lua
 --
--- Builds a mock WoW global environment so the addon's Lua sources can be
--- loaded and exercised headlessly under stock Lua 5.1 (no WoW client).
+-- PrettyChat's EXTENDER over the shared kit's mock_base (testing-§1). The base
+-- builder owns everything universal — LibStub with a real NewLibrary, AceDB's
+-- merge-in-place copyDefaults, AceConsole's :Print clobber, the AceGUI widget
+-- recorder, the Settings registrars, the timer queue. This file overwrites the
+-- handful of keys PrettyChat genuinely needs differently, and adds the ones the
+-- base deliberately omits.
 --
--- Design notes:
---   * The DB and the _G global-string table ARE real Lua tables, so the
---     schema / apply / render logic is genuinely exercised (per the
---     harness design in docs/audits/2026-07-12/04_TECHNICAL_DESIGN.md §A).
---   * `_G` is the env itself, so `_G[GLOBALNAME] = value` writes in
---     ApplyStrings land back in the same table the loader reads.
---   * Frame and AceGUI widget mocks are stubs, not a layout engine — they
---     model *state and wiring* (scripts, callbacks, shown-ness, child
---     order, text) and nothing about pixels. That is deliberately enough
---     to drive settings/Panel.lua headlessly: the panel's contract is
---     "which widget, wired to which schema path", not where it lands.
+-- ── Why this is an extender and not a swap ──────────────────────────────────
 --
--- Mock fidelity — three pieces are load-bearing and must not be
--- simplified away:
---   * the AceAddon mock stamps AceConsole's colliding `:Print` mixin, so
---     the tests exercise the real printer-reclaim path (anti-pattern #36);
---   * frames resolve UNKNOWN **PascalCase** keys to a self-returning
---     no-op (every WoW/AceGUI method is PascalCase) but resolve unknown
---     lowercase keys to nil — addon-owned fields (`panel.defaultsBtn`,
---     `frame.log`, `scroll.content`) are lowercase, and a catch-all that
---     answered those with a truthy function would silently invert every
---     `if not panel.defaultsBtn` guard in the addon;
---   * Show()/Hide() fire the OnShow/OnHide scripts and hooks, which is
---     what makes the panel's lazy first-OnShow body build testable.
+-- The base's own README names the divergence that forces most of what follows:
+-- its `CreateTexture` / `CreateFontString` answer from the frame stub's
+-- metatable and therefore return THE FRAME ITSELF. PrettyChat's debug console
+-- hangs three distinct FontStrings off one title bar (the title, the ON/OFF
+-- toggle label, the line counter) and asserts on each independently, so an
+-- aliased FontString would make `frame.debugToggle.text` read back the window
+-- TITLE and the header-label case would pass on the wrong string. WhatGroup's
+-- and KickCD's mocks make them distinct for the same reason and the kit README
+-- agrees they are right; this is the third.
+--
+-- The documented overrides, each with the reason it cannot come from the base:
+--
+--   1.  CreateFrame           — a registry (`_frames.all` / `.byName`) so a suite
+--                               can reach `PrettyChatDebugWindow` by its global
+--                               name, which is the only handle on a window the
+--                               console keeps private.
+--   2.  frame CreateFontString / CreateTexture
+--                             — distinct objects (see above).
+--   3.  frame Show/Hide       — FIRE the OnShow/OnHide scripts and hooks. The
+--                               base tracks `__shown` only; every settings page
+--                               builds its body on first OnShow, so a Show that
+--                               did not fire would leave the whole panel layer
+--                               untestable.
+--   4.  frame setters/getters — SetText/GetText, SetSize/GetWidth/GetHeight and
+--                               GetTextColor return real values (fidelity rule 2):
+--                               the header divider tints from `titleFS:GetTextColor()`.
+--   5.  ScrollingMessageFrame — AddMessage/Clear recording into `.messages`, plus
+--                               numeric GetMaxScrollRange/GetScrollOffset, so the
+--                               console's scroll sync walks its whole body.
+--   6.  DEFAULT_CHAT_FRAME    — records `.messages`. The base's stub frame answers
+--                               AddMessage from the metatable and keeps nothing,
+--                               which would silence every chat assertion in the suite.
+--   7.  Settings              — records categories / subcategories / addonCategories
+--                               and OpenToCategory calls, so a suite can assert WHICH
+--                               category the panel-open asked for, and how many times.
+--                               The base records only the last main panel.
+--   8.  SettingsPanel = nil   — the base ships a stub frame whose metatable answers
+--                               every PascalCase key with a self-returning function, so
+--                               the library's private category-tree walk would appear to
+--                               SUCCEED against a stub rather than take the guarded
+--                               fallback a live client can actually hit.
+--   9.  AceAddon              — adds GetAddon (three PrettyChat files call it) and
+--                               records RegisterChatCommand, which the base no-ops.
+--  10.  AceGUI Create         — adds `:Fire(name, ...)` beside the base's `__fire`
+--                               and mirrors creation order into `_widgets`.
+--  11.  C_AddOns / GetAddOnMetadata
+--                             — deliberately absent from the base so a Compat shim's
+--                               fallback branch stays drivable; added here, where this
+--                               addon's own tests manage them.
+--  12.  StaticPopup_Show      — records into `_popupsShown`; the base no-ops it.
+--  13.  GameTooltip AddLine   — records into `.lines` so a tooltip body is assertable.
+--  14.  YES / NO / GameFont*  — plain globals the base has no reason to carry.
+--  15.  _G = M               — see below.
+--
+-- ── `_G` is the mock table itself ───────────────────────────────────────────
+--
+-- PrettyChat's whole feature is rewriting `_G[GLOBALNAME]`, and `tests/loader.lua`
+-- builds a FRESH mock per instance, so pointing `_G` back at the mock is what
+-- gives each loaded instance its own isolated global-string table: a write in
+-- ApplyStrings lands in the same table the suite reads back through `inst.env`.
+-- The kit loader's env resolves unknown keys to the real `_G`, which stays the
+-- home of the standard Lua library and nothing else.
 
-local M = {}
+local base = dofile("tests/_kit/mock_base.lua")
 
--- Metadata returned by C_AddOns.GetAddOnMetadata (tests may override).
-M.metadata = {
-    Version  = "1.4.0",
-    Notes    = "Prettier chat messages",
-    Title    = "Ka0s Pretty Chat",
+-- Metadata returned by C_AddOns.GetAddOnMetadata. Module-level so `ctx.mock.metadata`
+-- and every built environment name the same table.
+local METADATA = {
+    Version     = "1.4.0",
+    Notes       = "Prettier chat messages",
+    Title       = "Ka0s Pretty Chat",
     IconTexture = "2056011",
 }
 
 local function noop() end
 
--- ---- Frame mock ------------------------------------------------------
+-- ---- the richer frame stub -------------------------------------------------
 
 local frameMethods = {}
 
@@ -60,7 +105,9 @@ local function newFrame(name)
             local m = frameMethods[k]
             if m then return m end
             -- PascalCase => an (unmodelled) WoW method: inert, self-returning.
-            -- Anything else => an addon-owned field that genuinely is nil.
+            -- Anything else => an addon-owned field that genuinely is nil. A
+            -- catch-all answering lowercase keys with a truthy function would
+            -- silently invert every `if not panel.defaultsBtn` guard in the addon.
             if type(k) == "string" and k:find("^%u") then
                 return function(self) return self end
             end
@@ -68,7 +115,6 @@ local function newFrame(name)
         end,
     })
 end
-M.newFrame = newFrame
 
 function frameMethods:SetScript(script, handler)
     self._scripts[script] = handler
@@ -92,6 +138,10 @@ function frameMethods:FireScript(script, ...)
     for _, h in ipairs(self._hooks[script] or {}) do h(self, ...) end
     return self
 end
+
+-- The kit's own name for the same thing, so a suite written to the kit idiom
+-- and one written to this repo's drive the same handler.
+frameMethods.__fire = frameMethods.FireScript
 
 function frameMethods:Show()
     self._shown = true
@@ -132,6 +182,7 @@ function frameMethods:AddLine(text)
     return self
 end
 
+-- Distinct child objects, NOT the frame itself — the base's documented divergence.
 function frameMethods:CreateFontString()
     local fs = newFrame()
     table.insert(self._children, fs)
@@ -144,9 +195,8 @@ function frameMethods:CreateTexture()
     return tex
 end
 
--- ScrollingMessageFrame surface. The scroll getters return real numbers so
--- DebugLog:UpdateScrollBar walks its whole body instead of bailing at the
--- type guard.
+-- ScrollingMessageFrame surface. The scroll getters return real numbers so the
+-- console's UpdateScrollBar walks its whole body instead of bailing at the type guard.
 function frameMethods:AddMessage(msg)
     self.messages[#self.messages + 1] = msg
     return self
@@ -169,142 +219,44 @@ end
 function frameMethods:SetValue(v) self._value = v; return self end
 function frameMethods:GetValue()  return self._value end
 
--- ---- AceGUI widget mock ---------------------------------------------
+-- ---- the builder -----------------------------------------------------------
 
-local widgetMethods = {}
+local function build()
+    local M = base()
 
-local function newWidget(wtype)
-    local w = {
-        type      = wtype,
-        frame     = newFrame(),
-        children  = {},
-        callbacks = {},
-        disabled  = false,
-    }
-    -- Label / Heading expose a `.label` FontString in real AceGUI; the panel
-    -- font-object branches key off it, so model it for those two types only.
-    if wtype == "Label" or wtype == "Heading" then
-        w.label = newFrame()
-    end
-    return setmetatable(w, { __index = widgetMethods })
-end
+    -- `_G` is this table. See the header.
+    M._G = M
+    M.__metadata = METADATA
 
-function widgetMethods:SetText(text)  self.text = text;   return self end
-function widgetMethods:GetText()      return self.text end
-function widgetMethods:SetLabel(text) self.labelText = text; return self end
-function widgetMethods:SetValue(v)    self.value = v;    return self end
-function widgetMethods:GetValue()     return self.value end
-function widgetMethods:SetDisabled(v) self.disabled = v and true or false; return self end
-function widgetMethods:SetLayout(l)   self.layout = l;   return self end
-function widgetMethods:SetFullWidth(v)     self.fullWidth = v and true or false; return self end
-function widgetMethods:SetRelativeWidth(v) self.relativeWidth = v; return self end
-function widgetMethods:SetHeight(h)   self.height = h;   return self end
-function widgetMethods:SetWidth(w)    self.width = w;    return self end
-
-function widgetMethods:SetCallback(name, fn)
-    self.callbacks[name] = fn
-    return self
-end
-
--- Invoke a registered AceGUI callback the way the widget would
--- (widget, event, ...). Returns false when nothing is registered.
-function widgetMethods:Fire(name, ...)
-    local fn = self.callbacks[name]
-    if not fn then return false end
-    fn(self, name, ...)
-    return true
-end
-
-function widgetMethods:AddChild(child)
-    self.children[#self.children + 1] = child
-    return self
-end
-
--- Depth-first walk of a widget tree, newest-last (build order).
-function M.walkWidgets(widget, out)
-    out = out or {}
-    for _, child in ipairs(widget.children or {}) do
-        out[#out + 1] = child
-        M.walkWidgets(child, out)
-    end
-    return out
-end
-
-local function deepcopy(t)
-    if type(t) ~= "table" then return t end
-    local o = {}
-    for k, v in pairs(t) do o[k] = deepcopy(v) end
-    return o
-end
-
-function M.newEnv()
-    local env = {}
-
-    -- Standard Lua 5.1 library passthrough.
-    local passthrough = {
-        "assert", "error", "ipairs", "next", "pairs", "pcall", "print",
-        "select", "setmetatable", "getmetatable", "tonumber", "tostring",
-        "type", "unpack", "rawget", "rawset", "rawequal", "xpcall",
-        "collectgarbage", "string", "table", "math", "os", "io",
-    }
-    for _, name in ipairs(passthrough) do env[name] = _G[name] end
-    env.setfenv    = setfenv
-    env.getfenv    = getfenv
-    env.loadstring = loadstring
-    env._VERSION   = _VERSION
-    env._G         = env
-
-    -- ---- Blizzard surface -------------------------------------------
-    local chatFrame = { messages = {} }
-    function chatFrame:AddMessage(msg) self.messages[#self.messages + 1] = msg end
-    env.DEFAULT_CHAT_FRAME = chatFrame
-
-    -- Every frame the addon creates, in creation order, keyed by the global
-    -- name when it has one (the debug console windows).
+    -- 1/2/3/4/5 — the richer frame, plus the creation registry.
     local frames = { all = {}, byName = {} }
-    env._frames = frames
-
-    env.CreateFrame      = function(_, name)
+    M._frames = frames
+    M.__stubFrame = newFrame
+    M.CreateFrame = function(_, name)
         local f = newFrame(name)
         frames.all[#frames.all + 1] = f
         if name then frames.byName[name] = f end
         return f
     end
-    env.UIParent         = newFrame("UIParent")
-    env.InCombatLockdown = function() return false end
-    -- Globals the on-screen debug console (core/DebugLog.lua) touches.
-    env.date             = os.date
-    env.wipe             = function(t) for k in pairs(t) do t[k] = nil end return t end
-    env.UISpecialFrames  = {}
-    env.C_Timer          = { After = function(_, fn) if fn then fn() end end }
-    env.C_AddOns         = {
-        GetAddOnMetadata = function(_, key) return M.metadata[key] end,
-        LoadAddOn        = function() return true end,
-    }
-    env.GetAddOnMetadata = function(_, key) return M.metadata[key] end
+    M.UIParent = newFrame("UIParent")
 
-    env.StaticPopupDialogs = {}
-    env._popupsShown       = {}
-    env.StaticPopup_Show   = function(which) env._popupsShown[#env._popupsShown + 1] = which end
-    env.GameTooltip        = newFrame("GameTooltip")
-    env.YES = "Yes"
-    env.NO  = "No"
+    -- 6 — a recording chat frame.
+    local chatFrame = newFrame("DEFAULT_CHAT_FRAME")
+    M.DEFAULT_CHAT_FRAME = chatFrame
 
-    -- ---- Settings API ------------------------------------------------
-    -- Modelled (unlike the pre-1.4 mock, which omitted it so registerPanels
-    -- early-returned) so settings/Panel.lua's registration path is exercised.
-    -- SettingsPanel stays nil: its category-tree internals are private API the
-    -- addon already pcall-guards, and OpenConfig's "could not auto-expand"
-    -- fallback is the branch worth covering.
+    -- 13 — a recording tooltip.
+    M.GameTooltip = newFrame("GameTooltip")
+
+    -- 7 — the Settings registrars, recorded.
     local settings = { categories = {}, subcategories = {}, addonCategories = {}, opened = {} }
-    env._settings = settings
+    M._settings = settings
 
     local function newCategory(name, frame)
-        local id = "cat:" .. name
+        local id = "cat:" .. tostring(name)
         return { name = name, frame = frame, GetID = function() return id end }
     end
 
-    env.Settings = {
+    M.Settings = {
         RegisterCanvasLayoutCategory = function(frame, name)
             local cat = newCategory(name, frame)
             settings.categories[#settings.categories + 1] = cat
@@ -324,45 +276,56 @@ function M.newEnv()
             return settings.openResult
         end,
     }
-    env.SettingsPanel = nil
 
-    -- Font objects referenced via _G.GameFont* — harmless placeholders.
+    -- 8 — absent, so the private category-tree walk takes its guarded fallback.
+    M.SettingsPanel = nil
+
+    -- 12 — the confirm popup, recorded.
+    M._popupsShown     = {}
+    M.StaticPopup_Show = function(which) M._popupsShown[#M._popupsShown + 1] = which end
+
+    -- 11 — the metadata surfaces the base deliberately leaves out.
+    M.C_AddOns = {
+        GetAddOnMetadata = function(_, key) return METADATA[key] end,
+        LoadAddOn        = function() return true end,
+    }
+    M.GetAddOnMetadata = function(_, key) return METADATA[key] end
+
+    -- 14 — plain globals.
+    M.YES = "Yes"
+    M.NO  = "No"
     for _, fname in ipairs({
-        "GameFontNormal", "GameFontNormalLarge", "GameFontNormalHuge",
+        "GameFontNormal", "GameFontNormalSmall", "GameFontNormalLarge", "GameFontNormalHuge",
         "GameFontHighlight", "GameFontDisable",
-    }) do env[fname] = newFrame(fname) end
+    }) do M[fname] = newFrame(fname) end
 
-    -- ---- LibStub + Ace3 fakes ---------------------------------------
-    local libs   = {}
+    -- 9 — AceAddon with GetAddon and a recorded chat-command registry, keeping the
+    -- base's AceConsole :Print clobber (which core/CoreSetup.lua has to reclaim).
     local addons = {}
-
-    env.LibStub = function(name) return libs[name] end
-
-    libs["AceAddon-3.0"] = {
-        -- Real AceAddon:NewAddon([object,] name, ...mixins). If the first arg is
-        -- a table it IS the addon object (the NS table, architecture-§2);
-        -- otherwise a fresh object is created and the first arg is the name.
-        NewAddon = function(_, first, ...)
+    local baseNewAddon = M.__libs["AceAddon-3.0"].NewAddon
+    M.__libs["AceAddon-3.0"] = {
+        -- Real signature: NewAddon([object,] name, ...mixins). When the first arg is
+        -- a table it IS the addon object (the NS table, architecture-§2).
+        NewAddon = function(self, first, ...)
             local object, name
             if type(first) == "table" then
                 object, name = first, (...)
             else
                 object, name = {}, first
             end
+            baseNewAddon(self, object)
             object.name = name
-            -- AceConsole mixin. Records the registrations so a suite can prove
-            -- both /pc and its /prettychat alias reach the dispatcher.
             object.slashCommands = {}
-            object.RegisterChatCommand = function(self, cmd, handler)
-                self.slashCommands[cmd] = handler
+            object.RegisterChatCommand = function(s, cmd, handler)
+                s.slashCommands[cmd] = handler
             end
-            object.Printf              = noop
-            -- AceConsole embeds a :Print mixin onto the object. Stamp a
-            -- colliding printer (its |cff33ff99Name|r: tag) so the suite can
-            -- prove core/PrettyChat.lua reclaims NS.Print after registration
-            -- (anti-pattern #36).
-            object.Print = function(_, msg)
-                chatFrame:AddMessage("|cff33ff99" .. tostring(name) .. "|r: " .. tostring(msg))
+            object.Printf = noop
+            -- AceConsole's embed, faithful to the base's shape but landing in THIS
+            -- environment's chat frame rather than a real global that is never set.
+            object.Print = function(selfOrMsg, ...)
+                local parts = { "|cff33ff99" .. tostring(selfOrMsg) .. "|r:" }
+                for i = 1, select("#", ...) do parts[#parts + 1] = tostring((select(i, ...))) end
+                chatFrame:AddMessage(table.concat(parts, " "))
             end
             addons[name] = object
             return object
@@ -370,41 +333,27 @@ function M.newEnv()
         GetAddon = function(_, name) return addons[name] end,
     }
 
-    libs["AceDB-3.0"] = {
-        New = function(_, _svName, defaults)
-            -- Copy every declared namespace (profile, global, ...) so
-            -- migration code that reads db.global works, and guarantee
-            -- both common namespaces exist even when undeclared.
-            local db = {}
-            if defaults then
-                for k, v in pairs(defaults) do db[k] = deepcopy(v) end
-            end
-            db.profile = db.profile or {}
-            db.global  = db.global or {}
-            -- Single shared Default profile (real AceDB was created with the default-profile
-            -- flag). GetCurrentProfile lets the debug console's [Init] summary read it.
-            db.GetCurrentProfile = function() return "Default" end
-            return db
-        end,
-    }
-
-    libs["AceConsole-3.0"] = { RegisterChatCommand = noop }
-
-    -- AceGUI: records every widget it creates so a suite can walk the panel
-    -- tree that settings/Panel.lua built.
+    -- 10 — AceGUI: creation order plus the `:Fire` alias this repo's suites drive.
+    local aceGUI  = M.__libs["AceGUI-3.0"]
     local created = {}
-    env._widgets = created
-    libs["AceGUI-3.0"] = {
-        Create = function(_, wtype)
-            local w = newWidget(wtype)
-            created[#created + 1] = w
-            return w
-        end,
-        RegisterAsContainer = noop,
-        RegisterAsWidget    = noop,
-    }
+    M._widgets = created
+    local baseCreate = aceGUI.Create
+    aceGUI.Create = function(self, wtype)
+        local w = baseCreate(self, wtype)
+        w.Fire = w.__fire
+        -- Label / Heading expose a `.label` FontString in real AceGUI; the panel's
+        -- font-object branches key off it, so model it for those two types.
+        if (wtype == "Label" or wtype == "Heading") and not w.label then
+            w.label = newFrame()
+        end
+        created[#created + 1] = w
+        return w
+    end
 
-    return env
+    return M
 end
 
-return M
+-- A callable table: `dofile("tests/wow_mock.lua")()` builds an environment
+-- (testing-§1's shape), while `.metadata` stays reachable for the suites that
+-- assert the TOC values reached the addon.
+return setmetatable({ metadata = METADATA }, { __call = build })

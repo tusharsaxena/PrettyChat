@@ -6,17 +6,6 @@
 -- unwrapped new string, or a manifest entry left behind by a deleted one,
 -- surfaces here instead of at a translator's desk.
 
--- Sources that may reference L (locales/ itself seeds the table, so it is
--- excluded — its `L[s] = s` loop is the seeding, not a call site).
-local L_CONSUMERS = {
-    "core/PrettyChat.lua",
-    "core/DebugLog.lua",
-    "modules/Override.lua",
-    "settings/Schema.lua",
-    "settings/Slash.lua",
-    "settings/Panel.lua",
-}
-
 local function readFile(path)
     local fh = io.open(path, "r")
     if not fh then return nil end
@@ -25,74 +14,87 @@ local function readFile(path)
     return body
 end
 
-return function(ctx)
-    local t    = ctx.t
-    local test = ctx.test
-    local inst = ctx.loadAddon()
-    local NS   = inst.NS
-    local L    = NS.L
+local ctx = _G.PC_TEST
+local t    = ctx.t
+local test = ctx.test
+local inst = ctx.loadAddon()
+local NS   = inst.NS
+local L    = NS.L
 
-    -- Every `L["…"]` literal in the addon's own sources, mapped to the file
-    -- it was found in.
-    local callSites = {}
-    for _, rel in ipairs(L_CONSUMERS) do
-        local body = readFile(ctx.root .. "/" .. rel)
-        if body then
-            for key in body:gmatch('L%[%s*"(.-)"%s*%]') do
-                callSites[key] = callSites[key] or rel
-            end
-        end
+-- Sources that may reference L, DERIVED from the TOC rather than hand-listed. A
+-- hand-maintained list goes stale silently in the direction that matters: a file
+-- renamed or added is simply never scanned, and the drift cases below then report
+-- green over a surface they never looked at. locales/ itself is excluded — its
+-- `L[s] = s` loop is the seeding, not a call site — and so is the generated
+-- GlobalStrings/ dump, which carries no user-facing prose.
+local L_CONSUMERS = {}
+for _, rel in ipairs(ctx.loadAddon.tocFiles) do
+    if not rel:find("^locales/") and not rel:find("^GlobalStrings/") then
+        L_CONSUMERS[#L_CONSUMERS + 1] = rel
     end
-
-    test("NS.L is published as a table", function()
-        t.truthy(L, "NS.L exists")
-        t.eq(type(L), "table", "NS.L is a table")
-    end)
-
-    test("an unknown key falls back to itself verbatim", function()
-        -- The fallback is what guarantees an unwrapped string still renders.
-        t.eq(L["a string nobody translated"], "a string nobody translated",
-            "unknown key returns the key")
-        t.eq(L["%d items"], "%d items", "the fallback preserves format conversions")
-    end)
-
-    test("every seeded manifest entry is an identity mapping", function()
-        local n = 0
-        for k, v in pairs(L) do
-            n = n + 1
-            t.eq(v, k, ("manifest entry %q maps to itself"):format(k))
-        end
-        t.truthy(n > 0, "the manifest seeded entries")
-    end)
-
-    test("the scan found the L call sites it is meant to guard", function()
-        -- A guard on the guard: if the scan silently matched nothing, the two
-        -- drift cases below would pass vacuously.
-        local n = 0
-        for _ in pairs(callSites) do n = n + 1 end
-        t.truthy(n > 20, "the source scan found the localized string surface")
-    end)
-
-    test("every localized call site is in the enUS manifest", function()
-        for key, file in pairs(callSites) do
-            t.truthy(rawget(L, key) ~= nil,
-                ("%s: L[%q] is missing from the enUS manifest"):format(file, key))
-        end
-    end)
-
-    test("the manifest carries no entry that nothing references", function()
-        for key in pairs(L) do
-            t.truthy(callSites[key] ~= nil,
-                ("manifest entry %q is still referenced by a call site"):format(key))
-        end
-    end)
-
-    test("every slash-command description is localized", function()
-        -- The COMMANDS table is the single source for /pc help AND the parent
-        -- panel's command list, so its descriptions must be translatable.
-        for _, entry in ipairs(NS.COMMANDS) do
-            t.truthy(rawget(L, entry[2]) ~= nil,
-                ("description for /pc %s is in the manifest"):format(entry[1]))
-        end
-    end)
 end
+
+-- Every `L["…"]` literal in the addon's own sources, mapped to the file
+-- it was found in.
+local callSites = {}
+for _, rel in ipairs(L_CONSUMERS) do
+    -- Hard assert rather than a tolerant skip: a source the scan cannot open is a
+    -- surface it did not look at, and a drift check that goes quiet when it cannot
+    -- look is worse than no check. (test_harness.lua pins existence separately.)
+    local body = assert(readFile(ctx.root .. "/" .. rel), rel .. " is unreadable")
+    for key in body:gmatch('L%[%s*"(.-)"%s*%]') do
+        callSites[key] = callSites[key] or rel
+    end
+end
+
+test("NS.L is published as a table", function()
+    t.truthy(L, "NS.L exists")
+    t.eq(type(L), "table", "NS.L is a table")
+end)
+
+test("an unknown key falls back to itself verbatim", function()
+    -- The fallback is what guarantees an unwrapped string still renders.
+    t.eq(L["a string nobody translated"], "a string nobody translated",
+        "unknown key returns the key")
+    t.eq(L["%d items"], "%d items", "the fallback preserves format conversions")
+end)
+
+test("every seeded manifest entry is an identity mapping", function()
+    local n = 0
+    for k, v in pairs(L) do
+        n = n + 1
+        t.eq(v, k, ("manifest entry %q maps to itself"):format(k))
+    end
+    t.truthy(n > 0, "the manifest seeded entries")
+end)
+
+test("the scan found the L call sites it is meant to guard", function()
+    -- A guard on the guard: if the scan silently matched nothing, the two
+    -- drift cases below would pass vacuously.
+    local n = 0
+    for _ in pairs(callSites) do n = n + 1 end
+    t.truthy(n > 20, "the source scan found the localized string surface")
+end)
+
+test("every localized call site is in the enUS manifest", function()
+    for key, file in pairs(callSites) do
+        t.truthy(rawget(L, key) ~= nil,
+            ("%s: L[%q] is missing from the enUS manifest"):format(file, key))
+    end
+end)
+
+test("the manifest carries no entry that nothing references", function()
+    for key in pairs(L) do
+        t.truthy(callSites[key] ~= nil,
+            ("manifest entry %q is still referenced by a call site"):format(key))
+    end
+end)
+
+test("every slash-command description is localized", function()
+    -- The COMMANDS table is the single source for /pc help AND the parent
+    -- panel's command list, so its descriptions must be translatable.
+    for _, entry in ipairs(NS.COMMANDS) do
+        t.truthy(rawget(L, entry[2]) ~= nil,
+            ("description for /pc %s is in the manifest"):format(entry[1]))
+    end
+end)

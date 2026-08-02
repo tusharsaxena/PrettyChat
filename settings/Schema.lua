@@ -49,7 +49,12 @@ local function buildAddonEnabledRow()
         category = "General",
         kind     = "addon_enabled",
         type     = "bool",
-        label    = "Enable PrettyChat",
+        label    = NS.L["Enable PrettyChat"],
+        -- The tooltip BODY lives on the row, not in the page builder: this row is
+        -- drawn by LibKa0s-Options-1.0's checkbox maker, which reads `tooltip`
+        -- (options-ui, "Row fields the flow engine reads"). A builder-side tooltip
+        -- would be a second source for the same text.
+        tooltip  = NS.L["Master switch for the addon. When off, all Blizzard originals are restored."],
         default  = true,
         get      = function() return PrettyChat:IsAddonEnabled() end,
         set      = function(v)
@@ -64,7 +69,8 @@ local function buildCategoryRow(category)
         category = category,
         kind     = "category_enabled",
         type     = "bool",
-        label    = category .. " category",
+        label    = "Enable " .. category,
+        tooltip  = "Enable or disable all " .. category .. " string overrides.",
         default  = (NS.Defaults[category] and NS.Defaults[category].enabled) and true or false,
         get      = function() return PrettyChat:IsCategoryEnabled(category) end,
         set      = function(v)
@@ -203,21 +209,40 @@ function Schema.Get(path)
     return row.get()
 end
 
--- Single, type-aware, schema-driven value formatter (Ka0s standard, slash-commands-§5).
--- Shared by `/pc list` rows and the `/pc get` / `/pc set` echo so the two surfaces can
--- never diverge. PrettyChat has two row types: bool → `true`/`false`; string → the raw
--- format string with `|` doubled to `||` so its embedded colour escapes render as literal
--- text (the same `||`-for-literal-pipe convention `/pc set` accepts as input) instead of
--- colouring the chat line.
+-- THE value formatter, and there is exactly one of it (slash-commands-§5: the value
+-- formatter and the coloured `key = value` helper are one shared pair, and an addon
+-- MUST NOT wrap either in a private variant).
+--
+-- It lives here, beside the rows it renders, rather than in settings/Slash.lua,
+-- because it has two consumers that are not both CLI surfaces: every `list` / `get` /
+-- `set` / `reset` echo, which reaches it as the Slash descriptor's `format` hook, and
+-- the `[Set] <path> = <value>` debug trace at the write seam below
+-- (debug-logging-§10). Two implementations would let a settings value read one way in
+-- chat and another in the console log — for the same stored value, at the same
+-- instant.
+--
+-- The rendering itself is `LibKa0s-Slash-1.0`'s; what is ours is the one thing it
+-- cannot know: a Blizzard format string is full of `|c…|r` colour escapes, and printed
+-- raw they COLOUR the line instead of appearing in it. Doubling is WoW's own escape
+-- for a literal pipe, and it is the same convention the panel's New box shows and
+-- accepts, so a value round-trips between the three surfaces unchanged.
+local slashLib = LibStub and LibStub("LibKa0s-Slash-1.0", true)
+
 function Schema.FormatValue(row, v)
+    if slashLib then
+        local out = slashLib.FormatValue(row, v)
+        if type(v) == "string" and v ~= "" then
+            out = out:gsub("|", "||")
+        end
+        return out
+    end
+    -- Library absent. The [Set] trace still has to say something, and this is the
+    -- pre-library rendering rather than a copy of the library's — no colour codes,
+    -- no `key = value` shape, just the value.
     if v == nil then return "nil" end
     local vtype = row and row.type or type(v)
-    if vtype == "bool" or type(v) == "boolean" then
-        return tostring(v)
-    end
-    if type(v) == "string" then
-        return (v:gsub("|", "||"))
-    end
+    if vtype == "bool" or type(v) == "boolean" then return tostring(v) end
+    if type(v) == "string" then return (v:gsub("|", "||")) end
     return tostring(v)
 end
 
@@ -234,6 +259,18 @@ function Schema.RegisterRefresher(category, fn)
 end
 
 function Schema.NotifyPanelChange(category)
+    -- Two refresher registries coexist here on purpose, and this is the one place
+    -- that has to know about both. The per-string editor is a bespoke three-row
+    -- block the library's flow engine cannot express, so its widgets register
+    -- through Schema.refreshers below; every widget the library's own makers built
+    -- registered on its panel's ctx.refreshers instead. RefreshScalars is the
+    -- in-place tier — refreshers only, no rebuild — which is exactly right for a
+    -- value write, and it re-reads rather than writing, so it cannot recurse back
+    -- into Schema.Set.
+    if NS.Helpers and NS.Helpers.RefreshScalars then
+        NS.Helpers.RefreshScalars()
+    end
+
     if category == "General" or category == nil then
         for _, fn in pairs(Schema.refreshers) do pcall(fn) end
         return
@@ -258,6 +295,29 @@ function Schema.Set(path, value)
     -- ApplyStrings' re-apply is an implied consequence and is deliberately not re-echoed.
     NS.Debug("Set", "%s = %s", path, Schema.FormatValue(row, value))
     return true
+end
+
+-- Every row, in DECLARATION order — which is the order `/pc list` prints and the
+-- order the settings tree shows, so the two can never disagree. Returned as the
+-- live table rather than a copy: callers iterate it, and a per-call copy of ~350
+-- rows on every `list` would be a real cost for no safety nobody asked for.
+function Schema.AllRows()
+    return rows
+end
+
+-- Restore ONE row to its default, through the same single write seam a panel
+-- checkbox and a slash `set` take, so the debug line, the re-apply and the panel
+-- refresh are identical on all three paths.
+--
+-- Deliberately NOT the implementation behind the per-category Defaults button or
+-- `/pc resetall`. Both of those are bulk: driving them row by row through here
+-- would run ApplyStrings once per row (~350 passes over ~170 globals) and emit one
+-- [Set] line per row into a 500-line console buffer, which is exactly the per-item
+-- spam debug-logging-§9 forbids. PrettyChat:ResetCategory and PrettyChat:ResetAll
+-- stay the bulk implementations, each one pass and one summary line.
+function Schema.ApplyDefault(row)
+    if not row then return false end
+    return Schema.Set(row.path, row.default)
 end
 
 function Schema.RowsByCategory(category)

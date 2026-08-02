@@ -6,40 +6,31 @@ This doc covers: the canvas-layout framework, the unified per-page header, the v
 
 ## Canvas-layout framework
 
-`settings/Panel.lua` doesn't go through `AceConfigDialog:AddToBlizOptions` (the older path that auto-renders an AceConfig options table inside the addon's right pane). It builds plain Blizzard `Frame`s for each page, stamps a unified header on each, and uses an AceGUI `ScrollFrame` for the body content. Every category (parent + sub-pages) shares the same header design and right-edge gutter, and the body is laid out the same way on every page.
+The panel does not go through `AceConfigDialog:AddToBlizOptions` (the older path that auto-renders an AceConfig options table inside the addon's right pane). It is plain Blizzard `Frame`s with a unified header and an AceGUI `ScrollFrame` body — and since the LibKa0s adoption, all of that is **`LibKa0s-Options-1.0`'s**, reached through `NS.Helpers` (`settings/OptionsSetup.lua`). Every category (parent + sub-pages) shares the same header design and right-edge gutter as every other Ka0s addon, not merely as every other page here.
 
-Registration order from `registerPanels()`:
+Registration: `settings/Panel.lua` queues one builder per category with `H.RegisterOptionsPage(key, name, builder)` at **file load**. `NS.Config.RegisterPanels` is the library's `CreateOptionsPanel`, called from `PrettyChat:OnEnable`; it resolves AceGUI, registers the parent canvas category, and drains the queue. Each builder creates its canvas with `H.CreatePanel(nil, category, opts)`, declares how the page draws itself with `H.SetRenderer(ctx, fn)`, and returns its `Settings.RegisterCanvasLayoutSubcategory` handle.
 
-```lua
-Settings.RegisterCanvasLayoutCategory(parentPanel, "Ka0s Pretty Chat")
-Settings.RegisterAddOnCategory(mainCategory)        -- adds to the addon list
+The category handle is the library's own business now — `PrettyChat.optionsCategory` / `optionsCategoryID` are gone, and `PrettyChat:OpenConfig()` is a one-line delegate to `H.OpenOptionsPanel()`, which owns the combat gate and the left-tree expansion (`LIBKA0S-04`). A host needing a live page context uses the `H.__panelFor(pageKey)` test seam.
 
-for _, category in ipairs(CATEGORY_ORDER) do
-    Settings.RegisterCanvasLayoutSubcategory(mainCategory, subPanel, category)
-end
-```
-
-`PrettyChat.optionsCategoryID = mainCategory:GetID()` is what `PrettyChat:OpenConfig()` passes to `Settings.OpenToCategory`. `PrettyChat.optionsCategory` (the category object itself) is what `expandMainCategory` walks for the left-tree disclosure toggle.
-
-`settings/Panel.lua` exposes `NS.Config.RegisterPanels`; `PrettyChat:OnEnable` calls it after the snapshot/`ApplyStrings` pair. AceGUI body rendering is **deferred until the panel's first `OnShow`** — at registration time the body's frame width is zero, and AceGUI's `List` layout sizes children against the container's current width, so building too early produces a stack of misaligned widgets.
+`SetRenderer` owns **when** a page draws: its first `OnShow` — at registration time the body's frame width is zero, and AceGUI's `List` layout sizes children against the container's current width, so building too early produces a stack of misaligned widgets — and again after a refresh flagged it dirty while hidden. It also builds the Defaults button on **every** `OnShow` (outside the rendered guard) and refuses to render under combat lockdown.
 
 ## Unified per-page header
 
-`buildHeader(panel, title, opts)` stamps every page with the same layout:
+The library's `CreatePanel` stamps every page with the same layout, and hosts **MUST NOT** hand-build a header (options-ui-§5):
 
 | Element | How |
 |---------|-----|
-| Title FontString | `GameFontNormalHuge`, anchored TOPLEFT at `(PANEL_PADDING_X, -PANEL_HEADER_TOP)` |
+| Title FontString | `GameFontNormalHuge`, anchored TOPLEFT at `(PADDING_X, -HEADER_TOP)` |
 | Atlas divider | `Options_HorizontalDivider`, full-width minus padding, tinted with `titleFS:GetTextColor()` so future theme retunes follow |
-| Defaults button (optional) | AceGUI `Button`, anchored TOPRIGHT at `(-PANEL_PADDING_X, -PANEL_HEADER_TOP)`, width `PANEL_DEFAULTS_W` |
+| Defaults button (optional) | AceGUI `Button`, anchored TOPRIGHT at `(-PADDING_X, -HEADER_TOP)`, width `DEFAULTS_W` |
 
 The parent page renders its title plain (`"Ka0s Pretty Chat"`) via `opts.isMain = true`. Sub-pages prefix the title to read as a breadcrumb: `"Ka0s Pretty Chat ▸ Loot"`. The chevron is an inline-atlas escape (` |A:common-icon-forwardarrow:16:16|a `) so it renders as a real texture, not a font glyph — font-agnostic and locale-safe. If a future client retires the atlas, swap to `NPE_RightClick` or `chevron-collapse` (same escape syntax, just the atlas name changes). The Blizzard left-tree label always stays unprefixed (driven by `panel.name`) so the indented tree doesn't repeat the parent name.
 
-All layout dimensions live in `core/Constants.lua` (`NS.Const.PANEL_PADDING_X`, `PANEL_HEADER_TOP`, `PANEL_HEADER_HEIGHT`, `PANEL_DEFAULTS_W`, `SECTION_TOP_SPACER`, `SECTION_BOTTOM_SPACER`, `SECTION_HEADING_H`, `ROW_VSPACER`, `STRING_VSPACER`).
+All panel layout dimensions live in **`LibKa0s-Options-1.0`'s `LAYOUT` table**, not in this addon — options-ui-§8 forbids a host copy, because every Ka0s panel renders identically only if every panel reads one set of values, and a host copy is the copy that goes stale. Where `settings/Panel.lua` needs one for a widget it draws itself it reads it off the instance (`NS.Helpers.ROW_VSPACER` and `NS.Helpers.SECTION_HEADING_H` today; `BUTTON_PAIR_REL` is published too, and is applied for it by `InlineButtonPair`). `core/Constants.lua` keeps only `SECTION_TOP_SPACER` / `SECTION_BOTTOM_SPACER` (the landing page's own body, which is the host's half) and `STRING_VSPACER` (the bespoke 40/60 editor, which the library has no equivalent for).
 
 ## Always-visible scrollbar
 
-`patchAlwaysShowScrollbar(scroll)` rebinds the AceGUI ScrollFrame's `FixScroll` so:
+`NS.Helpers.PatchAlwaysShowScrollbar(scroll)` — the library's `OptionsScroll.lua`, applied automatically by `EnsureScroll` — rebinds the AceGUI ScrollFrame's `FixScroll` so:
 
 - The scrollbar (and its 20 px right-side gutter) is shown on every page, regardless of overflow. Short pages (General) and long pages (Loot, 19 strings) line up at the same right edge.
 - When content fits, the thumb parks at the top, the scrollbar greys out, and mousewheel input is inert. When content overflows, the upstream FixScroll logic runs unchanged.
@@ -111,17 +102,20 @@ NS.Schema.Set(formatPath, value:gsub("||", "|"))          -- on commit
 
 ## NotifyPanelChange refresh dispatch
 
-`Schema.NotifyPanelChange(category)` invokes a per-sub-page refresh closure that `settings/Panel.lua` registers on first `OnShow`:
+**Two refresher registries coexist, and `Schema.NotifyPanelChange` is the one place that knows about both.**
+
+- Every widget the library's own makers built registered a closure on its page's `ctx.refreshers`. `NS.Helpers.RefreshScalars()` runs those — the *in-place* tier: re-read the value, `SetValue` it, no rebuild.
+- The bespoke 40/60 per-string blocks are drawn by hand and are invisible to that registry, so `buildCategoryBody` registers one closure per category through `Schema.RegisterRefresher`.
 
 ```lua
 -- settings/Schema.lua
-Schema.refreshers = {}
-
-function Schema.RegisterRefresher(category, fn)
-    Schema.refreshers[category] = fn
-end
-
 function Schema.NotifyPanelChange(category)
+    -- The library's tier first: in place, re-reads only, so it cannot recurse back
+    -- into Schema.Set.
+    if NS.Helpers and NS.Helpers.RefreshScalars then
+        NS.Helpers.RefreshScalars()
+    end
+
     if category == "General" or category == nil then
         for _, fn in pairs(Schema.refreshers) do pcall(fn) end
         return
@@ -131,7 +125,7 @@ function Schema.NotifyPanelChange(category)
 end
 ```
 
-`settings/Panel.lua`'s sub-page builder returns a `refresh` closure; the panel's `OnShow` calls `Schema.RegisterRefresher(category, refresh)`. A `Schema.Set` from the panel widgets (callback) or the `/pc set` slash both end up calling `Schema.NotifyPanelChange(row.category)` — the registered closure walks every per-string `refresh` in that category and re-syncs widget values + disabled state from the DB.
+A `Schema.Set` from a panel widget or from `/pc set` reaches `Schema.NotifyPanelChange(row.category)`, which re-syncs both. `General` (or `nil`) fans out to every host refresher, because per-string disabled state depends on the master switch.
 
 Master-toggle (`General.enabled`) changes cascade to every sub-page because per-string disabled state depends on the master.
 
