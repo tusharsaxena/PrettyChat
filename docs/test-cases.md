@@ -1,6 +1,19 @@
 # Test Cases
 
-_Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > docs/test-cases.md`._
+The full inventory of every headless test case in this repo, grouped by the suite file it
+lives in. The `## Totals` table below is the **authoritative pass count** — the README test
+badge and any count quoted in the docs must agree with it.
+
+**Generated — do not hand-edit.** Regenerate with `lua tests/run.lua --list > docs/test-cases.md`.
+
+### test_harness.lua (6)
+
+- the runner fed the loader exactly the TOC's files, in the TOC's order
+- every derived path exists on disk and no libs/ path leaked in
+- the vendored load list is every file of LibKa0s.xml, in XML order
+- every LibKa0s major actually registered in the loaded environment
+- libs/LibKa0s is byte-identical to the sibling library checkout, where present
+- tests/_kit is byte-identical to the sibling library checkout, where present
 
 ### test_compat.lua (8)
 
@@ -251,7 +264,7 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 - a category page builds a toggle plus one block per string
 - string blocks are built in sorted global-name order
 - each block is the documented three-row 40/60 editor
-- the read-only Original row degrades when the reference dump is absent
+- the read-only Original row shows the reference string, or degrades without it
 - the per-string checkbox writes the string's enable path
 - the New edit box unescapes || to | before storing
 - the Preview box renders the live format with sample arguments
@@ -268,6 +281,7 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 
 | Suite | Cases |
 |-------|------:|
+| test_harness.lua | 6 |
 | test_compat.lua | 8 |
 | test_constants.lua | 8 |
 | test_util.lua | 7 |
@@ -282,4 +296,4 @@ _Generated — do not hand-edit. Regenerate with `lua tests/run.lua --list > doc
 | test_debuglog.lua | 25 |
 | test_slash.lua | 39 |
 | test_panel.lua | 30 |
-| **Total** | **220** |
+| **Total** | **226** |
