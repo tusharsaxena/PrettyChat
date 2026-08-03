@@ -237,7 +237,7 @@ test("the Defaults button is deferred to first show, not built at registration",
     panel:Show()
     t.truthy(panel.defaultsBtn, "the first show builds it")
     t.eq(panel.defaultsBtn.type, "Button", "as an AceGUI Button (options-ui-§5)")
-    t.eq(panel.defaultsBtn.text, L["Defaults"], "labelled Defaults")
+    t.eq(panel.defaultsBtn.text, L["Defaults"], "labeled Defaults")
 end)
 
 test("the General page has no Defaults button", function()
@@ -401,13 +401,13 @@ test("the per-string Reset button restores both dimensions", function()
         "the New box re-syncs, pipe-doubled")
 end)
 
-test("disabling the category greys the per-string controls", function()
+test("disabling the category grays the per-string controls", function()
     local block  = lootBlocks[1]
     local catBox = byLabel(lootWidgets, "CheckBox", "Enable Loot")
 
     catBox:Fire("OnValueChanged", false)
-    t.truthy(block.rows[1].children[1].disabled, "the per-string Enable box greys out")
-    t.truthy(block.rows[2].children[2].disabled, "the New format box greys out")
+    t.truthy(block.rows[1].children[1].disabled, "the per-string Enable box grays out")
+    t.truthy(block.rows[2].children[2].disabled, "the New format box grays out")
 
     catBox:Fire("OnValueChanged", true)
     t.falsy(block.rows[1].children[1].disabled, "re-enabling restores them")
@@ -420,7 +420,7 @@ test("a master-toggle change refreshes every built page, not just its own", func
     local block = lootBlocks[1]
     Schema.Set("General.enabled", false)
     t.truthy(block.rows[1].children[1].disabled,
-        "the Loot page greyed out from a General-page write")
+        "the Loot page grayed out from a General-page write")
     Schema.Set("General.enabled", true)
     t.falsy(block.rows[1].children[1].disabled, "and came back")
 end)

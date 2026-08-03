@@ -1,4 +1,4 @@
--- tests/test_constants.lua — core/Constants.lua. The colour palette and the
+-- tests/test_constants.lua — core/Constants.lua. The color palette and the
 -- [PC] tag are the addon's brand mark and the slash-commands-§5 mandated
 -- output palette: those exact hex codes are a MUST (they read identically
 -- across every Ka0s addon), so they are pinned here rather than left to
@@ -13,7 +13,7 @@ local NS    = inst.NS
 local Const = NS.Const
 local C     = Const.Color
 
-test("every colour escape is a well-formed |cRRGGBB code", function()
+test("every color escape is a well-formed |cRRGGBB code", function()
     for name, code in pairs(C) do
         if name ~= "reset" then
             t.truthy(code:match("^|c%x%x%x%x%x%x%x%x$") ~= nil,
@@ -27,11 +27,11 @@ test("the slash-commands-§5 mandated palette is exact", function()
     -- These four MUST NOT be substituted — they are cross-addon constants.
     t.eq(C.listHead, "|cff33ff99", "list header green is 33ff99")
     t.eq(C.azure,    "|cff3399ff", "[category] group headers are azure 3399ff")
-    t.eq(C.yellow,   "|cffffff00", "schema-path/key colour is ffff00")
-    t.eq(C.white,    "|cffffffff", "value colour is ffffff")
+    t.eq(C.yellow,   "|cffffff00", "schema-path/key color is ffff00")
+    t.eq(C.white,    "|cffffffff", "value color is ffffff")
 end)
 
-test("the brand colours are distinct from the mandated palette", function()
+test("the brand colors are distinct from the mandated palette", function()
     -- The header green (33ff99) is deliberately NOT the brand green (40ff40).
     t.eq(C.green, "|cff40ff40", "brand green is 40ff40")
     t.neq(C.green, C.listHead, "brand green is not the list-header green")

@@ -2,7 +2,7 @@
 -- dispatcher itself (verb lookup, case handling, usage/error paths for every
 -- verb) and slash-commands-§5 output conformance — the shared schema-driven
 -- value formatter, the FormatKV gold/white `get` echo, and the green-header /
--- azure-group `list` colours. Most cases drive the real `/pc` entry point so
+-- azure-group `list` colors. Most cases drive the real `/pc` entry point so
 -- the COMMANDS table and the dispatcher are exercised together.
 
 local function run(NS, addon, name, rest)
@@ -55,7 +55,7 @@ test("Schema.FormatValue formats bools and doubles pipes in strings", function()
     t.eq(Schema.FormatValue(boolRow, true),  "true",  "bool true formats as `true`")
     t.eq(Schema.FormatValue(boolRow, false), "false", "bool false formats as `false`")
     t.eq(Schema.FormatValue({ type = "string" }, "|cffff0000%s|r"),
-        "||cffff0000%s||r", "string value doubles pipes so colour escapes show as text")
+        "||cffff0000%s||r", "string value doubles pipes so color escapes show as text")
 end)
 
 test("NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)", function()
@@ -121,7 +121,7 @@ end)
 -- ---- get ------------------------------------------------------------
 
 test("/pc get echoes the gold-key/white-value FormatKV line", function()
-    -- Same four mandated colours (slash-commands-§5), rendered by the library's one
+    -- Same four mandated colors (slash-commands-§5), rendered by the library's one
     -- FormatKV rather than a private copy. The hex CASE changed with the handover —
     -- lowercase ffffff00 to uppercase FFFFFF00 — which the client does not
     -- distinguish and a byte comparison does, so it is pinned as the library's.
@@ -222,7 +222,7 @@ test("/pc set keeps the whole remainder, spaces and all", function()
 end)
 
 test("/pc set and /pc get round-trip a pipe through the || escape", function()
-    -- get doubles pipes so colour escapes read as text; set halves them back, so a
+    -- get doubles pipes so color escapes read as text; set halves them back, so a
     -- value copied out of one and pasted into the other stores what it displayed.
     slash("set " .. formatPath .. " ||cffff0000Custom|| %s")
     t.eq(Schema.Get(formatPath), "|cffff0000Custom| %s", "the doubled pipes collapsed on the way in")
@@ -300,7 +300,7 @@ test("/pc reset takes a schema PATH and resets exactly that setting", function()
     Schema.Set(formatPath, "CUSTOM %s")
     local text = joined("reset Loot.enabled")
     t.eq(Schema.Get("Loot.enabled"), NS.Defaults.Loot.enabled, "the named row is back to default")
-    t.eq(Schema.Get(formatPath), "CUSTOM %s", "and only that row — its neighbours are untouched")
+    t.eq(Schema.Get(formatPath), "CUSTOM %s", "and only that row — its neighbors are untouched")
     t.truthy(text:find("|cFFFFFF00Loot.enabled|r", 1, true), "the reset echoes the stored value")
     Schema.Set(formatPath, formatRow.default)
 end)

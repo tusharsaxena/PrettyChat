@@ -103,10 +103,10 @@ end)
 -- question — *is what this consumer is running actually what the library
 -- shipped?* — and it is answerable, and it is immune to upstream work in flight.
 --
--- One normalisation, and only one: `git show` hands back the stored blob, which is
+-- One normalization, and only one: `git show` hands back the stored blob, which is
 -- LF, while the working tree is CRLF because `.gitattributes` pins
 -- `* text=auto eol=crlf`. Stripping CR from the working-tree side compares the
--- file to the blob it round-trips to. Nothing else is normalised — a real fork in
+-- file to the blob it round-trips to. Nothing else is normalized — a real fork in
 -- content still fails.
 
 --- The version the README claims to bundle. Read rather than hardcoded: a

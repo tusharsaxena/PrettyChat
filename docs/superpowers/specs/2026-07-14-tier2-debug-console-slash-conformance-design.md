@@ -15,14 +15,14 @@ Three deliverables, one PrettyChat spec + one separate WowAddonStandards edit:
    pattern: `700×344` DIALOG-strata `BackdropTemplate`, monospace `ScrollingMessageFrame`,
    `Debug: ON/OFF` header toggle, Copy/Clear, two pure formatters, session-only `ns.State.debug`
    routed through one `SetEnabled` seam. Replaces the current `debug-logging-§7` chat fallback.
-3. **Slash `list`/`get`/`set` colour conformance** (`slash-commands-§5`) — green `33ff99`
+3. **Slash `list`/`get`/`set` color conformance** (`slash-commands-§5`) — green `33ff99`
    "Available settings" header, azure `3399ff` `[category]` group headers, gold `ffff00` key /
    white `ffffff` value via a shared `FormatKV` + schema-driven value formatter; drop trailing
    colons; add the mandated `version` verb.
 4. **(separate repo) `options-ui-§2` rewrite** — mandate refuse-with-notice (PrettyChat's existing
-   behaviour) in place of defer-and-replay.
+   behavior) in place of defer-and-replay.
 
-## Section 1 — Tier-2 move-map (no behaviour change)
+## Section 1 — Tier-2 move-map (no behavior change)
 
 | New path | From | Change |
 |---|---|---|
@@ -56,7 +56,7 @@ only need to exist by `OnEnable`. `settings/Panel` keeps its runtime `ns.GlobalS
 - Vendor `media/fonts/JetBrainsMono-Regular.ttf` + `OFL.txt` (copied from AbsorbTracker).
 - `core/Constants.lua`: `Const.FONT_MONO = "Interface\\AddOns\\PrettyChat\\media\\fonts\\JetBrainsMono-Regular.ttf"`.
 - `core/DebugLog.lua`: AT's `DebugLog` ported to `ns` / `[PC]` / `PrettyChatDebugWindow` /
-  `PrettyChatDebugCopyWindow`. Title `"Pretty Chat — Debug"`. Colours per `debug-logging-§3`
+  `PrettyChatDebugCopyWindow`. Title `"Pretty Chat — Debug"`. Colors per `debug-logging-§3`
   (ts `6f8faf`, tag `c9a66b`). `ns.Debug(tag, fmt, ...)` routes to `DebugLog:Add`, gated + zero-alloc
   when off. `DebugLog:SetEnabled` is the single seam (flag → header → chat ack → console line).
 - **LSM deviation (flagged):** `debug-logging-§2` SHOULDs LSM registration; PrettyChat has no LSM
@@ -74,14 +74,14 @@ only need to exist by `OnEnable`. `settings/Panel` keeps its runtime `ns.GlobalS
 - `settings/Slash.lua`: `FormatKV(path, valueStr)` (gold key / white value). `listSettings` prints
   green `Available settings`, azure `[Category]`, indented `FormatKV` rows. `get`/`set` echo the
   single-line `FormatKV`. Drop all trailing colons. Add `version` verb → `[PC] v<version>`.
-- **Colour deviation (flagged):** §5 mandates header green `33ff99` (distinct from the brand
+- **Color deviation (flagged):** §5 mandates header green `33ff99` (distinct from the brand
   `Const.Color.green` `40ff40`) and azure `3399ff`; both added as `Const.Color` entries and used
   verbatim per the MUST.
 
 ## Section 4 — options-ui-§2 rewrite (WowAddonStandards)
 
 Rewrite §2 "Combat lockdown" to mandate: check `InCombatLockdown()` before opening the panel; on
-lockdown **refuse** and print a `NS.PREFIX` grey notice — canonical text
+lockdown **refuse** and print a `NS.PREFIX` gray notice — canonical text
 "cannot open settings during combat — Blizzard's category-switch is protected" — rather than
 deferring with a `PLAYER_REGEN_ENABLED` replay. PrettyChat becomes the described reference impl.
 **Ripple flagged:** AbsorbTracker currently defers-and-replays and would become non-conformant — a

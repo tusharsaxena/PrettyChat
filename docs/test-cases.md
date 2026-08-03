@@ -42,7 +42,7 @@ badge and any count quoted in the docs must agree with it.
 - with Slash absent the host verbs survive and the schema CLI says why
 - with LibKa0s absent the addon still loads and still prints, saying so once
 - the shared cause clause names the addon and where the library should be
-- the degraded secret guard still neutralises a protected value
+- the degraded secret guard still neutralizes a protected value
 
 ### test_compat.lua (8)
 
@@ -57,9 +57,9 @@ badge and any count quoted in the docs must agree with it.
 
 ### test_constants.lua (8)
 
-- every colour escape is a well-formed |cRRGGBB code
+- every color escape is a well-formed |cRRGGBB code
 - the slash-commands-§5 mandated palette is exact
-- the brand colours are distinct from the mandated palette
+- the brand colors are distinct from the mandated palette
 - the [PC] chat tag is cyan-wrapped and trailing-spaced
 - the host's own layout constants are positive numbers
 - no host copy of a library layout constant has grown back
@@ -74,7 +74,7 @@ badge and any count quoted in the docs must agree with it.
 - IsConcatSafe never raises on the value it is probing
 - trim strips surrounding whitespace and is nil-safe
 - trim keeps interior whitespace intact
-- note and cmd wrap text in the documented slash colours
+- note and cmd wrap text in the documented slash colors
 
 ### test_locale.lua (7)
 
@@ -196,7 +196,7 @@ badge and any count quoted in the docs must agree with it.
 - OnEnable snapshots a Blizzard original for every registered global
 - OnEnable applies the overrides so live chat is rewritten at load
 - NS.Print prepends the cyan [PC] tag to every line
-- NS.Print neutralises a value the concat probe rejects
+- NS.Print neutralizes a value the concat probe rejects
 - OpenConfig refuses during combat without touching the Settings API
 - OpenConfig opens the registered category out of combat
 - OpenConfig is silent on the paths the library does not report
@@ -205,17 +205,17 @@ badge and any count quoted in the docs must agree with it.
 ### test_debuglog.lua (25)
 
 - FONT_MONO points at the vendored JetBrainsMono TTF
-- pure line formatters render plain and coloured lines
+- pure line formatters render plain and colored lines
 - /pc debug on|off drives the session flag through the SetEnabled seam
-- colour-coded chat ack: ON green, OFF red, via [PC]
+- color-coded chat ack: ON green, OFF red, via [PC]
 - enable emits the [Init] session summary after the bracket
 - bare /pc debug toggles the window without changing the flag
 - header toggle click flips state through the same seam
 - NS.Debug is a no-op when off and appends one line when on
 - Schema.Set emits one [Set] line with no separate [Apply] echo
 - the console line and the copy buffer describe the same event
-- the plain buffer never carries colour escapes of its own
-- NS.Debug neutralises a protected value inside its format args
+- the plain buffer never carries color escapes of its own
+- NS.Debug neutralizes a protected value inside its format args
 - NS.Debug passes a bare message through without formatting it
 - NS.Debug keeps argument types so numeric conversions still work
 - the buffer is capped and drops its oldest lines first
@@ -225,7 +225,7 @@ badge and any count quoted in the docs must agree with it.
 - both console windows register for Esc-to-close
 - Show, Hide and Toggle drive the window's visibility
 - IsShown is false before the console has ever been built
-- the header label tracks the session flag in the §5 state colours
+- the header label tracks the session flag in the §5 state colors
 - SessionSummary self-identifies the build, schema and profile
 - disabling logging still writes its closing bracket line
 - ResetAll emits one [Reset] summary carrying apply counts
@@ -302,7 +302,7 @@ badge and any count quoted in the docs must agree with it.
 - the Preview box renders the live format with sample arguments
 - the Preview box surfaces an unrenderable format instead of blanking
 - the per-string Reset button restores both dimensions
-- disabling the category greys the per-string controls
+- disabling the category grays the per-string controls
 - a master-toggle change refreshes every built page, not just its own
 - a slash-command write re-syncs the open panel
 - a cross-registered string warns about the shared Blizzard global

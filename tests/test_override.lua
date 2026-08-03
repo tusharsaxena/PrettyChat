@@ -26,7 +26,7 @@ local function countMatching(list, pattern)
     return n
 end
 
--- Plain (non-pattern) variant, for needles carrying `|c…` colour escapes.
+-- Plain (non-pattern) variant, for needles carrying `|c…` color escapes.
 local function countPlain(list, needle)
     local n = 0
     for _, line in ipairs(list) do
@@ -85,7 +85,7 @@ end)
 test("IsStringEnabled is true unless the string is explicitly disabled", function()
     t.truthy(addon:IsStringEnabled(cat, g), "strings start enabled")
     Schema.Set(cat .. "." .. g .. ".enabled", false)
-    t.falsy(addon:IsStringEnabled(cat, g), "explicit disable is honoured")
+    t.falsy(addon:IsStringEnabled(cat, g), "explicit disable is honored")
     Schema.Set(cat .. "." .. g .. ".enabled", true)
     t.truthy(addon:IsStringEnabled(cat, g), "re-enabling clears the flag")
     local catDB = addon.db.profile.categories[cat]
@@ -204,7 +204,7 @@ test("a formatstring filter narrows the report to one string", function()
     t.eq(countPlain(out, "Name: " .. NS.Const.Color.reset .. g), 1,
         "the filtered string is shown")
     t.truthy(out[#out]:find("1 string shown", 1, true),
-        "the footer singularises for a single string")
+        "the footer singularizes for a single string")
 end)
 
 test("a filter that matches nothing says so instead of printing an empty report", function()

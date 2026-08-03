@@ -101,7 +101,7 @@ return function(root, mockModule)
         if addon and addon.OnInitialize then addon:OnInitialize() end
 
         -- Seed pristine Blizzard originals for every registered global so the
-        -- snapshot in OnEnable captures a recognisable value and the
+        -- snapshot in OnEnable captures a recognizable value and the
         -- restore-on-disable path is assertable.
         if NS.Schema and NS.Schema.CATEGORY_ORDER then
             local seen = {}

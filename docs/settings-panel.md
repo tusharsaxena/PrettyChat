@@ -33,7 +33,7 @@ All panel layout dimensions live in **`LibKa0s-Options-1.0`'s `LAYOUT` table**, 
 `NS.Helpers.PatchAlwaysShowScrollbar(scroll)` — the library's `OptionsScroll.lua`, applied automatically by `EnsureScroll` — rebinds the AceGUI ScrollFrame's `FixScroll` so:
 
 - The scrollbar (and its 20 px right-side gutter) is shown on every page, regardless of overflow. Short pages (General) and long pages (Loot, 19 strings) line up at the same right edge.
-- When content fits, the thumb parks at the top, the scrollbar greys out, and mousewheel input is inert. When content overflows, the upstream FixScroll logic runs unchanged.
+- When content fits, the thumb parks at the top, the scrollbar grays out, and mousewheel input is inert. When content overflows, the upstream FixScroll logic runs unchanged.
 - On widget release, the original FixScroll / MoveScroll / OnRelease are restored so the AceGUI pool returns clean for any subsequent acquirer.
 
 ## The virtual `General` sub-page
@@ -42,7 +42,7 @@ All panel layout dimensions live in **`LibKa0s-Options-1.0`'s `LAYOUT` table**, 
 
 | Control | Wire-up |
 |---------|---------|
-| Description label | One-line explainer: master toggle behaviour. |
+| Description label | One-line explainer: master toggle behavior. |
 | **Enable PrettyChat** toggle (50% row) | Bound to the `General.enabled` schema row. Master switch — when off, every Blizzard original is restored regardless of per-category settings. |
 | **Debug console** toggle (50% row, beside Enable) | *Not* schema-backed. Shows/hides the debug console **window** only (`NS.DebugLog:Show()` / `:Hide()`) — the same effect as bare `/pc debug`. It does **not** touch the debug logging flag; logging on/off stays owned by the window's header toggle and `/pc debug on\|off`. Reads `NS.DebugLog:IsShown()`, and the window's OnShow/OnHide fire `Schema.NotifyPanelChange("General")` so the checkbox tracks visibility however it changes (this box, `/pc debug`, the close button, Esc). |
 | **Test** button (50% row) | Calls `PrettyChat:Test()`. Synthesizes a sample chat line from every format string regardless of enable toggles, so the preview works even when the addon is disabled. |
@@ -67,7 +67,7 @@ Each format string renders as a `Heading` + a 3-row × 2-column grid inside the 
 ```
 ─── strData.label ───                          ← AceGUI Heading, full width
 [Enable]            | Original [disabled EditBox]
-GLOBALNAME (grey)   | New      [editable EditBox]
+GLOBALNAME (gray)   | New      [editable EditBox]
 [Reset]             | Preview  [disabled EditBox]
 ```
 
@@ -75,7 +75,7 @@ GLOBALNAME (grey)   | New      [editable EditBox]
 |-----|------------|-------------|
 | Heading | Friendly label, `GameFontNormalLarge` flanked by side dividers | — |
 | 1 | `[Enable]` checkbox | Original format `EditBox` (disabled, `:SetLabel("Original")`) |
-| 2 | `GLOBALNAME` caption (grey) | New format `EditBox` (editable, `:SetLabel("New")`, commits on Enter) |
+| 2 | `GLOBALNAME` caption (gray) | New format `EditBox` (editable, `:SetLabel("New")`, commits on Enter) |
 | 3 | `[Reset]` button | Preview `EditBox` (disabled, `:SetLabel("Preview")`, `NS.RenderSample` output) |
 
 Each row is its own AceGUI `SimpleGroup` with `Flow` layout; the left child uses `:SetRelativeWidth(LEFT_W)` (`0.4`) and the right uses `:SetRelativeWidth(RIGHT_W)` (`0.6`), so the two columns align across all three rows. The right-column EditBox labels (`Original` / `New` / `Preview`) sit above each input via AceGUI's built-in label slot — left-column widgets vertically align with the EditBox itself, not the label.
@@ -141,7 +141,7 @@ The function:
 
 1. Walks `Schema.CATEGORY_ORDER` (so output order matches the panel left-rail). Per category, the strings table is sorted alphabetically by global name. The `filter` argument is applied at both layers — a category filter skips non-matching categories before iterating their strings, a formatstring filter is applied per-string and shows the global under every category it's registered in (so `LOOT_ITEM_CREATED_SELF` prints under both Loot and Tradeskill).
 2. For each emitted string, prints a 3-line block: `Name: <GLOBALNAME>`, `Original: <rendered Blizzard original>`, `Formatted: <rendered PrettyChat-configured value>`. Labels are green; the category header above each block (`Category: <name>`) is gold. The Original is rendered from `self.originalStrings[globalName]` (the snapshot taken in `OnEnable`); the Formatted side is rendered from `self:GetStringValue(category, globalName)`.
-3. Both renders go through `NS.RenderSample(fmt)` — the same path the per-row Preview EditBox uses, so test output and panel preview can never drift on placeholder choices or positional-arg handling. `RenderSample` walks `%[n$][flags][width][.precision]type` conversions (positional `%n$type` is honored), produces typed placeholders (`"Sample"` for `%s`, `42` for integer types, `1.5` for floats, `65` for `%c`, `"?"` for unknowns), strips `%%` escapes first, and `pcall`s `string.format`. On failure the rendered cell is replaced by an inline grey `(error: <msg>)` and the row counts toward the errored tally.
+3. Both renders go through `NS.RenderSample(fmt)` — the same path the per-row Preview EditBox uses, so test output and panel preview can never drift on placeholder choices or positional-arg handling. `RenderSample` walks `%[n$][flags][width][.precision]type` conversions (positional `%n$type` is honored), produces typed placeholders (`"Sample"` for `%s`, `42` for integer types, `1.5` for floats, `65` for `%c`, `"?"` for unknowns), strips `%%` escapes first, and `pcall`s `string.format`. On failure the rendered cell is replaced by an inline gray `(error: <msg>)` and the row counts toward the errored tally.
 4. **Every line — header, category banner, body lines, blank-line separators, footer — carries the `[PC]` prefix**, so the report stays distinguishable from real chat traffic interleaved with it. Header includes a notice when `IsAddonEnabled()` is false. Footer reports both counts: `"end of test output (N strings shown, K errored)"` (the `K errored` clause is omitted when zero). When the filter matches no strings (e.g. `/pc test category General` — the virtual category has no strings) the function emits `(no matching strings)` and skips the footer.
 
 Test output ignores the master / per-category / per-string enable toggles — the preview is for *seeing what your formats look like*, not for verifying which ones are currently applied to live chat. The toggles only affect what `ApplyStrings` writes to live `_G[GLOBALNAME]`.
@@ -168,8 +168,8 @@ The default formats in `defaults/Defaults.lua` use this palette. Edit `defaults/
 | `cccccc` | Generic / secondary labels |
 | `ffffff` | Default / value text |
 | `ffd700` | Gold — panel string labels (per-string title) |
-| `aaaaaa` | Grey — panel captions, slash alias note, default-state sample line |
+| `aaaaaa` | Gray — panel captions, slash alias note, default-state sample line |
 
 WoW color escapes use `|cAARRGGBB...|r` (AA = alpha, always `ff`). The house style for new defaults is `Category | Context | Source | +/- value`, each segment color-coded.
 
-Addon UI escapes (slash output, `[PC]` prefix, panel grey captions, command-list colors, `/pc test` block markers) are centralized in `NS.Const.Color` (`core/Constants.lua`) — `cyan`/`reset` build the `[PC]` prefix, `yellow`/`white` colour the slash-help command names + descriptions (and the gold-key / white-value `/pc list` / `get` / `set` rows), `grey` colours the alias note and the per-string GLOBALNAME caption, `gold` is used for the `Category:` header in `/pc test` output, `green` is used for the `Name:` / `Original:` / `Formatted:` labels in the same. The mandated slash-commands-§5 output palette adds `listHead` (green "Available settings" / count headers) and `azure` (the `[Category]` group headers) — these exact codes are fixed across every Ka0s addon and must not be substituted. Edit `core/Constants.lua` to retune the addon UI palette; this table above governs the chat-message palette.
+Addon UI escapes (slash output, `[PC]` prefix, panel gray captions, command-list colors, `/pc test` block markers) are centralized in `NS.Const.Color` (`core/Constants.lua`) — `cyan`/`reset` build the `[PC]` prefix, `yellow`/`white` color the slash-help command names + descriptions (and the gold-key / white-value `/pc list` / `get` / `set` rows), `gray` colors the alias note and the per-string GLOBALNAME caption, `gold` is used for the `Category:` header in `/pc test` output, `green` is used for the `Name:` / `Original:` / `Formatted:` labels in the same. The mandated slash-commands-§5 output palette adds `listHead` (green "Available settings" / count headers) and `azure` (the `[Category]` group headers) — these exact codes are fixed across every Ka0s addon and must not be substituted. Edit `core/Constants.lua` to retune the addon UI palette; this table above governs the chat-message palette.

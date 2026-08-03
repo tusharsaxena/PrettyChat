@@ -143,8 +143,8 @@ NS.DebugLog = lib:New({
     -- field is both the common case and the safe one (README, "The `L` trap").
     --
     -- No `skin`, no `applySkin`, no `makeCloseButton` either, and that is a
-    -- decision rather than an omission. The flat 1px black edge with its grey inner
-    -- highlight, the gold title and the grey divider are now the NORMATIVE Ka0s
+    -- decision rather than an omission. The flat 1px black edge with its gray inner
+    -- highlight, the gold title and the gray divider are now the NORMATIVE Ka0s
     -- window edge (standalone-windows-§2, Core minor 3), and the × on a window the
     -- library draws is the library's — a host must not push its own onto them.
     -- The console therefore looks slightly different from the one this addon

@@ -8,7 +8,7 @@ local addonName, NS = ...
 -- list/get/set/reset schema verbs. What stayed: the COMMANDS table itself — a host
 -- owns its verbs, and the table crossing to the library as plain DATA is what keeps
 -- an options library and a slash library from having to resolve each other
--- (slash-commands-§3) — plus the four verbs whose behaviour is genuinely this
+-- (slash-commands-§3) — plus the four verbs whose behavior is genuinely this
 -- addon's: `list`'s two reserved sub-keywords and its category filter, `resetall`,
 -- `test` and `debug`.
 

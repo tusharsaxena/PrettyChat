@@ -100,14 +100,14 @@ end
 -- Per-string block.
 --   ─── <strData.label> ───                          (Heading, full width)
 --   [Enable]              | Original  [disabled EditBox]
---   GLOBALNAME (grey)     | New       [editable EditBox]
+--   GLOBALNAME (gray)     | New       [editable EditBox]
 --   [Reset]               | Preview   [disabled EditBox, color rendered]
 --
 -- Two-column 40/60 split, drawn by hand rather than by the library's flow
 -- engine. This is the documented deviation from options-ui-§6's 50/50 grid
 -- (PC-23), and adopting LibKa0s-Options-1.0 did not change the reasoning: the
 -- block is a domain-specific three-row CONTROL, not a row of independent
--- settings. The right column holds full format strings with their colour
+-- settings. The right column holds full format strings with their color
 -- escapes and needs the extra width to stay legible; the left column only ever
 -- holds a checkbox, a short GLOBALNAME caption and a Reset button.
 --
@@ -120,7 +120,7 @@ end
 --
 -- Reset restores BOTH per-string dimensions (custom format + enable state) via
 -- PrettyChat:ResetString, matching the category/all resets. The Preview EditBox
--- uses InputBoxTemplate, whose backing FontString renders WoW `|c…|r` colour
+-- uses InputBoxTemplate, whose backing FontString renders WoW `|c…|r` color
 -- escapes, so the rendered sample shows with its formatting intact.
 -- ---------------------------------------------------------------------
 
@@ -164,7 +164,7 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
         end
         if #others > 0 then
             enableTooltip = enableTooltip
-                .. "\n\n" .. Color.grey
+                .. "\n\n" .. Color.gray
                 .. "Shared with " .. table.concat(others, ", ")
                 .. " — both registrations write the same Blizzard global; the last category to apply wins on /reload."
                 .. Color.reset
@@ -192,7 +192,7 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
 
     local captionLbl = AceGUI:Create("Label")
     captionLbl:SetRelativeWidth(LEFT_W)
-    captionLbl:SetText(Color.grey .. globalName .. Color.reset)
+    captionLbl:SetText(Color.gray .. globalName .. Color.reset)
     row2:AddChild(captionLbl)
 
     local newInput = AceGUI:Create("EditBox")
@@ -354,7 +354,7 @@ local function buildParentBody(ctx)
 
     local alias = AceGUI:Create("Label")
     alias:SetFullWidth(true)
-    alias:SetText(Color.grey .. L["/prettychat is an alias for /pc"] .. Color.reset)
+    alias:SetText(Color.gray .. L["/prettychat is an alias for /pc"] .. Color.reset)
     scroll:AddChild(alias)
     H.AddSpacer(scroll, H.ROW_VSPACER)
 
@@ -364,7 +364,7 @@ local function buildParentBody(ctx)
     -- side of the em dash, the dash explicitly white-wrapped, the description bare —
     -- which is the silent drift between settings/Panel.lua and settings/Slash.lua
     -- that every addon in the collection had. Collapsing it changes what a user
-    -- sees: single spaces, no colour span on the dash, and a white description.
+    -- sees: single spaces, no color span on the dash, and a white description.
     for _, line in ipairs(NS.SlashCommands.LandingRows()) do
         local row = AceGUI:Create("Label")
         row:SetFullWidth(true)

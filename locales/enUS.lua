@@ -3,7 +3,7 @@ local addonName, NS = ...
 -- NS.L — localization table with English-key fallback. Keys ARE the
 -- enUS strings, so a missing translation returns the key verbatim: any
 -- unwrapped or untranslated string still renders in English (zero
--- behaviour change on enUS). Translators add locale files that assign
+-- behavior change on enUS). Translators add locale files that assign
 -- L["English source"] = "translated" under their own `GetLocale()` gate.
 --
 -- The seeded block below is the authoritative manifest of the addon's

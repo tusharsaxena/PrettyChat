@@ -26,7 +26,7 @@ tests/
 ```
 
 - `run.lua` builds the shared table with `Kit.expose` and hands the ordered suite list to `Kit.run`. `t.eq` / `t.truthy` / `t.falsy` / `t.nilv` are **aliases** onto `Kit.assertEqual` / `assertTrue` / `assertFalse` / `assertNil`, so the failure messages and the caller-line reporting are the kit's everywhere; `neq` is the one the kit does not carry and is a thin `Kit.fail` wrapper.
-- `loader.lua` derives the addon's own file list from `PrettyChat.toc` with `Loader.tocFiles` (testing-§9) rather than restating it, lists every file of `LibKa0s.xml` explicitly in XML order, seeds every schema-registered Blizzard global with a recognisable `ORIG:<NAME>` value, and runs the AceAddon lifecycle. `ctx.loadAddon()` returns a **fresh, fully-booted, isolated instance** (`{ env, NS, addon }`); `ctx.loadAddon({ skip = { … } })` loads with files genuinely absent, which is how the degraded-install cases are driven rather than by hand-stubbing (testing-§8), and `{ mock = fn }` reshapes the environment before anything loads.
+- `loader.lua` derives the addon's own file list from `PrettyChat.toc` with `Loader.tocFiles` (testing-§9) rather than restating it, lists every file of `LibKa0s.xml` explicitly in XML order, seeds every schema-registered Blizzard global with a recognizable `ORIG:<NAME>` value, and runs the AceAddon lifecycle. `ctx.loadAddon()` returns a **fresh, fully-booted, isolated instance** (`{ env, NS, addon }`); `ctx.loadAddon({ skip = { … } })` loads with files genuinely absent, which is how the degraded-install cases are driven rather than by hand-stubbing (testing-§8), and `{ mock = fn }` reshapes the environment before anything loads.
 
   **Why this file survives the kit adoption.** `tests/_kit/loader.lua` builds ONE environment whose `__newindex` writes through to the real `_G`. This addon's entire feature is rewriting `_G[GLOBALNAME]`, and half the suite asserts on what landed there — so each instance needs its own. `tests/wow_mock.lua` points `_G` back at the mock table and this file builds a fresh mock per call, which is what supplies the isolation the kit has no mode for. Chunks compile once and re-run per instance, because `loadfile` on the ~1.9 MB of generated `GlobalStrings/` chunks would otherwise dominate the run.
 - `wow_mock.lua` is a **thin extender** (testing-§1): `local base = dofile("tests/_kit/mock_base.lua")`, then a builder that overwrites the fifteen keys this addon genuinely needs differently. Its own header documents each with the reason it cannot come from the base. The load-bearing ones:
@@ -65,9 +65,9 @@ diff -r ../LibKa0s/testkit tests/_kit                          # bytes  — SHOU
 Run **both** of each pair and read the difference between them:
 
 - **content differs** → a real fork in `libs/` or `tests/_kit/`, which is the one state the vendoring discipline forbids. Fix it upstream in `../LibKa0s` and re-vendor whole (`cp -r ../LibKa0s/LibKa0s/. libs/LibKa0s/`); never edit the vendored copy.
-- **content same, bytes differ** → **nothing has forked.** The two checkouts merely disagree about line endings. Every repo here pins `* text=auto eol=crlf` while git stores LF blobs, so a working tree holding either ending round-trips to the same blob and `git status` stays clean on both sides — the state is invisible and self-perpetuating. Renormalise whichever side drifted (`git add --renormalize .`); re-vendoring will **not** converge it, it just moves the wrong endings downstream.
+- **content same, bytes differ** → **nothing has forked.** The two checkouts merely disagree about line endings. Every repo here pins `* text=auto eol=crlf` while git stores LF blobs, so a working tree holding either ending round-trips to the same blob and `git status` stays clean on both sides — the state is invisible and self-perpetuating. Renormalize whichever side drifted (`git add --renormalize .`); re-vendoring will **not** converge it, it just moves the wrong endings downstream.
 
-`tests/test_harness.lua` runs the same comparison mechanically whenever the sibling checkout is present, on raw bytes with no normalisation. It is the only gate that can go quiet — a missing sibling means it did not look — which is why the commands above stay written down here.
+`tests/test_harness.lua` runs the same comparison mechanically whenever the sibling checkout is present, on raw bytes with no normalization. It is the only gate that can go quiet — a missing sibling means it did not look — which is why the commands above stay written down here.
 
 ## Test-case inventory & badge sync (`testing-§5`)
 
@@ -83,4 +83,4 @@ Whenever the suite changes — a case added, removed, or renamed, or the pass co
 
 ## In-game validation
 
-For behaviour stock Lua can't cover (panel rendering, live chat overrides, positional `%n$s` formats), follow the manual [smoke-test suite](./smoke-tests.md) — it lists which invariant each test guards, so a failure can be tied back to a specific area of the addon.
+For behavior stock Lua can't cover (panel rendering, live chat overrides, positional `%n$s` formats), follow the manual [smoke-test suite](./smoke-tests.md) — it lists which invariant each test guards, so a failure can be tied back to a specific area of the addon.

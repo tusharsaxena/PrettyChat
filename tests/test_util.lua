@@ -62,11 +62,11 @@ test("trim keeps interior whitespace intact", function()
     t.eq(U.trim("  a  b  "), "a  b", "only the ends are touched")
 end)
 
-test("note and cmd wrap text in the documented slash colours", function()
+test("note and cmd wrap text in the documented slash colors", function()
     local Color = NS.Const.Color
     t.eq(U.note("body"), Color.white .. "body" .. Color.reset,
         "note() renders body text white")
     t.eq(U.cmd("/pc help"), Color.yellow .. "/pc help" .. Color.reset,
         "cmd() renders command text in the schema-path yellow (slash-commands-§4)")
-    t.eq(U.note(""), Color.white .. Color.reset, "an empty string still terminates its colour")
+    t.eq(U.note(""), Color.white .. Color.reset, "an empty string still terminates its color")
 end)

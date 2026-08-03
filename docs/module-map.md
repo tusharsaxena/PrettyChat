@@ -35,7 +35,7 @@ Public surfaces are exposed on `NS`:
 | Member | Set by | Used by |
 |--------|--------|---------|
 | `NS.Compat` | `core/Compat.lua` | `core/Namespace.lua`, `settings/Slash.lua`, `settings/Panel.lua` (`Compat.GetAddOnMetadata` — C_AddOns vs legacy global) |
-| `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `settings/Panel.lua` (`Color` palette, `STRING_VSPACER`, the landing page's own section spacers); `settings/Slash.lua` (slash-output `Color` codes); `core/Util.lua` (colour-wrap helpers); `core/DebugLogSetup.lua` (`FONT_MONO`); `core/CoreSetup.lua` (`NS.PREFIX` = the shared cyan `[PC]` tag, passed to the printer as a function so a later change is not frozen out) |
+| `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `settings/Panel.lua` (`Color` palette, `STRING_VSPACER`, the landing page's own section spacers); `settings/Slash.lua` (slash-output `Color` codes); `core/Util.lua` (color-wrap helpers); `core/DebugLogSetup.lua` (`FONT_MONO`); `core/CoreSetup.lua` (`NS.PREFIX` = the shared cyan `[PC]` tag, passed to the printer as a function so a later change is not frozen out) |
 | `NS.name` / `NS.version` | `core/Namespace.lua` | identity bootstrap (records addon name + TOC version so no module re-queries the TOC) |
 | `NS.State` | `core/State.lua` | `core/DebugLogSetup.lua`, `settings/Slash.lua` (session-only `debug` flag; `{ debug = false }`, reset every reload/login) |
 | `NS.Util` | `core/Util.lua` | `settings/Slash.lua`, `core/DebugLogSetup.lua`, `core/PrettyChat.lua` (`trim` / `note` / `cmd` string helpers; secret-safe `SafeToString` / `IsConcatSafe`) |

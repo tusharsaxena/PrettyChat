@@ -125,7 +125,7 @@ test("Core cannot express the L trap — the tripwire that stands in for a rende
 end)
 
 test("the secret-safe pair on NS.Util IS Core's, not a host copy beside it", function()
-    -- Identity, not behaviour: two implementations that agree today are exactly the
+    -- Identity, not behavior: two implementations that agree today are exactly the
     -- state the extraction exists to end, and only identity can see the difference.
     local core = env.LibStub("LibKa0s-Core-1.0", true)
     t.eq(NS.Util.SafeToString, core.SafeToString, "SafeToString is the library's function")
@@ -221,7 +221,7 @@ end)
 
 test("the console's print and safeToString are call-time forwarders, not captures", function()
     -- debug-logging-§1 makes this a MUST, and it is one of the few rules a
-    -- behavioural case genuinely cannot reach here: core/CoreSetup.lua loads BEFORE
+    -- behavioral case genuinely cannot reach here: core/CoreSetup.lua loads BEFORE
     -- this seam, so `print = NS.Print` would capture the already-reclaimed printer
     -- and work perfectly — today. It breaks the day the TOC order moves, which is
     -- exactly the change nobody re-tests. So the guard is on the source, where the
@@ -254,7 +254,7 @@ test("with DebugLog absent the console degrades but the flag and the ack survive
     bare.NS.DebugLog:SetEnabled(true)
     t.truthy(bare.NS.State.debug, "the session flag still flips")
     local joined = table.concat(msgs, "\n")
-    t.truthy(joined:find("debug logging |cff40ff40ON|r", 1, true), "the colour-coded ack still lands")
+    t.truthy(joined:find("debug logging |cff40ff40ON|r", 1, true), "the color-coded ack still lands")
     t.truthy(joined:find(bare.NS.LIBKA0S_MISSING ..
         ", so the debug console window is unavailable.", 1, true),
         "and the window's absence is explained through the shared cause clause")
@@ -273,9 +273,9 @@ test("with DebugLog absent the console degrades but the flag and the ack survive
 
     -- The stub must NOT re-implement the line format (debug-logging-§3/§7).
     t.nilv(bare.NS.DebugLog.FormatPlain, "the stub carries no plain formatter")
-    t.nilv(bare.NS.DebugLog.FormatColored, "and no coloured one")
+    t.nilv(bare.NS.DebugLog.FormatColored, "and no colored one")
     local src = readFile("core/DebugLogSetup.lua")
-    t.falsy(src:find("6f8faf", 1, true), "nor the console's colour codes anywhere in the seam")
+    t.falsy(src:find("6f8faf", 1, true), "nor the console's color codes anywhere in the seam")
     t.falsy(src:find("c9a66b", 1, true), "either of them")
 
     -- Every member the addon actually calls has to answer.
@@ -536,7 +536,7 @@ test("with Slash absent the host verbs survive and the schema CLI says why", fun
 
     -- And the stub re-implements none of the library's rendering.
     local src = readFile("settings/Slash.lua")
-    t.falsy(src:find("cFFFFFF00", 1, true), "no copied row/key colour codes in the seam")
+    t.falsy(src:find("cFFFFFF00", 1, true), "no copied row/key color codes in the seam")
     t.falsy(src:find("cFFFFFFFF", 1, true), "either of them")
 end)
 
@@ -589,7 +589,7 @@ test("the shared cause clause names the addon and where the library should be", 
     t.falsy(NS.LIBKA0S_MISSING:find("%.$"), "it carries no terminal punctuation of its own")
 end)
 
-test("the degraded secret guard still neutralises a protected value", function()
+test("the degraded secret guard still neutralizes a protected value", function()
     local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
     local secret = setmetatable({}, { __concat = function() error("secret") end })
     t.eq(bare.NS.Util.SafeToString(secret), "<secret>", "the fallback answers the same sentinel")

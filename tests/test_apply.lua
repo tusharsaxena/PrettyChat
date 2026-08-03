@@ -79,7 +79,7 @@ test("a disabled category leaves other categories applied", function()
     local otherRow = firstFormatRow(Schema, "Money")
     Schema.Set(cat .. ".enabled", false)
     t.eq(env[g], orig, "the disabled category is restored")
-    t.eq(env[otherRow.globalName], otherRow.default, "its neighbour is untouched")
+    t.eq(env[otherRow.globalName], otherRow.default, "its neighbor is untouched")
     inst.addon:ResetAll()
 end)
 

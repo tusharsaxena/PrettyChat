@@ -65,7 +65,7 @@ So writing a format back to its default value via `/pc set` or the panel acts as
 | `Schema.RowsByCategory(category)` | Filtered subset for one category. Used by `/pc list <Category>` and the no-arg `/pc list` (iterating `CATEGORY_ORDER`); also used by `schemaReady()` as the presence-check sentinel for "is the schema fully built?". |
 | `Schema.FindByPath(path)` | O(1) lookup; returns the row or `nil`. |
 | `Schema.Get(path)` / `Schema.Set(path, value)` | Read/write through the row's closures. `Set` returns `false` if the path is unknown. |
-| `Schema.FormatValue(row, value)` | Type-aware display string shared by `/pc list` rows and the `/pc get` / `/pc set` echo (slash-commands-§5): bool → `true`/`false`; string → the raw format with `|` doubled to `||` so its colour escapes render as literal text; `nil` → `"nil"`. |
+| `Schema.FormatValue(row, value)` | Type-aware display string shared by `/pc list` rows and the `/pc get` / `/pc set` echo (slash-commands-§5): bool → `true`/`false`; string → the raw format with `|` doubled to `||` so its color escapes render as literal text; `nil` → `"nil"`. |
 | `Schema.ResolveCategory(name)` | Case-insensitive PascalCase resolver — `/pc reset loot` finds `Loot`. Returns `nil` for unknowns. |
 | `Schema.NotifyPanelChange(category?)` | Invokes the closure registered for `category` via `RegisterRefresher`. Pass `nil` (or `"General"`) to fire every registered refresher. Safe to call before any sub-page has been opened — unregistered categories are no-ops. |
 | `Schema.RegisterRefresher(category, fn)` | Sub-page registration hook called by `settings/Panel.lua` on first `OnShow`. The closure should re-sync every visible widget on that page from the DB. |

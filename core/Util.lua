@@ -1,7 +1,7 @@
 local addonName, NS = ...
 
 -- NS.Util — tiny pure string helpers shared by the slash dispatcher (settings/Slash.lua)
--- and any other module. Kept here so the colour-wrap helpers have a single home instead
+-- and any other module. Kept here so the color-wrap helpers have a single home instead
 -- of being re-declared per file. Loads after Constants so NS.Const.Color exists.
 --
 -- The secret-safe pair that used to live here — IsConcatSafe and SafeToString — is now

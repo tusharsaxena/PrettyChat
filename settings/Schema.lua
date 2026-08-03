@@ -210,7 +210,7 @@ function Schema.Get(path)
 end
 
 -- THE value formatter, and there is exactly one of it (slash-commands-§5: the value
--- formatter and the coloured `key = value` helper are one shared pair, and an addon
+-- formatter and the colored `key = value` helper are one shared pair, and an addon
 -- MUST NOT wrap either in a private variant).
 --
 -- It lives here, beside the rows it renders, rather than in settings/Slash.lua,
@@ -222,8 +222,8 @@ end
 -- instant.
 --
 -- The rendering itself is `LibKa0s-Slash-1.0`'s; what is ours is the one thing it
--- cannot know: a Blizzard format string is full of `|c…|r` colour escapes, and printed
--- raw they COLOUR the line instead of appearing in it. Doubling is WoW's own escape
+-- cannot know: a Blizzard format string is full of `|c…|r` color escapes, and printed
+-- raw they COLOR the line instead of appearing in it. Doubling is WoW's own escape
 -- for a literal pipe, and it is the same convention the panel's New box shows and
 -- accepts, so a value round-trips between the three surfaces unchanged.
 local slashLib = LibStub and LibStub("LibKa0s-Slash-1.0", true)
@@ -237,7 +237,7 @@ function Schema.FormatValue(row, v)
         return out
     end
     -- Library absent. The [Set] trace still has to say something, and this is the
-    -- pre-library rendering rather than a copy of the library's — no colour codes,
+    -- pre-library rendering rather than a copy of the library's — no color codes,
     -- no `key = value` shape, just the value.
     if v == nil then return "nil" end
     local vtype = row and row.type or type(v)

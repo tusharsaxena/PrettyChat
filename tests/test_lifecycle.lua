@@ -61,7 +61,7 @@ test("NS.Print prepends the cyan [PC] tag to every line", function()
     t.eq(last(), NS.PREFIX .. "plain message", "the tag is prepended verbatim")
 end)
 
-test("NS.Print neutralises a value the concat probe rejects", function()
+test("NS.Print neutralizes a value the concat probe rejects", function()
     -- events-frames-taint-§8: a combat "secret" must never reach the
     -- output path. The printer routes through Util.SafeToString.
     local secret = setmetatable({}, { __concat = function() error("secret") end })
@@ -80,7 +80,7 @@ test("OpenConfig refuses during combat without touching the Settings API", funct
     t.eq(#env._settings.opened, opens, "the Settings API was not called")
     t.truthy(last():find("cannot open settings during combat", 1, true),
         "the refusal is surfaced to the user")
-    t.truthy(last():find(Color.grey, 1, true), "the notice renders grey")
+    t.truthy(last():find(Color.gray, 1, true), "the notice renders gray")
 end)
 
 test("OpenConfig opens the registered category out of combat", function()
@@ -94,7 +94,7 @@ end)
 
 test("OpenConfig is silent on the paths the library does not report", function()
     -- Two host diagnostics went with the old hand-written body, deliberately
-    -- (docs/pending/LEDGER.md, LIBKA0S-04): a grey notice on an explicit `false`
+    -- (docs/pending/LEDGER.md, LIBKA0S-04): a gray notice on an explicit `false`
     -- from Settings.OpenToCategory, and a one-time hint when the private
     -- category-tree expansion could not run. Keeping either would have meant a
     -- second open path around the library's combat gate, which options-ui-§2

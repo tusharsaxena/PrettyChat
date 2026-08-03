@@ -137,9 +137,9 @@ NS.Helpers = lib:New({
     -- Deliberately NOT passed, each for a reason worth writing down rather than
     -- leaving as an absence:
     --
-    --   colorDecode / colorEncode — this addon has no colour rows at all. The schema
-    --     is bool and string only, so there is no stored colour shape to declare.
-    --   getLSM / scheduleTimer    — no media pickers, no colour pickers, no sliders,
+    --   colorDecode / colorEncode — this addon has no color rows at all. The schema
+    --     is bool and string only, so there is no stored color shape to declare.
+    --   getLSM / scheduleTimer    — no media pickers, no color pickers, no sliders,
     --     so nothing reaches either.
     --   skipRestoreAll / afterRestoreAll — the global reset is PrettyChat:ResetAll,
     --     which wipes the profile in one pass; the library's row-by-row

@@ -229,7 +229,7 @@ function PrettyChat:Test(filter)
     local function renderOrError(fmt)
         local rendered, err = NS.RenderSample(fmt)
         if rendered then return rendered, false end
-        return Color.grey .. "(error: " .. tostring(err) .. ")" .. Color.reset, true
+        return Color.gray .. "(error: " .. tostring(err) .. ")" .. Color.reset, true
     end
 
     local printed, errored = 0, 0

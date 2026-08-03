@@ -59,8 +59,8 @@ end
 -- than a second implementation beside it — options-ui-§2 is explicit that the
 -- combat gate lives INSIDE the panel-open function so every caller is gated, and
 -- that a host MUST NOT wire a second, un-gated open path around it. The library's
--- version refuses under lockdown with the same grey notice this addon printed
--- (byte for byte — Color.grey IS |cffaaaaaa), logs through the descriptor's debug
+-- version refuses under lockdown with the same gray notice this addon printed
+-- (byte for byte — Color.gray IS |cffaaaaaa), logs through the descriptor's debug
 -- hook, and does the same private-API category-tree expansion inside a pcall.
 --
 -- Two host diagnostics were dropped with the old body, both deliberately and both

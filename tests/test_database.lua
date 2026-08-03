@@ -57,7 +57,7 @@ test("RunMigrations tolerates nil and a db without .global", function()
 end)
 
 test("the runner stamps the current version even with no steps to run", function()
-    -- There are no migrations yet; the runner still normalises the stamp so
+    -- There are no migrations yet; the runner still normalizes the stamp so
     -- the next release can rely on it.
     local ahead = { global = { schemaVersion = Database.SCHEMA_VERSION + 5 } }
     Database.RunMigrations(ahead)

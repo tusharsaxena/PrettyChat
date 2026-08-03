@@ -25,8 +25,8 @@ test("FONT_MONO points at the vendored JetBrainsMono TTF", function()
         "FONT_MONO points at the vendored JetBrainsMono TTF")
 end)
 
-test("pure line formatters render plain and coloured lines", function()
-    -- Frame-free, unit-tested so colour can't drift from plain.
+test("pure line formatters render plain and colored lines", function()
+    -- Frame-free, unit-tested so color can't drift from plain.
     t.eq(D.FormatPlain("15:04:43", "Loot", "item x2"),
         "15:04:43 | [Loot] item x2", "FormatPlain: ts | [tag] msg")
     t.eq(D.FormatPlain("15:04:43", nil, "hi"),
@@ -44,13 +44,13 @@ test("/pc debug on|off drives the session flag through the SetEnabled seam", fun
     t.eq(NS.State.debug, false, "/pc debug off disables session state")
 end)
 
-test("colour-coded chat ack: ON green, OFF red, via [PC]", function()
+test("color-coded chat ack: ON green, OFF red, via [PC]", function()
     -- debug-logging-§5.
     local msgs = env.DEFAULT_CHAT_FRAME.messages
     debugCmd(NS, addon, "on")
-    t.truthy(msgs[#msgs]:find("|cff40ff40ON|r", 1, true), "on ack colours ON green (40ff40)")
+    t.truthy(msgs[#msgs]:find("|cff40ff40ON|r", 1, true), "on ack colors ON green (40ff40)")
     debugCmd(NS, addon, "off")
-    t.truthy(msgs[#msgs]:find("|cffff4040OFF|r", 1, true), "off ack colours OFF red (ff4040)")
+    t.truthy(msgs[#msgs]:find("|cffff4040OFF|r", 1, true), "off ack colors OFF red (ff4040)")
 end)
 
 test("enable emits the [Init] session summary after the bracket", function()
@@ -136,23 +136,23 @@ test("the console line and the copy buffer describe the same event", function()
     t.eq(#D.buffer, 1, "one buffered line")
     t.truthy(plain:find("| %[Loot%] item x3$"), "the plain line carries tag + message")
     t.truthy(console[#console]:find("%[Loot%]|r item x3$"),
-        "the console line carries the same tag + message, coloured")
+        "the console line carries the same tag + message, colored")
     NS.State.debug = false
 end)
 
-test("the plain buffer never carries colour escapes of its own", function()
+test("the plain buffer never carries color escapes of its own", function()
     NS.State.debug = true
     D:Clear()
     NS.Debug("Loot", "plain message")
-    t.falsy(D.buffer[1]:find("|c", 1, true), "no colour code is added to a plain line")
+    t.falsy(D.buffer[1]:find("|c", 1, true), "no color code is added to a plain line")
     t.eq(D.FormatPlain("00:00:00", "Tag", "msg"), "00:00:00 | [Tag] msg",
         "the plain formatter emits the bare separator, never an escape")
     t.truthy(D.FormatColored("00:00:00", "Tag", "msg"):find("|cff", 1, true),
-        "while the console formatter does colour its line")
+        "while the console formatter does color its line")
     NS.State.debug = false
 end)
 
-test("NS.Debug neutralises a protected value inside its format args", function()
+test("NS.Debug neutralizes a protected value inside its format args", function()
     -- events-frames-taint-§8: a combat secret must not reach string.format.
     NS.State.debug = true
     D:Clear()
@@ -241,7 +241,7 @@ test("IsShown is false before the console has ever been built", function()
     t.falsy(fresh.NS.DebugLog:IsShown(), "no frame yet means not shown")
 end)
 
-test("the header label tracks the session flag in the §5 state colours", function()
+test("the header label tracks the session flag in the §5 state colors", function()
     local header = env._frames.byName["PrettyChatDebugWindow"].debugToggle
     D:SetEnabled(true)
     t.eq(header.text, "Debug: ON", "the toggle reads ON while logging")

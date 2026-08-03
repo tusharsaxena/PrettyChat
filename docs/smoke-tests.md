@@ -1,6 +1,6 @@
 # Smoke tests
 
-PrettyChat's automated coverage is the headless harness under `tests/` (`lua tests/run.lua` — see [testing.md](./testing.md)). It exercises the schema, sample renderer, apply pipeline and override engine, migration runner, slash dispatcher, debug console, and the settings panel's registration and widget wiring under stock Lua — but only against mocks. What it cannot reach is behaviour that depends on the live client: real `_G[GLOBALNAME]` formats rendered by Blizzard's own chat code, the persisted AceDB profile across `/reload`, actual panel layout, fonts and third-party skinning, taint, and positional `%n$s` formats. This checklist is that second layer: manual, in-game validation of what stock Lua can't exercise.
+PrettyChat's automated coverage is the headless harness under `tests/` (`lua tests/run.lua` — see [testing.md](./testing.md)). It exercises the schema, sample renderer, apply pipeline and override engine, migration runner, slash dispatcher, debug console, and the settings panel's registration and widget wiring under stock Lua — but only against mocks. What it cannot reach is behavior that depends on the live client: real `_G[GLOBALNAME]` formats rendered by Blizzard's own chat code, the persisted AceDB profile across `/reload`, actual panel layout, fonts and third-party skinning, taint, and positional `%n$s` formats. This checklist is that second layer: manual, in-game validation of what stock Lua can't exercise.
 
 Run the **quick recipe** for routine work. Run the **full suite** before tagging a release, after touching `OnEnable` / `ApplyStrings` / `settings/Schema.lua`, or after a WoW client patch.
 
@@ -122,7 +122,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
   ```
   ─── <strData.label> ───
   [Enable]            | Original [disabled EditBox]
-  GLOBALNAME (grey)   | New      [editable EditBox]
+  GLOBALNAME (gray)   | New      [editable EditBox]
   [Reset]             | Preview  [disabled EditBox]
   ```
   Left column = 40% width. Right column = 60%, EditBoxes have their `Original` / `New` / `Preview` labels above the input.
@@ -272,7 +272,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 > Why: `Settings.OpenToCategory` is taint-protected during combat. The guard lives in `PrettyChat:OpenConfig` itself (not just the slash dispatcher), so any caller is gated.
 
 - Steps: enter combat (engage a target dummy or attack a mob). While in combat: `/pc config`. Then, still in combat, run `/run LibStub("AceAddon-3.0"):GetAddon("PrettyChat"):OpenConfig()` to exercise the programmatic path.
-- Expected: both calls print `cannot open settings during combat — Blizzard's category-switch is protected` (grey). Panel does NOT open in either case. Leave combat — `/pc config` works.
+- Expected: both calls print `cannot open settings during combat — Blizzard's category-switch is protected` (gray). Panel does NOT open in either case. Leave combat — `/pc config` works.
 
 #### T-38 — Unknown command + empty input
 
@@ -365,7 +365,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 > Why: when master OR category is off, per-string Enable should be disabled; when any of the three layers is off, New input is disabled.
 
 - Steps: open Loot. Toggle `Enable Loot` off in the page body.
-- Expected: every per-string Enable checkbox on the page becomes disabled (greyed). Every New EditBox becomes disabled. The Original EditBox remains as it was (already disabled). Reset button stays clickable.
+- Expected: every per-string Enable checkbox on the page becomes disabled (grayed). Every New EditBox becomes disabled. The Original EditBox remains as it was (already disabled). Reset button stays clickable.
 
 #### T-55 — Unknown category name on slash reset
 
@@ -493,7 +493,7 @@ error, and not the same sentence stapled to every line.
   the semicolon must be identical apart from the addon name.
 - `/pc list` prints `…(expected in libs/LibKa0s), so the settings CLI is unavailable.` — one line,
   not a half-rendered listing.
-- `/pc debug on` still prints the colour-coded `debug logging ON` ack and still flips the flag; the
+- `/pc debug on` still prints the color-coded `debug logging ON` ack and still flips the flag; the
   window's absence is reported once with `…, so the debug console window is unavailable.`
 - `/pc config` reports `…, so the settings panel is unavailable.`
 - **`/pc resetall` still works** — the schema loaded fine, and a user whose panel will not open is
@@ -505,7 +505,7 @@ error, and not the same sentence stapled to every line.
 #### T-91 — No raw locale key is on screen anywhere
 
 **Why:** the `L` trap. A module handed the addon's locale table renders raw `SCREAMING_SNAKE` keys in
-place of English — for every key at once, and only in game, because a synthesised key *is* a string
+place of English — for every key at once, and only in game, because a synthesized key *is* a string
 and no headless assertion can tell the difference. Current vendored copies resolve overrides with
 `rawget` and are safe, but this is the check that would have caught a shipped one.
 
@@ -531,10 +531,10 @@ single-line border only looks wrong beside a window that has both lines.
 **Steps:** `/pc debug`, then open a second Ka0s addon's debug console beside it.
 
 **Expected:**
-- A **hard black 1px outer border** with a **lighter grey 1px line just inside it** — two lines, not
+- A **hard black 1px outer border** with a **lighter gray 1px line just inside it** — two lines, not
   one. Background `0.06, 0.06, 0.08` at 92% alpha.
 - The window title (`Pretty Chat — Debug`) renders **gold**; the divider under the title bar is
-  **grey**, not black.
+  **gray**, not black.
 - The × is the thin 18×18 glyph, and it is the **same** × the other addon's console wears.
 - Click **Copy** — the copy window wears the identical edge.
 - Side by side, the two consoles should be indistinguishable apart from their titles. Anything that
@@ -590,11 +590,11 @@ nothing while the header button beside it worked.
 **Expected — unchanged:** the breadcrumb `Ka0s Pretty Chat ▸ <Page>` with its inline arrow atlas;
 the title in `GameFontNormalHuge` with the gold divider tinted to it; the **Defaults** button top
 right at the same inset; the scrollbar gutter reserved on every page, short or long, with the bar
-greyed and inert where the content fits; the per-string 40/60 blocks.
+grayed and inert where the content fits; the per-string 40/60 blocks.
 
 **Expected — deliberately different:** the General page's two checkboxes sit at a true 50/50 rather
 than 0.492 (label-inset controls, so the honest half is correct); the landing page's command rows
-have **single** spaces around the em dash, no colour span on the dash itself, and a white
+have **single** spaces around the em dash, no color span on the dash itself, and a white
 description.
 
 #### T-96 — The panel refuses to render under combat, from the sidebar too
@@ -607,7 +607,7 @@ no guard on the render path before adopting.
 1. `/pc config`
 2. Open the Settings window from the game menu and click **Ka0s Pretty Chat** in the AddOns list.
 
-**Expected:** (1) refuses with the grey
+**Expected:** (1) refuses with the gray
 `cannot open settings during combat — Blizzard's category-switch is protected` and does not open.
 (2) closes the Settings window and prints the same line, rather than drawing a half-built page.
 
