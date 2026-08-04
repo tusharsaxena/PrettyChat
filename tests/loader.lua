@@ -40,6 +40,34 @@ local LIBKA0S = {
     "libs/LibKa0s/PerfPanel.lua",
 }
 
+local function toSet(list)
+    local set = {}
+    for _, v in ipairs(list or {}) do set[v] = true end
+    return set
+end
+
+-- The AceAddon lifecycle hooks are optional — a degraded load (opts.skip) can leave
+-- the addon object absent entirely, and a partial one without a given hook.
+local function callIfPresent(addon, method)
+    if addon and addon[method] then addon[method](addon) end
+end
+
+-- Seed pristine Blizzard originals for every registered global so the
+-- snapshot in OnEnable captures a recognizable value and the
+-- restore-on-disable path is assertable.
+local function seedOriginals(NS, mocks)
+    if not (NS.Schema and NS.Schema.CATEGORY_ORDER) then return end
+    local seen = {}
+    for _, cat in ipairs(NS.Schema.CATEGORY_ORDER) do
+        for _, row in ipairs(NS.Schema.RowsByCategory(cat)) do
+            if row.globalName and not seen[row.globalName] then
+                seen[row.globalName] = true
+                mocks[row.globalName] = "ORIG:" .. row.globalName
+            end
+        end
+    end
+end
+
 -- Returns a loader closure bound to the repo root + the mock module.
 return function(root, mockModule)
     local function abs(rel) return root .. "/" .. rel end
@@ -65,6 +93,19 @@ return function(root, mockModule)
         return c
     end
 
+    -- Run every source under `env`, honoring the skip set. Libs are called with no
+    -- args (they self-register through LibStub); addon files get (addonName, NS).
+    -- setfenv is re-applied per instance because the chunk itself is cached.
+    local function runSources(env, NS, addonName, skipSet)
+        for _, src in ipairs(sources) do
+            if not skipSet[src.path] then
+                local chunk = chunkFor(src.path)
+                setfenv(chunk, env)
+                if src.lib then chunk() else chunk(addonName, NS) end
+            end
+        end
+    end
+
     --- Build one instance.
     --- opts.skip = { "<relative path>", ... } omits those files, which is how the
     --- degraded-install cases load the addon with the library genuinely ABSENT
@@ -76,8 +117,7 @@ return function(root, mockModule)
     --- matters is what the addon does at load and at OnEnable rather than afterwards.
     local function build(opts)
         opts = opts or {}
-        local skipSet = {}
-        for _, rel in ipairs(opts.skip or {}) do skipSet[rel] = true end
+        local skipSet = toSet(opts.skip)
 
         local mocks = mockModule()
         if type(opts.mock) == "function" then opts.mock(mocks) end
@@ -89,33 +129,16 @@ return function(root, mockModule)
         -- previous instance's saved table would otherwise be adopted by this one.
         _G.PrettyChatDB = nil
 
-        for _, src in ipairs(sources) do
-            if not skipSet[src.path] then
-                local chunk = chunkFor(src.path)
-                setfenv(chunk, env)
-                if src.lib then chunk() else chunk(addonName, NS) end
-            end
-        end
+        runSources(env, NS, addonName, skipSet)
 
         local addon = mocks.LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
-        if addon and addon.OnInitialize then addon:OnInitialize() end
+        callIfPresent(addon, "OnInitialize")
 
-        -- Seed pristine Blizzard originals for every registered global so the
-        -- snapshot in OnEnable captures a recognizable value and the
-        -- restore-on-disable path is assertable.
-        if NS.Schema and NS.Schema.CATEGORY_ORDER then
-            local seen = {}
-            for _, cat in ipairs(NS.Schema.CATEGORY_ORDER) do
-                for _, row in ipairs(NS.Schema.RowsByCategory(cat)) do
-                    if row.globalName and not seen[row.globalName] then
-                        seen[row.globalName] = true
-                        mocks[row.globalName] = "ORIG:" .. row.globalName
-                    end
-                end
-            end
-        end
+        -- Seeding sits strictly between OnInitialize and OnEnable: OnEnable is what
+        -- snapshots originalStrings, so the originals must already be in place.
+        seedOriginals(NS, mocks)
 
-        if addon and addon.OnEnable then addon:OnEnable() end
+        callIfPresent(addon, "OnEnable")
 
         return { env = mocks, NS = NS, addon = addon, mocks = mocks }
     end
