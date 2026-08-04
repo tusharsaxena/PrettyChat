@@ -36,8 +36,13 @@ run that measured nothing cannot be mistaken for a green run that measured every
 
 - **`RESULTS.md`** — one row per run across all four suites, plus the current complexity watch list.
   **One file, overwritten in place**: the git history of that single path is the trend line.
-- **`<YYYYMMDD-HHMMSS>/`** — one frozen bundle per run: `manifest.json`, one file per suite, and
-  `ANALYSIS.md` (the write-up). Bundles are **never edited** once written and **never pruned**.
+- **`<YYYYMMDD-HHMMSS>/`** — one frozen bundle per run: `manifest.json` plus one file per suite.
+  Bundles are **never edited** once written and **never pruned**.
+  An **`ANALYSIS.md`** (the write-up) is **MUST for a release run and SHOULD otherwise**
+  (`automated-tests-§5`), so a bundle without one is not automatically a gap. Of the three recorded
+  runs, `20260804-182235` and `20260804-233338` carry one; `20260804-214445` does not, and its
+  `manifest.json` records `"release": null`, so it is a skipped SHOULD rather than a missed MUST.
+  Nothing in this repo has been recorded as a release run yet.
 
 Offline perf records live in the bundle with the run that produced them — except that this addon
 ships no `tests/perf.lua`, so every recorded run's `perf` suite is a **skip** and no bundle holds

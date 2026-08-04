@@ -3,8 +3,10 @@
 <!-- The newest run is prepended by tests/_kit/run-automated-tests.sh. -->
 <!-- This file is OVERWRITTEN IN PLACE — the git history of this one path is the trend line. -->
 
-One row per run. The frozen evidence for each is in the dated folder beside this file;
-the analysis of a given run is its `ANALYSIS.md`.
+One row per run. The frozen evidence for each is in the dated folder beside this file; where that
+folder carries an `ANALYSIS.md`, that file is the run's write-up. One is required only for a release
+run and expected otherwise (`automated-tests-§5`): `20260804-182235` and `20260804-233338` have one,
+`20260804-214445` does not.
 
 **`lint` and `tests` gate. `perf` and `complexity` are recorded and never fail a run** —
 they are read and compared, not thresholded. A `skip` is a suite that did not run at all,
