@@ -79,7 +79,7 @@ Three reset paths, all routed through `PrettyChat:Reset*` not directly through S
 - **`PrettyChat:ResetCategory(category)`** clears one category's overrides. Special case: `category == "General"` clears `db.profile.enabled` back to `nil` (default true). After clearing, calls `ApplyStrings` and `Schema.NotifyPanelChange(category)`.
 - **`PrettyChat:ResetAll()`** clears `db.profile.enabled` *and* every entry in `db.profile.categories`. Calls `ApplyStrings` and `Schema.NotifyPanelChange(nil)` (every category).
 
-Both are reachable from:
+All three are reachable from:
 
 - The per-string `Reset` button on each panel row (`ResetString` — always visible, a no-op when the string is already at default), the panel's per-category `Defaults` button (in the page header — no popup confirm), and the General sub-page's "Reset all to defaults" button (gated by the `PRETTYCHAT_RESET_ALL` StaticPopup).
 - `/pc reset <path>` (one row, through `Schema.ApplyDefault` → the single write seam) and `/pc resetall` (no in-chat confirmation — typing the command is itself the assertion). Category-scoped reset is the settings page's **Defaults** button; `/pc reset` has taken a path rather than a category since `LIBKA0S-10`.

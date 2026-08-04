@@ -69,7 +69,7 @@ WoW chat input interprets `|c…|r` as inline color escapes the moment the user 
 /pc set Loot.LOOT_ITEM_SELF.format ||cffff0000Loot||r | ||cff93c47dYou||r | + %s
 ```
 
-The settings panel's format input box wraps this internally — `settings/Panel.lua`'s edit-box `get` does `:gsub("|", "||")` and `set` does `:gsub("||", "|")`, so users see double-escaped strings while editing but `NS.Schema` always stores raw single-`|` format strings. `/pc set` users have to type `||` themselves; the slash command body does **no** un-escaping.
+The settings panel's format input box wraps this internally — `settings/Panel.lua`'s edit-box `get` does `:gsub("|", "||")` and `set` does `:gsub("||", "|")`, so users see double-escaped strings while editing but `NS.Schema` always stores raw single-`|` format strings. `/pc set` users still have to **type** `||`, but the value is un-escaped on the way in by the descriptor's `parse` hook (`settings/Slash.lua`, `text:gsub("||", "|")`) — the mirror of the `format` hook on the way out — so what lands in `NS.Schema` is the same raw single-`|` string the panel stores, and a value copied out of `/pc get` pastes back into `/pc set` unchanged.
 
 `/pc get` output renders with colors applied (single `|` is sent through `NS.Print` → `DEFAULT_CHAT_FRAME:AddMessage`, which interprets the escapes).
 

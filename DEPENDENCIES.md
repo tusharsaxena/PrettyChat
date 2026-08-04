@@ -21,7 +21,7 @@ import, or a documented command. Nothing here is listed because it seemed likely
 | World of Warcraft, Retail | Interface `120007` (Midnight 12.0.7) | `PrettyChat.toc:1` — `## Interface: 120007`, the single latest-Retail line |
 
 Every library the addon uses is **vendored and committed** under `libs/` and listed in the TOC's
-`# Libraries` section (`PrettyChat.toc:15-21`), so a player installs no library packs:
+`# Libraries` section (`PrettyChat.toc:16-22`), so a player installs no library packs:
 
 - `LibStub`, `CallbackHandler-1.0`, `AceAddon-3.0`, `AceDB-3.0`, `AceConsole-3.0`, `AceGUI-3.0`,
   and the Ka0s umbrella `LibKa0s` (vendored whole from the sibling `../LibKa0s` checkout).

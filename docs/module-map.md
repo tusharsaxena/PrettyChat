@@ -35,16 +35,16 @@ Public surfaces are exposed on `NS`:
 | Member | Set by | Used by |
 |--------|--------|---------|
 | `NS.Compat` | `core/Compat.lua` | `core/Namespace.lua`, `settings/Slash.lua`, `settings/Panel.lua` (`Compat.GetAddOnMetadata` — C_AddOns vs legacy global) |
-| `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `settings/Panel.lua` (`Color` palette, `STRING_VSPACER`, the landing page's own section spacers); `settings/Slash.lua` (slash-output `Color` codes); `core/Util.lua` (color-wrap helpers); `core/DebugLogSetup.lua` (`FONT_MONO`); `core/CoreSetup.lua` (`NS.PREFIX` = the shared cyan `[PC]` tag, passed to the printer as a function so a later change is not frozen out) |
+| `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `settings/Panel.lua` (`Color` palette, `STRING_VSPACER`, the landing page's own section spacers); `settings/Slash.lua` (slash-output `Color` codes); `core/Util.lua` (color-wrap helpers); `core/DebugLogSetup.lua` (`FONT_MONO`); `modules/Override.lua` (`Color` palette for the `Test` report); `core/CoreSetup.lua` (`NS.PREFIX` = the shared cyan `[PC]` tag, passed to the printer as a function so a later change is not frozen out) |
 | `NS.name` / `NS.version` | `core/Namespace.lua` | identity bootstrap (records addon name + TOC version so no module re-queries the TOC) |
 | `NS.State` | `core/State.lua` | `core/DebugLogSetup.lua`, `settings/Slash.lua` (session-only `debug` flag; `{ debug = false }`, reset every reload/login) |
-| `NS.Util` | `core/Util.lua` | `settings/Slash.lua`, `core/DebugLogSetup.lua`, `core/PrettyChat.lua` (`trim` / `note` / `cmd` string helpers; secret-safe `SafeToString` / `IsConcatSafe`) |
+| `NS.Util` | `core/Util.lua` (`trim` / `note` / `cmd`) + `core/CoreSetup.lua` (`SafeToString` / `IsConcatSafe`) | `settings/Slash.lua`, `modules/Override.lua`, `core/DebugLogSetup.lua` (`trim` / `note` / `cmd` string helpers; secret-safe `SafeToString` / `IsConcatSafe`) |
 | `NS.Database` | `core/Database.lua` | `core/PrettyChat.lua` (`OnInitialize` merges `global.schemaVersion` defaults + runs `RunMigrations`) |
 | `NS.DebugLog` / `NS.Debug(tag, fmt, …)` | `core/DebugLogSetup.lua` | every file (on-screen debug console; `NS.Debug` gated on session-only `NS.State.debug`, routed to the console, driven by `/pc debug` through the `DebugLog:SetEnabled` seam) |
-| `NS.Print(msg)` | `core/PrettyChat.lua` | every file (cyan `[PC]` chat-output chokepoint) |
+| `NS.Print(msg)` / `NS.Format(fmt, …)` | `core/CoreSetup.lua` | every file (secret-safe cyan `[PC]` chat-output chokepoint, built by `LibKa0s-Core-1.0` and reclaimed from AceConsole's embed) |
 | `NS.ProfileDefaults` | `defaults/Profile.lua` | `core/PrettyChat.lua` (`OnInitialize` merges it with `NS.Database.defaults` for `AceDB:New`) |
 | `NS.Defaults` | `defaults/Defaults.lua` | `settings/Schema.lua`, `modules/Override.lua`, `settings/Slash.lua`, `settings/Panel.lua` (category → format-string defaults) |
-| `NS.L` | `locales/enUS.lua` | `settings/Panel.lua`, `settings/Slash.lua` (English-key localization; `__index` returns the key) |
+| `NS.L` | `locales/enUS.lua` | `settings/Panel.lua`, `settings/Slash.lua`, `settings/Schema.lua` (English-key localization; `__index` returns the key) |
 | `NS.GlobalStrings` | `GlobalStrings/` chunks | `settings/Panel.lua` ("Original Format String" display) |
 | `NS.Schema` | `settings/Schema.lua` | `settings/Slash.lua` (slash dispatch), `settings/Panel.lua` (every widget get/set; registers a per-sub-page refresh closure via `Schema.RegisterRefresher` on first `OnShow`) |
 | `NS.RenderSample(fmt)` | `modules/Override.lua` | `settings/Panel.lua` (per-string Preview EditBox) |

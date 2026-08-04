@@ -68,17 +68,17 @@ Every file opens with `local addonName, NS = ...` — the addon-wide namespace t
 | Member | Set by | Used by |
 |--------|--------|---------|
 | `NS.Compat` | `core/Compat.lua` | `core/Namespace.lua`, `settings/Slash.lua`, `settings/Panel.lua` (metadata access) |
-| `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `core/Util.lua`, `core/DebugLogSetup.lua`, `core/PrettyChat.lua`, `settings/Panel.lua`, `settings/Slash.lua` (layout/palette/prefix) |
+| `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `core/Util.lua`, `core/CoreSetup.lua`, `core/DebugLogSetup.lua`, `modules/Override.lua`, `settings/Panel.lua`, `settings/Slash.lua` (palette/spacers/font/prefix) |
 | `NS.name` / `NS.version` | `core/Namespace.lua` | identity bootstrap (published for any module) |
 | `NS.State` | `core/State.lua` | `core/DebugLogSetup.lua`, `settings/Slash.lua` (session-only `debug` flag; reset every reload/login) |
-| `NS.Util` | `core/Util.lua` (`trim` / `note` / `cmd`) + `core/CoreSetup.lua` (`SafeToString` / `IsConcatSafe`, bound to Core's) | `settings/Slash.lua`, `core/DebugLogSetup.lua` |
+| `NS.Util` | `core/Util.lua` (`trim` / `note` / `cmd`) + `core/CoreSetup.lua` (`SafeToString` / `IsConcatSafe`, bound to Core's) | `settings/Slash.lua`, `modules/Override.lua`, `core/DebugLogSetup.lua` |
 | `NS.Database` | `core/Database.lua` | `core/PrettyChat.lua` (`OnInitialize` merges defaults + runs migrations) |
 | `NS.LIBKA0S_MISSING` | `core/CoreSetup.lua` | `core/DebugLogSetup.lua`, `settings/OptionsSetup.lua`, `settings/Slash.lua` — the shared cause clause every degraded seam appends its own consequence to |
 | `NS.DebugLog` / `NS.Debug` | `core/DebugLogSetup.lua` | every file (the `LibKa0s-DebugLog-1.0` console + its gated `Debug` sink, bound bare; `SetEnabled` seam driven by `/pc debug`) |
 | `NS.Print` / `NS.Format` | `core/CoreSetup.lua` | every file (secret-safe cyan `[PC]` chat-output chokepoint, built by `LibKa0s-Core-1.0`) |
 | `NS.ProfileDefaults` | `defaults/Profile.lua` | `core/PrettyChat.lua` (`OnInitialize` merges it with `NS.Database.defaults` for `AceDB:New`) |
 | `NS.Defaults` | `defaults/Defaults.lua` | `settings/Schema.lua`, `modules/Override.lua`, `settings/Slash.lua`, `settings/Panel.lua` |
-| `NS.L` | `locales/enUS.lua` | `settings/Panel.lua`, `settings/Slash.lua` (UI strings) |
+| `NS.L` | `locales/enUS.lua` | `settings/Panel.lua`, `settings/Slash.lua`, `settings/Schema.lua` (UI strings — the `General.enabled` row's label and tooltip) |
 | `NS.GlobalStrings` | `GlobalStrings/` chunks | `settings/Panel.lua` (Original Format String display) |
 | `NS.RenderSample` | `modules/Override.lua` | `settings/Panel.lua` (per-string Preview) |
 | `NS.Schema` | `settings/Schema.lua` | `settings/Slash.lua` (slash), `settings/Panel.lua` (widgets) |
@@ -136,7 +136,7 @@ Every mutation goes through `NS.Schema.Set(path, value)` — the **single write 
 
 ## External dependencies
 
-Vendored under `libs/` (the BigWigs packager pulls nothing — no `externals`): LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, and **[LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.3.1** (`libs/LibKa0s/`, listed in the TOC as `libs\LibKa0s\LibKa0s.xml` after Ace3). (`AceConfig-3.0` was removed — no live consumer.)
+Vendored under `libs/` (the BigWigs packager pulls nothing — no `externals`): LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, and **[LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.5.0** (`libs/LibKa0s/`, listed in the TOC as `libs\LibKa0s\LibKa0s.xml` after Ace3). (`AceConfig-3.0` was removed — no live consumer.)
 
 Four of LibKa0s's five majors are adopted: **Core**, **DebugLog**, **Slash** and **Options**. **Perf is declined** — see LIBKA0S-12 in [pending/LEDGER.md](./pending/LEDGER.md): this addon registers no events, no timers and no ticker, so every bucket would read `0.000` by construction, and `suspend` would flip the player's chat formatting back to Blizzard's mid-fight for a capture that can only report zero. `Perf.lua` and `PerfPanel.lua` are still vendored, because the folder is copied whole and never file by file.
 
@@ -160,6 +160,8 @@ Topic-specific detail lives in `docs/`. Read on demand.
 | Topic | File |
 |-------|------|
 | How to verify: harness, lint, the commit gate | [testing.md](./testing.md) |
+| What to install: the toolchain contract | [../DEPENDENCIES.md](../DEPENDENCIES.md) |
+| Generated `lizard` complexity report + watch list | [complexity.md](./complexity.md) |
 | In/out scope + resolved decisions | [scope.md](./scope.md) |
 | Per-file responsibility map | [file-index.md](./file-index.md) |
 | Module roles + public APIs | [module-map.md](./module-map.md) |
