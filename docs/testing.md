@@ -18,7 +18,8 @@ luacheck .                 # static analysis (config in .luacheckrc)
 
 ```
 tests/
-  _kit/              -- VENDORED, never edited: framework.lua, loader.lua, mock_base.lua, README.md
+  _kit/              -- VENDORED, never edited: framework.lua, loader.lua, mock_base.lua,
+                     --                          run-automated-tests.sh, README.md
   run.lua            -- the suite list, the assertion aliases, and Kit.run
   loader.lua         -- the instance factory: TOC-derived load list + per-call isolation
   wow_mock.lua       -- a thin EXTENDER over tests/_kit/mock_base.lua

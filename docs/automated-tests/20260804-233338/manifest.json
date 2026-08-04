@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "addon": "PrettyChat",
+  "addonVersion": "1.4.0",
+  "run": "20260804-233338",
+  "startedAt": "2026-08-04T23:33:38+05:30",
+  "durationMs": 3000,
+  "label": null,
+  "release": null,
+  "git": { "sha": "9bb28dbdfde55d56e6f9272073fd8534861095e2", "branch": "feat/fix-ccn", "dirty": true },
+  "host": { "lua": "Lua 5.1.5  Copyright (C) 1994-2012 Lua.org, PUC-Rio", "luacheck": "Luacheck: 1.2.0", "lizard": "1.23.0" },
+  "suites": {
+    "lint": { "status": "pass", "durationMs": 1000, "warnings": 0, "errors": 0, "files": 17, "gating": true },
+    "tests": { "status": "pass", "durationMs": 2000, "passed": 255, "failed": 0, "total": 255, "gating": true },
+    "perf": { "status": "skip", "durationMs": 0, "skipReason": "no tests/perf.lua — this addon ships no offline scenarios", "scenarios": 0, "gating": false },
+    "complexity": { "status": "pass", "durationMs": -1000, "warnings": 0, "maxCcn": 12, "nloc": 51248, "functions": 528, "avgCcn": 1.9, "avgNloc": 6.3, "avgToken": 47.5, "warnFunRatio": 0.00, "warnNlocRatio": 0.00, "bandFiles": 0, "overCapFiles": 1, "gating": false }
+  },
+  "verdict": "green"
+}

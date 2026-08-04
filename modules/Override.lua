@@ -10,6 +10,14 @@ local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 local Color  = NS.Const.Color
 local note   = NS.Util.note
 
+-- Row labels for the `/pc test` report. Color is a load-time constant, so these
+-- are built once here rather than per Test() call.
+local LABEL = {
+    name      = Color.green .. "Name: "      .. Color.reset,
+    original  = Color.green .. "Original: "  .. Color.reset,
+    formatted = Color.green .. "Formatted: " .. Color.reset,
+}
+
 function PrettyChat:GetStringValue(category, globalName)
     local catDB = self.db.profile.categories[category]
     if catDB and catDB.strings and catDB.strings[globalName] ~= nil then
@@ -201,6 +209,79 @@ function NS.RenderSample(fmt)
     return nil, result
 end
 
+-- Render one format string for the report, turning a string.format failure into a
+-- gray `(error: ...)` line rather than letting it propagate. Second return is the
+-- errored flag, which feeds the report's error tally.
+local function renderOrError(fmt)
+    local rendered, err = NS.RenderSample(fmt)
+    if rendered then return rendered, false end
+    return Color.gray .. "(error: " .. tostring(err) .. ")" .. Color.reset, true
+end
+
+-- A nil filter matches every category; a formatstring filter is category-blind.
+local function categoryMatches(filter, category)
+    return not filter or filter.kind ~= "category" or filter.value == category
+end
+
+-- The sorted, filter-surviving global names of one category. Sorted rather than
+-- pairs() order so the report is byte-stable across /reload (PC-16).
+local function collectNames(catData, filter)
+    local names = {}
+    if not (catData and catData.strings) then return names end
+    for globalName in pairs(catData.strings) do
+        if not filter or filter.kind ~= "formatstring" or filter.value == globalName then
+            names[#names + 1] = globalName
+        end
+    end
+    table.sort(names)
+    return names
+end
+
+-- One string's three-line block: name, the rendered Blizzard original (from the
+-- OnEnable snapshot, falling back to the live global), the rendered configured
+-- value, then a blank separator. Returns true when either render errored.
+local function printStringRow(addon, category, globalName)
+    NS.Print(LABEL.name .. globalName)
+
+    local origFmt = (addon.originalStrings and addon.originalStrings[globalName]) or _G[globalName]
+    local origLine, origErr = renderOrError(origFmt)
+    NS.Print(LABEL.original .. origLine)
+
+    local newFmt = addon:GetStringValue(category, globalName)
+    local newLine, newErr = renderOrError(newFmt)
+    NS.Print(LABEL.formatted .. newLine)
+
+    NS.Print("")
+
+    return newErr or origErr
+end
+
+-- One category's block: the gold header, then every string row. Returns the
+-- printed / errored counts this block contributed.
+local function printCategoryBlock(addon, category, names)
+    NS.Print(Color.gold .. "Category: " .. category .. Color.reset)
+    NS.Print("")
+
+    local printed, errored = 0, 0
+    for _, globalName in ipairs(names) do
+        if printStringRow(addon, category, globalName) then
+            errored = errored + 1
+        else
+            printed = printed + 1
+        end
+    end
+    return printed, errored
+end
+
+local function printFooter(printed, errored)
+    local footer = ("end of test output (%d %s shown"):format(
+        printed, printed == 1 and "string" or "strings")
+    if errored > 0 then
+        footer = footer .. (", %d errored"):format(errored)
+    end
+    NS.Print(note(footer .. ")"))
+end
+
 -- Print every format string in a per-category block. For each string
 -- show the global name, the rendered Blizzard original (from the
 -- snapshot taken in OnEnable), and the rendered PrettyChat-configured
@@ -222,55 +303,15 @@ function PrettyChat:Test(filter)
         NS.Print(note("(addon is currently disabled — these formats aren't being applied to live chat)"))
     end
 
-    local labelName      = Color.green .. "Name: "      .. Color.reset
-    local labelOriginal  = Color.green .. "Original: "  .. Color.reset
-    local labelFormatted = Color.green .. "Formatted: " .. Color.reset
-
-    local function renderOrError(fmt)
-        local rendered, err = NS.RenderSample(fmt)
-        if rendered then return rendered, false end
-        return Color.gray .. "(error: " .. tostring(err) .. ")" .. Color.reset, true
-    end
-
     local printed, errored = 0, 0
     local emittedAny = false
     for _, category in ipairs(NS.Schema.CATEGORY_ORDER) do
-        if not filter or filter.kind ~= "category" or filter.value == category then
-            local catData = NS.Defaults[category]
-            if catData and catData.strings and next(catData.strings) then
-                local sortedNames = {}
-                for globalName in pairs(catData.strings) do
-                    if not filter or filter.kind ~= "formatstring" or filter.value == globalName then
-                        sortedNames[#sortedNames + 1] = globalName
-                    end
-                end
-                table.sort(sortedNames)
-
-                if #sortedNames > 0 then
-                    emittedAny = true
-                    NS.Print(Color.gold .. "Category: " .. category .. Color.reset)
-                    NS.Print("")
-
-                    for _, globalName in ipairs(sortedNames) do
-                        NS.Print(labelName .. globalName)
-
-                        local origFmt = (self.originalStrings and self.originalStrings[globalName]) or _G[globalName]
-                        local origLine, origErr = renderOrError(origFmt)
-                        NS.Print(labelOriginal .. origLine)
-
-                        local newFmt = self:GetStringValue(category, globalName)
-                        local newLine, newErr = renderOrError(newFmt)
-                        NS.Print(labelFormatted .. newLine)
-
-                        NS.Print("")
-
-                        if newErr or origErr then
-                            errored = errored + 1
-                        else
-                            printed = printed + 1
-                        end
-                    end
-                end
+        if categoryMatches(filter, category) then
+            local names = collectNames(NS.Defaults[category], filter)
+            if #names > 0 then
+                emittedAny = true
+                local p, e = printCategoryBlock(self, category, names)
+                printed, errored = printed + p, errored + e
             end
         end
     end
@@ -280,10 +321,5 @@ function PrettyChat:Test(filter)
         return
     end
 
-    local footer = ("end of test output (%d %s shown"):format(
-        printed, printed == 1 and "string" or "strings")
-    if errored > 0 then
-        footer = footer .. (", %d errored"):format(errored)
-    end
-    NS.Print(note(footer .. ")"))
+    printFooter(printed, errored)
 end

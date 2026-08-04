@@ -12,6 +12,8 @@ which is never the same as a pass.
 
 | Run | Version | Lint w/e | Files | Tests | Perf | NLOC | Funcs | Avg NLOC | Avg CCN | Max CCN | CCN warn | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [`20260804-233338`](20260804-233338/) | 1.4.0 | 0/0 | 17 | 255/255 | skip | 51248 | 528 | 6.3 | 1.9 | 12 | 0 | **green** |
+| [`20260804-214445`](20260804-214445/) | 1.4.0 | 0/0 | 17 | 255/255 | skip | 51248 | 528 | 6.3 | 1.9 | 0 | 0 | **green** |
 | [`20260804-182235`](20260804-182235/) | 1.4.0 | 0/0 | 17 | 255/255 | skip | 51217 | 519 | 6.4 | 1.9 | 23 | 2 | **green** |
 
 ## Test suite
@@ -28,16 +30,18 @@ This addon ships no `tests/perf.lua`, so the `perf` column is a permanent `skip`
 
 ## Complexity watch list
 
-Current state as of [`20260804-182235`](20260804-182235/) — not that run's diff.
+Current state as of [`20260804-214445`](20260804-214445/) — not that run's diff.
 Every function `lizard` warned on, and every file at or above `layout-§1`'s 1000-LOC
 on-notice threshold, each with a one-line disposition.
 
 ### Functions `lizard` warned on
 
-| Function | CCN | Location | Disposition |
-|---|---|---|---|
-| `PrettyChat:Test` | 23 | `modules/Override.lua` | **Peel next.** Partly relieved by review finding **F-007**, whose shared `Schema.OrderedNames` index deletes the inner collect-and-sort outright. |
-| `build` | 18 | `tests/loader.lua` | **Accepted, and expected to disappear.** Tracked as **PC-51**: deleted, not refactored, once `LIBKA0S-01` lands an isolated-environment mode in the kit. |
+**None.** Zero warnings over 528 functions — the first run of this record with an empty
+functions list, and a result rather than a missing section. The two standing entries were
+`PrettyChat:Test` (CCN 23) and `build` in `tests/loader.lua` (CCN 18); both were split into
+named units this branch, to CCN 6 and 3, with no behavior change. Their dispositions are
+retired along with them — nothing is deferred here anymore. The next warned function is a
+regression, not a backlog item.
 
 ### Files by `layout-§1` band
 
