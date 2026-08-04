@@ -119,7 +119,7 @@ A few things worth knowing:
 
 ## Credits
 
-Bundles [LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.6.2 (MIT).
+Bundles [LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.6.3 (MIT).
 
 ## Issues and feature requests
 

@@ -1,8 +1,9 @@
-# Analysis — 20260804-122709
+# Analysis — 20260804-182235
 
 - **Addon:** PrettyChat 1.4.0
 - **Verdict:** green
-- **Commit:** 93571394c686 (master), dirty
+- **Commit:** f0958eb29787 (master), dirty
+- **Started:** 2026-08-04T18:22:35+05:30
 - **Previous run:** none — this is the first recorded run
 
 ## Headline
@@ -56,7 +57,7 @@ the first one that can say something moved, and this record is what it will be r
 
 **Files in the 1000–1500 band:** None.
 
-**Over the 1500 cap:** `GlobalStrings/GlobalStrings.lua` (23,842) — the unshipped Blizzard source dump. Not loaded by any TOC and excluded by `.pkgmeta:21`; it is the build-time input the splitter reads. The 26 shipped chunks are all ~882 lines, deliberately under the on-notice band (PC-49, closed this session).
+**Over the 1500 cap:** `GlobalStrings/GlobalStrings.lua` (23,842) — the unshipped Blizzard source dump. Not loaded by any TOC and excluded by `.pkgmeta:21`. The 26 shipped chunks are all ~882 lines, deliberately under the on-notice band (PC-49).
 
 ## Actions
 
