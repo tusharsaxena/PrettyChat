@@ -81,6 +81,42 @@ diff --strip-trailing-cr <(lua tests/run.lua --list) docs/test-cases.md
 
 Whenever the suite changes — a case added, removed, or renamed, or the pass count moves (i.e. whenever a failing test is resolved) — regenerate `docs/test-cases.md` and update the README `Tests` badge count **in the same change**, never as a follow-up.
 
+## Complexity report — a **release** checkpoint, not a commit gate (`performance-§10`)
+
+[`complexity.md`](./complexity.md) is the generated `lizard` report: one file, **overwritten in
+place**, so the git history of that single path is the trend line. Regenerate it with this exact
+invocation, from the repo root:
+
+```sh
+lizard -l lua -x "./libs/*" -x "./tests/_kit/*" .
+```
+
+Verbatim — no extra flags, no narrowed path, no re-tuned thresholds. A locally "improved" invocation
+produces a report that cannot be diffed against the one before it, which is the single property the
+fixed command exists to protect.
+
+**When:** as part of **every release** — in the same change that bumps `## Version:` and rolls the
+README's `## What's new` and `## Version History` forward, **before** the tag. Regenerate mid-cycle
+too when a change is what pushes a function over a threshold; recording it beside its cause is worth
+more than rediscovering it at release.
+
+**This is not a commit gate.** `lua tests/run.lua` and `luacheck .` gate commits; the complexity
+report does not, and must not be wired into one. It is a report you read when deciding where to
+refactor.
+
+**Then read the diff.** Regenerating is half the job. Update the report's `## Watch list` with a
+one-line disposition — *accepted and why*, *peel next*, or *already tracked as `<PC-nn>` / `<F-nnn>`*
+— for every function that **newly crossed** a `lizard` threshold and every file that **newly entered**
+`layout-§1`'s 1000–1500 LOC band since the previous report. An empty watch list is a result: write
+"None.", never drop the heading. A regeneration with no dispositions has performed the ritual and
+skipped the point (`anti-patterns` #51).
+
+`lizard` is an optional local tool (install: [`../DEPENDENCIES.md`](../DEPENDENCIES.md)). Without it
+the report is **stale, not non-compliant** — leave the previous file committed with its original
+header, which dates itself, and say so in the release notes. Never hand-edit the numbers; a
+hand-edited report is worse than an absent one, because it reads as measured. The rule in full is
+`performance-§10`.
+
 ## In-game validation
 
 For behavior stock Lua can't cover (panel rendering, live chat overrides, positional `%n$s` formats), follow the manual [smoke-test suite](./smoke-tests.md) — it lists which invariant each test guards, so a failure can be tied back to a specific area of the addon.
