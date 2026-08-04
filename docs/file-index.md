@@ -62,6 +62,8 @@ Source `.lua` is grouped under `core/`, `defaults/`, `locales/`, `modules/`, and
 
 - `README.md` — user-facing.
 - `CLAUDE.md` — stub (standard link, accepted deviations, pointer into `docs/`).
+- `DEPENDENCIES.md` — the toolchain contract (documentation-§7): runtime / development / release-and-assets, each entry with its evidence, a WSL2-Ubuntu install command and a one-line verification command.
+- `docs/complexity.md` — the **generated** `lizard` complexity report and its watch list; one file, overwritten in place, refreshed at every release (performance-§10). Never hand-edited. See [testing.md](./testing.md).
 - `docs/ARCHITECTURE.md` — the engineer brief: design overview, module map, namespace publishing table, invariants, working environment, doc index (documentation-§3 sections).
 - `docs/*.md` — topic chunks (this file is one of them). Includes [smoke-tests.md](./smoke-tests.md), the manual in-game test suite. Automated headless coverage lives in `tests/` (`lua tests/run.lua`).
 - `docs/pending/LEDGER.md` — decision record for pending items (TODO markers, unexecuted audit steps, open issues), maintained by `/wow-addon:pending-audit`. Rows are `done` / `wont-do` / `deferred`; the closed states stop an item being raised again.
