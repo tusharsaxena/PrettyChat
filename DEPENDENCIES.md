@@ -71,7 +71,7 @@ ahead of it. Do not "upgrade" to make the version banner look modern.
 | | |
 |---|---|
 | **Version** | **Any recent.** Verified here with 1.23.0. The report records the version it was generated with in its own header, so a diff across versions is visible rather than silent. |
-| **Why** | Generates [`docs/complexity.md`](./docs/complexity.md), refreshed at every release (`performance-§10`). |
+| **Why** | Drives the `complexity` suite of `tests/_kit/run-automated-tests.sh`, recorded in every run bundle (`automated-tests`). |
 | **Install** | `sudo apt install -y pipx && pipx ensurepath && pipx install lizard` |
 | **Verify** | `lizard --version` |
 

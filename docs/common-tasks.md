@@ -109,6 +109,6 @@ If you can only reason about a change from code and cannot test it in WoW, say s
 
 Before the tag, in the **same change** that bumps `## Version:` in `PrettyChat.toc` and rolls the README's `## What's new` and `## Version History` forward:
 
-1. Regenerate the complexity report — `lizard -l lua -x "./libs/*" -x "./tests/_kit/*" .`, verbatim, from the repo root — overwrite [`complexity.md`](./complexity.md), and **read its diff**: give every newly-crossed threshold a one-line disposition in the `## Watch list`. This is a release checkpoint, **not** a commit gate. Full rules and the stale-tooling case: [testing.md](./testing.md#complexity-report--a-release-checkpoint-not-a-commit-gate-performance-10) and `performance-§10`.
+1. Produce a full automated-test bundle — `tests/_kit/run-automated-tests.sh`, from the repo root — and **read its diff**: give every newly-crossed threshold a one-line disposition in [`automated-tests/RESULTS.md`](./automated-tests/RESULTS.md)'s watch list. This is a release checkpoint, **not** a commit gate. Full rules and the stale-tooling case: [testing.md](./testing.md#complexity-report--a-release-checkpoint-not-a-commit-gate-performance-10) and `performance-§10`.
 2. Re-check [`../DEPENDENCIES.md`](../DEPENDENCIES.md) against what the repo now actually needs (documentation-§5/§7) — a new script, a new import or a dropped tool belongs there already, but the release is the backstop.
 3. Regenerate `docs/test-cases.md` and sync the README `Tests` badge if the suite moved (testing-§5).

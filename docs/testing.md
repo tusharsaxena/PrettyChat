@@ -81,41 +81,42 @@ diff --strip-trailing-cr <(lua tests/run.lua --list) docs/test-cases.md
 
 Whenever the suite changes — a case added, removed, or renamed, or the pass count moves (i.e. whenever a failing test is resolved) — regenerate `docs/test-cases.md` and update the README `Tests` badge count **in the same change**, never as a follow-up.
 
-## Complexity report — a **release** checkpoint, not a commit gate (`performance-§10`)
+## Automated test records — the consolidated run
 
-[`complexity.md`](./complexity.md) is the generated `lizard` report: one file, **overwritten in
-place**, so the git history of that single path is the trend line. Regenerate it with this exact
-invocation, from the repo root:
+All four out-of-game suites go through one vendored runner, and every run is recorded
+(`automated-tests`):
 
 ```sh
-lizard -l lua -x "./libs/*" -x "./tests/_kit/*" .
+tests/_kit/run-automated-tests.sh                            # all four, writes a bundle
+tests/_kit/run-automated-tests.sh --suite complexity          # a subset
+tests/_kit/run-automated-tests.sh --suite lint --suite tests --no-bundle   # the green gate; writes nothing
 ```
 
-Verbatim — no extra flags, no narrowed path, no re-tuned thresholds. A locally "improved" invocation
-produces a report that cannot be diffed against the one before it, which is the single property the
-fixed command exists to protect.
+| Suite | Command | Gates? |
+|---|---|---|
+| `lint` | `luacheck .` | **yes** |
+| `tests` | `lua tests/run.lua` | **yes** |
+| `perf` | `lua tests/perf.lua` | no — recorded only |
+| `complexity` | `lizard -l lua -x "./libs/*" -x "./tests/_kit/*" .` | no — recorded only |
 
-**When:** as part of **every release** — in the same change that bumps `## Version:` and rolls the
-README's `## What's new` and `## Version History` forward, **before** the tag. Regenerate mid-cycle
-too when a change is what pushes a function over a threshold; recording it beside its cause is worth
-more than rediscovering it at release.
+**`perf` and `complexity` never fail a run.** They are measured, recorded and diffed — a threshold
+that fails a run teaches everyone to reach for `--no-verify`, after which the gate protects nothing
+and the habit remains. They contribute `amber`, which is a signal rather than a stop. **A missing
+tool is a skip recorded with its reason**, never a pass.
 
-**This is not a commit gate.** `lua tests/run.lua` and `luacheck .` gate commits; the complexity
-report does not, and must not be wired into one. It is a report you read when deciding where to
-refactor.
+The runner is **vendored** from `LibKa0s`'s `testkit/`; never edit `tests/_kit/`. A kit fix goes
+upstream and is re-vendored.
 
-**Then read the diff.** Regenerating is half the job. Update the report's `## Watch list` with a
-one-line disposition — *accepted and why*, *peel next*, or *already tracked as `<PC-nn>` / `<F-nnn>`*
-— for every function that **newly crossed** a `lizard` threshold and every file that **newly entered**
-`layout-§1`'s 1000–1500 LOC band since the previous report. An empty watch list is a result: write
-"None.", never drop the heading. A regeneration with no dispositions has performed the ritual and
-skipped the point (`anti-patterns` #51).
+**At release, not at commit.** A full bundle is produced as part of every version bump, before the
+tag, with an `ANALYSIS.md` write-up. Commits are gated on lint + tests only.
 
-`lizard` is an optional local tool (install: [`../DEPENDENCIES.md`](../DEPENDENCIES.md)). Without it
-the report is **stale, not non-compliant** — leave the previous file committed with its original
-header, which dates itself, and say so in the release notes. Never hand-edit the numbers; a
-hand-edited report is worse than an absent one, because it reads as measured. The rule in full is
-`performance-§10`.
+Results live in [`automated-tests/`](./automated-tests/): `RESULTS.md` is one row per run across all
+four suites plus the current complexity watch list — **one file, overwritten in place**, so its git
+history is the trend line — and each `<YYYY-MM-DD-HHMMSS>/` is a frozen bundle of that run's raw
+output. Bundles are never edited and never pruned.
+
+`docs/complexity.md` was this addon's standalone complexity report through standard v2.18.0; it is
+**retired** — its raw output is each bundle's `complexity.txt` and its trend line is `RESULTS.md`.
 
 ## In-game validation
 

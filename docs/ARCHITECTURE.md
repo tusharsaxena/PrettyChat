@@ -161,7 +161,7 @@ Topic-specific detail lives in `docs/`. Read on demand.
 |-------|------|
 | How to verify: harness, lint, the commit gate | [testing.md](./testing.md) |
 | What to install: the toolchain contract | [../DEPENDENCIES.md](../DEPENDENCIES.md) |
-| Generated `lizard` complexity report + watch list | [complexity.md](./complexity.md) |
+| Automated test records + the complexity watch list | [automated-tests/RESULTS.md](./automated-tests/RESULTS.md) |
 | In/out scope + resolved decisions | [scope.md](./scope.md) |
 | Per-file responsibility map | [file-index.md](./file-index.md) |
 | Module roles + public APIs | [module-map.md](./module-map.md) |
