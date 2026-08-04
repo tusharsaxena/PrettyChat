@@ -43,7 +43,7 @@ Source `.lua` is grouped under `core/`, `defaults/`, `locales/`, `modules/`, and
 | Path | Purpose |
 |------|---------|
 | `GlobalStrings/GlobalStrings.lua` | Bundled Blizzard reference (~1.6 MB, ~22,879 entries). **Not loaded by any TOC** — only used as input to `split_globalstrings.py`. |
-| `GlobalStrings/GlobalStrings_001.lua` … `_010.lua` | Chunk files. Each emits `NS.GlobalStrings["KEY"] = "value"` assignments. Loaded *eagerly* by `PrettyChat.toc` — the only load path. |
+| `GlobalStrings/GlobalStrings_001.lua` … `_026.lua` | Chunk files, each a contiguous alphabetical range of keys. Each emits `NS.GlobalStrings["KEY"] = "value"` assignments. Loaded *eagerly* by `PrettyChat.toc` — the only load path. |
 | `GlobalStrings/split_globalstrings.py` | Splitter script. Re-run after a WoW patch updates `GlobalStrings.lua`; rewrites the chunk files. |
 | `GlobalStrings/README.md` | Splitter usage instructions (where to source the latest `GlobalStrings.lua`, how to regenerate). |
 

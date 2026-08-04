@@ -3,7 +3,17 @@
 Split GlobalStrings.lua into manageable chunk files for GlobalStrings.
 
 Reads GlobalStrings.lua, parses KEY = "value"; entries (ignoring _G["KEY"] entries),
-then splits them into 10 roughly-equal chunks by first letter of the key.
+then splits them into evenly-sized chunks that each stay under layout-§1's 1500-LOC cap.
+
+The chunks are cut by ENTRY COUNT, not by first letter. Letter grouping was the
+original design and it cannot satisfy the cap: `S` alone is 3283 entries, and `E`,
+`C`, `P` and `B` are each over the per-file budget too, so any scheme that keeps a
+letter whole ships a file over 1500 lines. GlobalStrings.lua is sorted by key, so
+cutting by count still leaves every chunk a contiguous alphabetical range — the
+property that made letter grouping readable — without the cap violation.
+
+Nothing depends on which chunk a key lands in: each chunk only assigns into the
+shared NS.GlobalStrings table, so the split point is free to move.
 
 Usage:
     python GlobalStrings/split_globalstrings.py
@@ -15,14 +25,26 @@ import os
 import re
 import sys
 
-NUM_CHUNKS = 10
+# Entry lines allowed in one chunk. Each file is this plus the two header lines.
+#
+# Set below 1000, not below 1500. layout-§1 caps a file at 1500 and puts the
+# 1000-1500 band "on notice", and performance-§10 requires the complexity report
+# to list every on-notice file with a disposition. Chunks sized just under the
+# hard cap are legal but would put ~17 rows of "accepted, generated data" in that
+# watch list every release, burying the hand-written code the report exists to
+# flag. Staying under 1000 keeps generated data out of the report entirely; the
+# only cost is more files in the TOC, which costs a reader nothing.
+MAX_ENTRIES_PER_CHUNK = 900
 
 # Pattern for KEY = "value"; format (ignores _G["KEY"] = "value"; entries)
 RE_SIMPLE = re.compile(r'^([A-Z_][A-Z0-9_]*)\s*=\s*"(.*)"\s*;\s*$')
 
-# Canonical sort order for first characters
-# Non-alpha chars go last so they merge into the final chunk
+# Canonical sort order for first characters, used for the distribution printout.
 LETTER_ORDER = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789")
+
+# The TOC that loads the chunks, and the comment that opens its chunk block.
+TOC_NAME = "PrettyChat.toc"
+TOC_MARKER = "# GlobalStrings"
 
 
 def parse_globalstrings(filepath):
@@ -37,75 +59,57 @@ def parse_globalstrings(filepath):
     return entries
 
 
-def compute_chunks(entries, num_chunks):
-    """Group entries into num_chunks balanced groups by first letter of key.
+def compute_chunks(entries, max_per_chunk):
+    """Split entries into the fewest even chunks that all fit under max_per_chunk.
 
-    Uses a greedy algorithm: iterate through letters in order, accumulating
-    into the current chunk. Start a new chunk when adding the next letter
-    group would make the current chunk further from the target than not adding it.
+    Returns a list of entry lists. Sizes differ by at most one, so no chunk sits
+    near the cap while another is half empty, and the chunk count only moves when
+    Blizzard's string count moves enough to need another file.
     """
-    # Count entries per first character
-    counts = collections.Counter()
-    for key, _ in entries:
-        counts[key[0].upper()] += 1
+    total = len(entries)
+    num_chunks = -(-total // max_per_chunk)  # ceil
+    base, remainder = divmod(total, num_chunks)
 
-    # Get sorted list of (letter, count) for letters that actually appear
-    letter_counts = []
-    seen = set()
-    for ch in LETTER_ORDER:
-        if ch in counts and ch not in seen:
-            letter_counts.append((ch, counts[ch]))
-            seen.add(ch)
-    # Catch any characters not in LETTER_ORDER
-    for ch in sorted(counts):
-        if ch not in seen:
-            letter_counts.append((ch, counts[ch]))
+    chunks = []
+    start = 0
+    for i in range(num_chunks):
+        size = base + (1 if i < remainder else 0)
+        chunks.append(entries[start:start + size])
+        start += size
+    return chunks
 
-    total = sum(c for _, c in letter_counts)
-    target = total / num_chunks
 
-    # Greedy grouping
-    groups = []
-    current_letters = []
-    current_count = 0
+def rewrite_toc(toc_path, chunk_filenames):
+    """Replace the TOC's GlobalStrings chunk list with the files just written.
 
-    for i, (letter, count) in enumerate(letter_counts):
-        remaining_groups = num_chunks - len(groups)
-        remaining_letters = len(letter_counts) - i
+    The chunk count moves whenever Blizzard's string count crosses a multiple of
+    MAX_ENTRIES_PER_CHUNK, and a TOC updated by hand is how a chunk silently stops
+    loading. Rewriting it here keeps the two in step by construction.
+    """
+    with open(toc_path, "r", encoding="utf-8", newline="") as f:
+        raw = f.read()
+    newline = "\r\n" if "\r\n" in raw else "\n"
+    lines = raw.split(newline)
 
-        # If remaining letters exactly match remaining groups, give each its own.
-        # But never exceed num_chunks — merge excess into the last group.
-        if remaining_letters <= remaining_groups and len(groups) < num_chunks - 1:
-            if current_letters:
-                groups.append((current_letters, current_count))
-                current_letters = []
-                current_count = 0
-            groups.append(([letter], count))
-            continue
+    try:
+        marker = next(i for i, ln in enumerate(lines) if ln.startswith(TOC_MARKER))
+    except StopIteration:
+        print(f"Error: no '{TOC_MARKER}' block in {toc_path}", file=sys.stderr)
+        sys.exit(1)
 
-        # If current chunk is empty, always add
-        if not current_letters:
-            current_letters.append(letter)
-            current_count += count
-            continue
+    end = marker + 1
+    while end < len(lines) and lines[end].startswith("GlobalStrings\\"):
+        end += 1
 
-        # Would adding this letter overshoot the target?
-        if current_count + count > target and remaining_groups > 1:
-            # Close current chunk if it's closer to target without this letter
-            if abs(current_count - target) <= abs(current_count + count - target):
-                groups.append((current_letters, current_count))
-                current_letters = [letter]
-                current_count = count
-                continue
+    new_lines = [f"GlobalStrings\\{name}" for name in chunk_filenames]
+    if lines[marker + 1:end] == new_lines:
+        print(f"  {TOC_NAME} chunk list already matches — unchanged")
+        return
 
-        current_letters.append(letter)
-        current_count += count
-
-    # Flush remaining
-    if current_letters:
-        groups.append((current_letters, current_count))
-
-    return groups
+    lines[marker + 1:end] = new_lines
+    with open(toc_path, "w", encoding="utf-8", newline="") as f:
+        f.write(newline.join(lines))
+    print(f"  {TOC_NAME} chunk list rewritten to {len(chunk_filenames)} entries")
 
 
 def main():
@@ -137,35 +141,26 @@ def main():
     for ch in sorted(letter_counts):
         if ch not in LETTER_ORDER:
             print(f"  {ch}: {letter_counts[ch]}")
-    print(f"  Target per chunk ({NUM_CHUNKS}): {len(entries) // NUM_CHUNKS}")
+    print(f"  Max entries per chunk: {MAX_ENTRIES_PER_CHUNK}")
 
-    # Compute balanced chunk groups
-    groups = compute_chunks(entries, NUM_CHUNKS)
-
-    # Build a lookup: first char -> chunk index
-    char_to_chunk = {}
-    for i, (letters, _) in enumerate(groups):
-        for letter in letters:
-            char_to_chunk[letter] = i
-
-    # Distribute entries into chunks
-    chunk_entries = [[] for _ in groups]
-    for key, value in entries:
-        first = key[0].upper()
-        idx = char_to_chunk.get(first, len(groups) - 1)
-        chunk_entries[idx].append((key, value))
+    # Cut into evenly-sized, alphabetically contiguous chunks under the cap.
+    chunks = compute_chunks(entries, MAX_ENTRIES_PER_CHUNK)
 
     # Write chunk files
     print()
     total_written = 0
     chunk_filenames = []
-    for i, (letters, _) in enumerate(groups):
+    for i, items in enumerate(chunks):
         filename = f"GlobalStrings_{i + 1:03d}.lua"
         filepath = os.path.join(output_dir, filename)
-        items = chunk_entries[i]
-        letter_range = "".join(letters)
+        key_range = f"{items[0][0]}..{items[-1][0]}"
 
-        with open(filepath, "w", encoding="utf-8", newline="\n") as f:
+        # CRLF, because .gitattributes pins `* text=auto eol=crlf` and the working
+        # tree is expected to match it. Git normalizes the blob to LF either way, so
+        # writing LF here leaves the repo correct and the checkout wrong — an
+        # invisible drift, since the clean filter makes `git status` read clean
+        # regardless. That is exactly what LIBKA0S-16 had to repair by hand.
+        with open(filepath, "w", encoding="utf-8", newline="\r\n") as f:
             # Populate the addon-private NS.GlobalStrings (PC-14). `...` yields
             # PrettyChat's namespace under the only load path there is — the
             # chunk list in PrettyChat.toc.
@@ -174,15 +169,30 @@ def main():
             for key, value in items:
                 f.write(f'NS.GlobalStrings["{key}"] = "{value}"\n')
 
-        print(f"  {filename} [{letter_range}]: {len(items)} entries")
+        lines = len(items) + 2
+        print(f"  {filename} [{key_range}]: {len(items)} entries, {lines} lines")
         chunk_filenames.append(filename)
         total_written += len(items)
 
-    # The chunk list lives in PrettyChat.toc (the only TOC that loads these
-    # files). If NUM_CHUNKS ever changes, update that list by hand.
-    print(f"\nWrote {len(chunk_filenames)} chunk files — check PrettyChat.toc's # GlobalStrings list matches")
+    over = [n for n, c in zip(chunk_filenames, chunks) if len(c) + 2 > 1500]
+    if over:
+        print(f"ERROR: over layout-§1's 1500-LOC cap: {', '.join(over)}", file=sys.stderr)
+        sys.exit(1)
 
-    print(f"\nTotal entries written: {total_written}")
+    banded = [n for n, c in zip(chunk_filenames, chunks) if len(c) + 2 >= 1000]
+    if banded:
+        print(
+            f"WARNING: in layout-§1's 1000-1500 on-notice band, so the complexity "
+            f"report must list them: {', '.join(banded)}",
+            file=sys.stderr,
+        )
+
+    # Keep the TOC's chunk list in step with what was just written.
+    print()
+    rewrite_toc(os.path.join(os.path.dirname(script_dir), TOC_NAME), chunk_filenames)
+
+    print(f"\nWrote {len(chunk_filenames)} chunk files, all under the 1500-LOC cap")
+    print(f"Total entries written: {total_written}")
     if total_written != len(entries):
         print("WARNING: Entry count mismatch!", file=sys.stderr)
         sys.exit(1)

@@ -1,10 +1,10 @@
 # GlobalStrings sub-tree
 
-`GlobalStrings/` ships a searchable copy of Blizzard's `GlobalStrings.lua` (~22,879 entries), split into 10 chunk files by first letter of key. The chunks populate the addon-private `NS.GlobalStrings` table (each chunk begins `local _, NS = ...; NS.GlobalStrings = NS.GlobalStrings or {}` — no `_G` global is created; PC-14).
+`GlobalStrings/` ships a searchable copy of Blizzard's `GlobalStrings.lua` (~22,879 entries), split into 26 chunk files, each a contiguous alphabetical range of keys. The chunks populate the addon-private `NS.GlobalStrings` table (each chunk begins `local _, NS = ...; NS.GlobalStrings = NS.GlobalStrings or {}` — no `_G` global is created; PC-14).
 
 ## One TOC references these chunks
 
-**`PrettyChat.toc`** loads `GlobalStrings_001.lua` … `GlobalStrings_010.lua` *eagerly at addon startup* (load order: after `defaults/`, before `modules/Override.lua` and the `settings/` files). This populates `NS.GlobalStrings` so `settings/Panel.lua`'s "Original Format String" disabled input can resolve every key without an explicit load step. There is no second load path.
+**`PrettyChat.toc`** loads `GlobalStrings_001.lua` … `GlobalStrings_026.lua` *eagerly at addon startup* (load order: after `defaults/`, before `modules/Override.lua` and the `settings/` files). This populates `NS.GlobalStrings` so `settings/Panel.lua`'s "Original Format String" disabled input can resolve every key without an explicit load step. There is no second load path.
 
 Historically there was one: `GlobalStrings/GlobalStrings.toc`, a `LoadOnDemand: 1` sub-addon (`PrettyChat - GlobalStrings`) that loaded the same chunks. The main TOC was later given the chunks directly, when the Settings panel started rendering originals at panel-open time, and nothing ever called `C_AddOns.LoadAddOn("GlobalStrings")` — the LoD path sat dormant from then on. It was also broken as written: after PC-14 the chunks key off `...`, so under the sub-addon they would have populated **that sub-addon's** private `NS.GlobalStrings` rather than PrettyChat's. The sub-addon TOC was removed rather than left as a fallback that could not work if anyone reached for it.
 
@@ -15,7 +15,7 @@ If on-demand loading is ever wanted (e.g. to cut startup memory by dropping the 
 | Path | Purpose |
 |------|---------|
 | `GlobalStrings/GlobalStrings.lua` | Full Blizzard reference (~1.6 MB, source file). **Not loaded by any TOC** — only used as input to `split_globalstrings.py`. |
-| `GlobalStrings/GlobalStrings_001.lua` … `_010.lua` | Chunk files split by first letter of key. Each emits `NS.GlobalStrings["KEY"] = "value"` assignments. |
+| `GlobalStrings/GlobalStrings_001.lua` … `_026.lua` | Chunk files, each a contiguous alphabetical range of keys. Each emits `NS.GlobalStrings["KEY"] = "value"` assignments. |
 | `GlobalStrings/split_globalstrings.py` | Splitter script — re-run after a WoW patch. |
 | `GlobalStrings/README.md` | Splitter usage instructions. |
 
@@ -35,16 +35,21 @@ When Blizzard ships a new client (TWW patch, Midnight feature drop, etc.) the `G
 The script:
 
 1. Parses the source for `KEY = "value";` entries (ignoring `_G["KEY"]` forms).
-2. Computes 10 balanced groups of consecutive letters using a greedy algorithm (so each chunk file is roughly the same size — keeps load times even).
+2. Cuts the sorted entries into the fewest even chunks that all fit under `MAX_ENTRIES_PER_CHUNK` (900 entries, so 902 lines — under `layout-§1`'s 1000-LOC on-notice band, not merely under its 1500-LOC cap).
 3. Cleans up old `GlobalStrings_*.lua` files.
 4. Writes the new chunk files as `NS.GlobalStrings["KEY"] = "value"` assignments.
+5. Rewrites `PrettyChat.toc`'s `# GlobalStrings` list to match, and fails loudly if a chunk would exceed the cap.
 
-`PrettyChat.toc` is **not** updated by the script — its `GlobalStrings\GlobalStrings_001.lua` … `_010.lua` lines are stable as long as the chunk count stays at 10. If the splitter is ever changed to produce a different number of chunks, update that list by hand.
+`PrettyChat.toc` **is** updated by the script: it rewrites the `# GlobalStrings` block to exactly the chunks it just wrote. The chunk count moves whenever Blizzard's string count crosses a multiple of 900, so a hand-maintained list is how a chunk silently stops loading.
 
 After regenerating, `/reload` in-game and verify the panel's "Original Format String" inputs still resolve for every category. If a Blizzard format-string signature changed (e.g. `%s` → `%2$s`), the corresponding `NS.Defaults` entry in `defaults/Defaults.lua` needs updating to match — see [common-tasks.md](./common-tasks.md#fix-a-broken-format-string). Run the full [smoke-test suite](./smoke-tests.md) — a client patch can shift behavior anywhere in the override pipeline, not just in the keys you re-split.
 
 ## Why split into chunks?
 
-WoW will refuse to load a Lua file beyond a certain size threshold (the exact limit varies by client version; `GlobalStrings.lua` at ~1.6 MB has historically been over). The 10-chunk split keeps each file comfortably under the threshold while still letting the data load deterministically in a single pass.
+Two reasons, and they set two different limits.
 
-The split-by-first-letter approach is arbitrary but stable — keys never move between chunks unless you change the splitter, so version-control diffs after a re-split stay readable.
+WoW will refuse to load a Lua file beyond a certain size threshold (the exact limit varies by client version; `GlobalStrings.lua` at ~1.6 MB has historically been over). Any split fixes that.
+
+The *chunk size* is set by `layout-§1`'s 1500-LOC cap, which the shipped chunks used to break — eight of the ten ran 2176–3285 lines (deviation **PC-49**). Splitting by first letter cannot fix that: `S` alone is 3283 entries, and `E`, `C`, `P` and `B` are each over a 900-line budget too, so any scheme that keeps a letter whole ships an oversized file. The splitter therefore cuts by entry count. Because the source is sorted by key, each chunk is still a contiguous alphabetical range, which is what made the letter split readable in the first place.
+
+Keys do move between chunks when the entry count changes, so a re-split after a WoW patch produces a wider diff than the old scheme did. That is the cost of the cap; the chunk boundaries are load-bearing for nothing, since every chunk only assigns into the same `NS.GlobalStrings` table.
