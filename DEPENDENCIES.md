@@ -48,7 +48,7 @@ report. Install all of it; it is small.
 | | |
 |---|---|
 | **Version** | **5.1 exactly.** Not 5.2, not 5.3, not LuaJIT-as-5.2. |
-| **Why** | The headless harness sandboxes each loaded chunk with **`setfenv`**, which was **removed in Lua 5.2**. Evidence: `tests/loader.lua:95` and the vendored kit's `tests/_kit/loader.lua:31,50`. There is no fallback path — under 5.2+ the suite does not degrade, it fails to load the addon at all. |
+| **Why** | The headless harness sandboxes each loaded chunk with **`setfenv`**, which was **removed in Lua 5.2**. Evidence: `tests/loader.lua:103` and the vendored kit's `tests/_kit/loader.lua:31,50`. There is no fallback path — under 5.2+ the suite does not degrade, it fails to load the addon at all. |
 | **Install** | `sudo apt install -y lua5.1` |
 | **Verify** | `lua -v` → must print `Lua 5.1.x` |
 
