@@ -28,11 +28,19 @@ This addon ships no `tests/perf.lua`, so the `perf` column is a permanent `skip`
 
 ## Complexity watch list
 
-Current state as of [`20260804-182235`](20260804-182235/) — not that run's diff. Every function `lizard` warned on and every file in `layout-§1`'s 1000–1500 on-notice band, each with a one-line disposition.
+Current state as of [`20260804-182235`](20260804-182235/) — not that run's diff.
+Every function `lizard` warned on, and every file at or above `layout-§1`'s 1000-LOC
+on-notice threshold, each with a one-line disposition.
 
-| `PrettyChat:Test` | 23 | `modules/Override.lua` | **Peel next.** Partly relieved by review finding **F-007**, whose shared index deletes the inner collect-and-sort outright. |
-| `build` | 18 | `tests/loader.lua` | **Accepted, and expected to disappear** — tracked as **PC-51**, deleted when `LIBKA0S-01` lands. |
+### Functions `lizard` warned on
 
-**Files in the 1000–1500 band:** None.
+| Function | CCN | Location | Disposition |
+|---|---|---|---|
+| `PrettyChat:Test` | 23 | `modules/Override.lua` | **Peel next.** Partly relieved by review finding **F-007**, whose shared `Schema.OrderedNames` index deletes the inner collect-and-sort outright. |
+| `build` | 18 | `tests/loader.lua` | **Accepted, and expected to disappear.** Tracked as **PC-51**: deleted, not refactored, once `LIBKA0S-01` lands an isolated-environment mode in the kit. |
 
-**Over the 1500 cap:** `GlobalStrings/GlobalStrings.lua` (23,842) — the unshipped Blizzard source dump. Not loaded by any TOC and excluded by `.pkgmeta:21`. The 26 shipped chunks are all ~882 lines, deliberately under the on-notice band (PC-49).
+### Files by `layout-§1` band
+
+| Band | File | LOC | Disposition |
+|---|---|---|---|
+| > 1500 (over cap) | `GlobalStrings/GlobalStrings.lua` | 23842 | **Accepted — not shipped and not loaded.** No TOC references it and `.pkgmeta:21` excludes it; it is the build-time input `split_globalstrings.py` reads. `layout-§1` caps files a reader has to change. |
