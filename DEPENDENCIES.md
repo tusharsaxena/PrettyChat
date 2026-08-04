@@ -131,7 +131,7 @@ regenerating the GlobalStrings chunks. A contributor fixing a typo installs noth
 |---|---|
 | **Version** | **Python 3.6 or newer** (the script uses f-strings). Verified here with 3.12.3. |
 | **Why** | `GlobalStrings/split_globalstrings.py` regenerates the twenty-six committed `GlobalStrings/GlobalStrings_0NN.lua` chunks from Blizzard's `GlobalStrings.lua` dump. It is run **by hand after a WoW patch** — see `docs/common-tasks.md`, "Regenerate `GlobalStrings_*.lua` after a WoW patch" — and its output is committed. Nothing in the build, the TOC, the tests or the packager invokes it. It rewrites `PrettyChat.toc`'s `# GlobalStrings` block itself, so the chunk list cannot drift from the files on disk. |
-| **Packages** | **None.** Its imports are `collections`, `glob`, `os`, `re`, `sys` (`GlobalStrings/split_globalstrings.py:12-16`) — all standard library. There is no `requirements.txt`, no virtualenv, and no `pip install` step. |
+| **Packages** | **None.** Its imports are `collections`, `glob`, `os`, `re`, `sys` (`GlobalStrings/split_globalstrings.py:22-26`) — all standard library. There is no `requirements.txt`, no virtualenv, and no `pip install` step. |
 | **Install** | `sudo apt install -y python3` (present by default on Ubuntu 24.04) |
 | **Verify** | `python3 --version` |
 | **Run** | `python3 GlobalStrings/split_globalstrings.py`, from the repo root |

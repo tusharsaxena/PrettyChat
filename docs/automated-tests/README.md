@@ -39,6 +39,9 @@ run that measured nothing cannot be mistaken for a green run that measured every
 - **`<YYYYMMDD-HHMMSS>/`** — one frozen bundle per run: `manifest.json`, one file per suite, and
   `ANALYSIS.md` (the write-up). Bundles are **never edited** once written and **never pruned**.
 
-Offline perf records live in the bundle with the run that produced them. **In-game** captures cannot
-be produced by a script — a human runs the `perf` verb in a live client and exports the record — so
-they keep their own standing store at [`../perf-runs/`](../perf-runs/).
+Offline perf records live in the bundle with the run that produced them — except that this addon
+ships no `tests/perf.lua`, so every recorded run's `perf` suite is a **skip** and no bundle holds
+one. **In-game** captures cannot be produced by a script — a human runs the `perf` verb in a live
+client and exports the record — and they belong in a standing `../perf-runs/` store, which this repo
+does not have yet. Neither gap is a passing suite: `RESULTS.md`'s Perf column reads `skip`, and it
+means the record says nothing about runtime cost.
