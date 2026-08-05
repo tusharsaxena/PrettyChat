@@ -6,16 +6,19 @@ badge and any count quoted in the docs must agree with it.
 
 **Generated — do not hand-edit.** Regenerate with `lua tests/run.lua --list > docs/test-cases.md`.
 
-### test_harness.lua (6)
+### test_harness.lua (4)
 
 - the runner fed the loader exactly the TOC's files, in the TOC's order
 - every derived path exists on disk and no libs/ path leaked in
 - the vendored load list is every file of LibKa0s.xml, in XML order
 - every LibKa0s major actually registered in the loaded environment
+
+### test_vendor_sync.lua (2)
+
 - libs/LibKa0s is the LibKa0s release the README says this addon bundles
 - tests/_kit is the test kit that shipped with that release
 
-### test_libka0s.lua (26)
+### test_libka0s.lua (30)
 
 - the locale-table matcher catches both offending spellings and clears the legal one
 - no seam file hands a LibKa0s descriptor the addon-wide locale table
@@ -43,6 +46,10 @@ badge and any count quoted in the docs must agree with it.
 - with LibKa0s absent the addon still loads and still prints, saying so once
 - the shared cause clause names the addon and where the library should be
 - the degraded secret guard still neutralizes a protected value
+- the Core stub carries the whole live surface
+- the DebugLog stub carries the whole live surface
+- the Options stub carries the whole live surface
+- the Slash stub carries the whole live surface
 
 ### test_compat.lua (8)
 
@@ -86,7 +93,7 @@ badge and any count quoted in the docs must agree with it.
 - the manifest carries no entry that nothing references
 - every slash-command description is localized
 
-### test_defaults.lua (14)
+### test_defaults.lua (15)
 
 - the defaults table is non-empty and carries real entries
 - every defaults category appears in CATEGORY_ORDER
@@ -97,6 +104,7 @@ badge and any count quoted in the docs must agree with it.
 - every entry carries a non-empty label and default
 - labels are unique within their category
 - every default format string renders with sample arguments
+- every default's conversion sequence is a positional prefix of Blizzard's
 - no default carries a raw newline or tab
 - cross-registered globals are identified with their real categories
 - the schema builds exactly the rows the defaults imply
@@ -296,7 +304,7 @@ badge and any count quoted in the docs must agree with it.
 - a category page builds a toggle plus one block per string
 - string blocks are built in sorted global-name order
 - each block is the documented three-row 40/60 editor
-- the read-only Original row shows the reference string, or degrades without it
+- the read-only Original row shows this client's snapshot, or degrades without it
 - the per-string checkbox writes the string's enable path
 - the New edit box unescapes || to | before storing
 - the Preview box renders the live format with sample arguments
@@ -313,13 +321,14 @@ badge and any count quoted in the docs must agree with it.
 
 | Suite | Cases |
 |-------|------:|
-| test_harness.lua | 6 |
-| test_libka0s.lua | 26 |
+| test_harness.lua | 4 |
+| test_vendor_sync.lua | 2 |
+| test_libka0s.lua | 30 |
 | test_compat.lua | 8 |
 | test_constants.lua | 8 |
 | test_util.lua | 7 |
 | test_locale.lua | 7 |
-| test_defaults.lua | 14 |
+| test_defaults.lua | 15 |
 | test_schema.lua | 21 |
 | test_render.lua | 12 |
 | test_apply.lua | 10 |
@@ -329,4 +338,4 @@ badge and any count quoted in the docs must agree with it.
 | test_debuglog.lua | 25 |
 | test_slash.lua | 42 |
 | test_panel.lua | 31 |
-| **Total** | **255** |
+| **Total** | **260** |

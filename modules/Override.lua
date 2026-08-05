@@ -237,13 +237,29 @@ local function collectNames(catData, filter)
     return names
 end
 
--- One string's three-line block: name, the rendered Blizzard original (from the
--- OnEnable snapshot, falling back to the live global), the rendered configured
--- value, then a blank separator. Returns true when either render errored.
+-- Blizzard's pristine format for one global: the OnEnable snapshot first,
+-- falling back to the live global for a key registered since the last /reload
+-- (the snapshot is load-time — see ARCHITECTURE's Known Limitations).
+--
+-- ONE READER, TWO SURFACES. `/pc test`'s Original line and the settings panel's
+-- read-only Original box are answers to the same question and used to consult
+-- different sources — this snapshot here, the shipped GlobalStrings/ dump there
+-- (PC-R-04) — which is drift by construction: the dump is a build artifact of
+-- one client patch and the snapshot is what THIS client actually loaded, so on
+-- any patch that reworded a string the panel showed a player something the game
+-- no longer says. Both surfaces call this.
+function NS.OriginalFormat(addon, globalName)
+    return (addon and addon.originalStrings and addon.originalStrings[globalName])
+           or _G[globalName]
+end
+
+-- One string's three-line block: name, the rendered Blizzard original, the
+-- rendered configured value, then a blank separator. Returns true when either
+-- render errored.
 local function printStringRow(addon, category, globalName)
     NS.Print(LABEL.name .. globalName)
 
-    local origFmt = (addon.originalStrings and addon.originalStrings[globalName]) or _G[globalName]
+    local origFmt = NS.OriginalFormat(addon, globalName)
     local origLine, origErr = renderOrError(origFmt)
     NS.Print(LABEL.original .. origLine)
 

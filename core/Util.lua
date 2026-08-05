@@ -14,8 +14,12 @@ local Util  = NS.Util
 local Color = NS.Const.Color
 
 -- Trim leading/trailing whitespace; nil-safe.
+-- The WHOLE call is parenthesized so gsub's second return — the substitution
+-- count — is truncated away. Unparenthesized, `trim(x)` is a two-value
+-- expression and any caller that passes it straight into another call silently
+-- appends an integer argument (PC-R-10).
 function Util.trim(s)
-    return (s or ""):gsub("^%s+", ""):gsub("%s+$", "")
+    return ((s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
 -- note() — white body text (slash help descriptions, notices).

@@ -163,10 +163,13 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
             if c ~= category then others[#others + 1] = c end
         end
         if #others > 0 then
+            -- One localized sentence with a `%s`, not four concatenated
+            -- fragments (localization-§1). The color escapes stay outside it so
+            -- a translator never has to carry `|cff…|r` through.
             enableTooltip = enableTooltip
                 .. "\n\n" .. Color.gray
-                .. "Shared with " .. table.concat(others, ", ")
-                .. " — both registrations write the same Blizzard global; the last category to apply wins on /reload."
+                .. L["Shared with %s — both registrations write the same Blizzard global; the last category to apply wins on /reload."]
+                     :format(table.concat(others, ", "))
                 .. Color.reset
         end
     end
@@ -177,9 +180,15 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
     origInput:SetLabel(L["Original"])
     origInput:SetRelativeWidth(RIGHT_W)
     origInput:SetDisabled(true)
-    local origValue = (NS.GlobalStrings and NS.GlobalStrings[globalName])
+    -- The LIVE snapshot this client took at OnEnable, through the one reader
+    -- `/pc test` also uses — not the shipped GlobalStrings/ dump, which is a
+    -- build artifact of one client patch and drifts from what the game says
+    -- (PC-R-04).
+    local origValue = NS.OriginalFormat(PrettyChat, globalName)
                      or L["(original not available)"]
-    origInput:SetText(origValue:gsub("|", "||"))
+    -- Parenthesized: gsub returns (string, count) and SetText would otherwise be
+    -- handed the count as a second argument (PC-R-10).
+    origInput:SetText((origValue:gsub("|", "||")))
     H.AttachTooltip(origInput, L["Original Format String"],
         L["Blizzard's original format. Read-only."])
     row1:AddChild(origInput)
@@ -245,7 +254,7 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
 
         enable:SetValue(strEnabled)
         enable:SetDisabled(not (addonEnabled and catEnabled))
-        newInput:SetText((current or ""):gsub("|", "||"))
+        newInput:SetText(((current or ""):gsub("|", "||")))  -- parenthesized: no count
         newInput:SetDisabled(not (addonEnabled and catEnabled and strEnabled))
 
         local rendered, err = NS.RenderSample(current)
@@ -365,7 +374,10 @@ local function buildParentBody(ctx)
     -- which is the silent drift between settings/Panel.lua and settings/Slash.lua
     -- that every addon in the collection had. Collapsing it changes what a user
     -- sees: single spaces, no color span on the dash, and a white description.
-    for _, line in ipairs(NS.SlashCommands.LandingRows()) do
+    -- Colon: LibKa0s-Slash-1.0 declares `function Sl:LandingRows()`, so a dot
+    -- call passes no `self` and works only because today's body ignores it
+    -- (PC-R-08). The degradation stub in settings/Slash.lua is a method too.
+    for _, line in ipairs(NS.SlashCommands:LandingRows()) do
         local row = AceGUI:Create("Label")
         row:SetFullWidth(true)
         row:SetText(line)
@@ -390,7 +402,7 @@ for _, category in ipairs(CATEGORY_ORDER) do
             pageKey         = category,
             defaultsButton  = not isGeneral,
             defaultsTooltip = (not isGeneral)
-                and ("Reset all " .. category .. " strings to defaults.")
+                and L["Reset all %s strings to defaults."]:format(category)
                 or nil,
         })
 

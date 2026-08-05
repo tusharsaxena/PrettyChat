@@ -161,7 +161,7 @@ NS.Defaults = {
             },
             FACTION_STANDING_DECREASED_GENERIC = {
                 label = "Standing Decreased (Generic)",
-                default = "|cff00ff00Rep|cffffffff | |cff76a5af%s|cffffffff | |cffffffff- %d|cffffffff",
+                default = "|cff00ff00Rep|cffffffff | |cff76a5af%s|cffffffff ",
             },
             FACTION_STANDING_INCREASED = {
                 label = "Standing Increased",
@@ -189,7 +189,7 @@ NS.Defaults = {
             },
             FACTION_STANDING_INCREASED_GUARDIAN = {
                 label = "Standing Increased (Guardian)",
-                default = "|cff00ff00Rep|cffffffff | |cffccccccGuardian|cffffffff | |cffffffff+ %d|cffffffff",
+                default = "|cff00ff00Rep|cffffffff | |cff76a5af%s|cffffffff | |cffccccccGuardian|cffffffff | |cffffffff+ %d|cffffffff",
             },
             FACTION_STANDING_INCREASED_REFER_PART = {
                 label = "Standing Increased (RAF Part)",

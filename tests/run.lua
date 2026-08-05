@@ -51,6 +51,7 @@ Kit.run{
     dir    = "tests/",
     suites = {
         "test_harness",
+        "test_vendor_sync",
         "test_libka0s",
         "test_compat",
         "test_constants",

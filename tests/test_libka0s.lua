@@ -595,3 +595,96 @@ test("the degraded secret guard still neutralizes a protected value", function()
     t.eq(bare.NS.Util.SafeToString(secret), "<secret>", "the fallback answers the same sentinel")
     t.falsy(bare.NS.Util.IsConcatSafe(secret), "and the fallback probe still refuses it")
 end)
+
+-- ── stub-surface parity, one case per adopted seam (testing-§8) ────────────
+--
+-- The degraded arm comes from feeding the loader a PARTIAL FILE LIST — skipping
+-- libs/LibKa0s/Core.lua, which takes the whole library out, since every other
+-- module returns before LibStub:NewLibrary when Core is absent. Never by
+-- hand-stubbing the member under test: that would assert the test's own typing.
+--
+-- `assertSurfaceParity` walks the LIVE surface and reports every divergence in
+-- one message, counting a key that is a function live and something else degraded
+-- — the shape `X = lib and lib.X` leaves behind when the library is absent.
+--
+-- `ignore` carries the live-only members AS DATA, with the reason each one is
+-- live-only. Without it an intentional omission and a bug read the same, and the
+-- usual resolution for that is to delete the case.
+
+-- BOTH arms are freshly loaded, differing only by the file list, so the two
+-- surfaces are read at the same point in their lives. The shared `inst` above is
+-- not usable as the live arm: LibKa0s-DebugLog-1.0 attaches `_frameForTest` and
+-- `_toggleClickForTest` to its instance when the console frame is first built, so
+-- whether that surface carries them depends on which case ran before this one.
+local parityLive = ctx.loadAddon()
+local parityBare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+
+-- LibKa0s-Core-1.0 is the one seam this addon does not keep as an instance: the
+-- printer's members are re-published under the addon's own keys (anti-pattern #36
+-- reclaim), so the surface is PROJECTED from both paths by the same list.
+-- Members from: grep -nE "^\s*(function )?(NS|Util)\.[A-Za-z]+" core/CoreSetup.lua
+local function coreSurface(instance)
+    return {
+        Print        = instance.NS.Print,
+        Format       = instance.NS.Format,
+        IsConcatSafe = instance.NS.Util.IsConcatSafe,
+        SafeToString = instance.NS.Util.SafeToString,
+    }
+end
+
+test("the Core stub carries the whole live surface", function()
+    local live = coreSurface(parityLive)
+    -- Non-vacuity: a projection that read nothing would pass parity trivially.
+    for _, key in ipairs({ "Print", "Format", "IsConcatSafe", "SafeToString" }) do
+        t.eq(type(live[key]), "function", "the live Core seam publishes " .. key)
+    end
+    ctx.assertSurfaceParity(live, coreSurface(parityBare), "Core stub")
+end)
+
+test("the DebugLog stub carries the whole live surface", function()
+    -- Members from: grep -E "^  (function D[:.][A-Za-z_]+|D\.[A-Za-z_]+ +=)" libs/LibKa0s/DebugLog.lua
+    ctx.assertSurfaceParity(parityLive.NS.DebugLog, parityBare.NS.DebugLog, "DebugLog stub", {
+        -- debug-logging-§3/§7: the stub MUST NOT re-implement the line format, so
+        -- the two formatters are live-only by rule, not by oversight.
+        FormatPlain   = true,
+        FormatColored = true,
+        -- The library's own string resolver. Nothing in this addon calls it —
+        -- `grep -rn "DebugLog[:.]Text" core settings modules` is empty — and a stub
+        -- copy would be a second place the library's English could drift.
+        Text          = true,
+    })
+end)
+
+test("the Options stub carries the whole live surface", function()
+    -- Members from: grep -E "^  (function O[:.][A-Za-z_]+|O\.[A-Za-z_]+ +=)" libs/LibKa0s/Options.lua
+    ctx.assertSurfaceParity(parityLive.NS.Helpers, parityBare.NS.Helpers, "Options stub", {
+        -- options-ui-§8: the layout constants MUST NOT be copied into the host, so
+        -- the stub omits them deliberately. See settings/OptionsSetup.lua's comment
+        -- on the guard that keeps a nil from reaching anything.
+        PADDING_X         = true,
+        ROW_VSPACER       = true,
+        SECTION_HEADING_H = true,
+        BUTTON_PAIR_REL   = true,
+        -- Live-only because nothing in this addon reads them: settings/Panel.lua
+        -- resolves AceGUI itself, builds its own landing page and its own rows, and
+        -- never asks the library to patch a scrollbar or restore one page's
+        -- defaults. `grep -rn "Helpers.\(AceGUI\|BuildLandingPage\|TextRow\|RestoreDefaults\|PatchAlwaysShowScrollbar\)" core settings modules` is empty.
+        AceGUI                   = true,
+        BuildLandingPage         = true,
+        TextRow                  = true,
+        RestoreDefaults          = true,
+        PatchAlwaysShowScrollbar = true,
+    })
+end)
+
+test("the Slash stub carries the whole live surface", function()
+    -- Members from: grep -E "^  (function Sl[:.][A-Za-z_]+|Sl\.[A-Za-z_]+ +=)" libs/LibKa0s/Slash.lua
+    ctx.assertSurfaceParity(parityLive.NS.SlashCommands, parityBare.NS.SlashCommands, "Slash stub", {
+        -- Live-only because the degraded PrintHelp writes its own header inline and
+        -- nothing else asks for one: settings/Panel.lua:368 is the addon's only
+        -- caller of the help-index surface and it takes LandingRows, on a page that
+        -- never builds without the library. The day a degraded caller appears, this
+        -- entry is what has to be deleted first.
+        HelpHeader = true,
+    })
+end)

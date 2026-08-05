@@ -113,6 +113,160 @@ test("every default format string renders with sample arguments", function()
     end
 end)
 
+-- ---------------------------------------------------------------------
+-- The positional-prefix rule (PC-R-01 / PC-R-02, testing-§12).
+--
+-- The case ABOVE renders each default against arguments synthesized FROM THAT
+-- SAME STRING, so it can only ever agree with itself: a default asking for
+-- `%s %d` gets a string and a number and renders happily, whatever Blizzard
+-- actually passes at that call site. That is why it stayed green while
+-- FACTION_STANDING_DECREASED_GENERIC asked for an argument the game never sends
+-- and FACTION_STANDING_INCREASED_GUARDIAN put the guardian's NAME into `%d`.
+-- Both raised in a live client, for every user, on a routine reputation gain.
+--
+-- The check below compares against the SHIPPED BLIZZARD SIGNATURE in
+-- GlobalStrings/ instead — the same 22,879-entry dump the settings panel reads
+-- to show the "Original" box — so the arguments are the ones the game really
+-- hands over.
+--
+-- THE RULE IS A PREFIX, NOT AN EQUALITY. Lua's string.format ignores surplus
+-- arguments: string.format("a %s", "x", "extra") is "a x". So an override may
+-- stop early and drop trailing conversions it does not want to display, and
+-- that is safe. What is never safe is asking for MORE than Blizzard passes (the
+-- missing argument raises) or asking for a DIFFERENT TYPE at a position (a name
+-- into %d raises). Written to equality this case is red on six rows on the day
+-- it lands; four of those six are deliberate:
+--
+--   LOOT_DISENCHANT_CREDIT   [s]    of Blizzard's [s,s]
+--   COMBATLOG_DISHONORGAIN   []     of Blizzard's [s]
+--   OPEN_LOCK_OTHER          [s,s]  of Blizzard's [s,s,s]
+--   OPEN_LOCK_SELF           [s]    of Blizzard's [s,s]
+--
+-- THESE FOUR ARE SANCTIONED AND MUST NOT BE "FIXED". They are named in
+-- SANCTIONED_TRUNCATIONS below and the case asserts the set is exactly those
+-- four, in both directions: a NEW truncation is red (it wants a decision), and
+-- lengthening one of these four back to Blizzard's full list is also red —
+-- harmless in itself, but it means this register is stale and the name should
+-- be removed from it in the same change.
+-- ---------------------------------------------------------------------
+
+local SANCTIONED_TRUNCATIONS = {
+    LOOT_DISENCHANT_CREDIT = "shows the item only; Blizzard's second %s is the disenchanter",
+    COMBATLOG_DISHONORGAIN = "shows the tag only; Blizzard's %s is the dishonored unit",
+    OPEN_LOCK_OTHER        = "shows opener + object; Blizzard's third %s is the key used",
+    OPEN_LOCK_SELF         = "shows the object only; Blizzard's second %s is the key used",
+}
+
+-- Conversion type -> the class an argument must belong to. Only the class
+-- matters: %d and %x both need a number, and swapping one for the other cannot
+-- raise. `s` versus `int` is what raises.
+local CONVERSION_CLASS = {
+    s = "string",
+    d = "int", i = "int", u = "int", x = "int", X = "int", o = "int", c = "int",
+    f = "float", g = "float", e = "float", G = "float", E = "float",
+}
+
+-- The ordered conversion sequence of a format string, honoring WoW's positional
+-- `%n$type` form. Same walk as buildSampleArgs in modules/Override.lua: strip
+-- `%%` escapes first, then read [flags][width][.precision]type. A positional
+-- specifier lands at its index; a gap left by `%3$s` with no `%1$`/`%2$` is
+-- recorded as "gap" so it can never silently match Blizzard's real type.
+local function conversionSequence(fmt)
+    local clean = fmt:gsub("%%%%", "")
+    local seq, appendIdx, maxIdx = {}, 0, 0
+    for posCap, ftype in clean:gmatch("%%(%d*%$?)[%-+ #0]*%d*%.?%d*([%a])") do
+        local class = CONVERSION_CLASS[ftype] or ("unknown:" .. ftype)
+        if posCap:sub(-1) == "$" then
+            local idx = tonumber(posCap:sub(1, -2))
+            if idx and idx > 0 then
+                seq[idx] = class
+                if idx > maxIdx then maxIdx = idx end
+            end
+        else
+            appendIdx = appendIdx + 1
+            seq[appendIdx] = class
+            if appendIdx > maxIdx then maxIdx = appendIdx end
+        end
+    end
+    for i = 1, maxIdx do seq[i] = seq[i] or "gap" end
+    seq.n = maxIdx
+    return seq
+end
+
+local function showSequence(seq)
+    local parts = {}
+    for i = 1, seq.n do parts[i] = seq[i] end
+    return "[" .. table.concat(parts, ",") .. "]"
+end
+
+-- The shipped Blizzard signatures, loaded HERE and directly rather than read off
+-- the namespace. PrettyChat.toc no longer carries the GlobalStrings/ chunks
+-- (PC-R-05): after PC-R-04 the panel reads this client's OnEnable snapshot, so
+-- the client was parsing 1.89 MB at every login to serve zero lookups. The
+-- chunks stay in the repo as the reference data THIS case compares against, and
+-- .pkgmeta keeps them out of the shipped zip. Loading them here is what makes
+-- that split honest: the data is a test fixture now, and the file that needs it
+-- is the file that loads it.
+local function loadShippedGlobalStrings()
+    local box, n = {}, 0
+    while true do
+        local chunk = loadfile(("%s/GlobalStrings/GlobalStrings_%03d.lua"):format(ctx.root, n + 1))
+        if not chunk then break end
+        n = n + 1
+        chunk("PrettyChat", box)
+    end
+    return box.GlobalStrings, n
+end
+
+test("every default's conversion sequence is a positional prefix of Blizzard's", function()
+    local shipped, chunkCount = loadShippedGlobalStrings()
+    -- Guards on the guard: a fixture that failed to load would make every
+    -- comparison below vacuous, and the first assertion in the loop the only
+    -- thing left standing.
+    t.truthy(chunkCount > 20, ("the GlobalStrings/ chunks loaded (%d found)"):format(chunkCount))
+    t.truthy(shipped, "the chunks populated a reference table")
+    t.nilv(NS.GlobalStrings, "and the addon itself no longer loads that table (PC-R-05)")
+
+    local truncated = {}
+    for _, e in ipairs(entries) do
+        local category, globalName, strData = e[1], e[2], e[3]
+        local blizzard = shipped and shipped[globalName]
+
+        -- A default overriding a global the dump has never heard of cannot be
+        -- checked at all, which is a worse state than a mismatch.
+        t.truthy(type(blizzard) == "string",
+            ("%s.%s has a shipped Blizzard original to compare against"):format(category, globalName))
+
+        if type(blizzard) == "string" then
+            local ovr  = conversionSequence(strData.default)
+            local blz  = conversionSequence(blizzard)
+
+            t.truthy(ovr.n <= blz.n, ("%s.%s asks for %d conversions but Blizzard passes %d — %s vs %s; the surplus has no argument and string.format raises")
+                :format(category, globalName, ovr.n, blz.n, showSequence(ovr), showSequence(blz)))
+
+            for i = 1, math.min(ovr.n, blz.n) do
+                t.eq(ovr[i], blz[i], ("%s.%s conversion #%d takes a %s but Blizzard passes a %s (%s vs %s)")
+                    :format(category, globalName, i, tostring(ovr[i]), tostring(blz[i]),
+                            showSequence(ovr), showSequence(blz)))
+            end
+
+            if ovr.n < blz.n then
+                truncated[globalName] = true
+                t.truthy(SANCTIONED_TRUNCATIONS[globalName],
+                    ("%s.%s stops at %d of Blizzard's %d conversions. Dropping trailing arguments is SAFE — string.format ignores surplus — but an unlisted truncation is an undecided one: either restore the conversions or add the key to SANCTIONED_TRUNCATIONS with the reason")
+                        :format(category, globalName, ovr.n, blz.n))
+            end
+        end
+    end
+
+    -- The other direction: the register must not outlive the truncations.
+    for globalName in pairs(SANCTIONED_TRUNCATIONS) do
+        t.truthy(truncated[globalName],
+            ("%s is listed in SANCTIONED_TRUNCATIONS but its default no longer truncates — drop the entry in the same change that lengthened it")
+                :format(globalName))
+    end
+end)
+
 test("no default carries a raw newline or tab", function()
     for _, e in ipairs(entries) do
         t.falsy(e[3].default:find("[\n\t]"),

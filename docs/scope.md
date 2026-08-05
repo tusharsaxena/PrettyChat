@@ -40,4 +40,4 @@ Decisions made during requirements review and v1.x.x — these are settled, not 
 ## Where the contract lives
 
 - User-facing behavior: [README.md](../README.md) — categories, slash command table, FAQ, troubleshooting.
-- Engineer context: [ARCHITECTURE.md](./ARCHITECTURE.md) — design overview, module map, namespace publishing table, invariants, working environment, doc index. How to verify: [testing.md](./testing.md). The root [../CLAUDE.md](../CLAUDE.md) is the stub that points there and records the accepted standard deviations.
+- Engineer context: [ARCHITECTURE.md](./ARCHITECTURE.md) — design overview, module map, namespace publishing table, invariants, working environment, doc index. How to verify: [testing.md](./testing.md). The root [../CLAUDE.md](../CLAUDE.md) is the stub that points there. Accepted standard deviations live in `## Documented deviations` in [ARCHITECTURE.md](./ARCHITECTURE.md) and nowhere else (`documentation-§3`).

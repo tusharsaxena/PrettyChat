@@ -42,7 +42,8 @@ RE_SIMPLE = re.compile(r'^([A-Z_][A-Z0-9_]*)\s*=\s*"(.*)"\s*;\s*$')
 # Canonical sort order for first characters, used for the distribution printout.
 LETTER_ORDER = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789")
 
-# The TOC that loads the chunks, and the comment that opens its chunk block.
+# The addon TOC, and the section header it must NOT carry (see
+# assert_toc_does_not_load_chunks — the chunks are repo-local reference data).
 TOC_NAME = "PrettyChat.toc"
 TOC_MARKER = "# GlobalStrings"
 
@@ -79,37 +80,38 @@ def compute_chunks(entries, max_per_chunk):
     return chunks
 
 
-def rewrite_toc(toc_path, chunk_filenames):
-    """Replace the TOC's GlobalStrings chunk list with the files just written.
+def assert_toc_does_not_load_chunks(toc_path):
+    """Fail if PrettyChat.toc has started loading the chunks again.
 
-    The chunk count moves whenever Blizzard's string count crosses a multiple of
-    MAX_ENTRIES_PER_CHUNK, and a TOC updated by hand is how a chunk silently stops
-    loading. Rewriting it here keeps the two in step by construction.
+    This function used to REWRITE the TOC's `# GlobalStrings` block to match the
+    files just written, because the chunks were shipped and eagerly loaded. They
+    are not any more (PC-R-05): the settings panel's "Original" box reads this
+    client's OnEnable snapshot (PC-R-04), which left the 26 chunks — 1.89 MB and
+    22,879 entries — being parsed at every login to serve zero lookups. They are
+    repo-local reference data now: `tests/test_defaults.lua` loads them directly
+    to check every override's conversion sequence against Blizzard's, and
+    `.pkgmeta` keeps the whole folder out of the shipped zip.
+
+    So the recurrence guard runs the other way. Re-adding the block would restore
+    the whole cost for a table nothing reads, and it would happen quietly — which
+    is exactly how it survived this long.
     """
     with open(toc_path, "r", encoding="utf-8", newline="") as f:
-        raw = f.read()
-    newline = "\r\n" if "\r\n" in raw else "\n"
-    lines = raw.split(newline)
+        lines = f.read().splitlines()
 
-    try:
-        marker = next(i for i, ln in enumerate(lines) if ln.startswith(TOC_MARKER))
-    except StopIteration:
-        print(f"Error: no '{TOC_MARKER}' block in {toc_path}", file=sys.stderr)
+    offenders = [ln for ln in lines if ln.startswith("GlobalStrings\\")]
+    if offenders or any(ln.startswith(TOC_MARKER) for ln in lines):
+        print(
+            f"Error: {toc_path} loads GlobalStrings chunks again "
+            f"({len(offenders)} line(s), plus the '{TOC_MARKER}' section header if present).\n"
+            "       Nothing in the addon reads NS.GlobalStrings — see PC-R-05 and "
+            "docs/global-strings.md.\n"
+            "       If a runtime consumer really has come back, update that doc and this "
+            "check together.",
+            file=sys.stderr,
+        )
         sys.exit(1)
-
-    end = marker + 1
-    while end < len(lines) and lines[end].startswith("GlobalStrings\\"):
-        end += 1
-
-    new_lines = [f"GlobalStrings\\{name}" for name in chunk_filenames]
-    if lines[marker + 1:end] == new_lines:
-        print(f"  {TOC_NAME} chunk list already matches — unchanged")
-        return
-
-    lines[marker + 1:end] = new_lines
-    with open(toc_path, "w", encoding="utf-8", newline="") as f:
-        f.write(newline.join(lines))
-    print(f"  {TOC_NAME} chunk list rewritten to {len(chunk_filenames)} entries")
+    print(f"  {TOC_NAME} does not load the chunks — correct (PC-R-05)")
 
 
 def main():
@@ -187,9 +189,9 @@ def main():
             file=sys.stderr,
         )
 
-    # Keep the TOC's chunk list in step with what was just written.
+    # The chunks are repo-local reference data; the TOC must not load them.
     print()
-    rewrite_toc(os.path.join(os.path.dirname(script_dir), TOC_NAME), chunk_filenames)
+    assert_toc_does_not_load_chunks(os.path.join(os.path.dirname(script_dir), TOC_NAME))
 
     print(f"\nWrote {len(chunk_filenames)} chunk files, all under the 1500-LOC cap")
     print(f"Total entries written: {total_written}")

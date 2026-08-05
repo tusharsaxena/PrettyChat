@@ -1,4 +1,4 @@
--- tests/test_compat.lua — NS.Compat.GetAddOnMetadata (compat-§1): the
+-- tests/test_compat.lua — NS.Compat.GetAddOnMetadata (compat): the
 -- C_AddOns namespace is preferred, the legacy _G global is the fallback,
 -- and neither present is a clean nil rather than an error. The shim is the
 -- addon's only client-version seam, so all three branches are pinned.

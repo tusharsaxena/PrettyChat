@@ -17,7 +17,7 @@ defaults/Defaults.lua  ──▶ NS.Defaults (categories + format strings)
                                 ▼
                           _G[GLOBALNAME]   ◀── WoW chat code reads lazily on every line
 
-GlobalStrings/  ──▶ NS.GlobalStrings (Blizzard reference, ~22,879 entries)
+GlobalStrings/  ──▶ NOT LOADED (PC-R-05) — repo-only reference data for tests/test_defaults.lua
                        │
                        └──▶ settings/Panel.lua "Original Format String" disabled input
 ```
@@ -45,10 +45,10 @@ Public surfaces are exposed on `NS`:
 | `NS.ProfileDefaults` | `defaults/Profile.lua` | `core/PrettyChat.lua` (`OnInitialize` merges it with `NS.Database.defaults` for `AceDB:New`) |
 | `NS.Defaults` | `defaults/Defaults.lua` | `settings/Schema.lua`, `modules/Override.lua`, `settings/Slash.lua`, `settings/Panel.lua` (category → format-string defaults) |
 | `NS.L` | `locales/enUS.lua` | `settings/Panel.lua`, `settings/Slash.lua`, `settings/Schema.lua` (English-key localization; `__index` returns the key) |
-| `NS.GlobalStrings` | `GlobalStrings/` chunks | `settings/Panel.lua` ("Original Format String" display) |
+| `NS.OriginalFormat(addon, name)` | `modules/Override.lua` | `settings/Panel.lua` ("Original Format String" display) and `/pc test`'s Original line — one reader for both |
 | `NS.Schema` | `settings/Schema.lua` | `settings/Slash.lua` (slash dispatch), `settings/Panel.lua` (every widget get/set; registers a per-sub-page refresh closure via `Schema.RegisterRefresher` on first `OnShow`) |
 | `NS.RenderSample(fmt)` | `modules/Override.lua` | `settings/Panel.lua` (per-string Preview EditBox) |
-| `NS.COMMANDS` / `NS.SlashCommands` | `settings/Slash.lua` | `settings/Panel.lua` renders `NS.SlashCommands.LandingRows()` on the landing page — the SAME formatter the chat help uses, so the two surfaces cannot drift (`LIBKA0S-11`) |
+| `NS.COMMANDS` / `NS.SlashCommands` | `settings/Slash.lua` | `settings/Panel.lua` renders `NS.SlashCommands:LandingRows()` on the landing page — the SAME formatter the chat help uses, so the two surfaces cannot drift (`LIBKA0S-11`). The call is a **colon**: the library declares `function Sl:LandingRows()`, and the dot form only worked because today's body ignores `self` (PC-R-08) |
 | `NS.LIBKA0S_MISSING` | `core/CoreSetup.lua` | `core/DebugLogSetup.lua`, `settings/OptionsSetup.lua`, `settings/Slash.lua` — the shared cause clause each degraded seam appends its own consequence to |
 | `NS.Helpers` | `settings/OptionsSetup.lua` | `settings/Panel.lua` (the `LibKa0s-Options-1.0` instance itself, decorated in place), `settings/Schema.lua` (`RefreshScalars`), `core/PrettyChat.lua` (`OpenOptionsPanel`) |
 | `NS.Config.RegisterPanels()` | `settings/Panel.lua` | `core/PrettyChat.lua` (`OnEnable` calls it after the snapshot/`ApplyStrings` pair, replacing the old `PLAYER_LOGIN` bootstrap frame) |
@@ -131,11 +131,11 @@ The single chokepoint for addon chat output. Use this, not raw `print()` or `sel
 11. `core/DebugLogSetup.lua` — the `LibKa0s-DebugLog-1.0` seam. Populates `NS.DebugLog` (the library's console instance) + `NS.Debug` (its gated sink, bound bare). Reads `NS.State` / `NS.Util` / `NS.Const.FONT_MONO` / `NS.Print`, so it follows all four (debug-logging-§1).
 12. `defaults/Profile.lua` — populates `NS.ProfileDefaults` (the AceDB `profile` defaults table).
 13. `defaults/Defaults.lua` — populates `NS.Defaults`.
-14. `GlobalStrings/GlobalStrings_001.lua` … `_026.lua` — populates `NS.GlobalStrings` eagerly so the panel can resolve "Original" values without an explicit load step.
+14. `GlobalStrings/` — **not in the load order at all** since PC-R-05. The panel resolves "Original" values from the `OnEnable` snapshot through `NS.OriginalFormat`; the chunks are repo-only reference data that `tests/test_defaults.lua` loads directly.
 15. `modules/Override.lua` — attaches the override engine to the addon object (`ApplyStrings`, enable-cascade predicates, `ResetCategory` / `ResetAll`, `Test`) and defines `NS.RenderSample`.
 16. `settings/Schema.lua` — builds `rows` / `byPath` from `NS.Defaults` (which is loaded earlier) and runs the load-time path validator. Closures bind to live values.
 17. `settings/OptionsSetup.lua` — the `LibKa0s-Options-1.0` seam. Populates `NS.Helpers` (the instance itself). After `settings/Schema.lua`, whose `Get`/`Set`/`RowsByCategory` the descriptor reads, and before `settings/Panel.lua`, which takes it as a file-scope upvalue and registers its pages at file load (options-ui-§1).
 18. `settings/Slash.lua` — the `COMMANDS` table and the `LibKa0s-Slash-1.0` descriptor, publishing `NS.COMMANDS` and `NS.SlashCommands`. After Schema so the descriptor's `get`/`set`/`findRow`/`allRows` can reach it.
-19. `settings/Panel.lua` — the three page bodies. Registers each page with `NS.Helpers.RegisterOptionsPage` at file load and declares it with `SetRenderer`, which owns the first-`OnShow` deferral, the every-`OnShow` Defaults button and the combat refusal. Exposes `NS.Config.RegisterPanels` (the library's `CreateOptionsPanel`, called from `PrettyChat:OnEnable`) and `NS.Config.BuildMain`. Its bespoke per-string blocks register through `NS.Schema.RegisterRefresher`; every library-made widget registers on its page's own ctx. After `settings/Slash.lua`, because the landing page renders `NS.SlashCommands.LandingRows()`.
+19. `settings/Panel.lua` — the three page bodies. Registers each page with `NS.Helpers.RegisterOptionsPage` at file load and declares it with `SetRenderer`, which owns the first-`OnShow` deferral, the every-`OnShow` Defaults button and the combat refusal. Exposes `NS.Config.RegisterPanels` (the library's `CreateOptionsPanel`, called from `PrettyChat:OnEnable`) and `NS.Config.BuildMain`. Its bespoke per-string blocks register through `NS.Schema.RegisterRefresher`; every library-made widget registers on its page's own ctx. After `settings/Slash.lua`, because the landing page renders `NS.SlashCommands:LandingRows()`.
 
 If you add a new file, put it in the right place in `PrettyChat.toc`.

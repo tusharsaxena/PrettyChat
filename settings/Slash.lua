@@ -97,18 +97,23 @@ if not lib then
             NS.Print("unknown command '" .. name .. "'")
             Sl:PrintHelp()
         end,
-        PrintHelp = function()
+        -- Declared with the leading `_` these three are METHODS, matching the
+        -- library's `function Sl:PrintHelp()` / `:HelpRows()` / `:LandingRows()`
+        -- and the `Text` stub below. Every caller uses a colon; a stub whose
+        -- shape differs from the live surface is a degraded path that only
+        -- happens to work (PC-R-08).
+        PrintHelp = function(_)
             NS.Print("v" .. VERSION .. " slash commands")
             for _, entry in ipairs(COMMANDS) do
                 NS.Print("  /pc " .. entry[1] .. " — " .. entry[2])
             end
         end,
-        HelpRows    = function()
+        HelpRows    = function(_)
             local out = {}
             for i, entry in ipairs(COMMANDS) do out[i] = "  /pc " .. entry[1] .. " — " .. entry[2] end
             return out
         end,
-        LandingRows = function()
+        LandingRows = function(_)
             local out = {}
             for i, entry in ipairs(COMMANDS) do out[i] = "/pc " .. entry[1] .. " — " .. entry[2] end
             return out

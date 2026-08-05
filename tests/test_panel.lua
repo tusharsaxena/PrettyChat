@@ -306,31 +306,49 @@ test("each block is the documented three-row 40/60 editor", function()
     t.falsy(new.disabled,      "New is editable while the string is enabled")
 end)
 
-test("the read-only Original row shows the reference string, or degrades without it", function()
-    -- The generated GlobalStrings/ dump is part of the TOC load order, so the
-    -- Original box shows Blizzard's real format, pipe-doubled for display.
+test("the read-only Original row shows this client's snapshot, or degrades without it", function()
+    -- PC-R-04: the Original box and `/pc test`'s Original line answer the same
+    -- question and used to read different sources — the box read the shipped
+    -- GlobalStrings/ dump (a build artifact of one client patch), the slash verb
+    -- read the OnEnable snapshot of what THIS client loaded. Both go through
+    -- NS.OriginalFormat now. The harness seeds every registered global as
+    -- "ORIG:<NAME>" before OnEnable, so that is what the box must show.
     local sorted = {}
     for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
     table.sort(sorted)
+    local first = sorted[1]
     local orig = lootBlocks[1].rows[1].children[2]
-    t.eq(orig.text, NS.GlobalStrings[sorted[1]]:gsub("|", "||"),
-        "Blizzard's own format is shown, pipe-doubled")
 
-    -- And with the dump genuinely absent from the load list — not hand-stubbed —
-    -- the panel falls back to its localized placeholder rather than showing nil.
-    local skip = {}
-    for _, rel in ipairs(ctx.loadAddon.tocFiles) do
-        if rel:find("^GlobalStrings/") then skip[#skip + 1] = rel end
+    t.eq(addon.originalStrings[first], "ORIG:" .. first, "the snapshot holds this client's value")
+    t.eq(orig.text, (addon.originalStrings[first]:gsub("|", "||")),
+        "the snapshot is what the box shows, pipe-doubled")
+    -- "ORIG:<NAME>" is a sentinel only tests/loader.lua's seeding produces, so
+    -- the assertion above cannot pass by reading anything else. And the dump the
+    -- box used to read is not even loaded now — PrettyChat.toc dropped the 26
+    -- chunks once nothing in the addon read them (PC-R-05).
+    t.nilv(NS.GlobalStrings, "the shipped GlobalStrings/ dump is not loaded at all")
+
+    -- Degradation: a string registered since the last /reload has no snapshot
+    -- entry and no live global — the load-time-snapshot limitation ARCHITECTURE
+    -- records. The box shows the localized placeholder rather than nil.
+    local fresh = ctx.loadAddon()
+    local LATE = "PRETTYCHAT_REGISTERED_AFTER_SNAPSHOT"
+    fresh.NS.Defaults.Loot.strings[LATE] =
+        { label = "Registered after the snapshot", default = "a format with no conversions" }
+    t.nilv(fresh.addon.originalStrings[LATE], "the snapshot never saw it")
+    t.nilv(fresh.env[LATE], "and no live global carries it either")
+
+    local mark = #fresh.env._widgets
+    panelFrame(fresh.env, "Loot"):Show()
+    local lateOrig
+    for _, block in ipairs(stringBlocks(firstOfType(widgetsSince(fresh.env, mark), "ScrollFrame"))) do
+        local caption = block.rows[2] and block.rows[2].children[1]
+        if caption and caption.text and caption.text:find(LATE, 1, true) then
+            lateOrig = block.rows[1].children[2]
+        end
     end
-    t.truthy(#skip > 0, "the TOC really does carry the generated dump")
-    local bare = ctx.loadAddon({ skip = skip })
-    t.nilv(bare.NS.GlobalStrings, "the reference table is absent in that load")
-    local barePanel = panelFrame(bare.env, "Loot")
-    local mark = #bare.env._widgets
-    barePanel:Show()
-    local bareOrig = stringBlocks(firstOfType(widgetsSince(bare.env, mark), "ScrollFrame"))[1]
-        .rows[1].children[2]
-    t.eq(bareOrig.text, L["(original not available)"], "the placeholder is shown instead")
+    t.truthy(lateOrig, "the late registration was drawn as its own block")
+    t.eq(lateOrig.text, L["(original not available)"], "the placeholder is shown instead")
 end)
 
 test("the per-string checkbox writes the string's enable path", function()

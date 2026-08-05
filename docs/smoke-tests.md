@@ -524,7 +524,7 @@ and no headless assertion can tell the difference. Current vendored copies resol
 
 #### T-92 — The console wears the Ka0s window edge
 
-**Why:** the console's skin changed hands (`LIBKA0S-03`). standalone-windows-§2 makes the edge
+**Why:** the console's skin changed hands (`LIBKA0S-03`). standalone-windows makes the edge
 normative, and the failure mode is one that reads fine in a screenshot taken on its own — a
 single-line border only looks wrong beside a window that has both lines.
 

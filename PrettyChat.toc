@@ -39,34 +39,6 @@ core\DebugLogSetup.lua
 defaults\Profile.lua
 defaults\Defaults.lua
 
-# GlobalStrings (generated Blizzard reference data — must precede settings\Panel.lua)
-GlobalStrings\GlobalStrings_001.lua
-GlobalStrings\GlobalStrings_002.lua
-GlobalStrings\GlobalStrings_003.lua
-GlobalStrings\GlobalStrings_004.lua
-GlobalStrings\GlobalStrings_005.lua
-GlobalStrings\GlobalStrings_006.lua
-GlobalStrings\GlobalStrings_007.lua
-GlobalStrings\GlobalStrings_008.lua
-GlobalStrings\GlobalStrings_009.lua
-GlobalStrings\GlobalStrings_010.lua
-GlobalStrings\GlobalStrings_011.lua
-GlobalStrings\GlobalStrings_012.lua
-GlobalStrings\GlobalStrings_013.lua
-GlobalStrings\GlobalStrings_014.lua
-GlobalStrings\GlobalStrings_015.lua
-GlobalStrings\GlobalStrings_016.lua
-GlobalStrings\GlobalStrings_017.lua
-GlobalStrings\GlobalStrings_018.lua
-GlobalStrings\GlobalStrings_019.lua
-GlobalStrings\GlobalStrings_020.lua
-GlobalStrings\GlobalStrings_021.lua
-GlobalStrings\GlobalStrings_022.lua
-GlobalStrings\GlobalStrings_023.lua
-GlobalStrings\GlobalStrings_024.lua
-GlobalStrings\GlobalStrings_025.lua
-GlobalStrings\GlobalStrings_026.lua
-
 # Modules (the override pipeline)
 modules\Override.lua
 
