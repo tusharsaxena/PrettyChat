@@ -48,7 +48,7 @@ report. Install all of it; it is small.
 | | |
 |---|---|
 | **Version** | **5.1 exactly.** Not 5.2, not 5.3, not LuaJIT-as-5.2. |
-| **Why** | The headless harness sandboxes each loaded chunk with **`setfenv`**, which was **removed in Lua 5.2**. Evidence: `tests/loader.lua:103` and the vendored kit's `tests/_kit/loader.lua:31,50`. There is no fallback path — under 5.2+ the suite does not degrade, it fails to load the addon at all. |
+| **Why** | The headless harness sandboxes each loaded chunk with **`setfenv`**, which was **removed in Lua 5.2**. Evidence: `tests/loader.lua:105` and the vendored kit's `tests/_kit/loader.lua:31,50`. There is no fallback path — under 5.2+ the suite does not degrade, it fails to load the addon at all. |
 | **Install** | `sudo apt install -y lua5.1` |
 | **Verify** | `lua -v` → must print `Lua 5.1.x` |
 
@@ -95,7 +95,7 @@ dates for you. It does not make the addon non-compliant, and it is never a commi
 | | |
 |---|---|
 | **Version** | Any recent. |
-| **Why** | Beyond version control: `tests/test_harness.lua:120-121` runs `io.popen('git -C "<root>/../LibKa0s" show …')` to compare the vendored `libs/LibKa0s` and `tests/_kit` against the sibling checkout. Without `git` on `PATH` that case goes quiet rather than failing — the one gate in the suite that can pass by not looking. |
+| **Why** | Beyond version control: the vendored gate `tests/_kit/vendor_sync.lua:139-140` runs `io.popen('git -C "<root>/../LibKa0s" …')` to compare the vendored `libs/LibKa0s` and `tests/_kit` against the sibling checkout; `tests/test_vendor_sync.lua` is the ten-line factory call that registers it. Without `git` on `PATH` those cases report **SKIP** with that reason rather than passing — but the comparison did not run, so the four `diff` commands in [`docs/testing.md`](./docs/testing.md) stay written down. |
 | **Install** | `sudo apt install -y git` |
 | **Verify** | `git --version` |
 
@@ -135,14 +135,16 @@ regenerating the GlobalStrings chunks. A contributor fixing a typo installs noth
 | | |
 |---|---|
 | **Version** | **Python 3.6 or newer** (the script uses f-strings). Verified here with 3.12.3. |
-| **Why** | `GlobalStrings/split_globalstrings.py` regenerates the twenty-six committed `GlobalStrings/GlobalStrings_0NN.lua` chunks from Blizzard's `GlobalStrings.lua` dump. It is run **by hand after a WoW patch** — see `docs/common-tasks.md`, "Regenerate `GlobalStrings_*.lua` after a WoW patch" — and its output is committed. Nothing in the build, the TOC, the tests or the packager invokes it. It rewrites `PrettyChat.toc`'s `# GlobalStrings` block itself, so the chunk list cannot drift from the files on disk. |
+| **Why** | `GlobalStrings/split_globalstrings.py` regenerates the twenty-six committed `GlobalStrings/GlobalStrings_0NN.lua` chunks from Blizzard's `GlobalStrings.lua` dump. It is run **by hand after a WoW patch** — see `docs/common-tasks.md`, "Regenerate `GlobalStrings_*.lua` after a WoW patch" — and its output is committed. Nothing in the build, the TOC, the tests or the packager invokes it. It used to rewrite `PrettyChat.toc`'s `# GlobalStrings` block; since PC-R-05 dropped that block it **asserts the block's absence instead**, exiting 1 if a `# GlobalStrings` header or a `GlobalStrings\…` line returns, so a post-patch re-split cannot quietly restore the load cost. |
 | **Packages** | **None.** Its imports are `collections`, `glob`, `os`, `re`, `sys` (`GlobalStrings/split_globalstrings.py:22-26`) — all standard library. There is no `requirements.txt`, no virtualenv, and no `pip install` step. |
 | **Install** | `sudo apt install -y python3` (present by default on Ubuntu 24.04) |
 | **Verify** | `python3 --version` |
 | **Run** | `python3 GlobalStrings/split_globalstrings.py`, from the repo root |
 
-The script's inputs and the ~1.6 MB `GlobalStrings/GlobalStrings.lua` dump it reads are excluded from
-the shipped package by `.pkgmeta` — they are build-time-only assets.
+`.pkgmeta` ignores `GlobalStrings` **whole** — the ~1.6 MB source dump, the twenty-six chunks and the
+splitter alike. Since PC-R-05 nothing in the addon loads any of it; what is left is repo-only
+reference data that `tests/test_defaults.lua` reads to check every override against Blizzard's real
+signature, dev-only in the same sense as `docs/` and `tests/`.
 
 ### Image tooling — none, and none is claimed
 
