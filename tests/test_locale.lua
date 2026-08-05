@@ -25,8 +25,10 @@ local L    = NS.L
 -- hand-maintained list goes stale silently in the direction that matters: a file
 -- renamed or added is simply never scanned, and the drift cases below then report
 -- green over a surface they never looked at. locales/ itself is excluded — its
--- `L[s] = s` loop is the seeding, not a call site — and so is the generated
--- GlobalStrings/ dump, which carries no user-facing prose.
+-- `L[s] = s` loop is the seeding, not a call site. The `^GlobalStrings/` filter
+-- is a guard rather than a live exclusion: the TOC stopped loading the generated
+-- dump at PC-R-05, and if a runtime consumer ever brings it back it still
+-- carries no user-facing prose and must not be scanned.
 local L_CONSUMERS = {}
 for _, rel in ipairs(ctx.loadAddon.tocFiles) do
     if not rel:find("^locales/") and not rel:find("^GlobalStrings/") then

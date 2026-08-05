@@ -304,7 +304,7 @@ badge and any count quoted in the docs must agree with it.
 - a category page builds a toggle plus one block per string
 - string blocks are built in sorted global-name order
 - each block is the documented three-row 40/60 editor
-- the read-only Original row shows the reference string, or degrades without it
+- the read-only Original row shows this client's snapshot, or degrades without it
 - the per-string checkbox writes the string's enable path
 - the New edit box unescapes || to | before storing
 - the Preview box renders the live format with sample arguments

@@ -14,13 +14,14 @@ ignore:
   - _dev
   - "*.bak"
 
-  # Generated-data source assets. Only the GlobalStrings_0NN.lua chunks are
-  # loaded at runtime (PrettyChat.toc's # GlobalStrings section); the ~1.6 MB
-  # Blizzard dump and the splitter that turns it into those chunks are
-  # build-time-only inputs and would otherwise ship to every player.
-  - GlobalStrings/GlobalStrings.lua
-  - GlobalStrings/split_globalstrings.py
-  - GlobalStrings/README.md
+  # Generated reference data — the WHOLE folder, source dump, 26 chunks,
+  # splitter and all. Nothing in the addon loads it: PrettyChat.toc dropped the
+  # chunk list once the settings panel started reading this client's OnEnable
+  # snapshot instead (PC-R-04/PC-R-05), which had the client parsing 1.89 MB and
+  # 22,879 entries at every login to serve zero lookups. What is left is repo
+  # reference data that tests/test_defaults.lua loads directly to check every
+  # override against Blizzard's real signature — dev-only, like docs/ and tests/.
+  - GlobalStrings
 
   # Project-page art, served from the CurseForge CDN — never downloaded by a
   # player. Only the .tga logo is loadable at runtime (settings/Panel.lua);

@@ -48,7 +48,7 @@ No `settings/Panel.lua` edits — `buildCategoryBody` is generic and iterates wh
 
 A format string "breaks" when the panel-edited (or `/pc set`-edited) value's `%`-conversions don't match Blizzard's signature. Symptom: the chat line errors at `string.format` time, sometimes silently dropping the message, sometimes throwing a Lua error.
 
-1. Open the panel sub-page for the category and read the **Original Format String** disabled input for the affected key. That's Blizzard's exact signature (read from the addon-private `NS.GlobalStrings` — no `_G` global; PC-14).
+1. Open the panel sub-page for the category and read the **Original Format String** disabled input for the affected key. That's Blizzard's exact signature as **this** client loaded it — the `OnEnable` snapshot, through `NS.OriginalFormat`, the same source `/pc test` prints (PC-R-04). Out of game, `GlobalStrings/` carries the same data for the patch it was cut from, and `tests/test_defaults.lua` checks every default against it.
 2. Edit the **New Format String** input: keep every `%`-conversion (`%s`, `%d`, `%.1f`, `%2$s`, …) in the same order, but freely change surrounding text and `|cAARRGGBB...|r` color escapes.
 3. The Preview disabled `EditBox` (bottom-right of the block) renders the format with sample arguments substituted in via `NS.RenderSample` (which wraps `buildSampleArgs` from `modules/Override.lua`). It always reflects the saved value and updates after every commit (Enter). On `string.format` failure, the preview shows the error message instead.
 4. To revert: (a) click the per-string **Reset** button (bottom-left of the block — always visible, no-op when the value already equals the default — the simplest path); (b) set the format back to the PrettyChat default exactly — the auto-clear kicks in and removes the override (see [schema.md](./schema.md#auto-clear-on-default)); (c) disable the per-string Enable checkbox, which restores Blizzard's original via the snapshot path; or (d) the category page's header **Defaults** button — which is now the only category-scoped reset, since `/pc reset` takes a setting path (`LIBKA0S-10`).
@@ -67,7 +67,7 @@ If you want the *shipped* default for a key to change (not just per-user overrid
 See [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patch). Short version:
 
 1. Drop the new `GlobalStrings.lua` into `GlobalStrings/`.
-2. `python3 GlobalStrings/split_globalstrings.py` — it rewrites the chunk files *and* `PrettyChat.toc`'s `# GlobalStrings` block, so commit the TOC alongside them. The chunk count changes whenever the entry count crosses a multiple of 900.
+2. `python3 GlobalStrings/split_globalstrings.py` — it rewrites the chunk files and asserts `PrettyChat.toc` still does not load them (PC-R-05). The chunk count changes whenever the entry count crosses a multiple of 900. Then run `lua tests/run.lua`: `tests/test_defaults.lua` reads the chunks, so a changed Blizzard signature surfaces there.
 3. `/reload` in-game; verify the panel's "Original Format String" inputs still resolve.
 4. If Blizzard renamed any keys or changed signatures, update the corresponding entries in `defaults/Defaults.lua`.
 

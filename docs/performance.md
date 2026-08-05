@@ -98,6 +98,34 @@ subscription or a chat filter to this addon changes its compatibility contract a
 page, and the change that ends it is exactly the change nobody will re-read this section during. Run
 the sweep above; if it returns a call, the exemption is over.
 
+## The one load-time cost that was measured, and removed (PC-R-05)
+
+`performance-§9` is about what an addon makes the client do at load, and this addon had exactly one
+such cost worth naming: `PrettyChat.toc` eagerly loaded the 26 generated `GlobalStrings/` chunks —
+1.89 MB, 22,879 entries — to populate `NS.GlobalStrings`. Its **only** reader was the settings
+panel's read-only "Original" box, which now reads this client's `OnEnable` snapshot instead
+(PC-R-04). Zero readers, full cost, at every login.
+
+Measured before removal on the repo's own toolchain (`lua5.1`, mean of five cold runs; the client
+runs the same Lua 5.1, so read these as the order of magnitude rather than as client figures):
+
+| | Before | After |
+|---|---|---|
+| The addon's own files in the TOC (excluding `libs/`) | 43 | 17 |
+| Bytes of those files parsed at load | 2.01 MB | 123 KB |
+| `loadfile` over the 26 chunks | 24.3 ms | — |
+| Executing the 26 chunks | 2.1 ms | — |
+| **Load-time total attributable to the dump** | **26.4 ms** | **0 ms** |
+| Resident Lua heap for `NS.GlobalStrings` | ~1.25 MB | 0 |
+| Rebuild of one full addon instance in the harness (chunks already compiled) | 3.4 ms | 0.7 ms |
+
+Reproduce the harness figure with `tests/loader.lua`: build N instances with and without the
+`GlobalStrings/` entries in the TOC-derived file list and compare `os.clock()`. The compile figure is
+`loadfile` over `GlobalStrings/GlobalStrings_0NN.lua`, cold, averaged.
+
+Nothing about what the panel can display changed: the snapshot covers every key `NS.Defaults`
+mentions, which is every key any surface draws. See [global-strings.md](./global-strings.md).
+
 ## Where the numbers that do exist live
 
 The addon is measured out of game on every recorded run: lint, the headless suite and `lizard`

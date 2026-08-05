@@ -199,9 +199,33 @@ local function showSequence(seq)
     return "[" .. table.concat(parts, ",") .. "]"
 end
 
+-- The shipped Blizzard signatures, loaded HERE and directly rather than read off
+-- the namespace. PrettyChat.toc no longer carries the GlobalStrings/ chunks
+-- (PC-R-05): after PC-R-04 the panel reads this client's OnEnable snapshot, so
+-- the client was parsing 1.89 MB at every login to serve zero lookups. The
+-- chunks stay in the repo as the reference data THIS case compares against, and
+-- .pkgmeta keeps them out of the shipped zip. Loading them here is what makes
+-- that split honest: the data is a test fixture now, and the file that needs it
+-- is the file that loads it.
+local function loadShippedGlobalStrings()
+    local box, n = {}, 0
+    while true do
+        local chunk = loadfile(("%s/GlobalStrings/GlobalStrings_%03d.lua"):format(ctx.root, n + 1))
+        if not chunk then break end
+        n = n + 1
+        chunk("PrettyChat", box)
+    end
+    return box.GlobalStrings, n
+end
+
 test("every default's conversion sequence is a positional prefix of Blizzard's", function()
-    local shipped = NS.GlobalStrings
-    t.truthy(shipped, "the shipped GlobalStrings/ dump is loaded")
+    local shipped, chunkCount = loadShippedGlobalStrings()
+    -- Guards on the guard: a fixture that failed to load would make every
+    -- comparison below vacuous, and the first assertion in the loop the only
+    -- thing left standing.
+    t.truthy(chunkCount > 20, ("the GlobalStrings/ chunks loaded (%d found)"):format(chunkCount))
+    t.truthy(shipped, "the chunks populated a reference table")
+    t.nilv(NS.GlobalStrings, "and the addon itself no longer loads that table (PC-R-05)")
 
     local truncated = {}
     for _, e in ipairs(entries) do

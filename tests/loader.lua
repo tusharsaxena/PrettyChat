@@ -24,10 +24,12 @@
 --     builds a fresh mock per call, so each instance gets its own global-string
 --     table, its own chat-frame transcript and its own AceGUI widget log.
 --
--- Chunks are COMPILED ONCE and re-run per instance. `loadfile` on the ~1.9 MB of
--- generated GlobalStrings chunks dominates the run otherwise, and re-executing a
--- cached chunk against a fresh environment is exactly as faithful — the client
--- compiles each file once too.
+-- Chunks are COMPILED ONCE and re-run per instance, and re-executing a cached
+-- chunk against a fresh environment is exactly as faithful — the client compiles
+-- each file once too. This mattered most when `loadfile` on the ~1.9 MB of
+-- generated GlobalStrings chunks dominated the run; PrettyChat.toc no longer
+-- loads them (PC-R-05), so the caching is now merely cheap rather than
+-- load-bearing.
 
 local Loader = dofile("tests/_kit/loader.lua")
 

@@ -180,7 +180,11 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
     origInput:SetLabel(L["Original"])
     origInput:SetRelativeWidth(RIGHT_W)
     origInput:SetDisabled(true)
-    local origValue = (NS.GlobalStrings and NS.GlobalStrings[globalName])
+    -- The LIVE snapshot this client took at OnEnable, through the one reader
+    -- `/pc test` also uses — not the shipped GlobalStrings/ dump, which is a
+    -- build artifact of one client patch and drifts from what the game says
+    -- (PC-R-04).
+    local origValue = NS.OriginalFormat(PrettyChat, globalName)
                      or L["(original not available)"]
     -- Parenthesized: gsub returns (string, count) and SetText would otherwise be
     -- handed the count as a second argument (PC-R-10).
@@ -370,7 +374,10 @@ local function buildParentBody(ctx)
     -- which is the silent drift between settings/Panel.lua and settings/Slash.lua
     -- that every addon in the collection had. Collapsing it changes what a user
     -- sees: single spaces, no color span on the dash, and a white description.
-    for _, line in ipairs(NS.SlashCommands.LandingRows()) do
+    -- Colon: LibKa0s-Slash-1.0 declares `function Sl:LandingRows()`, so a dot
+    -- call passes no `self` and works only because today's body ignores it
+    -- (PC-R-08). The degradation stub in settings/Slash.lua is a method too.
+    for _, line in ipairs(NS.SlashCommands:LandingRows()) do
         local row = AceGUI:Create("Label")
         row:SetFullWidth(true)
         row:SetText(line)

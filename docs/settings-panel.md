@@ -74,7 +74,7 @@ GLOBALNAME (gray)   | New      [editable EditBox]
 | Row | Left (40%) | Right (60%) |
 |-----|------------|-------------|
 | Heading | Friendly label, `GameFontNormalLarge` flanked by side dividers | — |
-| 1 | `[Enable]` checkbox | Original format `EditBox` (disabled, `:SetLabel("Original")`) |
+| 1 | `[Enable]` checkbox | Original format `EditBox` (disabled, `:SetLabel("Original")`), seeded from `NS.OriginalFormat(PrettyChat, globalName)` — the `OnEnable` snapshot of this client's `_G`, the same source `/pc test` prints (PC-R-04) |
 | 2 | `GLOBALNAME` caption (gray) | New format `EditBox` (editable, `:SetLabel("New")`, commits on Enter) |
 | 3 | `[Reset]` button | Preview `EditBox` (disabled, `:SetLabel("Preview")`, `NS.RenderSample` output) |
 
@@ -140,7 +140,7 @@ Both the General sub-page's "Test" button and the `/pc test` slash command call 
 The function:
 
 1. Walks `Schema.CATEGORY_ORDER` (so output order matches the panel left-rail). Per category, the strings table is sorted alphabetically by global name. The `filter` argument is applied at both layers — a category filter skips non-matching categories before iterating their strings, a formatstring filter is applied per-string and shows the global under every category it's registered in (so `LOOT_ITEM_CREATED_SELF` prints under both Loot and Tradeskill).
-2. For each emitted string, prints a 3-line block: `Name: <GLOBALNAME>`, `Original: <rendered Blizzard original>`, `Formatted: <rendered PrettyChat-configured value>`. Labels are green; the category header above each block (`Category: <name>`) is gold. The Original is rendered from `self.originalStrings[globalName]` (the snapshot taken in `OnEnable`); the Formatted side is rendered from `self:GetStringValue(category, globalName)`.
+2. For each emitted string, prints a 3-line block: `Name: <GLOBALNAME>`, `Original: <rendered Blizzard original>`, `Formatted: <rendered PrettyChat-configured value>`. Labels are green; the category header above each block (`Category: <name>`) is gold. The Original is rendered from `NS.OriginalFormat(self, globalName)` — the snapshot taken in `OnEnable`, falling back to the live `_G` — which is the same one reader the panel's Original box uses, so the two surfaces cannot disagree (PC-R-04). The Formatted side is rendered from `self:GetStringValue(category, globalName)`.
 3. Both renders go through `NS.RenderSample(fmt)` — the same path the per-row Preview EditBox uses, so test output and panel preview can never drift on placeholder choices or positional-arg handling. `RenderSample` walks `%[n$][flags][width][.precision]type` conversions (positional `%n$type` is honored), produces typed placeholders (`"Sample"` for `%s`, `42` for integer types, `1.5` for floats, `65` for `%c`, `"?"` for unknowns), strips `%%` escapes first, and `pcall`s `string.format`. On failure the rendered cell is replaced by an inline gray `(error: <msg>)` and the row counts toward the errored tally.
 4. **Every line — header, category banner, body lines, blank-line separators, footer — carries the `[PC]` prefix**, so the report stays distinguishable from real chat traffic interleaved with it. Header includes a notice when `IsAddonEnabled()` is false. Footer reports both counts: `"end of test output (N strings shown, K errored)"` (the `K errored` clause is omitted when zero). When the filter matches no strings (e.g. `/pc test category General` — the virtual category has no strings) the function emits `(no matching strings)` and skips the footer.
 
