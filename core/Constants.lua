@@ -34,8 +34,8 @@ Const.Color = {
     gold   = "|cffffd700",
     gray   = "|cffaaaaaa",
     red    = "|cffff5050",
-    yellow = "|cffffff00",   -- also the slash-§5 schema-path/key color (ffff00)
-    white  = "|cffffffff",   -- also the slash-§5 value color (ffffff)
+    yellow = "|cffffff00",   -- also the slash-commands-§5 schema-path/key color (ffff00)
+    white  = "|cffffffff",   -- also the slash-commands-§5 value color (ffffff)
     cyan   = "|cff00ffff",
     green  = "|cff40ff40",   -- brand green (Test labels + existing UI)
     -- slash-commands-§5 mandated schema-output palette. These exact codes are a MUST —

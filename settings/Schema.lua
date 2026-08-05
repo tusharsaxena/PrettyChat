@@ -164,7 +164,7 @@ do
 end
 
 -- ---------------------------------------------------------------------
--- Load-time integrity check (§4.5 / PC-15). Every row's path must
+-- Load-time integrity check (architecture-§5 / PC-15). Every row's path must
 -- resolve to a backing default in NS.Defaults, so drift between the
 -- schema and the defaults surfaces loudly at load instead of as a silent
 -- nil at runtime. The checked/failed counts are stashed on Schema for
