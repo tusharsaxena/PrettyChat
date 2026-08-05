@@ -179,7 +179,9 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
     origInput:SetDisabled(true)
     local origValue = (NS.GlobalStrings and NS.GlobalStrings[globalName])
                      or L["(original not available)"]
-    origInput:SetText(origValue:gsub("|", "||"))
+    -- Parenthesized: gsub returns (string, count) and SetText would otherwise be
+    -- handed the count as a second argument (PC-R-10).
+    origInput:SetText((origValue:gsub("|", "||")))
     H.AttachTooltip(origInput, L["Original Format String"],
         L["Blizzard's original format. Read-only."])
     row1:AddChild(origInput)
@@ -245,7 +247,7 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
 
         enable:SetValue(strEnabled)
         enable:SetDisabled(not (addonEnabled and catEnabled))
-        newInput:SetText((current or ""):gsub("|", "||"))
+        newInput:SetText(((current or ""):gsub("|", "||")))  -- parenthesized: no count
         newInput:SetDisabled(not (addonEnabled and catEnabled and strEnabled))
 
         local rendered, err = NS.RenderSample(current)
