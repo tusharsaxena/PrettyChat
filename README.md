@@ -12,11 +12,7 @@ PrettyChat cleans up World of Warcraft's system messages — the lines you get f
 
 You can turn any message type on or off, and change its wording and colors, from the in-game settings panel or from chat with the `/pc` command.
 
-## Unreleased
-
-- **`/pc reset` now takes a setting, not a category.** `/pc reset Loot.enabled` restores one setting; the old `/pc reset Loot` form is gone. Nothing was lost — the **Defaults** button on each category's settings page restores that whole category, and `/pc resetall` still restores everything. Typing the old form tells you where both replacements are.
-- **The debug console looks like every other Ka0s addon's.** Same window, same border, same close button, shared with the rest of the collection instead of being this addon's own copy.
-- Under the hood: PrettyChat now shares its chat printer, debug console, settings panel and `/pc` command engine with the other Ka0s addons through a common library, so a fix in one reaches all of them.
+Everything this addon needs ships inside it — nothing else has to be installed. Alongside Ace3, it bundles [LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.8.0 (MIT), the shared Ka0s library behind the chat printer, the debug console, the `/pc` command line and the settings panel. Its license travels with the code at `libs/LibKa0s/LICENSE`.
 
 ## What's new in 1.4.0
 
@@ -113,13 +109,9 @@ A few things worth knowing:
 | Nothing changed after installing | Make sure it's switched on: check the master switch, the category, and the message (`/pc get General.enabled` should be `true`). Run `/pc test` — if the preview looks formatted but real chat doesn't, another addon is changing the same messages after PrettyChat. |
 | A message I edited looks broken | Your wording dropped or misused a `%s` / `%d` placeholder. Restore the category with its **Defaults** button, or copy the original from the panel and edit around the placeholders. |
 | The settings panel won't open | Wait until you're fully loaded in, and note it won't open during combat. If the main page opens but a sub-page doesn't, click the sub-page's row in the settings list. |
-| I want a clean slate | One message: its **Reset** button, or `/pc reset <setting>`. One category: the page's **Defaults** button. Everything: `/pc resetall`, or **Reset All to Defaults** on the General page. |
+| I want a clean slate | One message: its **Reset** button, or `/pc reset setting`. One category: the page's **Defaults** button. Everything: `/pc resetall`, or **Reset All to Defaults** on the General page. |
 | I opened the debug console but it's empty | The window and logging are separate switches. Opening the window (`/pc debug`) doesn't start logging — turn logging on first with `/pc debug on`, or the **Debug** toggle inside the window, then reproduce the problem. Use **Copy** to lift the log into a bug report. |
 | I edited a crafting message and my change won't stick | A couple of strings (item and multi-item crafting results) live under both **Loot** and **Tradeskill**. They share one game template, so whichever of the two you edited last, after a `/reload` the **Tradeskill** version wins. Edit it in one place — the panel's Enable tooltip flags these shared strings. |
-
-## Credits
-
-Bundles [LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.8.0 (MIT).
 
 ## Issues and feature requests
 

@@ -22,8 +22,11 @@
 -- sibling means the comparison did not run rather than that it disagreed.
 --
 -- No `opts` are needed: this repo's root is ".", its sibling is ../LibKa0s, and its README
--- provenance line (README.md:122) is the canonical `Bundles [LibKa0s](...) vX.Y.Z (MIT).` sentence
--- the kit's default pattern already matches.
+-- provenance line — the "it bundles [LibKa0s](...) v1.8.0 (MIT)" sentence in the README's opening
+-- description block — is matched by the kit's default pattern. It lives in the description rather
+-- than under a `## Credits` heading because documentation-§1 permits only twelve sections and
+-- Credits is not one of them; the line is deliberately cited by content, not by number, so moving
+-- it again does not leave a false `README.md:NNN` here.
 
 local VendorSync = dofile("tests/_kit/vendor_sync.lua")
 
