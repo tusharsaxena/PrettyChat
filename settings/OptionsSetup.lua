@@ -90,9 +90,17 @@ if not lib then
         -- No ROW_VSPACER / SECTION_HEADING_H / BUTTON_PAIR_REL here. options-ui-§1
         -- forbids carrying the library's layout constants into the stub and
         -- options-ui-§8 forbids a host copy of them anywhere, precisely because a
-        -- host copy is the copy that goes stale. Every consumer of them in
-        -- settings/Panel.lua sits behind a maker that is a no-op on this path, so a
-        -- nil reaches nothing.
+        -- host copy is the copy that goes stale.
+        --
+        -- What keeps the nil from reaching anything is ONE guard, not a no-op maker:
+        -- every page body in settings/Panel.lua opens with `local scroll =
+        -- H.EnsureScroll(ctx)` followed by `if not scroll then return end` (`:60-61`,
+        -- `:267-268`, `:304-305`), and the stub's EnsureScroll returns nil. The three
+        -- consumers sit AFTER that return — `H.AddSpacer(scroll, H.ROW_VSPACER * 2)`
+        -- at `:275`, which would raise on `nil * 2` rather than no-op, and
+        -- `heading:SetHeight(H.SECTION_HEADING_H)` at `:138` and `:347`. So a body
+        -- that ever draws before its EnsureScroll guard raises on this path; keep the
+        -- guard first, and keep the constants out of the stub.
     }
     return
 end
