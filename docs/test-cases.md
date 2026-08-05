@@ -93,7 +93,7 @@ badge and any count quoted in the docs must agree with it.
 - the manifest carries no entry that nothing references
 - every slash-command description is localized
 
-### test_defaults.lua (14)
+### test_defaults.lua (15)
 
 - the defaults table is non-empty and carries real entries
 - every defaults category appears in CATEGORY_ORDER
@@ -104,6 +104,7 @@ badge and any count quoted in the docs must agree with it.
 - every entry carries a non-empty label and default
 - labels are unique within their category
 - every default format string renders with sample arguments
+- every default's conversion sequence is a positional prefix of Blizzard's
 - no default carries a raw newline or tab
 - cross-registered globals are identified with their real categories
 - the schema builds exactly the rows the defaults imply
@@ -327,7 +328,7 @@ badge and any count quoted in the docs must agree with it.
 | test_constants.lua | 8 |
 | test_util.lua | 7 |
 | test_locale.lua | 7 |
-| test_defaults.lua | 14 |
+| test_defaults.lua | 15 |
 | test_schema.lua | 21 |
 | test_render.lua | 12 |
 | test_apply.lua | 10 |
@@ -337,4 +338,4 @@ badge and any count quoted in the docs must agree with it.
 | test_debuglog.lua | 25 |
 | test_slash.lua | 42 |
 | test_panel.lua | 31 |
-| **Total** | **259** |
+| **Total** | **260** |
