@@ -61,7 +61,7 @@ Source `.lua` is grouped under `core/`, `defaults/`, `locales/`, `modules/`, and
 ## Top-level docs
 
 - `README.md` — user-facing.
-- `CLAUDE.md` — stub (standard link, accepted deviations, pointer into `docs/`).
+- `CLAUDE.md` — stub (standard link, pointer into `docs/`). Accepted deviations are **not** here: they live in `## Documented deviations` in `docs/ARCHITECTURE.md`.
 - `DEPENDENCIES.md` — the toolchain contract (documentation-§7): runtime / development / release-and-assets, each entry with its evidence, a WSL2-Ubuntu install command and a one-line verification command.
 - `docs/automated-tests/RESULTS.md` — the **generated** one-row-per-run record across all four suites, and the complexity watch list; one file, overwritten in place, refreshed at every release (performance-§10). The **table rows are generated** and never hand-edited; the standing sections below the table are written by a reader. See [testing.md](./testing.md).
 - `docs/ARCHITECTURE.md` — the engineer brief: design overview, module map, namespace publishing table, invariants, working environment, doc index (documentation-§3 sections).
