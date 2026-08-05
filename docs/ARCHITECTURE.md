@@ -110,13 +110,21 @@ Break one of these and the addon misbehaves in ways no test or lint will name.
 
 Every mutation goes through `NS.Schema.Set(path, value)` — the **single write path** used by both `/pc set` and the panel widgets. Row `set()` closures are pure DB writes; `Schema.Set` runs `PrettyChat:ApplyStrings()` + `Schema.NotifyPanelChange()`. `string_format` rows **auto-clear** on a default match (a value equal to the default deletes the stored override). At load, `Schema.validation` records that every row path resolves to a backing default (loud `NS.Print` warn on any miss). Settings persist in `PrettyChatDB` via AceDB on a single shared Default profile; the `profile` defaults come from `defaults/Profile.lua` (`NS.ProfileDefaults`) and `db.global.schemaVersion` is stamped by `Database.RunMigrations`. Detail: [schema.md](./schema.md).
 
+## Message Bus
+
+**There is none, because this addon publishes no named message.** A whole-repo sweep of `core/ defaults/ modules/ settings/ locales/` returns zero `SendMessage`, zero `RegisterMessage` and zero `AceEvent` — AceEvent-3.0 is deliberately not vendored (the `library-stack-§1` row in `## Documented deviations`), so there is no bus to publish on and no sender/payload/consumer triple to tabulate.
+
+What stands in its place is a **direct, synchronous fan-out inside the single write path**. `Schema.Set` calls `Schema.NotifyPanelChange()`, which drives **both** refresher registries: `LibKa0s-Options-1.0`'s per-page `ctx.refreshers`, and this addon's own `Schema.RegisterRefresher(category, fn)` list — the one the bespoke per-string blocks in `settings/Panel.lua` sign up to, because a hand-built block is invisible to the library's registry. Each refresher runs under `pcall`, so a page whose AceGUI widgets have been released cannot take a `/pc set` down with it. Sender, payload and consumers are a function call and its closure rather than a message name; detail in [schema.md](./schema.md).
+
+**Re-check trigger:** the first `LibStub("AceEvent-3.0")` in this addon. Vendoring AceEvent means there are named messages, and they belong in a table here.
+
 ## Slash Commands
 
 `/pc` and `/prettychat` dispatch through one ordered `COMMANDS` table in `settings/Slash.lua` (help text is generated from the same table). Verbs: `help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `test`, `debug`. `NS.COMMANDS` is published as positional triples so the landing page renders the same list through `Sl:LandingRows()` — one formatter, two surfaces. Dispatch, help, the schema verbs, the `key = value` pair and the parser are `LibKa0s-Slash-1.0`'s; this addon adds a `format` hook (the `||` doubling) and a `parse` hook (free text containing spaces). `reset` takes a **path**, not a category. Chat input requires `||` for a literal `|`. Detail: [slash-commands.md](./slash-commands.md).
 
 ## Event Subscriptions
 
-**None by design**, and a whole-repo sweep of `core/ defaults/ modules/ settings/ locales/` confirms it: zero `RegisterEvent`, zero `OnUpdate`, zero `C_Timer`, zero ticker. PrettyChat registers no chat filters and hooks no chat frames — the entire mechanism is overriding `_G[GLOBALNAME]` and letting WoW's chat code read it lazily. The only lifecycle hooks are the AceAddon callbacks `OnInitialize` (DB + migrations + slash registration) and `OnEnable` (snapshot Blizzard originals → `ApplyStrings` → register panels). Adding an event subscription or chat filter would change the addon's compatibility contract. There is no message bus.
+**None by design**, and a whole-repo sweep of `core/ defaults/ modules/ settings/ locales/` confirms it: zero `RegisterEvent`, zero `OnUpdate`, zero `C_Timer`, zero ticker. PrettyChat registers no chat filters and hooks no chat frames — the entire mechanism is overriding `_G[GLOBALNAME]` and letting WoW's chat code read it lazily. The only lifecycle hooks are the AceAddon callbacks `OnInitialize` (DB + migrations + slash registration) and `OnEnable` (snapshot Blizzard originals → `ApplyStrings` → register panels). Adding an event subscription or chat filter would change the addon's compatibility contract. (What the addon has instead of a bus is under `## Message Bus` above.)
 
 ## Taint Notes
 
