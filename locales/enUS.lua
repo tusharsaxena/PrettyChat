@@ -37,6 +37,15 @@ local enUS = {
     "Reset all to defaults",
     "Reset every category and string to its default value.",
     "Reset every category and string to defaults?",
+    -- Category sub-page. `%s` is the category name, which is itself English —
+    -- see the `localization-§1` row in docs/ARCHITECTURE.md's deviations
+    -- register. The placeholder is what makes the SENTENCE translatable; these
+    -- four were concatenated fragments until PC-R-06, which pinned English word
+    -- order and left a translator nothing to reorder.
+    "Enable %s",
+    "Enable or disable all %s string overrides.",
+    "Reset all %s strings to defaults.",
+    "Shared with %s — both registrations write the same Blizzard global; the last category to apply wins on /reload.",
     -- Per-string row
     "Enable",
     "Use the rewritten format for this message. When unchecked, Blizzard's original is used.",

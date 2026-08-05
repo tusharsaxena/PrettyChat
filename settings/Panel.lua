@@ -163,10 +163,13 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
             if c ~= category then others[#others + 1] = c end
         end
         if #others > 0 then
+            -- One localized sentence with a `%s`, not four concatenated
+            -- fragments (localization-§1). The color escapes stay outside it so
+            -- a translator never has to carry `|cff…|r` through.
             enableTooltip = enableTooltip
                 .. "\n\n" .. Color.gray
-                .. "Shared with " .. table.concat(others, ", ")
-                .. " — both registrations write the same Blizzard global; the last category to apply wins on /reload."
+                .. L["Shared with %s — both registrations write the same Blizzard global; the last category to apply wins on /reload."]
+                     :format(table.concat(others, ", "))
                 .. Color.reset
         end
     end
@@ -392,7 +395,7 @@ for _, category in ipairs(CATEGORY_ORDER) do
             pageKey         = category,
             defaultsButton  = not isGeneral,
             defaultsTooltip = (not isGeneral)
-                and ("Reset all " .. category .. " strings to defaults.")
+                and L["Reset all %s strings to defaults."]:format(category)
                 or nil,
         })
 

@@ -69,8 +69,13 @@ local function buildCategoryRow(category)
         category = category,
         kind     = "category_enabled",
         type     = "bool",
-        label    = "Enable " .. category,
-        tooltip  = "Enable or disable all " .. category .. " string overrides.",
+        -- Routed through NS.L with a `%s` placeholder rather than concatenated
+        -- (localization-§1): concatenation pins English word order, and a locale
+        -- that puts the category first cannot express it. The category NAME
+        -- interpolated here is still English — see the `localization-§1` row in
+        -- docs/ARCHITECTURE.md's deviations register.
+        label    = NS.L["Enable %s"]:format(category),
+        tooltip  = NS.L["Enable or disable all %s string overrides."]:format(category),
         default  = (NS.Defaults[category] and NS.Defaults[category].enabled) and true or false,
         get      = function() return PrettyChat:IsCategoryEnabled(category) end,
         set      = function(v)
