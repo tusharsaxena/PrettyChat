@@ -5,10 +5,17 @@
 --
 --   { env = <the mock table, which is also its _G>, NS = <namespace>, addon = <AceAddon obj> }
 --
--- Everything about the environment comes from the shared kit — `Loader.makeEnv`
--- builds the sandbox, `Loader.tocFiles` derives the addon's own file list from
--- PrettyChat.toc (testing-§9) — and everything about ISOLATION is here, because
--- the kit has no isolated-environment mode and PrettyChat needs one:
+-- This file is reduced to the isolated-environment need and NOTHING ELSE. Every
+-- capability the kit already has is taken from the kit: `Loader.makeEnv` builds
+-- the sandbox, `Loader.tocFiles` derives the addon's own file list from
+-- PrettyChat.toc, and `Loader.xmlFiles` derives the vendored-library list from
+-- libs/LibKa0s/LibKa0s.xml (testing-§9, both lists). What remains below is only
+-- what the kit has no mode for, and each piece says which need it serves. When
+-- `LIBKA0S-01` lands upstream — an isolated-environment mode in
+-- `tests/_kit/loader.lua` — this file is deleted outright rather than trimmed
+-- again; there is nothing left in it that would survive.
+--
+-- ISOLATION is the need, because:
 --
 --   * the addon's reason for existing is rewriting `_G[GLOBALNAME]`, and half the
 --     suite asserts on what landed there. A single shared environment would let
@@ -24,21 +31,14 @@
 
 local Loader = dofile("tests/_kit/loader.lua")
 
--- Every file of libs/LibKa0s/LibKa0s.xml, in XML order. Spelled out because a
--- vendored library is pulled in through its own .xml, which `tocFiles` cannot
--- see, and because a module whose sibling is missing returns before
--- LibStub:NewLibrary and leaves the host measuring its own fallback stub
--- (testing-§9, anti-patterns #48).
-local LIBKA0S = {
-    "libs/LibKa0s/Core.lua",
-    "libs/LibKa0s/DebugLog.lua",
-    "libs/LibKa0s/Slash.lua",
-    "libs/LibKa0s/Options.lua",
-    "libs/LibKa0s/OptionsWidgets.lua",
-    "libs/LibKa0s/OptionsScroll.lua",
-    "libs/LibKa0s/Perf.lua",
-    "libs/LibKa0s/PerfPanel.lua",
-}
+-- Every file of libs/LibKa0s/LibKa0s.xml, in XML order, DERIVED — a vendored
+-- library is pulled in through its own .xml, which `tocFiles` cannot see, and a
+-- module whose sibling is missing returns before LibStub:NewLibrary and leaves
+-- the host measuring its own fallback stub (testing-§9, anti-patterns #48). This
+-- was eight hand-typed paths; the kit reads the XML the client reads, so a file
+-- added to or removed from LibKa0s.xml cannot leave this list behind. A missing
+-- XML raises rather than returning an empty list.
+local LIBKA0S = Loader.xmlFiles("libs/LibKa0s/LibKa0s.xml")
 
 local function toSet(list)
     local set = {}

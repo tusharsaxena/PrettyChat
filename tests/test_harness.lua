@@ -53,9 +53,13 @@ test("every derived path exists on disk and no libs/ path leaked in", function()
 end)
 
 test("the vendored load list is every file of LibKa0s.xml, in XML order", function()
-    -- The XML is what the client reads; the runner's list is a second copy of the
-    -- same order, and a module whose sibling is missing is absent rather than
-    -- broken (anti-patterns #48), which is exactly the silent case above.
+    -- The XML is what the client reads. The runner's list is no longer a hand-typed
+    -- second copy — tests/loader.lua derives it with `Loader.xmlFiles` — so this is
+    -- not a list compared against itself: the kit's line-based parser is pinned here
+    -- against an INDEPENDENT `gmatch` read of the same file, and goes red if the
+    -- derivation ever drops, reorders or mis-prefixes an entry. A module whose
+    -- sibling is missing is absent rather than broken (anti-patterns #48), which is
+    -- exactly the silent case above.
     local xml = readFile(ctx.root .. "/libs/LibKa0s/LibKa0s.xml")
     t.truthy(xml, "libs/LibKa0s/LibKa0s.xml is vendored")
 
