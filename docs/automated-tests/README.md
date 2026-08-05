@@ -18,16 +18,26 @@ silently by the next re-vendor.
 
 ## What gates, and what only records
 
-| Suite | Command | Gates? |
-|---|---|---|
-| `lint` | `luacheck .` | **yes** |
-| `tests` | `lua tests/run.lua` | **yes** |
-| `perf` | `lua tests/perf.lua` | no — recorded only |
-| `complexity` | `lizard -l lua -x "./libs/*" -x "./tests/_kit/*" .` | no — recorded only |
+There are **two** checkpoints — the commit and the tag — and a suite answers differently at each, so
+both columns are named (`automated-tests-§3`).
 
-`perf` and `complexity` are **measured, recorded and diffed — never used to fail a run.** A
-threshold that fails a run teaches everyone to reach for `--no-verify`, after which the gate protects
-nothing and the habit remains. They contribute `amber`, which is a signal rather than a stop.
+| Suite | Command | Gates the run and the commit? | Gates the tag? |
+|---|---|---|---|
+| `lint` | `luacheck .` | **yes** | **yes** |
+| `tests` | `lua tests/run.lua` | **yes** | **yes** |
+| `perf` | `lua tests/perf.lua` | no — recorded only | **yes** |
+| `complexity` | `lizard -l lua -x "./libs/*" -x "./tests/_kit/*" .` | no — recorded only | **yes** |
+
+`perf` and `complexity` are **measured, recorded and diffed — they never fail a run and never block
+a commit.** A threshold that fails a run teaches everyone to reach for `--no-verify`, after which the
+gate protects nothing and the habit remains. They contribute `amber`, which is a signal rather than a
+stop.
+
+**The tag is a different checkpoint.** It is gated on all four suites at `pass` plus zero functions
+above CCN 15 (`automated-tests-§3`, *The release gate*), evaluated by `/wow-addon:bump-version` from
+the `manifest.json` the release run writes — never by the runner, whose exit code is unchanged. A
+`skip` is **NOT EVALUATED** there rather than passed; the one narrow exception is `perf` skipped
+because this addon ships no `tests/perf.lua`, which the release notes state out loud.
 
 **A missing tool is a skip, not a failure**, and the skip is recorded with its reason — so a green
 run that measured nothing cannot be mistaken for a green run that measured everything.
