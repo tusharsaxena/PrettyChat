@@ -6,12 +6,15 @@ badge and any count quoted in the docs must agree with it.
 
 **Generated — do not hand-edit.** Regenerate with `lua tests/run.lua --list > docs/test-cases.md`.
 
-### test_harness.lua (6)
+### test_harness.lua (4)
 
 - the runner fed the loader exactly the TOC's files, in the TOC's order
 - every derived path exists on disk and no libs/ path leaked in
 - the vendored load list is every file of LibKa0s.xml, in XML order
 - every LibKa0s major actually registered in the loaded environment
+
+### test_vendor_sync.lua (2)
+
 - libs/LibKa0s is the LibKa0s release the README says this addon bundles
 - tests/_kit is the test kit that shipped with that release
 
@@ -313,7 +316,8 @@ badge and any count quoted in the docs must agree with it.
 
 | Suite | Cases |
 |-------|------:|
-| test_harness.lua | 6 |
+| test_harness.lua | 4 |
+| test_vendor_sync.lua | 2 |
 | test_libka0s.lua | 26 |
 | test_compat.lua | 8 |
 | test_constants.lua | 8 |
