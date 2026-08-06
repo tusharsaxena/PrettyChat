@@ -28,7 +28,7 @@ function Schema.Set(path, value)
     row.set(value)                              -- pure DB write
     PrettyChat:ApplyStrings()                   -- reconcile live _G overrides
     Schema.NotifyPanelChange(row.category)      -- refresh the affected sub-page
-    NS.Debug("Set", "%s = %s", path, Schema.FormatValue(row, value))  -- [Set] trace (§10)
+    NS.Debug("Set", "%s = %s", path, Schema.FormatValue(row, value))  -- [Set] trace (debug-logging-§10)
     return true
 end
 ```

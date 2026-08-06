@@ -54,7 +54,7 @@ test("color-coded chat ack: ON green, OFF red, via [PC]", function()
 end)
 
 test("enable emits the [Init] session summary after the bracket", function()
-    -- §5/§8: [Init] session summary emitted on enable, immediately after the bracket.
+    -- debug-logging-§5/§8: [Init] session summary emitted on enable, immediately after the bracket.
     D:Clear()
     D:SetEnabled(true)
     local bracketIdx, initIdx
@@ -113,7 +113,7 @@ end)
 
 test("Schema.Set emits one [Set] line with no separate [Apply] echo", function()
     -- Producers (debug-logging-§8/§9/§10): a settings change logs exactly one [Set]
-    -- line at the write seam — no separate [Apply] echo (folded per §10).
+    -- line at the write seam — no separate [Apply] echo (folded per debug-logging-§10).
     NS.State.debug = true
     D:Clear()
     NS.Schema.Set("General.enabled", false)

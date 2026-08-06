@@ -1,4 +1,4 @@
-# Design — Tier-2 promotion + debug console + slash-§5 conformance
+# Design — Tier-2 promotion + debug console + slash-commands-§5 conformance
 
 **Date:** 2026-07-14
 **Addon:** Ka0s Pretty Chat
@@ -67,20 +67,20 @@ only need to exist by `OnEnable`. `settings/Panel` keeps its runtime `ns.GlobalS
 - Test-mock additions (`tests/wow_mock.lua`): `env.date`, `env.wipe`, `env.UISpecialFrames`.
 - New `tests/test_debuglog.lua`: the two pure formatters + the `/pc debug on|off|toggle` seam.
 
-## Section 3 — slash-§5 conformance
+## Section 3 — slash-commands-§5 conformance
 
 - `settings/Schema.lua`: `Schema.FormatValue(row, v)` — type-aware, schema-driven (bool → `true`/`false`,
   string → the raw format string). Shared by `list` and `get`/`set`.
 - `settings/Slash.lua`: `FormatKV(path, valueStr)` (gold key / white value). `listSettings` prints
   green `Available settings`, azure `[Category]`, indented `FormatKV` rows. `get`/`set` echo the
   single-line `FormatKV`. Drop all trailing colons. Add `version` verb → `[PC] v<version>`.
-- **Color deviation (flagged):** §5 mandates header green `33ff99` (distinct from the brand
+- **Color deviation (flagged):** `slash-commands-§5` mandates header green `33ff99` (distinct from the brand
   `Const.Color.green` `40ff40`) and azure `3399ff`; both added as `Const.Color` entries and used
   verbatim per the MUST.
 
 ## Section 4 — options-ui-§2 rewrite (WowAddonStandards)
 
-Rewrite §2 "Combat lockdown" to mandate: check `InCombatLockdown()` before opening the panel; on
+Rewrite `options-ui-§2` "Combat lockdown" to mandate: check `InCombatLockdown()` before opening the panel; on
 lockdown **refuse** and print a `NS.PREFIX` gray notice — canonical text
 "cannot open settings during combat — Blizzard's category-switch is protected" — rather than
 deferring with a `PLAYER_REGEN_ENABLED` replay. PrettyChat becomes the described reference impl.
