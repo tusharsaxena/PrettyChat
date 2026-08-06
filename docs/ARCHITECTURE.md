@@ -227,7 +227,7 @@ Headless harness under `tests/` (stock Lua 5.1, no client): `lua tests/run.lua` 
 
 ## Working environment
 
-- **Dual-path WSL.** `/home/tushar/GIT/prettychat/` and `/mnt/d/Profile/Users/Tushar/Documents/GIT/prettychat/` are the same repo via symlink.
+- **Dual-path WSL.** `/home/tushar/GIT/PrettyChat/` and `/mnt/d/Profile/Users/Tushar/Documents/GIT/PrettyChat/` are the same repo via symlink.
 - **`.gitattributes`** forces CRLF on disk for all text files — hence the `--strip-trailing-cr` in the inventory diff ([testing.md](./testing.md)).
 - **`.gitignore`** covers OS/editor cruft and `.claude/`. `libs/` is tracked (vendored Ace3), as are `GlobalStrings/`, `media/`, all `.lua` source, `tests/`, `.luacheckrc` and `.pkgmeta`.
 - **Case-insensitive `/mnt/d`.** `libs/` was renamed from `Libs/` on disk; with `core.ignorecase=true`, recording a case flip in git needs `git mv -f Libs libs` even though the working tree already reads lowercase.

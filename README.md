@@ -113,7 +113,7 @@ A few things worth knowing:
 
 ## Issues and feature requests
 
-Found a bug or want a new feature? Everything is tracked on GitHub: [https://github.com/tusharsaxena/prettychat/issues](https://github.com/tusharsaxena/prettychat/issues). Please file it there rather than in a comment — that's where the project's to-do list lives.
+Found a bug or want a new feature? Everything is tracked on GitHub: [https://github.com/tusharsaxena/PrettyChat/issues](https://github.com/tusharsaxena/PrettyChat/issues). Please file it there rather than in a comment — that's where the project's to-do list lives.
 
 ## Version History
 
