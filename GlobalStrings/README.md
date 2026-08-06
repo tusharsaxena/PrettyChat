@@ -2,7 +2,7 @@
 
 A searchable copy of Blizzard's GlobalStrings (~22,879 entries), split into 26 chunk files. The chunks populate the addon-private `NS.GlobalStrings` table (each chunk begins `local _, NS = ...; NS.GlobalStrings = NS.GlobalStrings or {}`).
 
-`PrettyChat.toc` loads `GlobalStrings_001.lua` … `GlobalStrings_026.lua` *eagerly at addon startup* so the Settings panel can show originals without an explicit load step. That is the only load path — see [../docs/global-strings.md](../docs/global-strings.md) for the history of the removed LoadOnDemand sub-addon.
+**Nothing loads these chunks at runtime (PC-R-05).** `PrettyChat.toc` carries no `GlobalStrings\` line and no `# GlobalStrings` section, and `.pkgmeta` keeps the whole folder out of the shipped zip. The chunks are repo-local reference data with exactly one reader, `tests/test_defaults.lua`, which loads them with `loadfile` to check every override against Blizzard's real signature — see [../docs/global-strings.md](../docs/global-strings.md) for why the eager load was removed and for the history of the removed LoadOnDemand sub-addon.
 
 ## Files
 
@@ -28,7 +28,7 @@ python3 GlobalStrings/split_globalstrings.py
 2. Cuts the sorted entries into the fewest even chunks that all fit under `MAX_ENTRIES_PER_CHUNK` (900 entries + 2 header lines)
 3. Cleans up old `GlobalStrings_*.lua` files before writing new ones
 4. Writes chunk files as `NS.GlobalStrings["KEY"] = "value"` assignments (with a `local _, NS = ...` header)
-5. Rewrites `PrettyChat.toc`'s `# GlobalStrings` list to match, and exits non-zero if any chunk would land over 1500 lines, and warns if one enters the 1000-line on-notice band
+5. Asserts `PrettyChat.toc` still does **not** load the chunks (PC-R-05) and exits non-zero if the block has come back; exits non-zero if any chunk would land over 1500 lines, and warns if one enters the 1000-line on-notice band
 
 Chunks are cut by entry count rather than by first letter because letter grouping cannot satisfy the cap: `S` alone is 3283 entries. `GlobalStrings.lua` is sorted by key, so each chunk is still a contiguous alphabetical range.
 

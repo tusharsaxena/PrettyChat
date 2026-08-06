@@ -62,7 +62,7 @@ Modular layout (`core/`, `defaults/`, `locales/`, `modules/`, `settings/`) — t
 | `settings/Slash.lua` | `NS.COMMANDS`, `NS.SlashCommands` | The ordered `COMMANDS` table (positional triples, the host's), the `LibKa0s-Slash-1.0` descriptor with its `format` and `parse` hooks, and the four host-owned verbs: `list`'s sub-keywords and category filter, `resetall`, `test`, `debug`. |
 | `settings/Panel.lua` | `NS.Config.RegisterPanels`, `NS.Config.BuildMain` | The three page **bodies** and nothing else: the General page (library-drawn), the category pages (a library-made Enable row plus the bespoke 40/60 per-string editor), and the landing page. The canvas factory, the header, the Defaults button, the scroll container and the page registry are the library's. |
 
-Topic detail: [module-map.md](./module-map.md), [module-map.md](./module-map.md).
+Topic detail: [module-map.md](./module-map.md).
 
 ## Namespace publishing pattern
 
@@ -215,7 +215,7 @@ mandated or permitted outright — is **retired**, not kept.
 
 ## External dependencies
 
-Vendored under `libs/` (the BigWigs packager pulls nothing — no `externals`): LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, and **[LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.8.0** (`libs/LibKa0s/`, listed in the TOC as `libs\LibKa0s\LibKa0s.xml` after Ace3). (`AceConfig-3.0` was removed — no live consumer.)
+Vendored under `libs/` (the BigWigs packager pulls nothing — no `externals`): LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, and **[LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.8.1** (`libs/LibKa0s/`, listed in the TOC as `libs\LibKa0s\LibKa0s.xml` after Ace3). (`AceConfig-3.0` was removed — no live consumer.)
 
 Four of LibKa0s's five majors are adopted: **Core**, **DebugLog**, **Slash** and **Options**. **Perf is declined** under a recorded `performance-§12` no-combat-path exemption — the register row above, with its sweep in [performance.md](./performance.md) and its reasoning at [LIBKA0S-12](https://github.com/tusharsaxena/PrettyChat/issues/10). `Perf.lua` and `PerfPanel.lua` are still vendored, because the folder is copied whole and never file by file.
 
@@ -243,8 +243,7 @@ Topic-specific detail lives in `docs/`. Read on demand.
 | Automated test records + the complexity watch list | [automated-tests/RESULTS.md](./automated-tests/RESULTS.md) |
 | What this addon costs + the no-combat-path sweep | [performance.md](./performance.md) |
 | In/out scope + resolved decisions | [scope.md](./scope.md) |
-| Per-file responsibility map | [module-map.md](./module-map.md) |
-| Module roles + public APIs | [module-map.md](./module-map.md) |
+| Per-file responsibility map, module roles + public APIs | [module-map.md](./module-map.md) |
 | Snapshot → ApplyStrings → restore + 3-layer enable order | [data-flow.md](./data-flow.md) |
 | Schema row kinds + single write path + auto-clear + AceDB shape | [schema.md](./schema.md) |
 | Canvas-layout panel framework | [settings-panel.md](./settings-panel.md) |

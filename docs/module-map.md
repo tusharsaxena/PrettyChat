@@ -142,7 +142,7 @@ If you add a new file, put it in the right place in `PrettyChat.toc`.
 
 ## File index
 
-Every non-vendored file, by directory. Folded in from the retired `module-map.md` (standard v2.23.0), which duplicated this map at a different granularity.
+Every non-vendored file, by directory. Folded in from the retired `file-index.md` (standard v2.23.0), which duplicated this map at a different granularity.
 
 Where each responsibility lives in the source tree. Match this map to the actual files before editing — `PrettyChat.toc` is the source of truth for load order.
 
@@ -193,7 +193,7 @@ Source `.lua` is grouped under `core/`, `defaults/`, `locales/`, `modules/`, and
 
 ### Shared infrastructure
 
-- `PrettyChat.toc` — Interface line (`120007`), version, SavedVariables (`PrettyChatDB`), section comments, and file load order. Order is dependency order, not alphabetical: `libs/` (Ace3, then `libs\LibKa0s\LibKa0s.xml`) → `locales/enUS` → `core/Compat` → `core/Constants` → `core/Namespace` → `core/State` → `core/Util` → `core/Database` → `core/PrettyChat` → `core/CoreSetup` → `core/DebugLogSetup` → `defaults/Profile` → `defaults/Defaults` → `modules/Override` → `settings/Schema` → `settings/OptionsSetup` → `settings/Slash` → `settings/Panel`. The three positions that are load-bearing are explained in [module-map.md](./module-map.md).
+- `PrettyChat.toc` — Interface line (`120007`), version, SavedVariables (`PrettyChatDB`), section comments, and file load order. Order is dependency order, not alphabetical: `libs/` (Ace3, then `libs\LibKa0s\LibKa0s.xml`) → `locales/enUS` → `core/Compat` → `core/Constants` → `core/Namespace` → `core/State` → `core/Util` → `core/Database` → `core/PrettyChat` → `core/CoreSetup` → `core/DebugLogSetup` → `defaults/Profile` → `defaults/Defaults` → `modules/Override` → `settings/Schema` → `settings/OptionsSetup` → `settings/Slash` → `settings/Panel`. The three positions that are load-bearing are explained in [ARCHITECTURE.md](./ARCHITECTURE.md).
 - `libs/` — vendored Ace3 + LibStub, plus **`libs/LibKa0s/`** (the Ka0s shared library, copied whole from the sibling `../LibKa0s` checkout and **never edited here**). Tracked in git (standard WoW addon practice).
 - `tests/` — the headless harness (stock Lua 5.1, no client). `_kit/` (the **vendored** LibKa0s test kit — the registry, the assertions, the runner, the `--list` renderer, the sandboxed loader, the base mock and `vendor_sync.lua` (the consumer-side vendored-payload gate `tests/test_vendor_sync.lua` calls); never edited here), `run.lua` (the suite list, the assertion aliases and `Kit.run`), `loader.lua` (the instance factory, reduced to the isolation need: both load lists derived through the kit — TOC and `LibKa0s.xml` — plus per-call environment isolation), `wow_mock.lua` (a thin extender over `_kit/mock_base.lua`), and one `test_<module>.lua` suite per module. Excluded from luacheck. See [testing.md](./testing.md).
 - `media/` — the runtime `.tga` logo (`settings/Panel.lua`) and `media/fonts/` (vendored JetBrains Mono, OFL), which **is** loaded at runtime by `core/DebugLogSetup.lua` via `NS.Const.FONT_MONO`. Also the `.png`/`.jpg` logo masters and `media/screenshots/` — project-page art the README references by CDN URL, kept here as source backups. WoW cannot load `.png`/`.jpg` at all, so `.pkgmeta` keeps them and the screenshots out of the package.
