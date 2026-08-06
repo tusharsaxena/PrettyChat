@@ -71,6 +71,8 @@ Run **both** of each pair and read the difference between them:
 
 `tests/test_vendor_sync.lua` runs the same comparison mechanically whenever the sibling checkout is present. It is a ten-line call into the shared gate `tests/_kit/vendor_sync.lua`, vendored from LibKa0s like the rest of the kit rather than hand-copied here. It reads raw bytes and applies **exactly one** normalization — CR stripped from the working-tree side, because the other side is a `git show` blob (LF) while this working tree is CRLF — so a line-ending-only difference passes and a single content byte fails. A missing sibling is the one case where it can go quiet, and it reports **SKIP with that reason** rather than passing silently, which is why the commands above stay written down here.
 
+**Which tag it compares against comes from the root [`CLAUDE.md`](../CLAUDE.md).** The gate greps the `Bundles [LibKa0s](…) vX.Y.Z (MIT).` provenance line out of that file — kit revision 9 moved it there from `README.md`, with **no fallback**, because the README is the player's page and no longer carries a bundled-library inventory at all. So the line moves in the same commit as the vendored bytes: bump `libs/LibKa0s/` or `tests/_kit/` without moving it and this gate fails, naming `CLAUDE.md`.
+
 ## Test-case inventory & badge sync (`testing-§5`)
 
 The authoritative case count lives in the **generated** inventory [`test-cases.md`](./test-cases.md) — every case, grouped by suite, with per-suite and grand totals. It is produced by the runner's `--list` mode, never hand-edited:

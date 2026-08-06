@@ -21,12 +21,15 @@
 -- not PASS, which is what the old bare `return` did, and not a failure either, because a missing
 -- sibling means the comparison did not run rather than that it disagreed.
 --
--- No `opts` are needed: this repo's root is ".", its sibling is ../LibKa0s, and its README
--- provenance line — the "it bundles [LibKa0s](...) v1.8.0 (MIT)" sentence in the README's opening
--- description block — is matched by the kit's default pattern. It lives in the description rather
--- than under a `## Credits` heading because documentation-§1 permits only twelve sections and
--- Credits is not one of them; the line is deliberately cited by content, not by number, so moving
--- it again does not leave a false `README.md:NNN` here.
+-- No `opts` are needed: this repo's root is ".", its sibling is ../LibKa0s, and its provenance
+-- line — the "Bundles [LibKa0s](...) v1.8.1 (MIT)." sentence in CLAUDE.md's repo-facts list — is
+-- matched by the kit's default pattern, whose default `provenanceFile` is already "CLAUDE.md".
+--
+-- Kit revision 9 moved that input out of README.md, with no fallback. README.md is the player's
+-- page and no longer carries a bundled-library inventory at all; CLAUDE.md is where this repo
+-- keeps the build facts a maintainer or an agent needs, so the line lives there and the gate
+-- follows it. The line is deliberately cited by content, not by line number, so moving it again
+-- does not leave a false `CLAUDE.md:NNN` here.
 
 local VendorSync = dofile("tests/_kit/vendor_sync.lua")
 

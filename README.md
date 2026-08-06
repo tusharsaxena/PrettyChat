@@ -3,7 +3,7 @@
 ![WoW](https://img.shields.io/badge/WoW-Midnight_12.0.7-purple)
 ![CurseForge Version](https://img.shields.io/curseforge/v/919766)
 ![License](https://img.shields.io/badge/License-MIT-orange)
-[![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)](https://github.com/tusharsaxena/WowAddonStandards)
+![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
 ![Tests](https://img.shields.io/badge/Tests-260%2F260_passing-green)
 
 ![Logo](https://media.forgecdn.net/attachments/1659/647/prettychat-logo-v2-jpg.jpg)
@@ -11,8 +11,6 @@
 PrettyChat cleans up World of Warcraft's system messages — the lines you get for loot, currency, gold, reputation, experience, honor, and crafting — and rewrites them in a tidy, color-coded layout that's easy to scan in a busy chat window.
 
 You can turn any message type on or off, and change its wording and colors, from the in-game settings panel or from chat with the `/pc` command.
-
-Everything this addon needs ships inside it — nothing else has to be installed. Alongside Ace3, it bundles [LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.8.0 (MIT), the shared Ka0s library behind the chat printer, the debug console, the `/pc` command line and the settings panel. Its license travels with the code at `libs/LibKa0s/LICENSE`.
 
 ## What's new in 1.4.0
 
