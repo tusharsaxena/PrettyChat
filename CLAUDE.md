@@ -31,7 +31,7 @@ When in doubt, treat standard conformance as a hard requirement and ask.
 
 The canonical `docs/` set is exactly three files: **`ARCHITECTURE.md`** (what this addon is),
 **`testing.md`** (how to verify) and **`smoke-tests.md`** (in-game checks) — plus the generated
-`test-cases.md` and the topic-detail docs.
+`test-cases.md`, and the topic-detail docs — Tier 1 (`scope.md`, `module-map.md`, `schema.md`, `settings-panel.md`, `data-flow.md`, `common-tasks.md`) is always present, and `ARCHITECTURE.md` → `## Documentation map` lists the rest.
 
 **`docs/agent-context.md` does not exist in this repo and MUST NOT be created.** The standard
 deleted it in **v2.17.0**; shipping it is **anti-pattern #49**. It held `NEW_ADDON_CONTEXT.md` —
@@ -46,7 +46,7 @@ are **frozen history** — never treat them as a live requirement, and never "re
 
 ## Before touching code
 
-Read the docs — start with **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** (what this addon is: module map, namespace publishing table, invariants, working environment, doc index), then **[docs/testing.md](./docs/testing.md)** (how to verify), then the topic-detail docs it indexes. What to install: **[DEPENDENCIES.md](./DEPENDENCIES.md)**. User-facing reference: **[README.md](./README.md)**.
+Read the docs — start with **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** (what this addon is: module map, namespace publishing table, invariants, working environment, and the `## Documentation map` listing every page under `docs/`), then **[docs/testing.md](./docs/testing.md)** (how to verify), then the topic-detail docs it indexes. What to install: **[DEPENDENCIES.md](./DEPENDENCIES.md)**. User-facing reference: **[README.md](./README.md)**.
 
 ## Non-negotiable guardrails
 

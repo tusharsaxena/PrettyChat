@@ -98,7 +98,7 @@ WoW's chat input interprets `|c…|r` as inline color escapes the moment Enter i
 NS.Schema.Set(formatPath, value:gsub("||", "|"))          -- on commit
 ```
 
-`NS.Schema` always stores raw single-`|` format strings. The disabled Original input shows the doubled form too (read-only — the user never sends it back through chat input). `/pc set` users have to type `||` themselves; see [slash-commands.md](./slash-commands.md#edit-box-pipe-escaping).
+`NS.Schema` always stores raw single-`|` format strings. The disabled Original input shows the doubled form too (read-only — the user never sends it back through chat input). `/pc set` users have to type `||` themselves; see [slash-dispatch.md](./slash-dispatch.md#edit-box-pipe-escaping).
 
 ## NotifyPanelChange refresh dispatch
 
@@ -135,7 +135,7 @@ Programmatic `:SetValue`/`:SetText` on AceGUI widgets do **not** re-fire the use
 
 ## The Test preview
 
-Both the General sub-page's "Test" button and the `/pc test` slash command call `PrettyChat:Test(filter)` (in `modules/Override.lua`). The button calls it with no filter (every category, every string); the slash dispatcher (`runTest`) forwards `{kind="category", value=…}` or `{kind="formatstring", value=…}` for the subcommand variants. See [slash-commands.md](./slash-commands.md#command-reference) for the user-facing forms.
+Both the General sub-page's "Test" button and the `/pc test` slash command call `PrettyChat:Test(filter)` (in `modules/Override.lua`). The button calls it with no filter (every category, every string); the slash dispatcher (`runTest`) forwards `{kind="category", value=…}` or `{kind="formatstring", value=…}` for the subcommand variants. See [slash-dispatch.md](./slash-dispatch.md#command-reference) for the user-facing forms.
 
 The function:
 

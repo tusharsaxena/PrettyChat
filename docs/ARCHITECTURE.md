@@ -62,7 +62,7 @@ Modular layout (`core/`, `defaults/`, `locales/`, `modules/`, `settings/`) — t
 | `settings/Slash.lua` | `NS.COMMANDS`, `NS.SlashCommands` | The ordered `COMMANDS` table (positional triples, the host's), the `LibKa0s-Slash-1.0` descriptor with its `format` and `parse` hooks, and the four host-owned verbs: `list`'s sub-keywords and category filter, `resetall`, `test`, `debug`. |
 | `settings/Panel.lua` | `NS.Config.RegisterPanels`, `NS.Config.BuildMain` | The three page **bodies** and nothing else: the General page (library-drawn), the category pages (a library-made Enable row plus the bespoke 40/60 per-string editor), and the landing page. The canvas factory, the header, the Defaults button, the scroll container and the page registry are the library's. |
 
-Topic detail: [module-map.md](./module-map.md), [file-index.md](./file-index.md).
+Topic detail: [module-map.md](./module-map.md), [module-map.md](./module-map.md).
 
 ## Namespace publishing pattern
 
@@ -94,7 +94,7 @@ Every file opens with `local addonName, NS = ...` — the addon-wide namespace t
 Break one of these and the addon misbehaves in ways no test or lint will name.
 
 - **Single write path.** Every settings mutation goes through `NS.Schema.Set(path, value)` — panel widget callbacks (`settings/Panel.lua`) and `/pc set` (`settings/Slash.lua`) alike. Never write `db.profile.categories[…]` directly from outside a row's `set()` closure; only the single path runs `PrettyChat:ApplyStrings()` and `Schema.NotifyPanelChange()`, and it is what keeps panel and slash from drifting.
-- **Master toggle wins.** With `General.enabled` false, `ApplyStrings` restores every Blizzard original regardless of per-category and per-string state. Three enable layers, evaluated in order: addon → category → per-string ([override-pipeline.md](./override-pipeline.md)).
+- **Master toggle wins.** With `General.enabled` false, `ApplyStrings` restores every Blizzard original regardless of per-category and per-string state. Three enable layers, evaluated in order: addon → category → per-string ([data-flow.md](./data-flow.md)).
 - **Format-specifier signatures must match Blizzard's.** Each Blizzard string has a fixed signature (`%s`, `%d`, `%.1f`, `%2$s`, …); a replacement must consume the same conversions in the same order or `string.format` errors at runtime. Copy the signature from the panel's left (Original) edit box.
 - **Overrides only ever happen in `ApplyStrings`, and the snapshot only in `OnEnable`.** `OnEnable` runs after Blizzard has populated `_G`, and its pre-override snapshot (iterating `NS.Defaults` deterministically) is the one chance to capture pristine values for the runtime restore-on-disable path. Never assign `_G[GLOBALNAME]` from anywhere but `ApplyStrings`, which walks `CATEGORY_ORDER` plus sorted names so cross-registered globals resolve deterministically (documented last-writer).
 - **All chat output goes through `NS.Print`; all developer logging through `NS.Debug`.** `NS.Print` (`core/CoreSetup.lua`, built by `LibKa0s-Core-1.0`) prepends the cyan `NS.PREFIX` (`|cff00ffff[PC]|r `) — **no raw `print(...)` and no direct `DEFAULT_CHAT_FRAME:AddMessage`** anywhere, including `Test()` in `modules/Override.lua`, whose every body line is prefixed. `NS.Debug(tag, fmt, …)` is a zero-alloc no-op while off, gated on the session-only `NS.State.debug` flag whose single owner is `NS.DebugLog:SetEnabled(on)` (`/pc debug on|off`, the console header toggle). Console **visibility** is a separate concern (`:Show()` / `:Hide()` / `:Toggle()` / `:IsShown()`, bare `/pc debug` and the General-page checkbox); the window's OnShow/OnHide fire `Schema.NotifyPanelChange("General")` so the checkbox tracks it. `SetEnabled` prints the color-coded ack, writes the `[Debug] logging enabled|disabled` bracket, and on enable appends the one-line `[Init]` session summary (`PrettyChat v<ver>, schema v<n>, profile '<key>'`) — the visible boot summary, since the flag is off at login. Traces are **one gated line per event, never per string**: `[Init]`, `[Migrate]` (`core/Database.lua`, only when a step runs), `[Set] <path> = <value>` (`Schema.Set`, the single settings-change seam — no `[Apply]` re-echo), `[Reset]` (`modules/Override.lua`, with apply counts), `[Cfg]` (the library's panel-open — opened/refused). `ApplyStrings` returns `(applied, restored)` and stays silent so its caller emits the summary.
@@ -123,7 +123,7 @@ What stands in its place is a **direct, synchronous fan-out inside the single wr
 
 ## Slash Commands
 
-`/pc` and `/prettychat` dispatch through one ordered `COMMANDS` table in `settings/Slash.lua` (help text is generated from the same table). Verbs: `help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `test`, `debug`. `NS.COMMANDS` is published as positional triples so the landing page renders the same list through `Sl:LandingRows()` — one formatter, two surfaces. Dispatch, help, the schema verbs, the `key = value` pair and the parser are `LibKa0s-Slash-1.0`'s; this addon adds a `format` hook (the `||` doubling) and a `parse` hook (free text containing spaces). `reset` takes a **path**, not a category. Chat input requires `||` for a literal `|`. Detail: [slash-commands.md](./slash-commands.md).
+`/pc` and `/prettychat` dispatch through one ordered `COMMANDS` table in `settings/Slash.lua` (help text is generated from the same table). Verbs: `help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `test`, `debug`. `NS.COMMANDS` is published as positional triples so the landing page renders the same list through `Sl:LandingRows()` — one formatter, two surfaces. Dispatch, help, the schema verbs, the `key = value` pair and the parser are `LibKa0s-Slash-1.0`'s; this addon adds a `format` hook (the `||` doubling) and a `parse` hook (free text containing spaces). `reset` takes a **path**, not a category. Chat input requires `||` for a literal `|`. Detail: [slash-dispatch.md](./slash-dispatch.md).
 
 ## Event Subscriptions
 
@@ -144,6 +144,51 @@ What stands in its place is a **direct, synchronous fan-out inside the single wr
 - **Cross-registered globals: last-writer-wins.** A global registered under two categories (e.g. `LOOT_ITEM_CREATED_SELF` under Loot + Tradeskill) resolves to the **last** category in `CATEGORY_ORDER` — now deterministic (PC-16), surfaced in the per-string tooltip.
 - **Positional format rendering is WoW-only.** `%n$s` specifiers rely on WoW's extended `string.format`; the headless test harness (stock Lua 5.1) can't render them and asserts graceful degradation instead.
 - **Single shared profile.** Per-character / per-realm profile scoping is not exposed.
+
+## Documentation map
+
+Every `.md` under `docs/` appears in exactly one table below (`documentation-§3`). Frozen and
+generated directories are named once each and never enumerated per run: `docs/audits/`, `docs/reviews/`, `docs/automated-tests/`, `docs/pending/`, `docs/superpowers/`.
+
+### Required (documentation-§3, Tier 1)
+
+| Doc | Covers |
+|---|---|
+| `scope.md` | What the addon restyles in chat, and what it leaves to Blizzard |
+| `module-map.md` | Every non-vendored file, its responsibility, and load order |
+| `schema.md` | The persisted shape, every default, and the migration seam |
+| `settings-panel.md` | The panel tree, per-option behavior, and the write seam |
+| `data-flow.md` | Message in → override pipeline → what the player reads |
+| `common-tasks.md` | Recipes for the changes made most often here |
+
+### Conditional (documentation-§3, Tier 2)
+
+| Doc | Status | Trigger |
+|---|---|---|
+| `slash-dispatch.md` | Present | 10 verbs in the command table |
+| `midnight-quirks.md` | Not applicable | No client-version workaround of the addon’s own; the GlobalStrings work is data, not a shim |
+| `message-bus.md` | Not applicable | The addon defines no cross-module messages |
+| `compat-layer.md` | Not applicable | `core/Compat.lua` is 19 lines of straight API normalization |
+| `profiles.md` | Not applicable | No profile control ships in the options UI |
+| `debug.md` | Not applicable | The console is `LibKa0s-DebugLog-1.0`’s, with no debug surface of the addon’s own |
+| `perf-runs/README.md` | Not applicable | No performance harness is wired — see `performance.md` |
+
+### Verification and record
+
+| Doc | Covers |
+|---|---|
+| `testing.md` | How to run the harness and lint; the green commit gate |
+| `smoke-tests.md` | The in-game smoke-test suite |
+| `test-cases.md` | The generated case inventory (authoritative pass count) |
+| `performance.md` | The addon performance page |
+| `automated-tests/README.md` | What the automated-test record is and how to produce it |
+| `automated-tests/RESULTS.md` | One row per run; generated, never hand-edited |
+
+### Addon-specific (documentation-§3, Tier 3)
+
+| Doc | Covers |
+|---|---|
+| `global-strings.md` | The GlobalStrings sub-tree: what is overridden and how it is generated |
 
 ## Documented deviations
 
@@ -198,12 +243,12 @@ Topic-specific detail lives in `docs/`. Read on demand.
 | Automated test records + the complexity watch list | [automated-tests/RESULTS.md](./automated-tests/RESULTS.md) |
 | What this addon costs + the no-combat-path sweep | [performance.md](./performance.md) |
 | In/out scope + resolved decisions | [scope.md](./scope.md) |
-| Per-file responsibility map | [file-index.md](./file-index.md) |
+| Per-file responsibility map | [module-map.md](./module-map.md) |
 | Module roles + public APIs | [module-map.md](./module-map.md) |
-| Snapshot → ApplyStrings → restore + 3-layer enable order | [override-pipeline.md](./override-pipeline.md) |
+| Snapshot → ApplyStrings → restore + 3-layer enable order | [data-flow.md](./data-flow.md) |
 | Schema row kinds + single write path + auto-clear + AceDB shape | [schema.md](./schema.md) |
 | Canvas-layout panel framework | [settings-panel.md](./settings-panel.md) |
-| `COMMANDS` table + full command reference | [slash-commands.md](./slash-commands.md) |
+| `COMMANDS` table + full command reference | [slash-dispatch.md](./slash-dispatch.md) |
 | Dual-load story + splitter script | [global-strings.md](./global-strings.md) |
 | Recipes (add string/category, fix a format) | [common-tasks.md](./common-tasks.md) |
 | Quick recipe + full smoke-test suite | [smoke-tests.md](./smoke-tests.md) |

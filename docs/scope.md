@@ -27,7 +27,7 @@ These have been considered and explicitly declined. A change of heart needs an i
 Decisions made during requirements review and v1.x.x — these are settled, not open.
 
 - **Master toggle wins.** When `General.enabled` is false, `ApplyStrings` restores every Blizzard original regardless of per-category and per-string state. Customizations stay in the database, just unapplied.
-- **Three enable layers, evaluated in order.** addon → category → per-string. A string only renders with the user's format if all three are on. See [override-pipeline.md](./override-pipeline.md).
+- **Three enable layers, evaluated in order.** addon → category → per-string. A string only renders with the user's format if all three are on. See [data-flow.md](./data-flow.md).
 - **Single shared profile.** `AceDB:New(..., true)` selects the `Default` profile for every character. No profile switcher in the panel.
 - **One sub-page per category.** Categories register as `Settings.RegisterCanvasLayoutSubcategory(parent, panel, displayName)`, nesting them under the parent in the addon list. Chosen over a right-pane tab strip so each category gets the full pane width for the side-by-side Original/New edit boxes.
 - **`General` is a virtual category.** No entry in `NS.Defaults`; built by a dedicated `buildGeneralBody()` and stored as `db.profile.enabled` at the profile root (not under `db.profile.categories`). It owns the addon-wide toggle, Test, and Reset all to defaults.

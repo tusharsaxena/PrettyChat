@@ -358,7 +358,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 > Why: this key is registered under both `Loot` and `Tradeskill`. `ApplyStrings` iterates `CATEGORY_ORDER` in fixed order (sorted names within each), so the last category wins **deterministically** (PC-16) — `Tradeskill` comes after `Loot`, so the Tradeskill format wins.
 
 - Setup: edit `Loot.LOOT_ITEM_CREATED_SELF.format` and `Tradeskill.LOOT_ITEM_CREATED_SELF.format` to visibly different strings. `/reload` a few times and trigger creation events.
-- Expected: live chat shows the **Tradeskill** format on *every* load (stable across reloads, not a coin-flip). Documented behavior — see [override-pipeline.md](./override-pipeline.md#known-quirk-globals-shared-across-categories). Do not "fix" without a triggering complaint.
+- Expected: live chat shows the **Tradeskill** format on *every* load (stable across reloads, not a coin-flip). Documented behavior — see [data-flow.md](./data-flow.md#known-quirk-globals-shared-across-categories). Do not "fix" without a triggering complaint.
 
 #### T-54 — Disabled state propagates to UI inputs
 
