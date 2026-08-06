@@ -99,7 +99,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 #### T-21 — Sub-category tree auto-expands
 
-> Why: the library's own `expandMainCategory` walks `SettingsPanel:GetCategoryList():GetCategoryEntry(cat):SetExpanded(true)` inside `pcall`. It reports nothing when the private API moves (`LIBKA0S-04`), so this test is the only thing that would notice.
+> Why: the library's own `expandMainCategory` walks `SettingsPanel:GetCategoryList():GetCategoryEntry(cat):SetExpanded(true)` inside `pcall`. It reports nothing when the private API moves ([`LIBKA0S-04`](https://github.com/tusharsaxena/PrettyChat/issues/9)), so this test is the only thing that would notice.
 
 - Steps: starting from the closed addon list, `/pc config`.
 - Expected: the left rail shows every sub-page (`General`, `Loot`, `Currency`, `Money`, `Reputation`, `Experience`, `Honor`, `Tradeskill`, `Misc`) without the user clicking the disclosure arrow.

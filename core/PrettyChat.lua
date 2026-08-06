@@ -64,10 +64,11 @@ end
 -- hook, and does the same private-API category-tree expansion inside a pcall.
 --
 -- Two host diagnostics were dropped with the old body, both deliberately and both
--- recorded in docs/pending/LEDGER.md: the "could not open settings panel" line on
--- a false return from Settings.OpenToCategory, and the one-time "could not
--- auto-expand the sub-tree" notice. The library reports neither, and inventing a
--- second open path to keep them is the thing options-ui-§2 forbids.
+-- recorded in this repo's GitHub issues (LIBKA0S-04, issue #9): the "could not
+-- open settings panel" line on a false return from Settings.OpenToCategory, and
+-- the one-time "could not auto-expand the sub-tree" notice. The library reports
+-- neither, and inventing a second open path to keep them is the thing
+-- options-ui-§2 forbids.
 function PrettyChat:OpenConfig()
     NS.Helpers.OpenOptionsPanel()
 end

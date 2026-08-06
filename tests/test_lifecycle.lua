@@ -94,12 +94,12 @@ end)
 
 test("OpenConfig is silent on the paths the library does not report", function()
     -- Two host diagnostics went with the old hand-written body, deliberately
-    -- (docs/pending/LEDGER.md, LIBKA0S-04): a gray notice on an explicit `false`
+    -- (LIBKA0S-04, this repo's GitHub issue #9): a gray notice on an explicit `false`
     -- from Settings.OpenToCategory, and a one-time hint when the private
     -- category-tree expansion could not run. Keeping either would have meant a
     -- second open path around the library's combat gate, which options-ui-§2
     -- forbids outright. Pinned as SILENCE so the decision is visible here rather
-    -- than only in the ledger, and so re-adding a second open path fails.
+    -- than only in the issue, and so re-adding a second open path fails.
     local before = #env.DEFAULT_CHAT_FRAME.messages
     env._settings.openResult = false
     addon:OpenConfig()

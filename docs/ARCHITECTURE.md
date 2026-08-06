@@ -132,7 +132,7 @@ What stands in its place is a **direct, synchronous fan-out inside the single wr
 ## Taint Notes
 
 - The panel-open guards on `InCombatLockdown()` before `Settings.OpenToCategory` — the protected category-switch taints the panel for the session if called under combat lockdown. The guard lives **inside the library's `OpenOptionsPanel`** rather than in the slash dispatcher, so every caller is gated; `PrettyChat:OpenConfig` is a one-line delegate and there is deliberately no second open path (options-ui-§2).
-- The category-tree expansion reaches into private `SettingsPanel` internals (`GetCategoryList`, `GetCategoryEntry`, `SetExpanded`) inside a `pcall`. That code is `LibKa0s-Options-1.0`'s now, and it is silent when the private API moves — see LIBKA0S-04.
+- The category-tree expansion reaches into private `SettingsPanel` internals (`GetCategoryList`, `GetCategoryEntry`, `SetExpanded`) inside a `pcall`. That code is `LibKa0s-Options-1.0`'s now, and it is silent when the private API moves — see [LIBKA0S-04](https://github.com/tusharsaxena/PrettyChat/issues/9).
 - The always-show-scrollbar patch reaches into AceGUI ScrollFrame internals and restores stock behavior on widget release so the shared AceGUI pool isn't polluted for other addons. Also the library's (`OptionsScroll.lua`).
 - `SetRenderer` puts a **second** combat guard on the render itself, because the Blizzard AddOns sidebar reaches a panel without going through the panel-open at all — the path a user is most likely to take mid-fight. Before adopting, this addon had no guard there.
 - No `SecureHook`, no protected-frame creation, no combat-sensitive writes beyond the guarded panel open.
@@ -148,7 +148,7 @@ What stands in its place is a **direct, synchronous fan-out inside the single wr
 ## Documentation map
 
 Every `.md` under `docs/` appears in exactly one table below (`documentation-§3`). Frozen and
-generated directories are named once each and never enumerated per run: `docs/audits/`, `docs/reviews/`, `docs/automated-tests/`, `docs/pending/`, `docs/superpowers/`.
+generated directories are named once each and never enumerated per run: `docs/audits/`, `docs/reviews/`, `docs/automated-tests/`, `docs/superpowers/`.
 
 ### Required (documentation-§3, Tier 1)
 
@@ -193,7 +193,7 @@ generated directories are named once each and never enumerated per run: `docs/au
 ## Documented deviations
 
 Every ratified deviation from the Ka0s WoW Addon Standard lives here and **only** here
-(`documentation-§3`). A decision may be *reasoned* at length in [pending/LEDGER.md](./pending/LEDGER.md)
+(`documentation-§3`). A decision may be *reasoned* at length in this repo's GitHub issues
 or in an audit bundle, and the row cites that id — but **a deviation not in this table is not
 ratified**, and an audit that cannot find a decision here re-files it as an open MUST.
 
@@ -203,7 +203,7 @@ mandated or permitted outright — is **retired**, not kept.
 
 | Rule | What differs | Why | Decided | Re-check trigger |
 |---|---|---|---|---|
-| `performance-§12` | No perf harness is wired: no `core/PerfSetup.lua`, no `PrettyChatPerfDB`, no `perf` verb registration, no suspend/resume contract, no `tests/perf.lua`, no `docs/perf-runs/` | **Criterion (a)** holds — no `OnUpdate` handler, no repeating ticker, no in-combat event handler — proven by the committed whole-repo sweep in [performance.md](./performance.md), which returns one hit and it is a `.luacheckrc` lint declaration rather than a call. **Both (b) and (c)** apply: every declared bucket would read `0.000` by construction, and `suspend` would flip the player's chat formatting back to Blizzard's mid-fight for a capture that can only report zero. Reasoned at length as `LIBKA0S-12` in [pending/LEDGER.md](./pending/LEDGER.md) | 2026-08-05 | **The first `OnUpdate` handler, repeating ticker, or in-combat event handler doing real work re-arms the full wiring MUST.** Re-run the sweep in `performance.md`; if it returns a call, the exemption is over |
+| `performance-§12` | No perf harness is wired: no `core/PerfSetup.lua`, no `PrettyChatPerfDB`, no `perf` verb registration, no suspend/resume contract, no `tests/perf.lua`, no `docs/perf-runs/` | **Criterion (a)** holds — no `OnUpdate` handler, no repeating ticker, no in-combat event handler — proven by the committed whole-repo sweep in [performance.md](./performance.md), which returns one hit and it is a `.luacheckrc` lint declaration rather than a call. **Both (b) and (c)** apply: every declared bucket would read `0.000` by construction, and `suspend` would flip the player's chat formatting back to Blizzard's mid-fight for a capture that can only report zero. Reasoned at length as [`LIBKA0S-12`](https://github.com/tusharsaxena/PrettyChat/issues/10) | 2026-08-05 | **The first `OnUpdate` handler, repeating ticker, or in-combat event handler doing real work re-arms the full wiring MUST.** Re-run the sweep in `performance.md`; if it returns a call, the exemption is over |
 | `layout-§2` | `GlobalStrings/` is a **PascalCase, root-level** folder outside the mandated `core/ defaults/ settings/ locales/ modules/` skeleton (`layout-§1`), holding 26 machine-generated chunks (~22,879 Blizzard reference strings) plus the 23,842-line source dump `GlobalStrings/GlobalStrings.lua`, which is over `layout-§1`'s 1500-LOC cap | The modular layout has no home for bulk generated reference data. **Nothing ships and nothing loads:** since PC-R-05 the whole folder is `.pkgmeta`-ignored and `PrettyChat.toc` carries no chunk line, so it is repo-only reference data that `tests/test_defaults.lua` reads to check every override against Blizzard's real signature. Chunks stay cut by entry count, not by first letter, and each is under 1000 lines so the generated data stays out of `layout-§1`'s on-notice band (PC-49). Regenerate with `python3 GlobalStrings/split_globalstrings.py`, which now REFUSES to run if the TOC has started loading the chunks again | 2026-08-05 | A `layout` revision that sanctions a generated-data folder, **or** the folder moving under `tests/` now that it is a fixture rather than shipped data. The `toc-file-§5` half of this pair is already closed |
 | `toc-file-§5` | `# Locales` sits immediately after `# Libraries` rather than after `# Defaults` | The non-canonical `# GlobalStrings` section this row also covered is **gone** — PC-R-05 removed it, and the splitter now fails if it returns. The Locales placement is a **standard-internal conflict**: `toc-file-§5` orders Locales before Defaults, `layout-§1`'s load order puts Defaults first, and the two disagree (the same pair disagree on `settings/*` vs `modules/*`). Resolved toward `toc-file-§5` in both places; `locales/enUS.lua` only builds `NS.L` and has no earlier-load dependency, so loading it first is safe. Raised upstream as [WowAddonStandards#2](https://github.com/tusharsaxena/WowAddonStandards/issues/2) | 2026-07-18 | WowAddonStandards#2 resolving. If it resolves in favor of `layout-§1`, both orderings here are revisited |
 | `toc-file-§1` | `## Title:` keeps its rainbow `\|cRRGGBB…\|r` escapes, `## Author:` keeps its stylized `aDd1kTeD2Ka0s` casing, and `## X-Wago-ID` is absent | The color escapes and the casing are the addon's brand mark, kept deliberately rather than normalized to `Ka0s Pretty Chat` / `add1kted2ka0s`. `toc-file-§1` asks for both distribution ids once an addon is published anywhere; PrettyChat is on CurseForge only (`## X-Curse-Project-ID: 919766`), so there is no Wago listing to reference. Do not add the field and do not commit a placeholder | 2026-07-12 | The addon being listed on Wago (which re-arms `X-Wago-ID` immediately), or a decision to retire the brand mark |
@@ -217,7 +217,7 @@ mandated or permitted outright — is **retired**, not kept.
 
 Vendored under `libs/` (the BigWigs packager pulls nothing — no `externals`): LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, and **[LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.8.0** (`libs/LibKa0s/`, listed in the TOC as `libs\LibKa0s\LibKa0s.xml` after Ace3). (`AceConfig-3.0` was removed — no live consumer.)
 
-Four of LibKa0s's five majors are adopted: **Core**, **DebugLog**, **Slash** and **Options**. **Perf is declined** under a recorded `performance-§12` no-combat-path exemption — the register row above, with its sweep in [performance.md](./performance.md) and its reasoning at LIBKA0S-12 in [pending/LEDGER.md](./pending/LEDGER.md). `Perf.lua` and `PerfPanel.lua` are still vendored, because the folder is copied whole and never file by file.
+Four of LibKa0s's five majors are adopted: **Core**, **DebugLog**, **Slash** and **Options**. **Perf is declined** under a recorded `performance-§12` no-combat-path exemption — the register row above, with its sweep in [performance.md](./performance.md) and its reasoning at [LIBKA0S-12](https://github.com/tusharsaxena/PrettyChat/issues/10). `Perf.lua` and `PerfPanel.lua` are still vendored, because the folder is copied whole and never file by file.
 
 The shared test kit is vendored separately to `tests/_kit/` — **never** to `libs/`, which is the ship payload.
 
@@ -252,4 +252,3 @@ Topic-specific detail lives in `docs/`. Read on demand.
 | Dual-load story + splitter script | [global-strings.md](./global-strings.md) |
 | Recipes (add string/category, fix a format) | [common-tasks.md](./common-tasks.md) |
 | Quick recipe + full smoke-test suite | [smoke-tests.md](./smoke-tests.md) |
-| Every LibKa0s adoption decision, declined surface and reported gap | [pending/LEDGER.md](./pending/LEDGER.md) |

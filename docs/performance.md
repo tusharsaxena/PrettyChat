@@ -65,7 +65,7 @@ and either alone would qualify:
   and re-applying afterwards: a **visible flip of the player's chat formatting mid-fight**, for a
   capture that can only ever report zero.
 
-The reasoning is kept at length as `LIBKA0S-12` in [`pending/LEDGER.md`](./pending/LEDGER.md).
+The reasoning is kept at length as [`LIBKA0S-12`](https://github.com/tusharsaxena/PrettyChat/issues/10).
 
 ## What the exemption does and does not suspend
 
