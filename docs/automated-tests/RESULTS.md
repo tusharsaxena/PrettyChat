@@ -5,8 +5,8 @@
 
 One row per run. The frozen evidence for each is in the dated folder beside this file; where that
 folder carries an `ANALYSIS.md`, that file is the run's write-up. One is required only for a release
-run and expected otherwise (`automated-tests-§5`): `20260804-182235` and `20260804-233338` have one,
-`20260804-214445` does not.
+run and expected otherwise (`automated-tests-§5`): `20260807-022707`, `20260804-182235` and
+`20260804-233338` have one, `20260804-214445` does not.
 
 **`lint` and `tests` gate the run and gate the commit** (`testing-§4`).
 **`perf` and `complexity` never fail a run and never block a commit** — they are recorded,
@@ -22,6 +22,7 @@ not selected, which is a different fact again.
 
 | Run | Version | Lint w/e | Files | Tests | Perf | NLOC | Funcs | Avg NLOC | Avg CCN | Max CCN | CCN warn | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [`20260807-022707`](20260807-022707/) | 1.4.0 | 0/0 | 17 | 260/260 | skip | 51337 | 531 | 6.4 | 1.9 | 12 | 0 | **green** |
 | [`20260804-233338`](20260804-233338/) | 1.4.0 | 0/0 | 17 | 255/255 | skip | 51248 | 528 | 6.3 | 1.9 | 12 | 0 | **green** |
 | [`20260804-214445`](20260804-214445/) | 1.4.0 | 0/0 | 17 | 255/255 | skip | 51248 | 528 | 6.3 | 1.9 | 0 | 0 | **green** |
 | [`20260804-182235`](20260804-182235/) | 1.4.0 | 0/0 | 17 | 255/255 | skip | 51217 | 519 | 6.4 | 1.9 | 23 | 2 | **green** |
@@ -37,37 +38,50 @@ trend as 23 → 12 → 12.
 
 ## Test suite
 
-255 cases. The suite builds a fully isolated addon instance per case (`tests/loader.lua`), because the addon's whole job is writing `_G[GLOBALNAME]` and a shared environment would let one case's overrides answer another's reads. The generated inventory `test-cases.md` in each bundle is the authority on what exists at that point; the README badge tracks the same number. The count has now held at 255 across all three recorded runs, including one that refactored two functions — correctly, since that refactor was behavior-preserving and added no seam to cover. The next run that changes source without changing this number is worth a look: panel rendering, live chat overrides and positional `%n$s` formats are covered only by the in-game [smoke-test suite](../smoke-tests.md), so a coverage gap here does not show up as a failure anywhere.
+260 cases, across 17 suite files, with **0 skipped**. The suite builds a fully isolated addon instance per case (`tests/loader.lua`), because the addon's whole job is writing `_G[GLOBALNAME]` and a shared environment would let one case's overrides answer another's reads. The generated inventory `test-cases.md` in each bundle is the authority on what exists at that point; the README badge tracks the same number. The count held at 255 across the first three recorded runs and moved for the first time at `20260807-022707`: the consumer-side vendored-payload gate split out of `test_harness.lua` into its own `test_vendor_sync.lua` (a move, not new coverage), and five genuinely new cases arrived — four LibKa0s stub-surface parity checks in `test_libka0s.lua` and one conversion-sequence check in `test_defaults.lua`. The next run that changes source without changing this number is still worth a look: panel rendering, live chat overrides and positional `%n$s` formats are covered only by the in-game [smoke-test suite](../smoke-tests.md), so a coverage gap here does not show up as a failure anywhere.
 
 ## Lint
 
-Clean over 17 files, and clean over the same 17 in every recorded run. Scope excludes `libs/` (vendored, not this addon's to lint), `tests/`, `docs/audits`, `docs/reviews` and the generated `GlobalStrings/` chunks — the last is 91% of the repo's NLOC and carries no logic, so a clean lint here says nothing at all about that data. Before quoting 0/0, confirm the four seam files (`core/CoreSetup.lua`, `core/DebugLogSetup.lua`, `settings/OptionsSetup.lua`, `settings/Slash.lua`) are inside the set that was actually checked; the config is `.luacheckrc`.
+Clean over 17 files, and clean over the same 17 in every recorded run. Scope excludes `libs/` (vendored, not this addon's to lint), `tests/`, `docs/audits`, `docs/reviews` and the generated `GlobalStrings/` chunks — the last is **46,771 of the tree's 51,337 NLOC, 91%** (measured from `20260807-022707`'s `complexity.txt`) and carries no logic, so a clean lint here says nothing at all about that data. The `tests/` exclusion matters as much: the harness is 20 files that lint never reads, and it is where most of the repo's hand-written Lua now lives. Before quoting 0/0, confirm the four seam files (`core/CoreSetup.lua`, `core/DebugLogSetup.lua`, `settings/OptionsSetup.lua`, `settings/Slash.lua`) are inside the set that was actually checked; the config is `.luacheckrc`.
 
 ## Perf
 
-This addon ships no `tests/perf.lua`, so the `perf` column is a permanent `skip` rather than a transient tooling gap. Two things follow, and both are standing facts rather than any run's news: the record says **nothing** about the addon's runtime cost, and `performance-§9`'s zero-overhead evidence — that bracketed instrumentation is free when capture is off — does not exist for it. Adding scenarios is the only thing that changes either. In-game captures, which no script can produce, have no standing store in this repo yet.
+This addon ships no `tests/perf.lua`, so the `perf` column is a permanent `skip` rather than a transient tooling gap — the first of `automated-tests-§3`'s two sanctioned reasons, *nothing to run*, and not a recorded `performance-§12` no-combat-path exemption. Every bundle records it verbatim as `skipReason: "no tests/perf.lua — this addon ships no offline scenarios"`. Two things follow, and both are standing facts rather than any run's news: the record says **nothing** about the addon's runtime cost, and `performance-§9`'s zero-overhead evidence — that bracketed instrumentation is free when capture is off — does not exist for it. Adding scenarios is the only thing that changes either. In-game captures, which no script can produce, have no standing store in this repo yet.
 
 ## Complexity watch list
 
-Current state as of [`20260804-233338`](20260804-233338/) — not that run's diff.
+Current state as of [`20260807-022707`](20260807-022707/) — not that run's diff.
 Every function `lizard` warned on, and every file at or above `layout-§1`'s 1000-LOC
 on-notice threshold, each with a one-line disposition.
 
 ### Functions `lizard` warned on
 
-**None.** Zero warnings over 528 functions, and as of `20260804-233338` the maximum is
-**measured** at 12 rather than inferred from an empty warning list — see the note under the
-table for why the run before it recorded `0`. The two standing entries were `PrettyChat:Test`
-(CCN 23) and `build` in `tests/loader.lua` (CCN 18); both were split into named units, to CCN 6
-and 3, with no behavior change. Their dispositions are retired along with them — nothing is
-deferred here anymore. The five functions now nearest the threshold, named rather than counted
-so the next regression is visible, are `Database.RunMigrations` (`core/Database.lua`, CCN 12),
-`PrettyChat:ApplyStrings` (`modules/Override.lua`, 11), `sampleArg` (`modules/Override.lua`, 11),
-`runTest` (`settings/Slash.lua`, 11) and `buildParentBody` (`settings/Panel.lua`, 11). The next
-warned function is a regression, not a backlog item.
+**None.** Zero warnings over 531 functions, with the maximum **measured** at 12 rather than
+inferred from an empty warning list — see the note under the table for why `20260804-214445`
+recorded `0`. The two entries this list once carried were `PrettyChat:Test` (CCN 23) and `build`
+in `tests/loader.lua` (CCN 18); both were split into named units, to CCN 6 and 3, with no behavior
+change, and their dispositions retired with them. Nothing is deferred here. The five functions
+nearest the threshold, named rather than counted so the next regression is visible, are
+`Database.RunMigrations` (`core/Database.lua`, CCN 12), `buildParentBody` (`settings/Panel.lua`,
+11), `runTest` (`settings/Slash.lua`, 11), `PrettyChat:ApplyStrings` (`modules/Override.lua`, 11)
+and `sampleArg` (`modules/Override.lua`, 11) — the same five, at the same scores, as
+`20260804-233338`. All five are dense **defaulting and guarding** rather than tangled control flow:
+`lizard` scores every `and`/`or` short-circuit as a decision, so a run of `t.k = rec.k or D.k`
+lines rates high with no visible branching (`performance-§10`), and the two want different fixes.
+The next warned function is a regression against this list, not a backlog item.
 
 ### Files by `layout-§1` band
 
 | Band | File | LOC | Disposition |
 |---|---|---|---|
-| > 1500 (over cap) | `GlobalStrings/GlobalStrings.lua` | 23842 | **Accepted — not shipped and not loaded.** No TOC references it and `.pkgmeta:21` excludes it; it is the build-time input `split_globalstrings.py` reads. `layout-§1` caps files a reader has to change. |
+| > 1500 (over cap) | `GlobalStrings/GlobalStrings.lua` | 23840 | **Accepted — not shipped and not loaded.** No TOC line references it and `.pkgmeta:24` excludes the whole `GlobalStrings` directory; it is the build-time input `split_globalstrings.py` reads. `layout-§1` caps files a reader has to change. Carried forward unchanged; nothing newly crossed a band at `20260807-022707`. |
+
+The LOC figure is `lizard`'s NLOC for the file (`20260807-022707/complexity.txt`:550). Rows written
+before `20260807-022707` quoted 23842, the raw line count; the file has not changed, only the
+figure's stated source. Nothing here is hand-computed.
+
+**On the shelf life of that *Accepted*.** `automated-tests-§4` retires an entry carried as accepted
+across **three consecutive release runs**. No run in this record is a release run — every
+`manifest.json` here carries `"release": null` — so the clock has not started and the entry is not
+yet owed a fix or a tracked deviation ID. The first `--release X.Y.Z` run is where this disposition
+gets re-read rather than renewed by default.

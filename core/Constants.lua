@@ -26,7 +26,7 @@ Const.SECTION_BOTTOM_SPACER = 6
 Const.STRING_VSPACER = 14
 
 -- Single source for the chat-color escapes used across PrettyChat.lua
--- (slash output, [PC] prefix, Test header/footer) and Config.lua (panel
+-- (slash output, [PC] prefix, Test header/footer) and settings/Panel.lua (panel
 -- captions, alias label). `cyan` is the [PC] prefix color — the cyan
 -- /reset pair is the addon's brand mark and must not change without a
 -- visual review.

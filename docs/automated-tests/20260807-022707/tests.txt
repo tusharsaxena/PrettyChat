@@ -1,0 +1,262 @@
+  PASS  the runner fed the loader exactly the TOC's files, in the TOC's order
+  PASS  every derived path exists on disk and no libs/ path leaked in
+  PASS  the vendored load list is every file of LibKa0s.xml, in XML order
+  PASS  every LibKa0s major actually registered in the loaded environment
+  PASS  libs/LibKa0s is the LibKa0s release CLAUDE.md says this addon bundles
+  PASS  tests/_kit is the test kit that shipped with that release
+  PASS  the locale-table matcher catches both offending spellings and clears the legal one
+  PASS  no seam file hands a LibKa0s descriptor the addon-wide locale table
+  PASS  Core cannot express the L trap — the tripwire that stands in for a rendered case
+  PASS  the secret-safe pair on NS.Util IS Core's, not a host copy beside it
+  PASS  the [PC] printer renders the same bytes it did before Core owned it
+  PASS  the printer is reclaimed from AceConsole's embed, not merely defined
+  PASS  the console descriptor seeds the frame globals and the title we mean
+  PASS  the console renders prose, not its own SCREAMING_SNAKE keys
+  PASS  the console's two formatters still render the bytes the copy buffer expects
+  PASS  the console's print and safeToString are call-time forwarders, not captures
+  PASS  NS.Debug is the instance's bare sink, bound not wrapped
+  PASS  with DebugLog absent the console degrades but the flag and the ack survive
+  PASS  Options cannot express the L trap either — its own, different tripwire
+  PASS  NS.Helpers IS the library instance, decorated in place
+  PASS  every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh trio
+  PASS  the settings panel refuses to render under combat rather than drawing half a page
+  PASS  with Options absent the schema still loads whole — the measured stub set
+  PASS  the dispatcher renders prose, not its own SCREAMING_SNAKE keys
+  PASS  the COMMANDS table is the positional shape the library reads
+  PASS  the format hook doubles pipes without re-implementing the value formatter
+  PASS  the parse hook keeps a whole free-text value, spaces and all
+  PASS  both convergences are adopted, in bytes
+  PASS  with Slash absent the host verbs survive and the schema CLI says why
+  PASS  with LibKa0s absent the addon still loads and still prints, saying so once
+  PASS  the shared cause clause names the addon and where the library should be
+  PASS  the degraded secret guard still neutralizes a protected value
+  PASS  the Core stub carries the whole live surface
+  PASS  the DebugLog stub carries the whole live surface
+  PASS  the Options stub carries the whole live surface
+  PASS  the Slash stub carries the whole live surface
+  PASS  Compat.GetAddOnMetadata is published on the namespace
+  PASS  reads through the C_AddOns namespace on a modern client
+  PASS  prefers C_AddOns over the legacy global when both exist
+  PASS  falls back to the legacy _G global on an older client
+  PASS  falls back when C_AddOns exists without the getter
+  PASS  returns nil (never errors) when neither surface exists
+  PASS  passes the addon name and key straight through
+  PASS  NS.version is seeded from the TOC through the shim
+  PASS  every color escape is a well-formed |cRRGGBB code
+  PASS  the slash-commands-§5 mandated palette is exact
+  PASS  the brand colors are distinct from the mandated palette
+  PASS  the [PC] chat tag is cyan-wrapped and trailing-spaced
+  PASS  the host's own layout constants are positive numbers
+  PASS  no host copy of a library layout constant has grown back
+  PASS  the library publishes the layout constants a host page needs
+  PASS  FONT_MONO points inside the addon's own media folder
+  PASS  SafeToString renders scalars and nil verbatim
+  PASS  SafeToString substitutes <secret> for a value table.concat rejects
+  PASS  IsConcatSafe probes concatenability via table.concat, not ..
+  PASS  IsConcatSafe never raises on the value it is probing
+  PASS  trim strips surrounding whitespace and is nil-safe
+  PASS  trim keeps interior whitespace intact
+  PASS  note and cmd wrap text in the documented slash colors
+  PASS  NS.L is published as a table
+  PASS  an unknown key falls back to itself verbatim
+  PASS  every seeded manifest entry is an identity mapping
+  PASS  the scan found the L call sites it is meant to guard
+  PASS  every localized call site is in the enUS manifest
+  PASS  the manifest carries no entry that nothing references
+  PASS  every slash-command description is localized
+  PASS  the defaults table is non-empty and carries real entries
+  PASS  every defaults category appears in CATEGORY_ORDER
+  PASS  every ordered category except the virtual General has backing data
+  PASS  CATEGORY_ORDER lists General first and has no duplicates
+  PASS  every category declares a boolean enabled flag and a strings table
+  PASS  every key is a Blizzard-style UPPERCASE global name
+  PASS  every entry carries a non-empty label and default
+  PASS  labels are unique within their category
+  PASS  every default format string renders with sample arguments
+  PASS  every default's conversion sequence is a positional prefix of Blizzard's
+  PASS  no default carries a raw newline or tab
+  PASS  cross-registered globals are identified with their real categories
+  PASS  the schema builds exactly the rows the defaults imply
+  PASS  every string registration has both of its schema rows
+  PASS  each format row's schema default is the defaults-table default
+  PASS  resolves known setting paths and returns nil for unknown ones
+  PASS  resolves categories case-insensitively and by prefix
+  PASS  master toggle round-trips through the single write path
+  PASS  Set on a format pushes the override to _G via ApplyStrings
+  PASS  re-setting a format to its default auto-clears the stored override
+  PASS  Set on an unknown path is a no-op returning false
+  PASS  load-time schema path validation resolved every path
+  PASS  the four row kinds are built with their documented shape
+  PASS  exactly one addon-wide row exists, under the virtual General category
+  PASS  RowsByCategory returns only that category, in registration order
+  PASS  a cross-registered global carries one format row per category
+  PASS  an exact category name beats any prefix interpretation
+  PASS  an ambiguous prefix resolves to nothing rather than guessing
+  PASS  a non-string or empty category name resolves to nothing
+  PASS  FormatValue renders nil, bools, strings and numbers
+  PASS  Set returns true and coerces bool rows to real booleans
+  PASS  row.set closures are pure DB writes with no side effects
+  PASS  NotifyPanelChange calls only the affected category's refresher
+  PASS  a General or unscoped change refreshes every registered page
+  PASS  a refresher that errors cannot break the write path
+  PASS  an unregistered category is a silent no-op, not an error
+  PASS  renders basic %s + %d and collapses %% escapes
+  PASS  positional %n$s formats degrade gracefully under stock Lua
+  PASS  empty or nil format returns nil
+  PASS  malformed conversion surfaces as nil + error string
+  PASS  each conversion class gets a correctly typed sample argument
+  PASS  upper-case conversions are typed from their lower-case form
+  PASS  flags, width and precision are parsed, not mistaken for arguments
+  PASS  multiple conversions are filled in order
+  PASS  a format with no conversions renders as itself
+  PASS  %% is not mistaken for a conversion next to a real one
+  PASS  a non-string format is rejected like an empty one
+  PASS  a real Blizzard-style default renders without error
+  PASS  override is applied by default when all three layers are on
+  PASS  master toggle off restores original, back on reapplies
+  PASS  category toggle off restores original, back on reapplies
+  PASS  per-string toggle off restores original, back on reapplies
+  PASS  the cascade is a conjunction — every layer must be on to apply
+  PASS  a disabled category leaves other categories applied
+  PASS  a string with no snapshot is left alone rather than blanked
+  PASS  repeated applies are idempotent across the whole surface
+  PASS  ResetString clears both the custom format and the per-string disable
+  PASS  cross-registered global resolves to the last CATEGORY_ORDER registrant, stably
+  PASS  GetStringValue falls back to the defaults table until overridden
+  PASS  IsAddonEnabled treats an absent flag as default-true
+  PASS  IsCategoryEnabled falls back to the category's shipped default
+  PASS  IsStringEnabled is true unless the string is explicitly disabled
+  PASS  EnsureCategoryDB creates the sub-table once and reuses it
+  PASS  ApplyStrings returns applied/restored counts that sum to the surface
+  PASS  a disabled category shifts its own strings from applied to restored
+  PASS  ResetCategory drops the whole category table
+  PASS  ResetCategory('General') clears only the master flag
+  PASS  ResetAll clears the master flag and every category at once
+  PASS  Test prints a header, a per-category block, and a counted footer
+  PASS  Test previews the Blizzard original from the OnEnable snapshot
+  PASS  a formatstring filter narrows the report to one string
+  PASS  a filter that matches nothing says so instead of printing an empty report
+  PASS  Test warns when the addon is disabled but still previews
+  PASS  an unrenderable override is reported as an error line, not a crash
+  PASS  every Test line routes through the [PC] printer
+  PASS  NS.Database and the db.global namespace exist
+  PASS  a fresh DB is stamped at the current schema version
+  PASS  re-running migrations is idempotent
+  PASS  RunMigrations tolerates a db without a .global namespace
+  PASS  an older DB is upgraded to the current version
+  PASS  the schema version is a positive integer the defaults start below
+  PASS  a DB with no recorded version is treated as version 0
+  PASS  RunMigrations tolerates nil and a db without .global
+  PASS  the runner stamps the current version even with no steps to run
+  PASS  migrating emits no debug noise when nothing ran
+  PASS  the addon object and the bootstrap namespace are one table
+  PASS  OnInitialize provisions both AceDB namespaces
+  PASS  OnInitialize registers /pc and its /prettychat alias
+  PASS  OnEnable snapshots a Blizzard original for every registered global
+  PASS  OnEnable applies the overrides so live chat is rewritten at load
+  PASS  NS.Print prepends the cyan [PC] tag to every line
+  PASS  NS.Print neutralizes a value the concat probe rejects
+  PASS  OpenConfig refuses during combat without touching the Settings API
+  PASS  OpenConfig opens the registered category out of combat
+  PASS  OpenConfig is silent on the paths the library does not report
+  PASS  OpenConfig is a silent no-op when the Settings API is unavailable
+  PASS  FONT_MONO points at the vendored JetBrainsMono TTF
+  PASS  pure line formatters render plain and colored lines
+  PASS  /pc debug on|off drives the session flag through the SetEnabled seam
+  PASS  color-coded chat ack: ON green, OFF red, via [PC]
+  PASS  enable emits the [Init] session summary after the bracket
+  PASS  bare /pc debug toggles the window without changing the flag
+  PASS  header toggle click flips state through the same seam
+  PASS  NS.Debug is a no-op when off and appends one line when on
+  PASS  Schema.Set emits one [Set] line with no separate [Apply] echo
+  PASS  the console line and the copy buffer describe the same event
+  PASS  the plain buffer never carries color escapes of its own
+  PASS  NS.Debug neutralizes a protected value inside its format args
+  PASS  NS.Debug passes a bare message through without formatting it
+  PASS  NS.Debug keeps argument types so numeric conversions still work
+  PASS  the buffer is capped and drops its oldest lines first
+  PASS  Clear empties both the buffer and the console view
+  PASS  the line counter reports buffered lines against the cap
+  PASS  the Copy window is filled with the plain-text buffer
+  PASS  both console windows register for Esc-to-close
+  PASS  Show, Hide and Toggle drive the window's visibility
+  PASS  IsShown is false before the console has ever been built
+  PASS  the header label tracks the session flag in the §5 state colors
+  PASS  SessionSummary self-identifies the build, schema and profile
+  PASS  disabling logging still writes its closing bracket line
+  PASS  ResetAll emits one [Reset] summary carrying apply counts
+  PASS  Schema.FormatValue formats bools and doubles pipes in strings
+  PASS  NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
+  PASS  a bare /pc prints the help index
+  PASS  /pc help lists every command with its description
+  PASS  an unknown verb says so and then prints the help index
+  PASS  the verb is lower-cased but the argument keeps its case
+  PASS  extra whitespace around the verb is tolerated
+  PASS  /pc version prints the tagged version line
+  PASS  /pc config routes to the combat-gated panel opener
+  PASS  /pc get echoes the gold-key/white-value FormatKV line
+  PASS  /pc get with no path prints usage
+  PASS  /pc get on an unknown path reports it as not found
+  PASS  /pc get doubles the pipes in a format string so escapes read as text
+  PASS  /pc set accepts every documented truthy bool spelling
+  PASS  /pc set accepts every documented falsy bool spelling
+  PASS  /pc set rejects an unparseable bool without touching the value
+  PASS  /pc set stores a format string and echoes the stored value
+  PASS  /pc set echoes the value the DB actually kept, not the input
+  PASS  /pc set with no path prints usage, and with no value refuses by path
+  PASS  /pc set on an unknown path reports it as not found
+  PASS  /pc set keeps the whole remainder, spaces and all
+  PASS  /pc set and /pc get round-trip a pipe through the || escape
+  PASS  /pc list prints the green header and azure category groups
+  PASS  /pc list emits every schema row exactly once
+  PASS  /pc list category lists the category names alphabetically
+  PASS  /pc list formatstring lists every Category.GLOBALNAME pair
+  PASS  /pc list <Category> narrows to that category's rows
+  PASS  /pc list resolves a category case-insensitively and by prefix
+  PASS  /pc list on an unknown category lists the valid ones
+  PASS  /pc reset takes a schema PATH and resets exactly that setting
+  PASS  /pc reset <Category> answers with the deprecation and both replacements
+  PASS  /pc reset with no argument prints the library's usage line
+  PASS  /pc reset on a name that is neither path nor category reports not found
+  PASS  /pc resetall clears every override and confirms
+  PASS  /pc test routes every line through the [PC] printer
+  PASS  /pc test and /pc test all preview the whole surface
+  PASS  /pc test category resolves the name and narrows the report
+  PASS  /pc test formatstring upper-cases the name before matching
+  PASS  /pc test surfaces usage for each malformed filter
+  PASS  /pc test rejects unknown filter values by name
+  PASS  /pc debug rejects an argument that is neither on, off, nor a toggle
+  PASS  every slash line carries the cyan [PC] tag
+  PASS  registration builds the parent category and one sub-page per category
+  PASS  the panel registry holds one ctx per page, reachable by page key
+  PASS  sub-page frames start hidden and unbuilt
+  PASS  registration is a no-op on a client without the canvas Settings API
+  PASS  a second CreateOptionsPanel is a no-op, not a second Blizzard category
+  PASS  the General page builds its controls on first show
+  PASS  a second show does not rebuild the page
+  PASS  the master checkbox is seeded from the schema, not assumed true
+  PASS  toggling the master checkbox writes through the single Schema path
+  PASS  the Debug console checkbox drives the window, never the logging flag
+  PASS  the checkbox re-syncs when the console is opened another way
+  PASS  the Test button prints the preview report
+  PASS  Reset all asks for confirmation instead of resetting immediately
+  PASS  the Defaults button is deferred to first show, not built at registration
+  PASS  the General page has no Defaults button
+  PASS  the Defaults button resets its own category only
+  PASS  a category page builds a toggle plus one block per string
+  PASS  string blocks are built in sorted global-name order
+  PASS  each block is the documented three-row 40/60 editor
+  PASS  the read-only Original row shows this client's snapshot, or degrades without it
+  PASS  the per-string checkbox writes the string's enable path
+  PASS  the New edit box unescapes || to | before storing
+  PASS  the Preview box renders the live format with sample arguments
+  PASS  the Preview box surfaces an unrenderable format instead of blanking
+  PASS  the per-string Reset button restores both dimensions
+  PASS  disabling the category grays the per-string controls
+  PASS  a master-toggle change refreshes every built page, not just its own
+  PASS  a slash-command write re-syncs the open panel
+  PASS  a cross-registered string warns about the shared Blizzard global
+  PASS  the parent page lists every slash command through the one row formatter
+  PASS  the parent page shows the TOC tagline
+
+260 passed, 0 failed, 0 skipped, 260 total

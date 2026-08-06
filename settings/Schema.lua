@@ -5,7 +5,7 @@ local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 local Schema = {}
 NS.Schema = Schema
 
--- Display order shared with Config.lua. Iterating NS.Defaults via
+-- Display order shared with settings/Panel.lua. Iterating NS.Defaults via
 -- pairs() would give a non-deterministic order; this keeps `/pc list`
 -- and the addon-list left rail in sync. "General" is a virtual category
 -- (no entry in NS.Defaults) that hosts addon-wide settings —
@@ -251,7 +251,7 @@ function Schema.FormatValue(row, v)
     return tostring(v)
 end
 
--- Refresher dispatch. Config.lua registers a closure per sub-page on
+-- Refresher dispatch. settings/Panel.lua registers a closure per sub-page on
 -- first OnShow via Schema.RegisterRefresher; NotifyPanelChange invokes
 -- the matching closure (or every closure when the master toggle moves —
 -- per-string disabled state depends on the master). Sub-pages that have
