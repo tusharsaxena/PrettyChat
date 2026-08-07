@@ -233,7 +233,7 @@ badge and any count quoted in the docs must agree with it.
 - both console windows register for Esc-to-close
 - Show, Hide and Toggle drive the window's visibility
 - IsShown is false before the console has ever been built
-- the header label tracks the session flag in the §5 state colors
+- the header label tracks the session flag in the debug-logging-§5 state colors
 - SessionSummary self-identifies the build, schema and profile
 - disabling logging still writes its closing bracket line
 - ResetAll emits one [Reset] summary carrying apply counts

@@ -241,7 +241,7 @@ test("IsShown is false before the console has ever been built", function()
     t.falsy(fresh.NS.DebugLog:IsShown(), "no frame yet means not shown")
 end)
 
-test("the header label tracks the session flag in the §5 state colors", function()
+test("the header label tracks the session flag in the debug-logging-§5 state colors", function()
     local header = env._frames.byName["PrettyChatDebugWindow"].debugToggle
     D:SetEnabled(true)
     t.eq(header.text, "Debug: ON", "the toggle reads ON while logging")
