@@ -71,7 +71,7 @@ The reasoning is kept at length as [`LIBKA0S-12`](https://github.com/tusharsaxen
 
 Suspended, and correctly absent from this repo: `core/PerfSetup.lua`, the `PrettyChatPerfDB`
 SavedVariables global (the TOC declares **one** SV global, not two), the `perf` verb registration, the
-suspend/resume contract, `tests/perf.lua`, and `docs/perf-runs/`.
+suspend/resume contract, `tests/perf.lua`, and `docs/perf-analysis/`.
 
 **Not suspended, and all four are live here:**
 
