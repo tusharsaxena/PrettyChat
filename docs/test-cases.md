@@ -18,7 +18,7 @@ badge and any count quoted in the docs must agree with it.
 - libs/LibKa0s is the LibKa0s release CLAUDE.md says this addon bundles
 - tests/_kit is the test kit that shipped with that release
 
-### test_libka0s.lua (30)
+### test_libka0s.lua (32)
 
 - the locale-table matcher catches both offending spellings and clears the legal one
 - no seam file hands a LibKa0s descriptor the addon-wide locale table
@@ -31,6 +31,8 @@ badge and any count quoted in the docs must agree with it.
 - the console's two formatters still render the bytes the copy buffer expects
 - the console's print and safeToString are call-time forwarders, not captures
 - NS.Debug is the instance's bare sink, bound not wrapped
+- the close button is the library's, told which addon folder is asking
+- the console descriptor passes the FOLDER name, not just the frame name
 - with DebugLog absent the console degrades but the flag and the ack survive
 - Options cannot express the L trap either — its own, different tripwire
 - NS.Helpers IS the library instance, decorated in place
@@ -71,7 +73,18 @@ badge and any count quoted in the docs must agree with it.
 - the host's own layout constants are positive numbers
 - no host copy of a library layout constant has grown back
 - the library publishes the layout constants a host page needs
-- FONT_MONO points inside the addon's own media folder
+- FONT_MONO is whatever the media seam answers, never a literal path
+
+### test_mediasetup.lua (8)
+
+- MediaSetup: NS.Icon answers the vendored path, EXTENSIONLESS
+- MediaSetup: an icon the library does not ship answers nil
+- MediaSetup: NS.MediaFont answers the vendored face, and only for a face it ships
+- MediaSetup: the font this addon names is one the library carries
+- MediaSetup: every mark the console title bar reaches for is one the library ships
+- MediaSetup: every name the library ships has a file in the vendored copy
+- MediaSetup: the vendored face is on disk where the seam says it is
+- MediaSetup: with no library there is no art and no face, and that is not an error
 
 ### test_util.lua (7)
 
@@ -323,9 +336,10 @@ badge and any count quoted in the docs must agree with it.
 |-------|------:|
 | test_harness.lua | 4 |
 | test_vendor_sync.lua | 2 |
-| test_libka0s.lua | 30 |
+| test_libka0s.lua | 32 |
 | test_compat.lua | 8 |
 | test_constants.lua | 8 |
+| test_mediasetup.lua | 8 |
 | test_util.lua | 7 |
 | test_locale.lua | 7 |
 | test_defaults.lua | 15 |
@@ -338,4 +352,4 @@ badge and any count quoted in the docs must agree with it.
 | test_debuglog.lua | 25 |
 | test_slash.lua | 42 |
 | test_panel.lua | 31 |
-| **Total** | **260** |
+| **Total** | **270** |

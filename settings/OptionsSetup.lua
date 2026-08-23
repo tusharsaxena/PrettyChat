@@ -72,6 +72,9 @@ if not lib then
         SetRenderer          = function() end,
         RegisterOptionsPage  = function() end,
         RefreshAllPanels     = function() end,
+        -- Options minor 8. Two parameters it never reads, so the degraded shape matches
+        -- the live one rather than a zero-arity lookalike (PC-R-08).
+        RefreshPanel         = function(_ctx, _structural) end,
         RefreshScalars       = function() end,
         LSMValues            = function() return function() return {} end end,
         __pages              = function() return {} end,

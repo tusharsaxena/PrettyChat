@@ -90,6 +90,28 @@ end
 Util.IsConcatSafe = lib.IsConcatSafe
 Util.SafeToString = lib.SafeToString
 
+-- WRAPPED, TO SAY WHO IS ASKING — the one seam here that is not a direct bind.
+-- LibKa0s draws this collection's own `close` mark when it is told which addon
+-- folder to build a texture path from, and it cannot work that out for itself: the
+-- library is vendored, so there is no one path to it and a copy cannot know which
+-- folder it was copied into. `addonName` is that answer and this file has it as its
+-- first vararg. Without it the library falls back to a multiplication sign, which is
+-- what a degraded install should get and not what this one should.
+--
+-- TWO ARGUMENTS IN, THREE OUT, and the asymmetry is the whole point (anti-pattern
+-- #64): the wrapper exists to supply the argument a caller cannot know. A
+-- two-argument passthrough onto the three-argument target is a perfectly good button
+-- with the wrong glyph — no error, no red suite, and the only witness is someone
+-- looking at two windows side by side. It cost a sibling addon a release.
+--
+-- PrettyChat builds no window of its own today, so nothing calls this yet; the
+-- console's close is LibKa0s' own and is told the folder name through
+-- core/DebugLogSetup.lua's descriptor instead. This is the seam that keeps the NEXT
+-- window this addon builds from having to remember the folder name at its call site.
+NS.MakeCloseButton = function(parent, onClick)
+    return lib.MakeCloseButton(parent, onClick, addonName)
+end
+
 -- `sep = ""` because Const.PREFIX already carries its own trailing space. Without
 -- it every line would render "[PC]  message" with a double gap — a change nobody
 -- would file a bug about and everybody would see.

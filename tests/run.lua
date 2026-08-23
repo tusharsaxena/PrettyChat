@@ -55,6 +55,7 @@ Kit.run{
         "test_libka0s",
         "test_compat",
         "test_constants",
+        "test_mediasetup",
         "test_util",
         "test_locale",
         "test_defaults",

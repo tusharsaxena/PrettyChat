@@ -51,10 +51,21 @@ Const.Color = {
 Const.PREFIX = Const.Color.cyan .. "[PC]" .. Const.Color.reset .. " "
 NS.PREFIX    = Const.PREFIX
 
--- Monospace font for the on-screen debug console (debug-logging-§2). Vendored under
--- media/fonts/ (JetBrains Mono, OFL) rather than depending on a user-installed font, and
--- handed to LibKa0s-DebugLog-1.0 as the console descriptor's `font` (core/DebugLogSetup.lua),
--- which applies it to the log, the line counter and the copy box. LibSharedMedia registration is
--- intentionally omitted: PrettyChat ships no font-picker consumer, so the path constant
--- alone suffices — a documented SHOULD-deviation from debug-logging-§2.
-Const.FONT_MONO = "Interface\\AddOns\\PrettyChat\\media\\fonts\\JetBrainsMono-Regular.ttf"
+-- Monospace font for the on-screen debug console (debug-logging-§2). The face is
+-- JetBrains Mono (OFL) and it now arrives inside the LibKa0s payload this repo already
+-- vendors — core/MediaSetup.lua resolves it — rather than from a second copy of the same
+-- bytes under this addon's own media/fonts/. It is handed to LibKa0s-DebugLog-1.0 as the
+-- console descriptor's `font` (core/DebugLogSetup.lua), which applies it to the log, the
+-- line counter and the copy box.
+--
+-- THE FALLBACK IS A REAL CLIENT FONT, deliberately. `SetFont` accepts a path to a file that
+-- is not there, fails to load it, and the text simply does not draw — so a degraded install
+-- (no LibKa0s, hence no payload and no face) gets Blizzard's own STANDARD_TEXT_FONT and a
+-- readable console in a proportional face, never a dead path.
+--
+-- LibSharedMedia registration is no longer this file's business either: the library
+-- registers every face it ships, from core/MediaSetup.lua's RegisterLSM call. PrettyChat
+-- does not vendor LibSharedMedia-3.0, so that call is a no-op in this install — the
+-- registration happens the day LSM arrives, and nothing here has to decide.
+Const.FONT_MONO_NAME = "JetBrains Mono"
+Const.FONT_MONO      = NS.MediaFont and NS.MediaFont(Const.FONT_MONO_NAME) or _G.STANDARD_TEXT_FONT

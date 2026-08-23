@@ -78,9 +78,12 @@ test("the library publishes the layout constants a host page needs", function()
     t.truthy(NS.Helpers.BUTTON_PAIR_REL < 0.5, "the button pair still insets under half")
 end)
 
-test("FONT_MONO points inside the addon's own media folder", function()
-    -- debug-logging-§2 accepted deviation: shipped font, no LSM registration.
-    t.truthy(Const.FONT_MONO:find("Interface\\AddOns\\PrettyChat\\media\\fonts\\", 1, true) == 1,
-        "FONT_MONO is a vendored media path under the addon folder")
+test("FONT_MONO is whatever the media seam answers, never a literal path", function()
+    -- The face moved into the LibKa0s payload, so this constant is now derived
+    -- rather than typed. Asserted AGAINST THE SEAM instead of against a prefix: a
+    -- literal here would have to be re-typed the day the library changes where it
+    -- keeps its fonts, and re-typing it is how the two drift apart silently.
+    t.eq(Const.FONT_MONO, NS.MediaFont(Const.FONT_MONO_NAME),
+        "FONT_MONO must BE the seam's answer for FONT_MONO_NAME")
     t.truthy(Const.FONT_MONO:match("%.ttf$") ~= nil, "FONT_MONO is a .ttf")
 end)

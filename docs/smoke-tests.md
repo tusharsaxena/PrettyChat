@@ -192,12 +192,12 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 - Setup: `/pc debug on` (start logging), then `/pc debug` to open the console.
 - Steps:
-  1. On first open, confirm the console is fully wired: the header toggle reads **`Debug: ON`** (green), the **×** and Esc both close it, and no Lua error fired. (A blank header or dead Esc ⇒ the initial sync wasn't run last / threw mid-build.)
+  1. On first open, confirm the console is fully wired: the header toggle reads **`Debug: ON`** (green), the close mark and Esc both close it, and no Lua error fired. (A blank header or dead Esc ⇒ the initial sync wasn't run last / threw mid-build.)
   2. Read the footer: a right-aligned **`N / 500 lines`** counter in the same monospace font as the log. Note N.
   3. Generate lines until the log overflows — e.g. `/pc test all` a few times, or toggle a handful of settings. Expect: N climbs on **every** append; once past 500 it pins at **`500 / 500 lines`** (the buffer is capped).
   4. With the log overflowing, spin the **mouse wheel** up/down over the log. Expect: the scrollbar **thumb tracks the wheel** — moving up toward the **top = oldest** lines, down toward the **bottom = newest**.
   5. **Drag the thumb** up and down. Expect: the log scrolls to match — thumb top shows the oldest buffered line, thumb bottom the newest. No flicker/jitter loop (the `_syncing` re-entrancy guard holds).
-  6. Click **Clear**. Expect: the log empties, the counter resets to **`0 / 500 lines`**, and the scrollbar goes **inert** (thumb parked, mouse disabled) but stays **visible** — the right gutter width is unchanged.
+  6. Click the **clear** mark (the middle of the three title-bar marks). Expect: the log empties, the counter resets to **`0 / 500 lines`**, and the scrollbar goes **inert** (thumb parked, mouse disabled) but stays **visible** — the right gutter width is unchanged.
 - Failure mode: `attempt to call a nil value` on first open ⇒ the old C getters are being called (#41). Thumb direction inverted (top = newest) ⇒ flip the `sliderValue ↔ offset` sign (`offset = maxOffset − value`). Counter never updates ⇒ `UpdateStatus` isn't wired into `Add`/`Clear`. Bar hidden when the log fits, or gutter width jumps ⇒ the always-shown/inert rule (`options-ui-§10`) regressed.
 
 ### L — Slash command surface
@@ -412,15 +412,26 @@ The four reset entry points — per-string **Reset** button, per-category **Defa
 
 ### M — Media (fonts, textures, borders)
 
-Validates the 2026-07-17 media audit conclusion in-game: every font, texture, and border is a Blizzard default **except** the debug console's vendored JetBrains Mono (the accepted `debug-logging-§2` deviation) and the addon's own logo. PrettyChat never restyles the chat frame itself.
+Validates the media audit conclusion in-game: every font, texture, and border is a Blizzard default **except** the debug console's JetBrains Mono, the shared Ka0s marks on the console's title bar, and the addon's own logo. PrettyChat never restyles the chat frame itself.
+
+Since the `LibKa0s-Media-1.0` adoption the font and the marks both come from **inside the vendored library payload** (`libs/LibKa0s/media/`), not from this addon's own `media/` — which now holds nothing but the logo and the project-page screenshots. Everything in this section therefore has a second failure mode worth naming up front: **the library was never told which addon folder is asking.** A texture path is absolute from `Interface\AddOns\`, a vendored copy cannot work out which folder it sits in, and a wrong or missing answer produces a path to a file that is not there — which draws nothing and raises nothing. Nothing goes red; the window just quietly goes back to the pre-icon spelling.
 
 #### T-60 — Debug console renders with the vendored mono font + Blizzard chrome
 
-> Why: the console is the one accepted non-Blizzard font (`Const.FONT_MONO`, JetBrains Mono); its frame/border are Blizzard assets (`Interface\Buttons\WHITE8x8` backdrop, `Interface\Tooltips\UI-Tooltip-Border` edge).
+> Why: the console is the one non-Blizzard font (`Const.FONT_MONO`, JetBrains Mono); its frame/border are Blizzard assets (`Interface\Buttons\WHITE8x8` backdrop, `Interface\Tooltips\UI-Tooltip-Border` edge). The face is resolved at load through `NS.MediaFont` (`core/MediaSetup.lua`) out of the LibKa0s payload — this addon no longer ships a copy of it.
 
 - Steps: `/pc debug`. Add a few lines (trigger a reset or two so entries appear).
-- Expected: log text is clearly **monospaced** (columns line up); the window has a dark backdrop with a thin tooltip-style border and no missing-texture boxes; the title bar reads "Pretty Chat — Debug" in a normal Blizzard font; the close glyph shows a proper **×**. Click **Copy** — the copy window's EditBox is also monospaced.
-- Failure mode: log text is proportional ⇒ the `.ttf` didn't ship / path wrong; a pink-and-black checkerboard ⇒ backdrop asset renamed in a client patch.
+- Expected: log text is clearly **monospaced** (columns line up); the window has a dark backdrop with a thin tooltip-style border and no missing-texture boxes; the title bar reads "Pretty Chat — Debug" in a normal Blizzard font. Click the copy mark — the copy window's EditBox is also monospaced.
+- Failure mode: log text is **proportional** ⇒ the seam answered nil and `Const.FONT_MONO` fell through to `STANDARD_TEXT_FONT`. That is the designed degradation and it is deliberately readable, so it will not announce itself — check that `libs/LibKa0s/media/fonts/JetBrainsMono-Regular.ttf` shipped, and that `core/MediaSetup.lua` precedes `core/Constants.lua` in the TOC. A pink-and-black checkerboard ⇒ backdrop asset renamed in a client patch. Log text missing **entirely** ⇒ someone replaced the `STANDARD_TEXT_FONT` fallback with a path; `SetFont` accepts a path to a file that is not there and simply draws nothing.
+
+#### T-60a — The console title bar wears the collection's marks, not two words and a ×
+
+> Why: `core/DebugLogSetup.lua`'s descriptor passes `addonName` **beside** `name`. `name` seeds the frame globals (`PrettyChatDebugWindow`); `addonName` is the folder name the library builds a texture path from, and it is the only way a vendored copy can find its own art. This addon draws no frames of its own, so this title bar and its copy window are the **only** places in PrettyChat a player sees the change at all.
+
+- Steps: `/pc debug`. Look at the right-hand end of the title bar, then click the copy mark and look at the copy window's own title bar.
+- Expected, left to right on the console: a **copy** mark, a **clear** mark, and a **close** mark — three small square icons of the same size and pitch, drawn in the same off-white and brightening on hover. The copy window carries the same close mark. The words **Copy** and **Clear** are gone, and **there is no tooltip on any of them** — that is by design, not an omission (a tooltip anchored under the strip covers the first line of the log, which is the thing the window exists to show).
+- Failure mode — and this is the one to memorise: **a multiplication sign (×) on the close control, with the words "Copy" and "Clear" beside it, means the folder name stopped being passed.** That is the library's fallback, not a broken build: it is exactly what a host that never passes `addonName` gets. Check that `addonName = addonName` is still in the descriptor **and that `name = addonName` is still there too** — they answer different questions and this addon happens to answer both with the same string, which is precisely what hides a mix-up. If only *some* of the three marks are missing, the art did not ship: check `libs/LibKa0s/media/icons/{copy,clear,close}.tga`.
+- Second failure mode: the marks are there but the two consoles you have open draw **different** art. One of the two addons is on an older LibKa0s payload; re-vendor it.
 
 #### T-61 — Settings panel header uses Blizzard font objects + atlas divider
 
@@ -511,8 +522,10 @@ and no headless assertion can tell the difference. Current vendored copies resol
 
 **Steps:** walk every surface and read every label:
 1. `/pc config` — the landing page and all nine sub-pages, including each page's **Defaults** button.
-2. `/pc debug` — the console: the title bar, the `Debug: ON`/`Debug: OFF` toggle, the Copy and Clear
-   buttons, the `N / 500 lines` counter, and the Copy window's own title.
+2. `/pc debug` — the console: the title bar, the `Debug: ON`/`Debug: OFF` toggle, the `N / 500 lines`
+   counter, and the copy window's own title. (The Copy and Clear controls are marks now and carry no
+   text — if you can read a word on either of them, the folder name is not reaching the library and
+   T-60a is the failing check, not this one.)
 3. The General page's **Debug console** checkbox — hover it and read the tooltip.
 4. `/pc help`, `/pc list`, `/pc get General.enabled`, `/pc set General.enabled maybe`,
    `/pc reset nonsense`.
@@ -535,8 +548,9 @@ single-line border only looks wrong beside a window that has both lines.
   one. Background `0.06, 0.06, 0.08` at 92% alpha.
 - The window title (`Pretty Chat — Debug`) renders **gold**; the divider under the title bar is
   **gray**, not black.
-- The × is the thin 18×18 glyph, and it is the **same** × the other addon's console wears.
-- Click **Copy** — the copy window wears the identical edge.
+- The close control is the collection's **close mark**, and it is the **same** mark the other addon's
+  console wears — not a multiplication sign on either. See T-60a for what a × there means.
+- Click the copy mark — the copy window wears the identical edge, and the identical close mark.
 - Side by side, the two consoles should be indistinguishable apart from their titles. Anything that
   differs is the finding.
 

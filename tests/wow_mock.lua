@@ -294,6 +294,10 @@ local function build()
     -- 14 — plain globals.
     M.YES = "Yes"
     M.NO  = "No"
+    -- The client's own default face, and the one core/Constants.lua falls back to when
+    -- the media seam answers nil. Present here because a nil fallback would let the
+    -- degraded-console case pass on nil == nil while the real client drew nothing.
+    M.STANDARD_TEXT_FONT = "Fonts\\FRIZQT__.TTF"
     for _, fname in ipairs({
         "GameFontNormal", "GameFontNormalSmall", "GameFontNormalLarge", "GameFontNormalHuge",
         "GameFontHighlight", "GameFontDisable",

@@ -39,6 +39,7 @@ end
 -- globbed so a new seam is a deliberate addition to this list, not a silent one.
 local SEAM_FILES = {
     "core/CoreSetup.lua",
+    "core/MediaSetup.lua",
     "core/DebugLogSetup.lua",
     "settings/OptionsSetup.lua",
     "settings/Slash.lua",
@@ -241,6 +242,50 @@ test("NS.Debug is the instance's bare sink, bound not wrapped", function()
     -- A wrapper would work and would also be a second place the gate could be
     -- forgotten; debug-logging-§4 requires the bare binding.
     t.eq(NS.Debug, NS.DebugLog.Debug, "NS.Debug IS the instance's Debug")
+end)
+
+test("the close button is the library's, told which addon folder is asking", function()
+    -- THE ONE SEAM IN core/CoreSetup.lua THAT IS WRAPPED rather than handed over, and
+    -- the wrapper takes two arguments and passes three. That asymmetry is the whole
+    -- reason it exists: LibKa0s draws this collection's `close` mark once it can build
+    -- a texture path, and it cannot work out which addon folder it was vendored into.
+    -- Only the addon knows, and only this file has it as its first vararg.
+    --
+    -- Asserted on the ARGUMENT, never on the appearance. A two-argument passthrough
+    -- returns a perfectly good button wearing a multiplication sign: nothing errors,
+    -- no suite reddens, and the only witness is someone looking at two Ka0s windows
+    -- side by side. That is anti-pattern #64, and it cost a sibling addon a release.
+    -- red under: NS.MakeCloseButton = lib.MakeCloseButton, or a two-argument forward.
+    local seen
+    local lib  = inst.mocks.LibStub("LibKa0s-Core-1.0", true)
+    local real = lib.MakeCloseButton
+    lib.MakeCloseButton = function(_, _, name) seen = name; return nil end
+    NS.MakeCloseButton(inst.mocks.__stubFrame(), function() end)
+    lib.MakeCloseButton = real
+
+    t.eq(seen, "PrettyChat",
+        "the library was not told which addon folder to build the texture path from")
+end)
+
+test("the console descriptor passes the FOLDER name, not just the frame name", function()
+    -- Two fields, two questions, one string in this addon: `name` seeds
+    -- PrettyChatDebugWindow and friends, `addonName` is what the library builds a
+    -- texture path from so its own copy, clear and close draw the collection's art
+    -- instead of two words and a multiplication sign. A host where the two diverge
+    -- would hand the library a path into nowhere -- which draws nothing and raises
+    -- nothing -- so it is passed explicitly rather than inferred from `name`.
+    --
+    -- Read off the SOURCE because a descriptor field is not observable after
+    -- lib:New returns, and with comments stripped so a mention in prose cannot
+    -- stand in for the field.
+    -- red under: dropping `addonName`, or replacing `name` with it.
+    local src = readFile("core/DebugLogSetup.lua")
+    t.truthy(src, "core/DebugLogSetup.lua is readable")
+    local code = src:gsub("%-%-[^\r\n]*", "")
+    t.truthy(code:match("addonName%s*=%s*addonName") ~= nil,
+        "the descriptor does not pass addonName, so the console keeps the minor-8 title bar")
+    t.truthy(code:match("name%s*=%s*addonName") ~= nil,
+        "the descriptor must still pass `name`: it is what seeds the frame globals")
 end)
 
 test("with DebugLog absent the console degrades but the flag and the ack survive", function()

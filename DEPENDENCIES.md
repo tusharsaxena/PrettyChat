@@ -31,10 +31,14 @@ hint**, not an install requirement: if a standalone Ace3 is present it loads fir
 the vendored copies serve. There is no `## Dependencies` line, and there is nothing for a player to
 install alongside this addon.
 
-The monospace console font (JetBrains Mono, `media/fonts/JetBrainsMono-Regular.ttf`, referenced at
-`core/Constants.lua:60`) is a **bundled asset**, not a dependency — it ships in the package and is
-loaded by path. The same is true of the `.tga` logo. Neither needs anything installed, at runtime or
-at build time.
+The monospace console font (JetBrains Mono, OFL) is a **bundled asset**, not a dependency — but it
+is no longer bundled *here*. It ships inside the vendored LibKa0s payload at
+`libs/LibKa0s/media/fonts/JetBrainsMono-Regular.ttf`, with its license beside it as
+`JetBrainsMono-OFL.txt`, and `core/MediaSetup.lua` resolves the path that `core/Constants.lua`'s
+`Const.FONT_MONO` hands to the console. This repo's own `media/fonts/` is gone: six Ka0s addons
+shipping the same bytes under six folders was six licenses to track and six chances for one copy to
+go stale. The `.tga` logo is still genuinely ours and still ships here. Neither needs anything
+installed, at runtime or at build time.
 
 ---
 

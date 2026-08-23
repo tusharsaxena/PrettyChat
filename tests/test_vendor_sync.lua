@@ -22,7 +22,7 @@
 -- sibling means the comparison did not run rather than that it disagreed.
 --
 -- No `opts` are needed: this repo's root is ".", its sibling is ../LibKa0s, and its provenance
--- line — the "Bundles [LibKa0s](...) v1.8.2 (MIT)." sentence in CLAUDE.md's repo-facts list — is
+-- line — the "Bundles [LibKa0s](...) v1.10.2 (MIT)." sentence in CLAUDE.md's repo-facts list — is
 -- matched by the kit's default pattern, whose default `provenanceFile` is already "CLAUDE.md".
 --
 -- Kit revision 9 moved that input out of README.md, with no fallback. README.md is the player's

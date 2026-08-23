@@ -83,7 +83,10 @@ if not lib then
         LastLine        = function() return nil end,
         FindLine        = function() return nil end,
         CopyText        = function() return "" end,
-        MakeCloseButton = function() return nil end,
+        -- Three parameters it never reads, so the degraded shape matches the live one
+        -- (PC-R-08, below). A zero-arity stub in front of a three-argument target is the
+        -- shape anti-pattern #64 punishes, and it is the shape a future caller would copy.
+        MakeCloseButton = function(_parent, _onClick, _addonName) return nil end,
         SessionSummary  = sessionSummary,
         SetEnabled      = function(_, on)
             on = not not on
@@ -111,6 +114,15 @@ NS.DebugLog = lib:New({
     -- PrettyChatDebugCopyScroll — the same three frame globals the hand-written
     -- console used, so /framestack and any Esc-close muscle memory are unchanged.
     name  = addonName,
+    -- THE FOLDER NAME, which is a different question from the one above even though
+    -- this addon answers both with the same string. `name` seeds the frame globals;
+    -- `addonName` is what the library builds a texture path from, so its own copy,
+    -- clear and close controls draw this collection's art instead of two words and a
+    -- multiplication sign. A vendored library cannot work that out for itself -- there
+    -- is no one path to it -- and a host where the two strings diverge would hand it a
+    -- path into nowhere, which draws nothing and raises nothing. Passed explicitly for
+    -- that reason, BESIDE `name` and never instead of it.
+    addonName = addonName,
     -- The library appends its own " — Debug", so this is the bare brand.
     title = "Pretty Chat",
     font  = NS.Const.FONT_MONO,
@@ -141,6 +153,8 @@ NS.DebugLog = lib:New({
 
     -- No `L`: this addon translates none of the console's strings, so omitting the
     -- field is both the common case and the safe one (README, "The `L` trap").
+    --
+    -- `addonName` above is the one identity field the library needs beyond `name`.
     --
     -- No `skin`, no `applySkin`, no `makeCloseButton` either, and that is a
     -- decision rather than an omission. The flat 1px black edge with its gray inner
