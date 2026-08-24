@@ -419,7 +419,7 @@ for _, category in ipairs(CATEGORY_ORDER) do
             -- RestoreDefaults: it wipes the category's table and re-applies in ONE
             -- pass with ONE [Reset] summary line, where the row-by-row form would
             -- run ApplyStrings once per row and emit one [Set] line per row into a
-            -- 500-line console buffer (debug-logging-§9).
+            -- 1500-line console buffer (debug-logging-§9).
             ctx.panel.defaultsOnClick = function() PrettyChat:ResetCategory(category) end
             H.SetRenderer(ctx, function(pageCtx)
                 buildCategoryBody(pageCtx, category, catData)

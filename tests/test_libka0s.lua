@@ -199,7 +199,7 @@ test("the console renders prose, not its own SCREAMING_SNAKE keys", function()
 
     t.truthy(win.lineCount.text, "the line counter renders")
     t.falsy(win.lineCount.text:match("^[A-Z][A-Z0-9_]+$"), "not the LINES key")
-    t.truthy(win.lineCount.text:find("/ 500 lines", 1, true), "it is the formatted counter")
+    t.truthy(win.lineCount.text:find("/ 1500 lines", 1, true), "it is the formatted counter")
 
     local spec = NS.DebugLog:ConsoleCheckbox()
     t.falsy(spec.label:match("^[A-Z][A-Z0-9_]+$"), "the checkbox label is prose")

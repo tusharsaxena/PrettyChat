@@ -290,7 +290,7 @@ end
 -- per-category Defaults button is: PrettyChat:ResetAll wipes the profile and
 -- re-applies in ONE pass with ONE [Reset] summary line, where the library's
 -- row-by-row form would run ApplyStrings ~171 times and emit ~171 [Set] lines into
--- a 500-line console buffer (debug-logging-§9).
+-- a 1500-line console buffer (debug-logging-§9).
 function runResetAll()
     PrettyChat:ResetAll()
     NS.Print(note("all settings reset to defaults"))

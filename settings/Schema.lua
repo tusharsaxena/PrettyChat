@@ -317,7 +317,7 @@ end
 -- Deliberately NOT the implementation behind the per-category Defaults button or
 -- `/pc resetall`. Both of those are bulk: driving them row by row through here
 -- would run ApplyStrings once per row (~350 passes over ~170 globals) and emit one
--- [Set] line per row into a 500-line console buffer, which is exactly the per-item
+-- [Set] line per row into a 1500-line console buffer, which is exactly the per-item
 -- spam debug-logging-§9 forbids. PrettyChat:ResetCategory and PrettyChat:ResetAll
 -- stay the bulk implementations, each one pass and one summary line.
 function Schema.ApplyDefault(row)

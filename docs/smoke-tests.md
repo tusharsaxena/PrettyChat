@@ -188,16 +188,16 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 #### T-29b — Debug console scrollbar + line counter
 
-> Why: the console log is a wheel-only `ScrollingMessageFrame`, so a thin right-edge `Slider` and a bottom `N / 500 lines` counter are both a MUST (`debug-logging-§11`, anti-pattern #41). The Slider is driven by the Lua mixin API (`GetMaxScrollRange`/`GetScrollOffset`/`SetScrollOffset`) — the old C getters (`GetNumLinesDisplayed`/`GetCurrentScroll`) are `nil` on retail's mixin and would raise on first open. The initial sync runs LAST in the window build so a frame-API surprise can't blank the header or drop ESC-to-close.
+> Why: the console log is a wheel-only `ScrollingMessageFrame`, so a thin right-edge `Slider` and a bottom `N / 1500 lines` counter are both a MUST (`debug-logging-§11`, anti-pattern #41). The Slider is driven by the Lua mixin API (`GetMaxScrollRange`/`GetScrollOffset`/`SetScrollOffset`) — the old C getters (`GetNumLinesDisplayed`/`GetCurrentScroll`) are `nil` on retail's mixin and would raise on first open. The initial sync runs LAST in the window build so a frame-API surprise can't blank the header or drop ESC-to-close.
 
 - Setup: `/pc debug on` (start logging), then `/pc debug` to open the console.
 - Steps:
   1. On first open, confirm the console is fully wired: the header toggle reads **`Debug: ON`** (green), the close mark and Esc both close it, and no Lua error fired. (A blank header or dead Esc ⇒ the initial sync wasn't run last / threw mid-build.)
-  2. Read the footer: a right-aligned **`N / 500 lines`** counter in the same monospace font as the log. Note N.
-  3. Generate lines until the log overflows — e.g. `/pc test all` a few times, or toggle a handful of settings. Expect: N climbs on **every** append; once past 500 it pins at **`500 / 500 lines`** (the buffer is capped).
+  2. Read the footer: a right-aligned **`N / 1500 lines`** counter in the same monospace font as the log. Note N.
+  3. Generate lines until the log overflows — e.g. `/pc test all` a few times, or toggle a handful of settings. Expect: N climbs on **every** append; once past 1500 it pins at **`1500 / 1500 lines`** (the buffer is capped).
   4. With the log overflowing, spin the **mouse wheel** up/down over the log. Expect: the scrollbar **thumb tracks the wheel** — moving up toward the **top = oldest** lines, down toward the **bottom = newest**.
   5. **Drag the thumb** up and down. Expect: the log scrolls to match — thumb top shows the oldest buffered line, thumb bottom the newest. No flicker/jitter loop (the `_syncing` re-entrancy guard holds).
-  6. Click the **clear** mark (the middle of the three title-bar marks). Expect: the log empties, the counter resets to **`0 / 500 lines`**, and the scrollbar goes **inert** (thumb parked, mouse disabled) but stays **visible** — the right gutter width is unchanged.
+  6. Click the **clear** mark (the middle of the three title-bar marks). Expect: the log empties, the counter resets to **`0 / 1500 lines`**, and the scrollbar goes **inert** (thumb parked, mouse disabled) but stays **visible** — the right gutter width is unchanged.
 - Failure mode: `attempt to call a nil value` on first open ⇒ the old C getters are being called (#41). Thumb direction inverted (top = newest) ⇒ flip the `sliderValue ↔ offset` sign (`offset = maxOffset − value`). Counter never updates ⇒ `UpdateStatus` isn't wired into `Add`/`Clear`. Bar hidden when the log fits, or gutter width jumps ⇒ the always-shown/inert rule (`options-ui-§10`) regressed.
 
 ### L — Slash command surface
@@ -522,7 +522,7 @@ and no headless assertion can tell the difference. Current vendored copies resol
 
 **Steps:** walk every surface and read every label:
 1. `/pc config` — the landing page and all nine sub-pages, including each page's **Defaults** button.
-2. `/pc debug` — the console: the title bar, the `Debug: ON`/`Debug: OFF` toggle, the `N / 500 lines`
+2. `/pc debug` — the console: the title bar, the `Debug: ON`/`Debug: OFF` toggle, the `N / 1500 lines`
    counter, and the copy window's own title. (The Copy and Clear controls are marks now and carry no
    text — if you can read a word on either of them, the folder name is not reaching the library and
    T-60a is the failing check, not this one.)

@@ -183,10 +183,10 @@ end)
 
 test("the buffer is capped and drops its oldest lines first", function()
     D:Clear()
-    for i = 1, 520 do D:Add("Bulk", "line " .. i) end
-    t.eq(#D.buffer, 500, "the buffer holds at most MAX_BUFFER lines")
+    for i = 1, 1520 do D:Add("Bulk", "line " .. i) end
+    t.eq(#D.buffer, 1500, "the buffer holds at most MAX_BUFFER lines")
     t.truthy(D.buffer[1]:find("line 21", 1, true), "the oldest lines were dropped")
-    t.truthy(D.buffer[#D.buffer]:find("line 520", 1, true), "the newest line is kept")
+    t.truthy(D.buffer[#D.buffer]:find("line 1520", 1, true), "the newest line is kept")
 end)
 
 test("Clear empties both the buffer and the console view", function()
@@ -200,7 +200,7 @@ end)
 test("the line counter reports buffered lines against the cap", function()
     D:Clear()
     D:Add("Loot", "one")
-    t.eq(env._frames.byName["PrettyChatDebugWindow"].lineCount.text, "1 / 500 lines",
+    t.eq(env._frames.byName["PrettyChatDebugWindow"].lineCount.text, "1 / 1500 lines",
         "the status bar counts lines against MAX_BUFFER")
 end)
 
