@@ -53,7 +53,7 @@ Kit.run{
         "test_harness",
         "test_vendor_sync",
         "test_libka0s",
-        "test_compat",
+        "test_envsetup",
         "test_constants",
         "test_mediasetup",
         "test_util",

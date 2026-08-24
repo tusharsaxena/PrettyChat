@@ -30,9 +30,11 @@ OnEnable snapshot ─▶ addon.originalStrings ─▶ NS.OriginalFormat(addon, G
 
 ## Module Map
 
-Modular layout (`core/`, `defaults/`, `locales/`, `modules/`, `settings/`) — the single Ka0s layout (`layout-§1`). Load order is `PrettyChat.toc` (dependency, not alphabetical): libraries first — **including `libs\LibKa0s\LibKa0s.xml`, after Ace3** — then `locales/enUS → core/Compat → core/MediaSetup → core/Constants → core/Namespace → core/State → core/Util → core/Database → core/PrettyChat → core/CoreSetup → core/DebugLogSetup → defaults/Profile → defaults/Defaults → modules/Override → settings/Schema → settings/OptionsSetup → settings/Slash → settings/Panel`.
+Modular layout (`core/`, `defaults/`, `locales/`, `modules/`, `settings/`) — the single Ka0s layout (`layout-§1`). Load order is `PrettyChat.toc` (dependency, not alphabetical): libraries first — **including `libs\LibKa0s\LibKa0s.xml`, after Ace3** — then `locales/enUS → core/EnvSetup → core/MediaSetup → core/Constants → core/Namespace → core/State → core/Util → core/Database → core/PrettyChat → core/CoreSetup → core/DebugLogSetup → defaults/Profile → defaults/Defaults → modules/Override → settings/Schema → settings/OptionsSetup → settings/Slash → settings/Panel`.
 
-**Four positions in that order are load-bearing and are pinned by tests, not by convention:**
+**Five positions in that order are load-bearing and are pinned by tests, not by convention:**
+
+- `core/EnvSetup.lua` sits **before** `core/Namespace.lua`, and therefore before `settings/Slash.lua` and `settings/Panel.lua` too, because all three read the TOC at FILE SCOPE — `NS.version`, `VERSION` and `TOC_NOTES` each resolve once at load and keep the answer for the whole session. All three call the seam unguarded, so a seam published later raises on the first load instead of pinning the reported version to a literal for good; `tests/test_envsetup.lua` pins what each of the three actually resolved to, which no raise can tell you.
 
 - `core/MediaSetup.lua` sits **before** `core/Constants.lua`, because `Const.FONT_MONO` is resolved through `NS.MediaFont` at load. A seam published afterwards would leave every install silently on `STANDARD_TEXT_FONT` — a console that reads perfectly well in the wrong face, which is the kind of regression nobody files.
 
@@ -46,7 +48,7 @@ Modular layout (`core/`, `defaults/`, `locales/`, `modules/`, `settings/`) — t
 
 | Module | Publishes on `NS` | Role |
 |--------|-------------------|------|
-| `core/Compat.lua` | `NS.Compat` | Version-shim seam. `Compat.GetAddOnMetadata` (C_AddOns vs legacy global). |
+| `core/EnvSetup.lua` | `NS.Meta`, `NS.Version` | The `LibKa0s-Env-1.0` seam. Reads one field of this addon's own TOC manifest, and answers its version string (the TOC first, then `NS.version`, then `"?"`), telling the library which addon FOLDER is asking — a vendored copy cannot work that out for itself. Falls back to the C_AddOns-then-legacy-global ladder when the library is absent, so a degraded install reads its own TOC exactly as it did before. Replaced `core/Compat.lua`, which held nothing but the same reader. |
 | `core/Constants.lua` | `NS.Const`, `NS.PREFIX` | `Const.Color` palette (incl. `azure` / `listHead` slash-output codes), the landing page's own section spacers, `Const.STRING_VSPACER`, `Const.FONT_MONO_NAME` / `Const.FONT_MONO` (JetBrains Mono, resolved through `NS.MediaFont` from the LibKa0s payload, falling back to `STANDARD_TEXT_FONT`), and the shared cyan `[PC]` chat prefix. Carries **no** panel layout constants — those are `LibKa0s-Options-1.0`'s `LAYOUT` table (options-ui-§8). Side-effect-free. |
 | `core/Namespace.lua` | `NS.name`, `NS.version` | Identity bootstrap — records the addon name + version so any module can read them without re-querying the TOC. |
 | `core/State.lua` | `NS.State` | Session-only runtime state (`{ debug = false }`); never persisted, reset every reload/login. |
@@ -73,7 +75,7 @@ Every file opens with `local addonName, NS = ...` — the addon-wide namespace t
 
 | Member | Set by | Used by |
 |--------|--------|---------|
-| `NS.Compat` | `core/Compat.lua` | `core/Namespace.lua`, `settings/Slash.lua`, `settings/Panel.lua` (metadata access) |
+| `NS.Meta`, `NS.Version` | `core/EnvSetup.lua` | `core/Namespace.lua`, `settings/Slash.lua`, `settings/Panel.lua` (metadata access, all three at FILE SCOPE) |
 | `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `core/Util.lua`, `core/CoreSetup.lua`, `core/DebugLogSetup.lua`, `modules/Override.lua`, `settings/Panel.lua`, `settings/Slash.lua` (palette/spacers/font/prefix) |
 | `NS.name` / `NS.version` | `core/Namespace.lua` | identity bootstrap (published for any module) |
 | `NS.State` | `core/State.lua` | `core/DebugLogSetup.lua`, `settings/Slash.lua` (session-only `debug` flag; reset every reload/login) |
@@ -171,7 +173,7 @@ generated directories are named once each and never enumerated per run: `docs/au
 | `slash-dispatch.md` | Present | 10 verbs in the command table |
 | `midnight-quirks.md` | Not applicable | No client-version workaround of the addon’s own; the GlobalStrings work is data, not a shim |
 | `message-bus.md` | Not applicable | The addon defines no cross-module messages |
-| `compat-layer.md` | Not applicable | `core/Compat.lua` is 19 lines of straight API normalization |
+| `compat-layer.md` | Not applicable | There is no `core/Compat.lua`. Its one shim, `Compat.GetAddOnMetadata`, is now `LibKa0s-Env-1.0` behind `core/EnvSetup.lua`, and this addon has no addon-specific client-version shim left to document |
 | `profiles.md` | Not applicable | No profile control ships in the options UI |
 | `debug.md` | Not applicable | The console is `LibKa0s-DebugLog-1.0`’s, with no debug surface of the addon’s own |
 | `perf-analysis/README.md` | Not applicable | No performance harness is wired — see `performance.md` |

@@ -15,13 +15,13 @@ local addonName, NS = ...
 local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 
 local L       = NS.L
--- TOC metadata first so it cannot drift from the packaged manifest, then the
--- in-code constant (slash-commands-§3) — NS.version, which core/Namespace.lua sets
--- from the same metadata with its own literal fallback. A bare "?" here would make
--- `/pc version` answer with a question mark on the one client where the metadata
--- shim comes back empty, which is precisely when a user is being asked what version
--- they are running.
-local VERSION = NS.Compat.GetAddOnMetadata(addonName, "Version") or NS.version or "?"
+-- The version banner, resolved ONCE at file load through the core/EnvSetup.lua seam.
+-- NS.Version() is the whole ladder (slash-commands-§3): the packaged TOC first so this
+-- cannot drift from the manifest, then NS.version — core/Namespace.lua's literal, set
+-- from the same metadata — and only then "?". A bare "?" here would make `/pc version`
+-- answer with a question mark on the one client where the metadata cannot be read,
+-- which is precisely when a user is being asked what version they are running.
+local VERSION = NS.Version()
 local Color   = NS.Const.Color
 local cmd     = NS.Util.cmd
 local note    = NS.Util.note

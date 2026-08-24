@@ -22,7 +22,7 @@ local Schema = NS.Schema
 local L      = NS.L
 local CATEGORY_ORDER = Schema.CATEGORY_ORDER
 
-local TOC_NOTES = NS.Compat.GetAddOnMetadata(addonName, "Notes") or ""
+local TOC_NOTES = NS.Meta("Notes") or ""
 
 local LOGO_PATH = "Interface\\AddOns\\" .. addonName
                   .. "\\media\\logos\\prettychat.logo.v2.tga"

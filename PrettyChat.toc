@@ -24,8 +24,13 @@ libs\LibKa0s\LibKa0s.xml
 # Locales (locale table — no earlier-load dependency; toc-file-§5 section order)
 locales\enUS.lua
 
-# Core (Compat loads first)
-core\Compat.lua
+# Core (the LibKa0s seams load first)
+# core\EnvSetup.lua loads BEFORE core\Namespace.lua and the position is load-bearing:
+# Namespace, settings\Panel.lua and settings\Slash.lua ALL read the TOC at FILE SCOPE, so the
+# seam has to exist before them. Each of those reads resolves once, at load, and keeps the
+# answer for the whole session. They call the seam UNGUARDED, deliberately: a seam published
+# later raises here and now rather than leaving a version silently pinned to a literal.
+core\EnvSetup.lua
 # core\MediaSetup.lua loads BEFORE core\Constants.lua and the position is load-bearing:
 # Constants resolves FONT_MONO through NS.MediaFont at load, so the seam must be published first.
 core\MediaSetup.lua

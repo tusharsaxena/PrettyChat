@@ -42,7 +42,7 @@ Two of this addon's shapes are not the library's default, and both are handled a
 
 | Command | Effect |
 |---------|--------|
-| `/pc` / `/pc help` | Print the help index via `NS.Print`. Header line includes the addon version (`v<VERSION>`, read from TOC `## Version:` at file load via `NS.Compat.GetAddOnMetadata` — C_AddOns with a legacy-global fallback). |
+| `/pc` / `/pc help` | Print the help index via `NS.Print`. Header line includes the addon version (`v<VERSION>`, read from TOC `## Version:` at file load via `NS.Version()` — the `core/EnvSetup.lua` seam over `LibKa0s-Env-1.0`, falling back to `NS.version` and then `"?"`). |
 | `/pc config` | Open the Blizzard settings panel to the parent page and auto-expand the addon's sub-category tree so every per-category sub-page (Loot, Currency, …) is visible in the left rail without clicking the disclosure arrow. **Refuses during combat** (`InCombatLockdown()`) — Blizzard's category-switch is protected and would taint the panel. Prints a notice and stops if combat is active. |
 | `/pc version` | Print `v<version>` via `NS.Print`. |
 | `/pc list` | List every setting and its current value, grouped by category (~170 lines). Output follows the mandated color scheme (slash-commands-§5): a green "Available settings" header, azure `[Category]` group headers, and gold-key `=` white-value rows via the shared `FormatKV` + `Schema.FormatValue`. With ~170 rows the output is long, but it's the only way the slash UI reaches parity with the panel (which exposes a toggle and a format edit-box per string). |

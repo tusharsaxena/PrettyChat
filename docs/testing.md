@@ -37,7 +37,7 @@ tests/
   - a **recording** `DEFAULT_CHAT_FRAME`; the base's stub frame answers `AddMessage` from its metatable and keeps nothing, which would silence every chat assertion in the suite;
   - `AceAddon:GetAddon`, which the base omits and five PrettyChat files call — `modules/Override.lua:8`, `settings/Schema.lua:3`, `settings/Panel.lua:15`, `settings/Slash.lua:15` and `settings/OptionsSetup.lua:87` (the last through the addon object, `addon:GetAddon("PrettyChat", true)`);
   - `SettingsPanel = nil`, so the private category-tree walk takes its guarded fallback rather than "succeeding" against a stub that answers every method;
-  - `C_AddOns` / `GetAddOnMetadata`, deliberately absent from the base so a Compat shim's fallback branch stays drivable.
+  - `C_AddOns` / `GetAddOnMetadata`, deliberately absent from the base so the `core/EnvSetup.lua` seam's library-absent fallback branch stays drivable.
 
 What the mocks deliberately do *not* model is layout: they answer "which widget, seeded from what, wired to which schema path", never where anything lands on screen. Rendering, fonts, skinning, taint and live chat stay in the [smoke-test suite](./smoke-tests.md).
 

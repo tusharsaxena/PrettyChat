@@ -625,6 +625,44 @@ no guard on the render path before adopting.
 `cannot open settings during combat — Blizzard's category-switch is protected` and does not open.
 (2) closes the Settings window and prints the same line, rather than drawing a half-built page.
 
+#### T-97 — The TOC still reaches this addon after the LibKa0s-Env seam
+
+**Why:** `core/Compat.lua` is gone and its metadata reader is now `core/EnvSetup.lua` over
+`LibKa0s-Env-1.0`. Three call sites read the TOC at FILE SCOPE — `NS.version`, `/pc version`'s
+`VERSION`, and the About page's `TOC_NOTES` — so the seam's new TOC position is load-bearing and
+only a live load proves the client agrees with the headless loader about that order. The three
+strings below are what a player actually sees; all three come off the packaged manifest, and a
+seam the client resolved late would show a stale version rather than an error.
+
+**Setup:** a normal install of the packaged addon (not a source checkout with an edited TOC).
+
+**Steps:**
+1. `/reload`.
+2. `/pc version`
+3. `/pc` (the help index header line).
+4. `/pc config` and read the top of the parent **Ka0s Pretty Chat** page.
+
+**Expected:** no Lua error on load. (2) and (3) both print the version from the TOC's
+`## Version:` line, and they agree with each other. (4) shows the tagline **Prettier chat
+messages** — the TOC's `## Notes:` — above the command list. A missing tagline, or a version that
+disagrees with the `.toc`, means a file-scope read did not reach the seam.
+
+#### T-98 — A degraded install with no LibKa0s still knows its own version
+
+**Why:** `core/EnvSetup.lua` writes its fallback ladder out in full so an install missing the
+vendored payload reads its own TOC exactly as it did before the library existed. That arm is
+covered headlessly, but only the client proves the addon still boots with the payload absent.
+
+**Setup:** rename `Interface/AddOns/PrettyChat/libs/LibKa0s` to `libs/LibKa0s.off`. Restore it
+afterwards.
+
+**Steps:** launch, then `/pc version` and `/pc config`.
+
+**Expected:** the addon loads. `/pc version` prints the same version as T-97 — not `?`, and not a
+stale literal. The About tagline is still there. The debug console falls back to the client's own
+proportional face and draws no title-bar icons, because the art and the mono face are inside the
+missing payload — that is the media seam's contract, not this one's.
+
 ## Reporting a failure
 
 If a test fails:

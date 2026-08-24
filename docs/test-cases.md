@@ -53,16 +53,17 @@ badge and any count quoted in the docs must agree with it.
 - the Options stub carries the whole live surface
 - the Slash stub carries the whole live surface
 
-### test_compat.lua (8)
+### test_envsetup.lua (9)
 
-- Compat.GetAddOnMetadata is published on the namespace
-- reads through the C_AddOns namespace on a modern client
-- prefers C_AddOns over the legacy global when both exist
-- falls back to the legacy _G global on an older client
-- falls back when C_AddOns exists without the getter
-- returns nil (never errors) when neither surface exists
-- passes the addon name and key straight through
-- NS.version is seeded from the TOC through the shim
+- EnvSetup: NS.Meta reads THIS addon's TOC
+- EnvSetup: NS.Meta asks about the addon FOLDER, not its title or its slash prefix
+- EnvSetup: NS.Version prefers the TOC over this addon's own constant
+- EnvSetup: NS.Version answers a string, never nil — it goes straight into a banner
+- EnvSetup: every file-scope read resolved through the seam
+- EnvSetup degraded: an install with no LibKa0s still reads its own TOC
+- EnvSetup degraded: the fallback prefers C_AddOns and falls back to the legacy global
+- EnvSetup degraded: NS.Version falls back to this addon's own constant
+- EnvSetup: the deleted shim is gone from Compat
 
 ### test_constants.lua (8)
 
@@ -337,7 +338,7 @@ badge and any count quoted in the docs must agree with it.
 | test_harness.lua | 4 |
 | test_vendor_sync.lua | 2 |
 | test_libka0s.lua | 32 |
-| test_compat.lua | 8 |
+| test_envsetup.lua | 9 |
 | test_constants.lua | 8 |
 | test_mediasetup.lua | 8 |
 | test_util.lua | 7 |
@@ -352,4 +353,4 @@ badge and any count quoted in the docs must agree with it.
 | test_debuglog.lua | 25 |
 | test_slash.lua | 42 |
 | test_panel.lua | 31 |
-| **Total** | **270** |
+| **Total** | **271** |
