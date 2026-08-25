@@ -52,7 +52,7 @@ report. Install all of it; it is small.
 | | |
 |---|---|
 | **Version** | **5.1 exactly.** Not 5.2, not 5.3, not LuaJIT-as-5.2. |
-| **Why** | The headless harness sandboxes each loaded chunk with **`setfenv`**, which was **removed in Lua 5.2**. Evidence: `tests/loader.lua:105` and the vendored kit's `tests/_kit/loader.lua:31,50`. There is no fallback path — under 5.2+ the suite does not degrade, it fails to load the addon at all. |
+| **Why** | The headless harness sandboxes each loaded chunk with **`setfenv`**, which was **removed in Lua 5.2**. Evidence: `tests/loader.lua:105` and the vendored kit's `tests/_kit/loader.lua:72,91`. There is no fallback path — under 5.2+ the suite does not degrade, it fails to load the addon at all. |
 | **Install** | `sudo apt install -y lua5.1` |
 | **Verify** | `lua -v` → must print `Lua 5.1.x` |
 
@@ -99,7 +99,7 @@ dates for you. It does not make the addon non-compliant, and it is never a commi
 | | |
 |---|---|
 | **Version** | Any recent. |
-| **Why** | Beyond version control: the vendored gate `tests/_kit/vendor_sync.lua:139-140` runs `io.popen('git -C "<root>/../LibKa0s" …')` to compare the vendored `libs/LibKa0s` and `tests/_kit` against the sibling checkout; `tests/test_vendor_sync.lua` is the ten-line factory call that registers it. Without `git` on `PATH` those cases report **SKIP** with that reason rather than passing — but the comparison did not run, so the four `diff` commands in [`docs/testing.md`](./docs/testing.md) stay written down. |
+| **Why** | Beyond version control: the vendored gate `tests/_kit/vendor_sync.lua:184` runs `io.popen('git -C "<root>/../LibKa0s" …')` to compare the vendored `libs/LibKa0s` and `tests/_kit` against the sibling checkout; `tests/test_vendor_sync.lua` is the ten-line factory call that registers it. Without `git` on `PATH` those cases report **SKIP** with that reason rather than passing — but the comparison did not run, so the four `diff` commands in [`docs/testing.md`](./docs/testing.md) stay written down. |
 | **Install** | `sudo apt install -y git` |
 | **Verify** | `git --version` |
 

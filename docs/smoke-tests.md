@@ -466,7 +466,7 @@ Since the `LibKa0s-Media-1.0` adoption the font and the marks both come from **i
 | Touched slash command surface in `settings/Slash.lua` | Quick recipe + L + X groups |
 | Touched the reset paths (`ResetString` / `ResetCategory` / `ResetAll` in `modules/Override.lua`, or a Reset/Defaults button) | Quick recipe + R group |
 | Touched `core/DebugLogSetup.lua`, `media/`, or panel chrome (fonts/textures/borders) | Quick recipe + M + K groups |
-| Re-vendored `libs/LibKa0s/`, or touched any of the four seam files | Quick recipe + **K group** |
+| Re-vendored `libs/LibKa0s/`, or touched any of the six seam files | Quick recipe + **K group** |
 | Pre-release / pre-tag | Full suite |
 | Post WoW client patch | Full suite + regenerate `GlobalStrings/` per [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patch) |
 
@@ -476,7 +476,7 @@ Everything in this group is invisible to the headless suite by construction: a r
 `SCREAMING_SNAKE` key is a perfectly good string, a window's border only reads as wrong beside one
 that has both lines, and a degraded install is a state the loader can only simulate.
 
-Run the whole group after re-vendoring `libs/LibKa0s/`, after any change to the four seam files, or
+Run the whole group after re-vendoring `libs/LibKa0s/`, after any change to the six seam files, or
 before tagging.
 
 #### T-90 — The degraded install: nothing errors, and the reason is said once
