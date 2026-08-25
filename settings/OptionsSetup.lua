@@ -98,10 +98,10 @@ if not lib then
         -- What keeps the nil from reaching anything is ONE guard, not a no-op maker:
         -- every page body in settings/Panel.lua opens with `local scroll =
         -- H.EnsureScroll(ctx)` followed by `if not scroll then return end` (`:60-61`,
-        -- `:267-268`, `:304-305`), and the stub's EnsureScroll returns nil. The three
+        -- `:276-277`, `:313-314`), and the stub's EnsureScroll returns nil. The three
         -- consumers sit AFTER that return — `H.AddSpacer(scroll, H.ROW_VSPACER * 2)`
-        -- at `:275`, which would raise on `nil * 2` rather than no-op, and
-        -- `heading:SetHeight(H.SECTION_HEADING_H)` at `:138` and `:347`. So a body
+        -- at `:284`, which would raise on `nil * 2` rather than no-op, and
+        -- `heading:SetHeight(H.SECTION_HEADING_H)` at `:138` and `:356`. So a body
         -- that ever draws before its EnsureScroll guard raises on this path; keep the
         -- guard first, and keep the constants out of the stub.
     }

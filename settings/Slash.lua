@@ -65,8 +65,10 @@ local COMMANDS = {
         function(rest) runDebug(rest) end},
 }
 
--- Published so settings/Panel.lua's landing page renders the same table the help
--- index does. It crosses as plain data; neither library resolves the other.
+-- Published for the suite, which pins the host-owns-its-verbs contract against it; no
+-- production caller reads it — settings/Panel.lua's landing page reaches the same rows
+-- through NS.SlashCommands:LandingRows(). It crosses as plain data; neither library
+-- resolves the other.
 NS.COMMANDS = COMMANDS
 
 local lib = LibStub and LibStub("LibKa0s-Slash-1.0", true)
