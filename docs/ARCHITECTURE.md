@@ -76,6 +76,8 @@ Every file opens with `local addonName, NS = ...` — the addon-wide namespace t
 | Member | Set by | Used by |
 |--------|--------|---------|
 | `NS.Meta`, `NS.Version` | `core/EnvSetup.lua` | `core/Namespace.lua`, `settings/Slash.lua`, `settings/Panel.lua` (metadata access, all three at FILE SCOPE) |
+| `NS.Icon`, `NS.MediaFont` | `core/MediaSetup.lua` | `core/Constants.lua` (`FONT_MONO`, at file scope). **`NS.Icon` has no host caller today** — the marks a player sees are drawn by the library's own console windows, told the folder name through `core/DebugLogSetup.lua`'s descriptor; the seam is published so the first window this addon builds asks the catalog rather than typing a path |
+| `NS.MakeCloseButton` | `core/CoreSetup.lua` | **No host caller today**, for the same reason — published so the next window this addon builds does not have to remember the folder name at its call site. Covered by `tests/test_libka0s.lua` |
 | `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `core/Util.lua`, `core/CoreSetup.lua`, `core/DebugLogSetup.lua`, `modules/Override.lua`, `settings/Panel.lua`, `settings/Slash.lua` (palette/spacers/font/prefix) |
 | `NS.name` / `NS.version` | `core/Namespace.lua` | identity bootstrap (published for any module) |
 | `NS.State` | `core/State.lua` | `core/DebugLogSetup.lua`, `settings/Slash.lua` (session-only `debug` flag; reset every reload/login) |
@@ -90,7 +92,7 @@ Every file opens with `local addonName, NS = ...` — the addon-wide namespace t
 | `NS.OriginalFormat` | `modules/Override.lua` | `settings/Panel.lua` (Original Format String display), `modules/Override.lua` (`/pc test`'s Original line) — one reader of Blizzard's pristine format for both surfaces |
 | `NS.RenderSample` | `modules/Override.lua` | `settings/Panel.lua` (per-string Preview) |
 | `NS.Schema` | `settings/Schema.lua` | `settings/Slash.lua` (slash), `settings/Panel.lua` (widgets) |
-| `NS.COMMANDS` / `NS.SlashCommands` | `settings/Slash.lua` | `settings/Panel.lua` (the landing page renders `NS.SlashCommands:LandingRows()`) |
+| `NS.COMMANDS` / `NS.SlashCommands` | `settings/Slash.lua` | `settings/Panel.lua` reads **`NS.SlashCommands`** (the landing page renders `NS.SlashCommands:LandingRows()`). **`NS.COMMANDS` has no consumer in the addon's own source** — the descriptor is handed the file-local `COMMANDS` upvalue, and the published copy is read only by the suite (`tests/test_slash.lua`, `test_panel.lua`, `test_libka0s.lua`, `test_locale.lua`, `test_debuglog.lua`), which is where the host-owns-its-verbs contract is actually pinned |
 | `NS.Helpers` | `settings/OptionsSetup.lua` | `settings/Panel.lua` (the `LibKa0s-Options-1.0` instance itself), `settings/Schema.lua` (`RefreshScalars`), `core/PrettyChat.lua` (`OpenOptionsPanel`) |
 | `NS.Config.RegisterPanels()` | `settings/Panel.lua` | `core/PrettyChat.lua` (`OnEnable`) |
 
@@ -153,7 +155,7 @@ What stands in its place is a **direct, synchronous fan-out inside the single wr
 ## Documentation map
 
 Every `.md` under `docs/` appears in exactly one table below (`documentation-§3`). Frozen and
-generated directories are named once each and never enumerated per run: `docs/audits/`, `docs/reviews/`, `docs/automated-tests/`, `docs/superpowers/`.
+generated directories are named once each and never enumerated per run: `docs/audits/`, `docs/reviews/`, `docs/automated-tests/`, `docs/revendor/`, `docs/superpowers/`.
 
 ### Required (documentation-§3, Tier 1)
 
@@ -220,7 +222,7 @@ mandated or permitted outright — is **retired**, not kept.
 
 ## External dependencies
 
-Vendored under `libs/` (the BigWigs packager pulls nothing — no `externals`): LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, and **[LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.15.0** (`libs/LibKa0s/`, listed in the TOC as `libs\LibKa0s\LibKa0s.xml` after Ace3). (`AceConfig-3.0` was removed — no live consumer.)
+Vendored under `libs/` (the BigWigs packager pulls nothing — no `externals`): LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, and **[LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.16.0** (`libs/LibKa0s/`, listed in the TOC as `libs\LibKa0s\LibKa0s.xml` after Ace3). (`AceConfig-3.0` was removed — no live consumer.)
 
 Six of LibKa0s's ten majors are adopted: **Core**, **Env**, **Media**, **DebugLog**, **Slash** and **Options**. **Perf is declined** under a recorded `performance-§12` no-combat-path exemption — the register row above, with its sweep in [performance.md](./performance.md) and its reasoning at [LIBKA0S-12](https://github.com/tusharsaxena/PrettyChat/issues/10). **Item**, **Pool** and **Widgets** are not consumed here at all — nothing in this addon, and no other vendored LibKa0s file, `LibStub`s any of the three. `Item.lua`, `Pool.lua`, `Widgets.lua`, `Perf.lua` and `PerfPanel.lua` are still vendored, because the folder is copied whole and never file by file.
 
