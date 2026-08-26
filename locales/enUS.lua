@@ -35,8 +35,8 @@ local enUS = {
     "Test",
     "Print a sample of every active format string to chat so you can see what real loot/currency/XP messages will look like.",
     "Reset all to defaults",
-    "Reset every category and string to its default value.",
-    "Reset every category and string to defaults?",
+    "Start over: reset the active profile to the addon defaults. The same thing the Profiles page's Reset Profile does. Your other profiles are left alone.",
+    "Reset this profile to the addon's defaults? Everything you have configured or added in it is discarded — your other profiles are not affected.",
     -- Category sub-page. `%s` is the category name, which is itself English —
     -- see the `localization-§1` row in docs/ARCHITECTURE.md's deviations
     -- register. The placeholder is what makes the SENTENCE translatable; these

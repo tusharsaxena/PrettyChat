@@ -113,14 +113,26 @@ function PrettyChat:ResetCategory(category)
     NS.Debug("Reset", "%s → applied %d restored %d", category, applied, restored)
 end
 
+--- The global reset, and it is a PROFILE reset (options-ui-§12).
+---
+--- `Reset all to defaults` and AceDBOptions' own `Reset Profile` are the same act
+--- across the whole collection: `db:ResetProfile()` on the ACTIVE profile, never a
+--- second walk of the schema, and never a touch on another profile.
+---
+--- It used to clear two keys by hand -- `enabled` and `categories` -- which was the
+--- whole profile as this addon knew it in the moment the line was written, and is
+--- the shape that quietly stops being true. Anything a later version stores beside
+--- them survived a reset that took everything around it. AceDB empties the profile
+--- IN PLACE (so anything holding db.profile keeps the live table), merges the
+--- defaults back, and fires OnProfileReset -- which core/PrettyChat.lua answers by
+--- re-running the migrations, re-applying every string and telling the panel.
+---
+--- The [Reset] summary therefore moves to that handler's path: ApplyStrings is what
+--- knows how many overrides were applied and how many originals were restored, and
+--- it is now reached through the callback rather than from here.
 function PrettyChat:ResetAll()
-    self.db.profile.enabled    = nil
-    self.db.profile.categories = {}
-    local applied, restored = self:ApplyStrings()
-    if NS.Schema and NS.Schema.NotifyPanelChange then
-        NS.Schema.NotifyPanelChange()  -- nil → all categories
-    end
-    NS.Debug("Reset", "all → applied %d restored %d", applied, restored)
+    local db = self.db
+    if db and db.ResetProfile then db:ResetProfile() end
 end
 
 -- Restore ONE string to its untouched default. A per-string reset must

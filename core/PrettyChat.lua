@@ -30,6 +30,45 @@ function PrettyChat:OnInitialize()
         NS.Database.RunMigrations(self.db)
     end
 
+    -- PROFILE CALLBACKS, and this addon had none.
+    --
+    -- Every override this addon applies is READ from db.profile and WRITTEN onto a
+    -- Blizzard global. Switching, copying or resetting a profile replaces every
+    -- stored value at once, and nothing here reacted: the chat strings on screen
+    -- stayed the OUTGOING profile's until something else happened to call
+    -- ApplyStrings, and an open settings panel kept showing values that were no
+    -- longer stored. It went unnoticed because nothing in this addon switched
+    -- profiles -- until options-ui-§12 made the GLOBAL RESET a profile reset,
+    -- which fires the same event and needs the same reaction.
+    --
+    -- The migrations run first, because a copied profile may have been authored at
+    -- an older schema version, and ApplyStrings must not read a shape that has not
+    -- been brought forward yet.
+    --
+    -- ONE BODY, THREE TAGS. The work is identical for all three events; only the
+    -- debug line differs, because "[Reset] all" and "[Profile] switched" are two
+    -- different things to read in a 1500-line buffer (debug-logging-§9). The
+    -- counts are ApplyStrings', and this is the only place that has them -- which
+    -- is why PrettyChat:ResetAll no longer logs a summary of its own: it would be
+    -- guessing at numbers this handler produced.
+    if self.db.RegisterCallback then
+        local function reload(tag, what)
+            return function()
+                if NS.Database and NS.Database.RunMigrations then
+                    NS.Database.RunMigrations(self.db)
+                end
+                local applied, restored = self:ApplyStrings()
+                if NS.Schema and NS.Schema.NotifyPanelChange then
+                    NS.Schema.NotifyPanelChange()   -- nil -> every category
+                end
+                NS.Debug(tag, "%s \226\134\146 applied %d restored %d", what, applied, restored)
+            end
+        end
+        self.db.RegisterCallback(self, "OnProfileChanged", reload("Profile", "switched"))
+        self.db.RegisterCallback(self, "OnProfileCopied",  reload("Profile", "copied"))
+        self.db.RegisterCallback(self, "OnProfileReset",   reload("Reset",   "all"))
+    end
+
     self:RegisterChatCommand("pc", "OnSlashCommand")
     self:RegisterChatCommand("prettychat", "OnSlashCommand")
 end

@@ -35,7 +35,11 @@ local LOGO_SIZE = 300
 -- ---------------------------------------------------------------------
 
 StaticPopupDialogs["PRETTYCHAT_RESET_ALL"] = {
-    text         = L["Reset every category and string to defaults?"],
+    -- THE COLLECTION'S ONE WORDING (options-ui-§12), verbatim. Addon-agnostic on
+    -- purpose -- no addon enumerates its own nouns -- and explicit about the
+    -- destruction. Eight phrasings of one act is how a collection reads as eight
+    -- addons.
+    text         = L["Reset this profile to the addon's defaults? Everything you have configured or added in it is discarded — your other profiles are not affected."],
     button1      = YES,
     button2      = NO,
     timeout      = 0,
@@ -89,7 +93,7 @@ local function buildGeneralBody(ctx)
         },
         {
             text    = L["Reset all to defaults"],
-            tooltip = L["Reset every category and string to its default value."],
+            tooltip = L["Start over: reset the active profile to the addon defaults. The same thing the Profiles page's Reset Profile does. Your other profiles are left alone."],
             -- Through the popup, never straight to the reset: this is the
             -- destructive path and its confirmation is the guard.
             onClick = function() StaticPopup_Show("PRETTYCHAT_RESET_ALL") end,

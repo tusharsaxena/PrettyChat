@@ -71,7 +71,7 @@ PrettyChat:OpenConfig()                -- a one-line delegate to NS.Helpers.Open
 PrettyChat:ApplyStrings()              -- writes enabled overrides to _G; restores originals for disabled ones
 PrettyChat:ResetString(category, globalName)  -- clears BOTH per-string dimensions (custom format + disable flag) + ApplyStrings + NotifyPanelChange
 PrettyChat:ResetCategory(category)     -- clears one category's overrides + ApplyStrings + NotifyPanelChange
-PrettyChat:ResetAll()                  -- clears every category + the addon-wide flag + ApplyStrings + NotifyPanelChange
+PrettyChat:ResetAll()                  -- db:ResetProfile() -- a PROFILE reset (options-ui-§12). OnProfileReset re-runs the migrations, re-applies every string and notifies the panel
 PrettyChat:Test(filter?)               -- prints a per-category Original-vs-Formatted block per string (ignores enable toggles); filter is nil | {kind="category", value=…} | {kind="formatstring", value=…}
 
 -- Read helpers (used by Schema closures, ApplyStrings, panel widgets)
