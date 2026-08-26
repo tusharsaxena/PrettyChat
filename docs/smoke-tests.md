@@ -442,7 +442,7 @@ Since the `LibKa0s-Media-1.0` adoption the font and the marks both come from **i
 
 #### T-62 — Landing-page logo texture renders
 
-> Why: the one intentional brand (non-Blizzard) texture — `media/logos/prettychat.logo.v2.tga`.
+> Why: the one intentional brand (non-Blizzard) texture — `media/logos/prettychat.logo.tga`.
 
 - Steps: `/pc config` (lands on the parent page).
 - Expected: the PrettyChat logo image displays at the top-left of the landing page (not a blank/checkerboard box), followed by the tagline and slash-command list.

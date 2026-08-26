@@ -25,7 +25,7 @@ local CATEGORY_ORDER = Schema.CATEGORY_ORDER
 local TOC_NOTES = NS.Meta("Notes") or ""
 
 local LOGO_PATH = "Interface\\AddOns\\" .. addonName
-                  .. "\\media\\logos\\prettychat.logo.v2.tga"
+                  .. "\\media\\logos\\prettychat.logo.tga"
 local LOGO_SIZE = 300
 
 -- ---------------------------------------------------------------------
