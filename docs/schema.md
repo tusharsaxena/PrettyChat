@@ -27,7 +27,7 @@ function Schema.Set(path, value)
     if not row then return false end
     row.set(value)                              -- pure DB write
     PrettyChat:ApplyStrings()                   -- reconcile live _G overrides
-    Schema.NotifyPanelChange(row.category)      -- refresh the affected sub-page
+    Schema.NotifyPanelChange(row.category)      -- refresh the affected page / tab
     NS.Debug("Set", "%s = %s", path, Schema.FormatValue(row, value))  -- [Set] trace (debug-logging-§10)
     return true
 end
@@ -42,7 +42,7 @@ Both surfaces go through the same row's `set()`:
 
 Row `set()` closures are pure DB writes — they do **not** run `ApplyStrings` or `NotifyPanelChange` themselves. Both side effects live in `Schema.Set` so a future `Schema.SetMany` / preset-load can apply once per batch instead of N times. Callers must therefore never invoke `row.set(value)` directly; always go through `Schema.Set`.
 
-`Schema.NotifyPanelChange(category)` dispatches to a refresher closure that `settings/Panel.lua` registers per sub-page on first `OnShow` via `Schema.RegisterRefresher(category, fn)`. The closure re-syncs every visible widget on that page from the DB. Master-toggle changes (category `"General"` or `nil`) cascade to every registered refresher since per-string disabled state depends on the master. This keeps the panel and the slash UI from ever drifting — a `/pc set` while the panel is open updates both surfaces in the same frame. Sub-pages that have never been opened have no entry; that's correct because their first `OnShow` builds widgets seeded from the live DB and so cannot show stale state.
+`Schema.NotifyPanelChange(category)` dispatches to a refresher closure that `settings/Panel.lua` registers for the category tab it has just drawn, via `Schema.RegisterRefresher(category, fn)`. The closure re-syncs every visible widget on that tab from the DB. Master-toggle changes (category `"General"` or `nil`) cascade to every registered refresher since per-string disabled state depends on the master. This keeps the panel and the slash UI from ever drifting — a `/pc set` while the panel is open updates both surfaces in the same frame. At most one category has an entry at a time: the visible tab. A tab that is not on screen has none, and that is correct — it is rebuilt from the live DB the moment it is selected, so it cannot show stale state.
 
 ### Auto-clear on default
 
@@ -67,9 +67,9 @@ So writing a format back to its default value via `/pc set` or the panel acts as
 | `Schema.Get(path)` / `Schema.Set(path, value)` | Read/write through the row's closures. `Set` returns `false` if the path is unknown. |
 | `Schema.FormatValue(row, value)` | Type-aware display string shared by `/pc list` rows and the `/pc get` / `/pc set` echo (slash-commands-§5): bool → `true`/`false`; string → the raw format with `|` doubled to `||` so its color escapes render as literal text; `nil` → `"nil"`. |
 | `Schema.ResolveCategory(name)` | Case-insensitive PascalCase resolver — `/pc reset loot` finds `Loot`. Returns `nil` for unknowns. |
-| `Schema.NotifyPanelChange(category?)` | Invokes the closure registered for `category` via `RegisterRefresher`. Pass `nil` (or `"General"`) to fire every registered refresher. Safe to call before any sub-page has been opened — unregistered categories are no-ops. |
+| `Schema.NotifyPanelChange(category?)` | Invokes the closure registered for `category` via `RegisterRefresher`. Pass `nil` (or `"General"`) to fire every registered refresher. Safe to call before any tab has been drawn — unregistered categories are no-ops. |
 | `Schema.RegisterRefresher(category, fn)` | Sub-page registration hook called by `settings/Panel.lua` on first `OnShow`. The closure should re-sync every visible widget on that page from the DB. |
-| `Schema.CATEGORY_ORDER` | Display order array. Imported by `settings/Panel.lua` (left-rail order), `modules/Override.lua`'s `Test()` and `settings/Slash.lua`'s `/pc list` (iteration order). The single source of truth — iterating `pairs(NS.Defaults)` would give a non-deterministic order. |
+| `Schema.CATEGORY_ORDER` | Display order array. Imported by `settings/Panel.lua` (tab-strip order on the Categories page, minus the virtual `General`), `modules/Override.lua`'s `Test()` and `settings/Slash.lua`'s `/pc list` (iteration order). The single source of truth — iterating `pairs(NS.Defaults)` would give a non-deterministic order. |
 
 ## Reset semantics
 
@@ -81,7 +81,7 @@ Three reset paths, all routed through `PrettyChat:Reset*` not directly through S
 
 All three are reachable from:
 
-- The per-string `Reset` button on each panel row (`ResetString` — always visible, a no-op when the string is already at default), the panel's per-category `Defaults` button (in the page header — no popup confirm), and the General sub-page's "Reset all to defaults" button (gated by the `PRETTYCHAT_RESET_ALL` StaticPopup).
+- The per-string `Reset` button on each panel row (`ResetString` — always visible, a no-op when the string is already at default), the `Categories` page's `Defaults` button (in the page header, acting on the visible tab — no popup confirm), and the General sub-page's "Reset all to defaults" button (gated by the `PRETTYCHAT_RESET_ALL` StaticPopup).
 - `/pc reset <path>` (one row, through `Schema.ApplyDefault` → the single write seam) and `/pc resetall` (no in-chat confirmation — typing the command is itself the assertion). Category-scoped reset is the settings page's **Defaults** button; `/pc reset` has taken a path rather than a category since `LIBKA0S-10`.
 
 ## SavedVariables shape
@@ -109,7 +109,7 @@ self.db = LibStub("AceDB-3.0"):New("PrettyChatDB", defaults, true)
 
 The third arg (`true`) selects the `Default` profile name for every character. All characters on the account see the same configuration out of the box.
 
-`AceDBOptions-3.0` (per-character / per-class / per-realm profile UI) is **not** wired in. Adding it is a small contribution: register the AceDBOptions table as another `PrettyChat_Profiles` sub-page in `settings/Panel.lua`. See [scope.md](./scope.md#out-of-scope) for why it isn't there today.
+`AceDBOptions-3.0` (per-character / per-class / per-realm profile UI) is **not** wired in. Adding it is a small contribution: register the AceDBOptions table as a third `PrettyChat_Profiles` sub-page in `settings/Panel.lua` (library-drawn, and deliberately never tabbed). See [scope.md](./scope.md#out-of-scope) for why it isn't there today.
 
 ## Build sequence
 

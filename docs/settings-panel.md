@@ -1,14 +1,23 @@
 # Settings panel
 
-`settings/Panel.lua` builds the settings panel directly on Blizzard's modern `Settings.RegisterCanvasLayoutCategory` / `Settings.RegisterCanvasLayoutSubcategory` API and renders body content with AceGUI. PrettyChat appears under **Ka0s Pretty Chat**; the parent page hosts the logo, tagline, and slash-command list (read-only orientation), and nine sub-pages hold the actionable controls — one per category (`General`, Loot, Currency, Money, Reputation, Experience, Honor, Tradeskill, Misc).
+`settings/Panel.lua` builds the settings panel directly on Blizzard's modern `Settings.RegisterCanvasLayoutCategory` / `Settings.RegisterCanvasLayoutSubcategory` API and renders body content with AceGUI. PrettyChat appears under **Ka0s Pretty Chat**; the parent page hosts the logo, tagline, and slash-command list (read-only orientation), and **two** sub-pages hold the actionable controls.
 
-This doc covers: the canvas-layout framework, the unified per-page header, the virtual `General` sub-page, the per-string row, the Test button, and the color palette.
+| Page | Tabs (strip order) | Rows |
+|---|---|---|
+| `General` | *(none — a single-group page draws no strip)* | 1 |
+| `Categories` | Loot (39), Currency (9), Money (17), Reputation (29), Experience (41), Honor (13), Tradeskill (17), Misc (5) | 170 |
+
+Row counts are schema rows (`Schema.RowsByCategory`), i.e. one category `enabled` plus two per format string, and are pinned by the page/tab partition case in `tests/test_schema.lua`. Every tab's controls are the same shape, so the numbers are the only thing that differs between them.
+
+The strip is `H.TabStrip`'s (options-ui-§13). It replaced eight sub-pages — one per category — in the pass recorded in [scope.md](./scope.md#resolved-decisions); what survived of that decision, and what did not, is written out there.
+
+This doc covers: the canvas-layout framework, the unified per-page header, the virtual `General` sub-page, the `Categories` tab strip, the per-string row, the Test button, and the color palette.
 
 ## Canvas-layout framework
 
 The panel does not go through `AceConfigDialog:AddToBlizOptions` (the older path that auto-renders an AceConfig options table inside the addon's right pane). It is plain Blizzard `Frame`s with a unified header and an AceGUI `ScrollFrame` body — and since the LibKa0s adoption, all of that is **`LibKa0s-Options-1.0`'s**, reached through `NS.Helpers` (`settings/OptionsSetup.lua`). Every category (parent + sub-pages) shares the same header design and right-edge gutter as every other Ka0s addon, not merely as every other page here.
 
-Registration: `settings/Panel.lua` queues one builder per category with `H.RegisterOptionsPage(key, name, builder)` at **file load**. `NS.Config.RegisterPanels` is the library's `CreateOptionsPanel`, called from `PrettyChat:OnEnable`; it resolves AceGUI, registers the parent canvas category, and drains the queue. Each builder creates its canvas with `H.CreatePanel(nil, category, opts)`, declares how the page draws itself with `H.SetRenderer(ctx, fn)`, and returns its `Settings.RegisterCanvasLayoutSubcategory` handle.
+Registration: `settings/Panel.lua` queues one builder **per page** — two of them, `General` and `Categories` — with `H.RegisterOptionsPage(key, name, builder)` at **file load**. `NS.Config.RegisterPanels` is the library's `CreateOptionsPanel`, called from `PrettyChat:OnEnable`; it resolves AceGUI, registers the parent canvas category, and drains the queue. Each builder creates its canvas with `H.CreatePanel(nil, category, opts)`, declares how the page draws itself with `H.SetRenderer(ctx, fn)`, and returns its `Settings.RegisterCanvasLayoutSubcategory` handle.
 
 The category handle is the library's own business now — `PrettyChat.optionsCategory` / `optionsCategoryID` are gone, and `PrettyChat:OpenConfig()` is a one-line delegate to `H.OpenOptionsPanel()`, which owns the combat gate and the left-tree expansion ([`LIBKA0S-04`](https://github.com/tusharsaxena/PrettyChat/issues/9)). A host needing a live page context uses the `H.__panelFor(pageKey)` test seam.
 
@@ -26,13 +35,13 @@ The library's `CreatePanel` stamps every page with the same layout, and hosts **
 
 The parent page renders its title plain (`"Ka0s Pretty Chat"`) via `opts.isMain = true`. Sub-pages prefix the title to read as a breadcrumb: `"Ka0s Pretty Chat ▸ Loot"`. The chevron is an inline-atlas escape (` |A:common-icon-forwardarrow:16:16|a `) so it renders as a real texture, not a font glyph — font-agnostic and locale-safe. If a future client retires the atlas, swap to `NPE_RightClick` or `chevron-collapse` (same escape syntax, just the atlas name changes). The Blizzard left-tree label always stays unprefixed (driven by `panel.name`) so the indented tree doesn't repeat the parent name.
 
-All panel layout dimensions live in **`LibKa0s-Options-1.0`'s `LAYOUT` table**, not in this addon — options-ui-§8 forbids a host copy, because every Ka0s panel renders identically only if every panel reads one set of values, and a host copy is the copy that goes stale. Where `settings/Panel.lua` needs one for a widget it draws itself it reads it off the instance (`NS.Helpers.ROW_VSPACER` and `NS.Helpers.SECTION_HEADING_H` today; `BUTTON_PAIR_REL` is published too, and is applied for it by `InlineButtonPair`). `core/Constants.lua` keeps only `SECTION_TOP_SPACER` / `SECTION_BOTTOM_SPACER` (the landing page's own body, which is the host's half) and `STRING_VSPACER` (the bespoke 40/60 editor, which the library has no equivalent for).
+All panel layout dimensions live in **`LibKa0s-Options-1.0`'s `LAYOUT` table**, not in this addon — options-ui-§8 forbids a host copy, because every Ka0s panel renders identically only if every panel reads one set of values, and a host copy is the copy that goes stale. Where `settings/Panel.lua` needs one for a widget it draws itself it reads it off the instance (`NS.Helpers.ROW_VSPACER` and `NS.Helpers.SECTION_HEADING_H` today; `BUTTON_PAIR_REL` is published too, and is applied for it by `InlineButtonPair`). The tab strip's own geometry (`CHROME_GAP`, `TAB_H`, `BANNER_H`) is published on the instance for a host that lays out a strip by hand; this addon lays out none — it hands `TabStrip` a tab list and the library places the buttons — so it reads none of the three. `core/Constants.lua` keeps only `SECTION_TOP_SPACER` / `SECTION_BOTTOM_SPACER` (the landing page's own body, which is the host's half) and `STRING_VSPACER` (the bespoke 40/60 editor, which the library has no equivalent for).
 
 ## Always-visible scrollbar
 
 `NS.Helpers.PatchAlwaysShowScrollbar(scroll)` — the library's `OptionsScroll.lua`, applied automatically by `EnsureScroll` — rebinds the AceGUI ScrollFrame's `FixScroll` so:
 
-- The scrollbar (and its 20 px right-side gutter) is shown on every page, regardless of overflow. Short pages (General) and long pages (Loot, 19 strings) line up at the same right edge.
+- The scrollbar (and its 20 px right-side gutter) is shown on every page, regardless of overflow. Short pages (General) and long tabs (Experience, 20 strings) line up at the same right edge.
 - When content fits, the thumb parks at the top, the scrollbar grays out, and mousewheel input is inert. When content overflows, the upstream FixScroll logic runs unchanged.
 - On widget release, the original FixScroll / MoveScroll / OnRelease are restored so the AceGUI pool returns clean for any subsequent acquirer.
 
@@ -50,15 +59,22 @@ All panel layout dimensions live in **`LibKa0s-Options-1.0`'s `LAYOUT` table**, 
 
 The General sub-page does not show a `Defaults` button in the header — the in-body "Reset all to defaults" with its popup confirm is the only addon-wide reset surface, and showing both would be redundant.
 
-## Per-category sub-pages
+## The `Categories` sub-page and its tab strip
 
-`buildCategoryBody(ctx, category, catData)`:
+`buildCategoriesBody(ctx)` draws the whole page:
 
-1. **Enable `<Category>`** checkbox at the top, bound to the `<Cat>.enabled` schema row.
-2. A 2× row spacer.
-3. One per-string row block per format string in `catData.strings`, sorted by global name.
+1. **The strip** — `H.TabStrip(ctx, { tabs, value, onSelect })`, one tab per message category, in `CATEGORY_ORDER` minus the virtual `General`. The tab order is *derived* from that array rather than restated, so the strip, `/pc list` and `/pc test` cannot disagree about what comes first. Loot leads because it is what a player opens the page to change; Misc trails because it is the drawer.
+2. **One footnote line**, gray, above the controls: *"Strings on these tabs are rewritten only while the master Enable on the General page is on."* Every switch and every format box on every tab is inert while the master is off, and that toggle lives on the other page — a player who enables a category, sees nothing change in chat and has no sentence to explain it has been misled by the page rather than by the setting.
+3. **The active tab's body**, `buildCategoryBody(ctx, scroll, category, catData)`:
+   1. **Enable `<Category>`** checkbox, bound to the `<Cat>.enabled` schema row.
+   2. A 2× row spacer.
+   3. One per-string row block per format string in `catData.strings`, sorted by global name.
 
-The header carries a **Defaults** button on the right that calls `PrettyChat:ResetCategory(category)` directly — no popup confirm. Per-row reset is preserved via the per-string `Reset` button (see below), and the master `Reset all to defaults` on General has the popup, so a per-category Defaults click is a single recoverable action.
+**Why not `H.RenderTabbedSchema`.** That helper partitions a page's *schema rows* by `group` and hands each partition to the flow engine. A category tab is one schema row (the Enable) followed by N bespoke 40/60 editors the flow engine cannot express — the `options-ui-§6` deviation in [ARCHITECTURE.md](./ARCHITECTURE.md#documented-deviations). So the page takes the **strip** from the library and keeps generating its bodies per category, exactly as it did when each was a page. The tab click re-renders through the same `ClearScroll`-then-draw path `RenderTabbedSchema`'s own `onSelect` takes, and carries no combat guard for the same reason it does not: redrawing widgets inside an already-open panel was never a protected action.
+
+**Refresher hygiene.** `Schema.refreshers` is keyed by *category*, not by page, so an entry left behind by the tab the player just left is a closure over released AceGUI widgets that the next master-toggle fan-out would still reach. `buildCategoriesBody` drops every category's entry before it draws, and the body it draws re-registers the one now on screen.
+
+**The Defaults button** in the header resolves the **active tab** at click time — it is wired once, on the page's first show, and the strip moves underneath it — and calls `PrettyChat:ResetCategory(...)` directly, no popup confirm. Its tooltip therefore names the selected tab rather than a category: one button cannot carry eight wordings that are fixed at panel-build time. Per-row reset is preserved via the per-string `Reset` button (see below), and the master `Reset all to defaults` on General has the popup, so a Defaults click is a single recoverable action.
 
 ## Per-string block
 
@@ -127,9 +143,9 @@ end
 
 A `Schema.Set` from a panel widget or from `/pc set` reaches `Schema.NotifyPanelChange(row.category)`, which re-syncs both. `General` (or `nil`) fans out to every host refresher, because per-string disabled state depends on the master switch.
 
-Master-toggle (`General.enabled`) changes cascade to every sub-page because per-string disabled state depends on the master.
+Master-toggle (`General.enabled`) changes cascade to both sub-pages because per-string disabled state depends on the master. Only the visible tab has a host refresher registered; the tabs behind it are rebuilt from the live DB the moment they are clicked, so there is nothing stale for them to show.
 
-Sub-pages that have never been opened have no entry in `Schema.refreshers`. That's correct: their first `OnShow` builds widgets seeded from the live DB, so they cannot show stale state — there is nothing to refresh until the user has opened the page at least once.
+A tab that has never been drawn has no entry in `Schema.refreshers`. That's correct: it is built from the live DB the moment it is selected, so it cannot show stale state — there is nothing to refresh until it is on screen.
 
 Programmatic `:SetValue`/`:SetText` on AceGUI widgets do **not** re-fire the user callbacks, so refresh is safe to call from inside a callback chain.
 
@@ -139,7 +155,7 @@ Both the General sub-page's "Test" button and the `/pc test` slash command call 
 
 The function:
 
-1. Walks `Schema.CATEGORY_ORDER` (so output order matches the panel left-rail). Per category, the strings table is sorted alphabetically by global name. The `filter` argument is applied at both layers — a category filter skips non-matching categories before iterating their strings, a formatstring filter is applied per-string and shows the global under every category it's registered in (so `LOOT_ITEM_CREATED_SELF` prints under both Loot and Tradeskill).
+1. Walks `Schema.CATEGORY_ORDER` (so output order matches the Categories page's tab strip). Per category, the strings table is sorted alphabetically by global name. The `filter` argument is applied at both layers — a category filter skips non-matching categories before iterating their strings, a formatstring filter is applied per-string and shows the global under every category it's registered in (so `LOOT_ITEM_CREATED_SELF` prints under both Loot and Tradeskill).
 2. For each emitted string, prints a 3-line block: `Name: <GLOBALNAME>`, `Original: <rendered Blizzard original>`, `Formatted: <rendered PrettyChat-configured value>`. Labels are green; the category header above each block (`Category: <name>`) is gold. The Original is rendered from `NS.OriginalFormat(self, globalName)` — the snapshot taken in `OnEnable`, falling back to the live `_G` — which is the same one reader the panel's Original box uses, so the two surfaces cannot disagree (PC-R-04). The Formatted side is rendered from `self:GetStringValue(category, globalName)`.
 3. Both renders go through `NS.RenderSample(fmt)` — the same path the per-row Preview EditBox uses, so test output and panel preview can never drift on placeholder choices or positional-arg handling. `RenderSample` walks `%[n$][flags][width][.precision]type` conversions (positional `%n$type` is honored), produces typed placeholders (`"Sample"` for `%s`, `42` for integer types, `1.5` for floats, `65` for `%c`, `"?"` for unknowns), strips `%%` escapes first, and `pcall`s `string.format`. On failure the rendered cell is replaced by an inline gray `(error: <msg>)` and the row counts toward the errored tally.
 4. **Every line — header, category banner, body lines, blank-line separators, footer — carries the `[PC]` prefix**, so the report stays distinguishable from real chat traffic interleaved with it. Header includes a notice when `IsAddonEnabled()` is false. Footer reports both counts: `"end of test output (N strings shown, K errored)"` (the `K errored` clause is omitted when zero). When the filter matches no strings (e.g. `/pc test category General` — the virtual category has no strings) the function emits `(no matching strings)` and skips the footer.

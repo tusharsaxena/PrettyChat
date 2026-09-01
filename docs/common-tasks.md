@@ -15,7 +15,7 @@ The single source of truth is `defaults/Defaults.lua` — Schema, Config, and sl
    ```
    - `label` is what the panel shows as the block's full-width `Heading` above the Enable row (`GameFontNormalLarge`).
    - `default` is the PrettyChat format. Match Blizzard's `%`-conversion signature exactly — see [Fix a broken format string](#fix-a-broken-format-string) below for what happens if you don't.
-2. `/reload` in-game. The schema rebuilds at file-load, so the new row appears in `/pc list <Category>`, in the panel sub-page, and the override pipeline starts targeting `_G[YOUR_GLOBAL_NAME]`.
+2. `/reload` in-game. The schema rebuilds at file-load, so the new row appears in `/pc list <Category>`, on the category's tab of the Categories page, and the override pipeline starts targeting `_G[YOUR_GLOBAL_NAME]`.
 
 No code changes needed. The Schema row, panel widgets, slash-set parsing, Test preview, and the per-category **Defaults** button all pick the new entry up automatically.
 
@@ -30,7 +30,7 @@ Categories are top-level keys in `NS.Defaults`. Adding one requires:
        strings = { /* one or more entries as above */ },
    },
    ```
-2. **`settings/Schema.lua`** — append the category name to `CATEGORY_ORDER` (controls display order in the panel left rail and `/pc list`):
+2. **`settings/Schema.lua`** — append the category name to `CATEGORY_ORDER` (controls tab order on the Categories page and `/pc list`):
    ```lua
    local CATEGORY_ORDER = {
        "General",
@@ -40,7 +40,7 @@ Categories are top-level keys in `NS.Defaults`. Adding one requires:
    }
    ```
 3. (Optional) Add a category-color line to the [color palette](./settings-panel.md#color-palette) section of `docs/settings-panel.md` if you're introducing a new label color.
-4. `/reload`. The category appears as a sibling sub-page beneath "Ka0s Pretty Chat" in the addon list, the schema picks up its rows, and `/pc list YourCategory` works.
+4. `/reload`. The category appears as a new **tab** on the Categories page — `settings/Panel.lua` derives its `TAB_ORDER` from `CATEGORY_ORDER`, so there is no second list to add it to — the schema picks up its rows, and `/pc list YourCategory` works. Update the page/tab partition case in `tests/test_schema.lua` with the new tab and its row count, and the page table in `docs/settings-panel.md`.
 
 No `settings/Panel.lua` edits — `buildCategoryBody` is generic and iterates whatever's in `NS.Defaults[category].strings`.
 
@@ -48,7 +48,7 @@ No `settings/Panel.lua` edits — `buildCategoryBody` is generic and iterates wh
 
 A format string "breaks" when the panel-edited (or `/pc set`-edited) value's `%`-conversions don't match Blizzard's signature. Symptom: the chat line errors at `string.format` time, sometimes silently dropping the message, sometimes throwing a Lua error.
 
-1. Open the panel sub-page for the category and read the **Original Format String** disabled input for the affected key. That's Blizzard's exact signature as **this** client loaded it — the `OnEnable` snapshot, through `NS.OriginalFormat`, the same source `/pc test` prints (PC-R-04). Out of game, `GlobalStrings/` carries the same data for the patch it was cut from, and `tests/test_defaults.lua` checks every default against it.
+1. Open the category's tab on the Categories page and read the **Original Format String** disabled input for the affected key. That's Blizzard's exact signature as **this** client loaded it — the `OnEnable` snapshot, through `NS.OriginalFormat`, the same source `/pc test` prints (PC-R-04). Out of game, `GlobalStrings/` carries the same data for the patch it was cut from, and `tests/test_defaults.lua` checks every default against it.
 2. Edit the **New Format String** input: keep every `%`-conversion (`%s`, `%d`, `%.1f`, `%2$s`, …) in the same order, but freely change surrounding text and `|cAARRGGBB...|r` color escapes.
 3. The Preview disabled `EditBox` (bottom-right of the block) renders the format with sample arguments substituted in via `NS.RenderSample` (which wraps `buildSampleArgs` from `modules/Override.lua`). It always reflects the saved value and updates after every commit (Enter). On `string.format` failure, the preview shows the error message instead.
 4. To revert: (a) click the per-string **Reset** button (bottom-left of the block — always visible, no-op when the value already equals the default — the simplest path); (b) set the format back to the PrettyChat default exactly — the auto-clear kicks in and removes the override (see [schema.md](./schema.md#auto-clear-on-default)); (c) disable the per-string Enable checkbox, which restores Blizzard's original via the snapshot path; or (d) the category page's header **Defaults** button — which is now the only category-scoped reset, since `/pc reset` takes a setting path (`LIBKA0S-10`).
@@ -109,6 +109,6 @@ If you can only reason about a change from code and cannot test it in WoW, say s
 
 Before the tag, in the **same change** that bumps `## Version:` in `PrettyChat.toc` and rolls the README's `## What's new` and `## Version History` forward:
 
-1. Produce a full automated-test bundle — `tests/_kit/run-automated-tests.sh`, from the repo root — and **read its diff**: give every newly-crossed threshold a one-line disposition in [`automated-tests/RESULTS.md`](./automated-tests/RESULTS.md)'s watch list. This is a release checkpoint, **not** a commit gate. Full rules and the stale-tooling case: [testing.md](./testing.md#complexity-report--a-release-checkpoint-not-a-commit-gate-performance-10) and `performance-§10`.
+1. Produce a full automated-test bundle — `tests/_kit/run-automated-tests.sh`, from the repo root — and **read its diff**: give every newly-crossed threshold a one-line disposition in [`automated-tests/RESULTS.md`](./automated-tests/RESULTS.md)'s watch list. This is a release checkpoint, **not** a commit gate. Full rules and the stale-tooling case: [testing.md](./testing.md#automated-test-records--the-consolidated-run) and `performance-§10`.
 2. Re-check [`../DEPENDENCIES.md`](../DEPENDENCIES.md) against what the repo now actually needs (documentation-§5/§7) — a new script, a new import or a dropped tool belongs there already, but the release is the backstop.
 3. Regenerate `docs/test-cases.md` and sync the README `Tests` badge if the suite moved (testing-§5).

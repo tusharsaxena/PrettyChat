@@ -69,7 +69,30 @@ if not lib then
         RenderRows           = function() end,
         RenderSchema         = function() end,
         RenderGrid           = function() end,
+        TextRow              = function() end,
         SetRenderer          = function() end,
+        -- Options minor 13/14 — the tabbed page and the page banner. TabStrip is
+        -- reached for real on the live path now (settings/Panel.lua's Categories
+        -- page draws its strip with it), and it is reached AFTER the EnsureScroll
+        -- guard, so the degraded page returns before any of these are called.
+        -- Declared anyway, and as no-ops rather than as lookalikes: a stub that
+        -- placed tabs would be a second layout engine, which options-ui-§1 and
+        -- anti-pattern #47 both forbid.
+        SetChromeHeight      = function() end,
+        TabStrip             = function() return nil end,
+        PageBanner           = function() return nil end,
+        RenderTabbedSchema   = function() return {} end,
+        -- The library's own pure arithmetic, published for a host that lays out a
+        -- strip of its own. This addon lays out none — it hands TabStrip a tab list
+        -- and the library does the placing — so these answer the shape their live
+        -- counterparts answer and nothing more. Zero is the honest degraded band:
+        -- with no AceGUI there is no chrome to reserve.
+        __scrollTopInset     = function() return 0 end,
+        __bannerBand         = function() return 0 end,
+        __tabBand            = function() return 0 end,
+        __layoutTabs         = function() return {} end,
+        __tabPlacement       = function() return {}, 0 end,
+        __releaseChrome      = function() end,
         RegisterOptionsPage  = function() end,
         RefreshAllPanels     = function() end,
         -- Options minor 8. Two parameters it never reads, so the degraded shape matches
@@ -97,13 +120,15 @@ if not lib then
         --
         -- What keeps the nil from reaching anything is ONE guard, not a no-op maker:
         -- every page body in settings/Panel.lua opens with `local scroll =
-        -- H.EnsureScroll(ctx)` followed by `if not scroll then return end` (`:60-61`,
-        -- `:276-277`, `:313-314`), and the stub's EnsureScroll returns nil. The three
+        -- H.EnsureScroll(ctx)` followed by `if not scroll then return end` (`:65-66`,
+        -- `:363-364`, `:415-416`), and the stub's EnsureScroll returns nil. The three
         -- consumers sit AFTER that return — `H.AddSpacer(scroll, H.ROW_VSPACER * 2)`
-        -- at `:284`, which would raise on `nil * 2` rather than no-op, and
-        -- `heading:SetHeight(H.SECTION_HEADING_H)` at `:138` and `:356`. So a body
+        -- at `:291`, which would raise on `nil * 2` rather than no-op, and
+        -- `heading:SetHeight(H.SECTION_HEADING_H)` at `:143` and `:458`. So a body
         -- that ever draws before its EnsureScroll guard raises on this path; keep the
-        -- guard first, and keep the constants out of the stub.
+        -- guard first, and keep the constants out of the stub. The Categories page's
+        -- H.TabStrip call sits after the same guard, which is why the strip needs no
+        -- second one.
     }
     return
 end

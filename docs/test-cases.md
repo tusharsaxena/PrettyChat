@@ -125,7 +125,7 @@ badge and any count quoted in the docs must agree with it.
 - every string registration has both of its schema rows
 - each format row's schema default is the defaults-table default
 
-### test_schema.lua (21)
+### test_schema.lua (24)
 
 - resolves known setting paths and returns nil for unknown ones
 - resolves categories case-insensitively and by prefix
@@ -148,6 +148,9 @@ badge and any count quoted in the docs must agree with it.
 - a General or unscoped change refreshes every registered page
 - a refresher that errors cannot break the write path
 - an unregistered category is a silent no-op, not an error
+- every page's tabs hold the designed number of rows
+- the partition is total and disjoint — every row on exactly one tab
+- the Categories tabs are CATEGORY_ORDER minus the virtual General
 
 ### test_render.lua (12)
 
@@ -297,9 +300,10 @@ badge and any count quoted in the docs must agree with it.
 - /pc debug rejects an argument that is neither on, off, nor a toggle
 - every slash line carries the cyan [PC] tag
 
-### test_panel.lua (31)
+### test_panel.lua (34)
 
-- registration builds the parent category and one sub-page per category
+- registration builds the parent category and two sub-pages
+- the strip carries one tab per message category, in CATEGORY_ORDER
 - the panel registry holds one ctx per page, reachable by page key
 - sub-page frames start hidden and unbuilt
 - registration is a no-op on a client without the canvas Settings API
@@ -314,8 +318,8 @@ badge and any count quoted in the docs must agree with it.
 - Reset all asks for confirmation instead of resetting immediately
 - the Defaults button is deferred to first show, not built at registration
 - the General page has no Defaults button
-- the Defaults button resets its own category only
-- a category page builds a toggle plus one block per string
+- the Defaults button resets the visible tab's category only
+- a category tab builds a toggle plus one block per string
 - string blocks are built in sorted global-name order
 - each block is the documented three-row 40/60 editor
 - the read-only Original row shows this client's snapshot, or degrades without it
@@ -328,6 +332,8 @@ badge and any count quoted in the docs must agree with it.
 - a master-toggle change refreshes every built page, not just its own
 - a slash-command write re-syncs the open panel
 - a cross-registered string warns about the shared Blizzard global
+- the page says its controls are read only while the master switch is on
+- clicking a tab swaps the body and drops the tab it left
 - the parent page lists every slash command through the one row formatter
 - the parent page shows the TOC tagline
 
@@ -344,7 +350,7 @@ badge and any count quoted in the docs must agree with it.
 | test_util.lua | 7 |
 | test_locale.lua | 7 |
 | test_defaults.lua | 15 |
-| test_schema.lua | 21 |
+| test_schema.lua | 24 |
 | test_render.lua | 12 |
 | test_apply.lua | 10 |
 | test_override.lua | 17 |
@@ -352,5 +358,5 @@ badge and any count quoted in the docs must agree with it.
 | test_lifecycle.lua | 11 |
 | test_debuglog.lua | 25 |
 | test_slash.lua | 42 |
-| test_panel.lua | 31 |
-| **Total** | **271** |
+| test_panel.lua | 34 |
+| **Total** | **277** |

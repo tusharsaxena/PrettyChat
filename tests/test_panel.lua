@@ -60,24 +60,58 @@ local C      = NS.Const.Color
 
 -- OnEnable already ran registerPanels; each page builds its body on first
 -- OnShow, so the suite shows a page and then reads the widgets it created.
-local generalPanel = panelFrame(env, "General")
-local lootPanel    = panelFrame(env, "Loot")
-local parentPanel  = env._settings.categories[1] and env._settings.categories[1].frame
+local generalPanel    = panelFrame(env, "General")
+-- Every message category is a TAB on this one page now, and Loot is the first of
+-- them, so a Categories page nobody has clicked is a Loot page.
+local categoriesPanel = panelFrame(env, "Categories")
+local parentPanel     = env._settings.categories[1] and env._settings.categories[1].frame
 
 local generalWidgets, lootWidgets, lootScroll, lootBlocks
 
+-- The tab strip's buttons, in strip order, off the library's own ctx layout.
+-- They are plain Blizzard frames rather than AceGUI widgets, so env._widgets
+-- never sees them.
+local function tabButtons(pageKey)
+    local layout = NS.Helpers.__panelFor(pageKey).__tabLayout
+    return layout and layout.buttons or {}
+end
+
+local function tabNames(pageKey)
+    local names = {}
+    for i, b in ipairs(tabButtons(pageKey)) do names[i] = b.text end
+    return names
+end
+
 -- ---- registration -------------------------------------------------
 
-test("registration builds the parent category and one sub-page per category", function()
+test("registration builds the parent category and two sub-pages", function()
+    -- The left rail used to carry nine rows, eight of which were the same page
+    -- with a different noun on it. It carries two: the addon-wide switches, and
+    -- everything this addon rewrites (one tab per message category).
     t.eq(#env._settings.categories, 1, "exactly one canvas parent category")
     t.eq(env._settings.categories[1].name, "Ka0s Pretty Chat", "the parent carries the brand title")
     t.eq(#env._settings.addonCategories, 1, "the parent is added to the AddOns list")
-    t.eq(#env._settings.subcategories, #Schema.CATEGORY_ORDER,
-        "one sub-page per CATEGORY_ORDER entry")
-    for i, category in ipairs(Schema.CATEGORY_ORDER) do
-        t.eq(env._settings.subcategories[i].name, category,
-            ("sub-page %d is %s (tree order follows CATEGORY_ORDER)"):format(i, category))
+    t.eq(#env._settings.subcategories, 2, "two sub-pages, not one per category")
+    t.eq(env._settings.subcategories[1].name, "General", "General leads the rail")
+    t.eq(env._settings.subcategories[2].name, L["Categories"], "and Categories follows it")
+    for _, category in ipairs(Schema.CATEGORY_ORDER) do
+        if category ~= "General" then
+            t.falsy(panelFrame(env, category),
+                category .. " is a tab now, not a page of its own")
+        end
     end
+end)
+
+test("the strip carries one tab per message category, in CATEGORY_ORDER", function()
+    categoriesPanel:Show()
+    local expected = {}
+    for _, category in ipairs(Schema.CATEGORY_ORDER) do
+        if category ~= "General" then expected[#expected + 1] = category end
+    end
+    t.eq(table.concat(tabNames("Categories"), ","), table.concat(expected, ","),
+        "the strip order IS the order /pc list and /pc test print")
+    t.eq(NS.Helpers.__panelFor("Categories").activeTab, "Loot",
+        "and the page opens on the first tab")
 end)
 
 test("the panel registry holds one ctx per page, reachable by page key", function()
@@ -86,20 +120,21 @@ test("the panel registry holds one ctx per page, reachable by page key", functio
     -- business. What a host (and this suite) still needs is a handle on a live ctx,
     -- which is what the __panelFor test seam exists for.
     t.nilv(addon.optionsCategoryID, "the host no longer keeps a copy of the ID")
-    t.eq(#NS.Helpers.__panels(), #Schema.CATEGORY_ORDER + 1,
-        "one ctx per sub-page, plus the landing page")
-    for _, category in ipairs(Schema.CATEGORY_ORDER) do
-        local pageCtx = NS.Helpers.__panelFor(category)
-        t.truthy(pageCtx, category .. " has a registered ctx")
+    t.eq(#NS.Helpers.__panels(), 3, "one ctx per sub-page, plus the landing page")
+    -- Keyed by PAGE KEY, titled by the localized display name: the two are the same
+    -- word on enUS and must not be assumed to be the same word anywhere else.
+    for _, page in ipairs({ { "General", "General" }, { "Categories", L["Categories"] } }) do
+        local pageCtx = NS.Helpers.__panelFor(page[1])
+        t.truthy(pageCtx, page[1] .. " has a registered ctx")
         t.eq(pageCtx.panel.titleText,
-            "Ka0s Pretty Chat |A:common-icon-forwardarrow:16:16|a " .. category,
-            category .. " renders the shared breadcrumb header")
+            "Ka0s Pretty Chat |A:common-icon-forwardarrow:16:16|a " .. page[2],
+            page[1] .. " renders the shared breadcrumb header")
     end
 end)
 
 test("sub-page frames start hidden and unbuilt", function()
     local fresh = ctx.loadAddon()
-    local panel = panelFrame(fresh.env, "Loot")
+    local panel = panelFrame(fresh.env, "Categories")
     t.falsy(panel:IsShown(), "a registered page is hidden until Blizzard shows it")
     t.eq(#fresh.env._widgets, 0, "registration creates no AceGUI widgets at all")
 end)
@@ -231,7 +266,7 @@ test("the Defaults button is deferred to first show, not built at registration",
     -- The deferral dodges the AceGUI skinning race (a button created during
     -- ADDON_LOADED keeps Blizzard's stock art for the session).
     local fresh = ctx.loadAddon()
-    local panel = panelFrame(fresh.env, "Loot")
+    local panel = panelFrame(fresh.env, "Categories")
     t.truthy(panel.wantsDefaultsButton, "the page recorded the intent to have one")
     t.nilv(panel.defaultsBtn, "but no button exists before the first show")
     panel:Show()
@@ -245,25 +280,44 @@ test("the General page has no Defaults button", function()
     t.nilv(generalPanel.defaultsBtn, "and none is built for it")
 end)
 
-test("the Defaults button resets its own category only", function()
+test("the Defaults button resets the visible tab's category only", function()
+    -- One button over eight tabs, so it has to resolve the tab at CLICK time. It
+    -- is wired once, on the page's first show, and the strip moves underneath it.
     local fresh = ctx.loadAddon()
     fresh.NS.Schema.Set("Loot.enabled", false)
     fresh.NS.Schema.Set("Money.enabled", false)
-    local panel = panelFrame(fresh.env, "Loot")
+    local panel = panelFrame(fresh.env, "Categories")
     panel:Show()
     panel.defaultsBtn:Fire("OnClick")
     t.eq(fresh.NS.Schema.Get("Loot.enabled"), fresh.NS.Defaults.Loot.enabled,
-        "the page's own category is reset")
+        "the visible tab's category is reset")
     t.eq(fresh.NS.Schema.Get("Money.enabled"), false, "other categories are untouched")
+
+    -- Move the strip and the same button follows it.
+    local pageCtx = fresh.NS.Helpers.__panelFor("Categories")
+    for _, b in ipairs(pageCtx.__tabLayout.buttons) do
+        if b.text == "Money" then b:FireScript("OnClick") end
+    end
+    t.eq(pageCtx.activeTab, "Money", "the click moved the strip")
+    fresh.NS.Schema.Set("Loot.enabled", false)
+    panel.defaultsBtn:Fire("OnClick")
+    t.eq(fresh.NS.Schema.Get("Money.enabled"), fresh.NS.Defaults.Money.enabled,
+        "the button now resets the tab the player is looking at")
+    t.eq(fresh.NS.Schema.Get("Loot.enabled"), false, "and leaves the tab they left alone")
 end)
 
 -- ---- category sub-page + per-string rows ---------------------------
 
-test("a category page builds a toggle plus one block per string", function()
+test("a category tab builds a toggle plus one block per string", function()
     local mark = #env._widgets
-    lootPanel:Show()
+    -- Already shown by the strip case above, so re-render it the way a tab click
+    -- does rather than relying on an OnShow that will not fire twice.
+    NS.Helpers.RefreshPanel(NS.Helpers.__panelFor("Categories"), true)
     lootWidgets = widgetsSince(env, mark)
-    lootScroll  = firstOfType(lootWidgets, "ScrollFrame")
+    -- Off the ctx, not out of the new widgets: the ScrollFrame is created once per
+    -- page and REUSED across tab switches (ClearScroll releases its children, not
+    -- the container), so a re-render adds no ScrollFrame to find.
+    lootScroll  = NS.Helpers.__panelFor("Categories").scroll
     lootBlocks  = stringBlocks(lootScroll)
 
     local strings = 0
@@ -338,10 +392,9 @@ test("the read-only Original row shows this client's snapshot, or degrades witho
     t.nilv(fresh.addon.originalStrings[LATE], "the snapshot never saw it")
     t.nilv(fresh.env[LATE], "and no live global carries it either")
 
-    local mark = #fresh.env._widgets
-    panelFrame(fresh.env, "Loot"):Show()
+    panelFrame(fresh.env, "Categories"):Show()
     local lateOrig
-    for _, block in ipairs(stringBlocks(firstOfType(widgetsSince(fresh.env, mark), "ScrollFrame"))) do
+    for _, block in ipairs(stringBlocks(fresh.NS.Helpers.__panelFor("Categories").scroll)) do
         local caption = block.rows[2] and block.rows[2].children[1]
         if caption and caption.text and caption.text:find(LATE, 1, true) then
             lateOrig = block.rows[1].children[2]
@@ -477,6 +530,47 @@ test("a cross-registered string warns about the shared Blizzard global", functio
     t.truthy(joined:find("Shared with", 1, true), "the tooltip names the conflict")
     t.truthy(joined:find("last category to apply wins", 1, true),
         "and explains the documented last-writer rule")
+end)
+
+test("the page says its controls are read only while the master switch is on", function()
+    -- The footnote the strip earns: every switch and every format box on every tab
+    -- is dead while the master Enable is off, and that toggle lives on another
+    -- page. Above the controls, not after them.
+    local labels = {}
+    for _, child in ipairs(lootScroll.children) do
+        if child.type == "Label" and child.text then labels[#labels + 1] = child.text end
+    end
+    t.truthy(labels[1] and labels[1]:find(
+        L["Strings on these tabs are rewritten only while the master Enable on the General page is on."],
+        1, true), "the note is the first thing on the page")
+end)
+
+test("clicking a tab swaps the body and drops the tab it left", function()
+    -- The stale-refresher half is the one that bites in game rather than on
+    -- screen: Schema.refreshers is keyed by CATEGORY, not by page, so an entry the
+    -- previous tab left behind is a closure over released AceGUI widgets that the
+    -- next master-toggle change would still fan out to.
+    local money
+    for _, b in ipairs(tabButtons("Categories")) do
+        if b.text == "Money" then money = b end
+    end
+    t.truthy(money, "the strip carries a Money tab")
+
+    local mark = #env._widgets
+    money:FireScript("OnClick")
+    t.eq(NS.Helpers.__panelFor("Categories").activeTab, "Money", "the strip moved")
+    t.truthy(byLabel(widgetsSince(env, mark), "CheckBox", "Enable Money"),
+        "and the body under it is Money's")
+    t.eq(#stringBlocks(lootScroll), 8, "with one block per Money string")
+    t.nilv(Schema.refreshers["Loot"], "the tab we left unregistered its refresher")
+    t.truthy(Schema.refreshers["Money"], "and the tab we arrived on registered one")
+
+    -- Clicking the tab you are already on cannot re-render the page you are
+    -- already looking at: the active tab is the DISABLED button, and the handler
+    -- refuses a second time for a harness that can fire a disabled script anyway.
+    local again = #env._widgets
+    money:FireScript("OnClick")
+    t.eq(#env._widgets, again, "re-clicking the active tab draws nothing")
 end)
 
 -- ---- parent page ----------------------------------------------------

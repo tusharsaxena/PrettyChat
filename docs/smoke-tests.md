@@ -13,7 +13,7 @@ For a routine change (one new format string, a doc edit, a CSS-level panel tweak
 1. `/reload` — file-load-time builders re-run.
 2. `/pc test` — dump a synthesized sample of every format string. Output ignores enable toggles, so this works even when the addon is disabled.
 3. Trigger one real chat event (loot an item, gain XP, repair an item, etc.) and read the actual chat line.
-4. Open `/pc config`, walk to the affected category sub-page, exercise the toggle and edit boxes for the changed row.
+4. Open `/pc config`, walk to Categories and the affected category's tab, exercise the toggle and edit boxes for the changed row.
 
 If all four pass, you're good for routine work. The full suite below catches the rest.
 
@@ -102,7 +102,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 > Why: the library's own `expandMainCategory` walks `SettingsPanel:GetCategoryList():GetCategoryEntry(cat):SetExpanded(true)` inside `pcall`. It reports nothing when the private API moves ([`LIBKA0S-04`](https://github.com/tusharsaxena/PrettyChat/issues/9)), so this test is the only thing that would notice.
 
 - Steps: starting from the closed addon list, `/pc config`.
-- Expected: the left rail shows every sub-page (`General`, `Loot`, `Currency`, `Money`, `Reputation`, `Experience`, `Honor`, `Tradeskill`, `Misc`) without the user clicking the disclosure arrow.
+- Expected: the left rail shows both sub-pages (`General`, `Categories`) without the user clicking the disclosure arrow. The eight message categories are **tabs on the Categories page** and must not appear in the rail at all.
 - Failure mode: tree stays collapsed. Cause: a future patch renamed `GetCategoryList` / `GetCategoryEntry` / `SetExpanded`. The `pcall` wrapper prevents an error, but the auto-expand silently no-ops. Falls back to manual click.
 
 #### T-22 — Sub-page header breadcrumb
@@ -110,14 +110,14 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 > Why: the library's `CreatePanel` builds sub-page titles as `parentTitle .. BREADCRUMB_SEP .. title`, where `BREADCRUMB_SEP` is `" |A:common-icon-forwardarrow:16:16|a "` — an inline-atlas chevron, not a font glyph, so it renders the same regardless of font or locale fallback.
 
 - Steps: open each sub-page in turn.
-- Expected: page header reads `Ka0s Pretty Chat ▸ Loot`, `Ka0s Pretty Chat ▸ Currency`, etc., with the separator visibly rendered as a small gold right-arrow texture (not as a literal `▸` character or pipe). Atlas divider underneath in the same gold as the title.
+- Expected: page header reads `Ka0s Pretty Chat ▸ General`, `Ka0s Pretty Chat ▸ Categories`, with the separator visibly rendered as a small gold right-arrow texture (not as a literal `▸` character or pipe). Atlas divider underneath in the same gold as the title.
 - Failure mode: separator appears as raw escape text `|A:common-icon-forwardarrow:16:16|a`, or as a missing-texture box. Cause: the atlas was retired in a client patch. The separator is `BREADCRUMB_SEP` in `libs/LibKa0s/Options.lua` — a value shared by every Ka0s panel, so a change belongs upstream in `../LibKa0s`, never in the vendored copy.
 
 #### T-23 — Per-string block layout
 
 > Why: `buildStringRow` renders `Heading + 3 × Flow row (40/60)`.
 
-- Steps: open Loot. Pick any string.
+- Steps: open Categories > Loot. Pick any string.
 - Expected layout:
   ```
   ─── <strData.label> ───
@@ -131,7 +131,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 > Why: `InputBoxTemplate`'s FontString processes `|c…|r` natively, so `previewInput:SetText(rendered)` shows colored output.
 
-- Steps: open Loot, find `LOOT_ITEM_SELF`. Read the Preview row.
+- Steps: open Categories > Loot, find `LOOT_ITEM_SELF`. Read the Preview row.
 - Expected: the rendered sample shows colored (red `Loot`, green `You`, etc.), NOT raw `|cffff0000Loot|r` text.
 - If you see the raw escape codes literally, `InputBoxTemplate`'s color-rendering behavior changed and we need a Label-in-a-frame fallback.
 
@@ -139,17 +139,33 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 > Why: refresh closure removed the conditional `Show()` / `Hide()` — Reset always shown; clicking it when value already equals the default is a harmless no-op via the schema's auto-clear.
 
-- Steps: open a fresh Loot sub-page. Note that every per-string row has a Reset button visible. Click Reset on a row whose value matches the default.
+- Steps: open a fresh Categories > Loot tab. Note that every per-string row has a Reset button visible. Click Reset on a row whose value matches the default.
 - Expected: button stays visible; nothing changes (no error, no panel re-render visible to the user).
 - Note: this covers only the always-visible / no-op-at-default behavior. For the per-string Reset *restoring both format and enable state*, see **T-56** (which supersedes the reset-effect coverage this test used to imply).
 
-#### T-26 — Per-category Defaults button (header)
+#### T-26 — Defaults button acts on the visible tab (header)
 
-> Why: the page parks `ctx.panel.defaultsOnClick = function() PrettyChat:ResetCategory(category) end`, the library wires it onto the button it builds on first `OnShow`, and the canvas's `OnDefault` forwards to the same body — no popup.
+> Why: the page parks `ctx.panel.defaultsOnClick = function() PrettyChat:ResetCategory(activeCategory(ctx)) end`, the library wires it onto the button it builds on first `OnShow`, and the canvas's `OnDefault` forwards to the same body — no popup. It resolves the tab at **click** time, because the button is wired once and the strip moves underneath it.
 
-- Setup: edit one Loot format and disable one Loot string via the panel.
-- Steps: click **Defaults** in the Loot page header.
-- Expected: the edit reverts to default; the disabled toggle re-enables; no popup confirmation appears. `/pc list Loot` shows everything at default.
+- Setup: edit one Loot format and disable one Loot string via the panel. Edit one Money format too.
+- Steps: on Categories > Loot, click **Defaults** in the page header. Then click the **Money** tab and click **Defaults** again.
+- Expected: each click reverts only the tab you were looking at; no popup confirmation appears. `/pc list Loot` and `/pc list Money` show everything at default, and no other category moved. Hovering **Defaults** reads "Reset the strings on the selected category tab to their defaults."
+- Failure mode to watch for: the button resets **Loot** no matter which tab is showing. That is the handler having closed over one category instead of reading the active tab.
+
+#### T-26a — The tab strip itself
+
+> Why: `H.TabStrip` (options-ui-§13) draws the strip, and the addon hands it `CATEGORY_ORDER` minus the virtual `General`. The active tab is the **disabled** button, which is how the selection is marked.
+
+- Steps: open Categories. Read the strip left to right. Click **Currency**, then **Misc**, then **Currency** again. Narrow the Settings window until the strip has to wrap.
+- Expected: eight tabs, in the order `Loot, Currency, Money, Reputation, Experience, Honor, Tradeskill, Misc` — the same order `/pc list` and `/pc test` print. The selected tab reads as attached to the page below it and does not highlight on hover; the others do. Each click swaps the body under the strip to that category's Enable row and its string blocks, with no flicker of the previous tab's rows and no duplicate heading. A wrapped strip lays out in two flush rows and the first row of controls sits **below** the whole strip, never underneath it.
+- Failure mode: every tab on its own row (the strip read a zero width and never re-placed itself), or a second copy of a category's blocks appearing under the first (the scroll was not cleared on the tab click).
+
+#### T-26b — The page's footnote
+
+> Why: every control on every tab is inert while the master Enable is off, and that switch is on the other page.
+
+- Steps: open Categories.
+- Expected: a gray line above the Enable checkbox reading "Strings on these tabs are rewritten only while the master Enable on the General page is on." It is there on every tab, and it is the first thing on the page.
 
 #### T-27 — Reset all to defaults popup
 
@@ -287,15 +303,15 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 > Why: `Schema.Set` calls `Schema.NotifyPanelChange(category)` → invokes the closure registered via `Schema.RegisterRefresher(category, …)` → re-syncs visible widgets.
 
-- Steps: open `/pc config`, navigate to the Loot sub-page. Leave the panel open. From chat: `/pc set Loot.LOOT_ITEM_SELF.enabled false`. Look at the panel.
+- Steps: open `/pc config`, navigate to Categories > Loot. Leave the panel open. From chat: `/pc set Loot.LOOT_ITEM_SELF.enabled false`. Look at the panel.
 - Expected: the per-string Enable checkbox for `LOOT_ITEM_SELF` flips to unchecked without reopening the panel. The New input becomes disabled.
 
-#### T-41 — Master change cascades to all sub-pages
+#### T-41 — Master change cascades to the visible tab and to the ones behind it
 
-> Why: `NotifyPanelChange("General")` runs every sub-page's refresher.
+> Why: `NotifyPanelChange("General")` runs every registered refresher, and only the visible tab has one. The tabs behind it are rebuilt from the live DB when they are clicked, which is the other half of the same guarantee.
 
-- Steps: open `/pc config`, walk to Loot. Leave it open. `/pc set General.enabled false`. Click each sub-page in turn (Loot, Currency, …).
-- Expected: every per-string Enable + format input on every page shows as disabled. Re-enable the master — every input becomes interactable again.
+- Steps: open `/pc config`, walk to Categories > Loot. Leave it open. `/pc set General.enabled false`. Watch the Loot tab, then click through Currency, Money and the rest.
+- Expected: the Loot tab grays out **without being clicked**; every tab you then click is already gray. Re-enable the master — the visible tab comes back live, and so does each tab you visit afterwards.
 
 #### T-42 — Panel mutation reflects in `/pc get`
 
@@ -407,8 +423,8 @@ The four reset entry points — per-string **Reset** button, per-category **Defa
 
 > Why: each reset calls `NotifyPanelChange(category)` (or nil → all), re-syncing visible widgets without a reopen.
 
-- Steps: open Loot, leave it open. From chat, after editing/disabling a couple of its strings: `/pc reset loot`.
-- Expected: the visible Enable checkboxes re-check and New boxes repopulate to defaults live, no panel reopen. `/pc resetall` from chat similarly refreshes whichever sub-page is showing.
+- Steps: open Categories > Loot, leave it open. From chat, after editing/disabling a couple of its strings: `/pc reset loot`.
+- Expected: the visible Enable checkboxes re-check and New boxes repopulate to defaults live, no panel reopen. `/pc resetall` from chat similarly refreshes whichever tab is showing.
 
 ### M — Media (fonts, textures, borders)
 
@@ -521,7 +537,7 @@ and no headless assertion can tell the difference. Current vendored copies resol
 `rawget` and are safe, but this is the check that would have caught a shipped one.
 
 **Steps:** walk every surface and read every label:
-1. `/pc config` — the landing page and all nine sub-pages, including each page's **Defaults** button.
+1. `/pc config` — the landing page, both sub-pages and all eight tabs on Categories, including the page's **Defaults** button and the Categories footnote.
 2. `/pc debug` — the console: the title bar, the `Debug: ON`/`Debug: OFF` toggle, the `N / 1500 lines`
    counter, and the copy window's own title. (The Copy and Clear controls are marks now and carry no
    text — if you can read a word on either of them, the folder name is not reaching the library and

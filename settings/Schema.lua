@@ -6,10 +6,12 @@ local Schema = {}
 NS.Schema = Schema
 
 -- Display order shared with settings/Panel.lua. Iterating NS.Defaults via
--- pairs() would give a non-deterministic order; this keeps `/pc list`
--- and the addon-list left rail in sync. "General" is a virtual category
--- (no entry in NS.Defaults) that hosts addon-wide settings —
--- listed first so it sits at the top of the addon list.
+-- pairs() would give a non-deterministic order; this keeps `/pc list`, `/pc test`
+-- and the Categories page's tab strip in sync — the strip DERIVES its tab order
+-- from this array rather than restating it. "General" is a virtual category
+-- (no entry in NS.Defaults) that hosts addon-wide settings — listed first, and
+-- the one entry the strip skips, because it is a page of its own rather than a
+-- message category.
 local CATEGORY_ORDER = {
     "General",
     "Loot", "Currency", "Money", "Reputation",
@@ -251,12 +253,13 @@ function Schema.FormatValue(row, v)
     return tostring(v)
 end
 
--- Refresher dispatch. settings/Panel.lua registers a closure per sub-page on
--- first OnShow via Schema.RegisterRefresher; NotifyPanelChange invokes
--- the matching closure (or every closure when the master toggle moves —
--- per-string disabled state depends on the master). Sub-pages that have
--- never been opened have no entry, which is correct: their first OnShow
--- builds widgets seeded from the live DB, so they cannot show stale state.
+-- Refresher dispatch. settings/Panel.lua registers a closure for the category
+-- TAB it has just drawn via Schema.RegisterRefresher, and drops the previous
+-- tab's on the way in; NotifyPanelChange invokes the matching closure (or every
+-- closure when the master toggle moves — per-string disabled state depends on the
+-- master). At most one category is registered at a time: the visible tab. A tab
+-- that is not on screen has no entry, which is correct — it is rebuilt from the
+-- live DB the moment it is selected, so it cannot show stale state.
 Schema.refreshers = {}
 
 function Schema.RegisterRefresher(category, fn)

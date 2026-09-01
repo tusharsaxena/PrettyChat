@@ -1,6 +1,6 @@
 local addonName, NS = ...
 
--- settings/Panel.lua — the three page BODIES, and nothing else.
+-- settings/Panel.lua — the page BODIES, and nothing else.
 --
 -- The canvas factory, the header and its breadcrumb, the lazily-built Defaults
 -- button, the AceGUI ScrollFrame with its always-shown-scrollbar patch, the
@@ -9,7 +9,8 @@ local addonName, NS = ...
 -- reached through NS.Helpers (settings/OptionsSetup.lua). What is left here is the
 -- part that is genuinely PrettyChat's: what each of its three kinds of page draws.
 --
--- Two of the three are the library's own shapes. The third is not, and that is the
+-- The landing page, the General page and the Categories page's tab strip are the
+-- library's own shapes. The per-string editor under a tab is not, and that is the
 -- documented deviation this file has carried since PC-23 — see buildStringRow.
 
 local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
@@ -270,15 +271,17 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
 end
 
 -- ---------------------------------------------------------------------
--- Category sub-page — the category's own Enable row, then one per-string
+-- One category's body — the category's own Enable row, then one per-string
 -- block. The Enable row is a schema row and goes through the library's
 -- checkbox maker at full width; the blocks below it are bespoke.
+--
+-- The scroll is the CALLER's now, not this function's. It used to own the
+-- ClearScroll/EnsureScroll pair because it was a whole page; it is one tab of
+-- the Categories page today, drawn under a strip and under that page's footnote,
+-- and a body that cleared the scroll itself would wipe the line above it.
 -- ---------------------------------------------------------------------
 
-local function buildCategoryBody(ctx, category, catData)
-    H.ClearScroll(ctx)
-    local scroll = H.EnsureScroll(ctx)
-    if not scroll then return end
+local function buildCategoryBody(ctx, scroll, category, catData)
     local refreshers = {}
 
     -- relativeWidth nil => full width. The category toggle governs everything
@@ -303,6 +306,101 @@ local function buildCategoryBody(ctx, category, catData)
     Schema.RegisterRefresher(category, function()
         for _, fn in ipairs(refreshers) do pcall(fn) end
     end)
+end
+
+-- ---------------------------------------------------------------------
+-- Categories sub-page — one TAB per message category (options-ui-§13).
+--
+-- Every category used to be a sub-page of its own: nine rows in the Blizzard
+-- left rail for one addon, eight of which were the same page with a different
+-- noun on it. They are one page and one tab strip now, and the rail carries
+-- General, Categories and nothing else.
+--
+-- NOT H.RenderTabbedSchema, and that is the one thing to understand before
+-- editing this. RenderTabbedSchema partitions a page's SCHEMA ROWS by `group`
+-- and hands each partition to the flow engine; a category tab is one schema row
+-- (the Enable) followed by N bespoke 40/60 editors the flow engine cannot
+-- express (the options-ui-§6 deviation in docs/ARCHITECTURE.md). So the strip
+-- is taken from the library directly through H.TabStrip and the body under it
+-- is still buildCategoryBody, generated per category exactly as before. The tab
+-- click re-renders through the same ClearScroll-then-draw path
+-- RenderTabbedSchema's own onSelect takes, for the same reason: redrawing
+-- widgets inside an already-open panel was never a protected action, so the tab
+-- click needs no combat guard and carries none.
+-- ---------------------------------------------------------------------
+
+-- The page KEY, which is the untranslated form of its display name (the rail and
+-- the header show L["Categories"]). Not a category name: it is deliberately
+-- absent from CATEGORY_ORDER, whose entries are schema path segments
+-- (`/pc set Loot.enabled false`) and must stay resolvable by
+-- Schema.ResolveCategory. This page owns no rows of its own, which is also why
+-- the page name is free to be translated where a category name is not.
+local CATEGORY_PAGE = "Categories"
+
+-- The tabs, in strip order: CATEGORY_ORDER minus the virtual "General", which
+-- is a page rather than a message category. Derived rather than restated, so
+-- the strip, `/pc list` and `/pc test` cannot disagree about what comes first —
+-- Loot leads because it is what a player opens this page to change, and Misc
+-- trails because it is the drawer.
+local TAB_ORDER = {}
+for _, category in ipairs(CATEGORY_ORDER) do
+    if category ~= "General" and NS.Defaults[category] then
+        TAB_ORDER[#TAB_ORDER + 1] = category
+    end
+end
+
+-- The visible tab, healed against a category that no longer exists — the same
+-- stale-pointer guard RenderTabbedSchema applies to ctx.activeTab, and for the
+-- same reason: a pointer at a missing group renders an empty page under a strip.
+local function activeCategory(ctx)
+    local key = ctx.activeTab
+    if key and NS.Defaults[key] then return key end
+    return TAB_ORDER[1]
+end
+
+local function buildCategoriesBody(ctx)
+    H.ClearScroll(ctx)
+    local scroll = H.EnsureScroll(ctx)
+    if not scroll then return end
+
+    local category = activeCategory(ctx)
+    ctx.activeTab = category
+
+    -- Every tab's blocks close over widgets this render is about to release, and
+    -- Schema.refreshers is keyed by CATEGORY rather than by page, so an entry left
+    -- behind by the tab we just left is a closure pointed at released AceGUI
+    -- widgets that a master-toggle change would still fan out to. Dropped here, at
+    -- the one place that knows a tab is being replaced; buildCategoryBody
+    -- re-registers the one that is now on screen.
+    for _, name in ipairs(TAB_ORDER) do
+        Schema.RegisterRefresher(name, nil)
+    end
+
+    local tabs = {}
+    for i, name in ipairs(TAB_ORDER) do
+        tabs[i] = { key = name, label = name }
+    end
+    H.TabStrip(ctx, {
+        tabs     = tabs,
+        value    = category,
+        onSelect = function(key)
+            if key == ctx.activeTab then return end
+            ctx.activeTab = key
+            buildCategoriesBody(ctx)
+        end,
+    })
+
+    -- The page's one footnote, above the controls rather than after them: every
+    -- switch and every format box on every tab is read only while the master
+    -- Enable is on, and that switch is on another page. A player who turns a
+    -- category on, sees nothing change in chat and has no sentence to explain it
+    -- has been misled by the page.
+    H.TextRow(ctx, Color.gray
+        .. L["Strings on these tabs are rewritten only while the master Enable on the General page is on."]
+        .. Color.reset)
+    H.AddSpacer(scroll, H.ROW_VSPACER)
+
+    buildCategoryBody(ctx, scroll, category, NS.Defaults[category])
 end
 
 -- ---------------------------------------------------------------------
@@ -399,40 +497,49 @@ end
 -- refusal — and hands the frame to Blizzard.
 -- ---------------------------------------------------------------------
 
-for _, category in ipairs(CATEGORY_ORDER) do
-    H.RegisterOptionsPage(category, category, function(mainCategory)
-        local isGeneral = (category == "General")
-        local ctx = H.CreatePanel(nil, category, {
-            pageKey         = category,
-            defaultsButton  = not isGeneral,
-            defaultsTooltip = (not isGeneral)
-                and L["Reset all %s strings to defaults."]:format(category)
-                or nil,
-        })
+-- Two pages, registered in rail order: the addon-wide switches first, then
+-- everything this addon rewrites. The eight per-category registrations this loop
+-- used to run are one page with eight tabs (buildCategoriesBody above).
+H.RegisterOptionsPage("General", "General", function(mainCategory)
+    local ctx = H.CreatePanel(nil, "General", {
+        pageKey        = "General",
+        defaultsButton = false,
+    })
+    H.SetRenderer(ctx, buildGeneralBody)
+    return Settings.RegisterCanvasLayoutSubcategory(mainCategory, ctx.panel, "General")
+end)
 
-        if isGeneral then
-            H.SetRenderer(ctx, buildGeneralBody)
-        else
-            local catData = NS.Defaults[category]
-            if not catData then return nil end
-            -- Parked for the library to wire onto the Defaults button on first
-            -- OnShow, and forwarded to by the panel's OnDefault so the Settings
-            -- window's own footer control reaches the same body (options-ui-§1).
-            --
-            -- PrettyChat:ResetCategory rather than the library's row-by-row
-            -- RestoreDefaults: it wipes the category's table and re-applies in ONE
-            -- pass with ONE [Reset] summary line, where the row-by-row form would
-            -- run ApplyStrings once per row and emit one [Set] line per row into a
-            -- 1500-line console buffer (debug-logging-§9).
-            ctx.panel.defaultsOnClick = function() PrettyChat:ResetCategory(category) end
-            H.SetRenderer(ctx, function(pageCtx)
-                buildCategoryBody(pageCtx, category, catData)
-            end)
-        end
+H.RegisterOptionsPage(CATEGORY_PAGE, CATEGORY_PAGE, function(mainCategory)
+    local ctx = H.CreatePanel(nil, L["Categories"], {
+        pageKey        = CATEGORY_PAGE,
+        defaultsButton = true,
+        -- One button, eight tabs, so the sentence names the SELECTED tab rather
+        -- than a category. It replaces the per-page `Reset all %s strings to
+        -- defaults.` this addon carried while every category was its own page:
+        -- that string is built at CreatePanel time and the button is built once,
+        -- on first show, so a per-category wording here could only ever name the
+        -- tab the page happened to open on.
+        defaultsTooltip = L["Reset the strings on the selected category tab to their defaults."],
+    })
 
-        return Settings.RegisterCanvasLayoutSubcategory(mainCategory, ctx.panel, category)
-    end)
-end
+    -- Parked for the library to wire onto the Defaults button on first OnShow,
+    -- and forwarded to by the panel's OnDefault so the Settings window's own
+    -- footer control reaches the same body (options-ui-§1). It reads the ACTIVE
+    -- tab at click time rather than closing over one category, because the button
+    -- is wired once and the strip moves underneath it.
+    --
+    -- PrettyChat:ResetCategory rather than the library's row-by-row
+    -- RestoreDefaults: it wipes the category's table and re-applies in ONE pass
+    -- with ONE [Reset] summary line, where the row-by-row form would run
+    -- ApplyStrings once per row and emit one [Set] line per row into a 1500-line
+    -- console buffer (debug-logging-§9).
+    ctx.panel.defaultsOnClick = function()
+        PrettyChat:ResetCategory(activeCategory(ctx))
+    end
+
+    H.SetRenderer(ctx, buildCategoriesBody)
+    return Settings.RegisterCanvasLayoutSubcategory(mainCategory, ctx.panel, L["Categories"])
+end)
 
 NS.Config = NS.Config or {}
 NS.Config.BuildMain      = buildParentBody

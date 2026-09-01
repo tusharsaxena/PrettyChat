@@ -37,14 +37,22 @@ local enUS = {
     "Reset all to defaults",
     "Start over: reset the active profile to the addon defaults. The same thing the Profiles page's Reset Profile does. Your other profiles are left alone.",
     "Reset this profile to the addon's defaults? Everything you have configured or added in it is discarded — your other profiles are not affected.",
+    -- Categories sub-page (the tab strip). The page name is a heading rather
+    -- than a schema path segment, so unlike the category names interpolated
+    -- below it is fully translatable.
+    "Categories",
+    "Strings on these tabs are rewritten only while the master Enable on the General page is on.",
+    "Reset the strings on the selected category tab to their defaults.",
     -- Category sub-page. `%s` is the category name, which is itself English —
     -- see the `localization-§1` row in docs/ARCHITECTURE.md's deviations
     -- register. The placeholder is what makes the SENTENCE translatable; these
-    -- four were concatenated fragments until PC-R-06, which pinned English word
-    -- order and left a translator nothing to reorder.
+    -- were concatenated fragments until PC-R-06, which pinned English word order
+    -- and left a translator nothing to reorder. There were four until the eight
+    -- category pages became one tabbed page: the per-page `Reset all %s strings
+    -- to defaults.` had no caller left, because one Defaults button over eight
+    -- tabs cannot name a category (settings/Panel.lua, the Categories page).
     "Enable %s",
     "Enable or disable all %s string overrides.",
-    "Reset all %s strings to defaults.",
     "Shared with %s — both registrations write the same Blizzard global; the last category to apply wins on /reload.",
     -- Per-string row
     "Enable",

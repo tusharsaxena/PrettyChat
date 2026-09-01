@@ -368,7 +368,13 @@ test("NS.Helpers IS the library instance, decorated in place", function()
                               "__panels", "__panelFor" }) do
         t.eq(type(NS.Helpers[member]), "function", "the instance carries " .. member)
     end
-    t.eq(#NS.Helpers.__pages(), #NS.Schema.CATEGORY_ORDER, "every page builder ran")
+    -- Two registered pages, BY KEY and in rail order, rather than a count derived
+    -- from CATEGORY_ORDER. The two stopped being the same number when the eight
+    -- message categories became eight tabs on one page, and a count alone would
+    -- have gone on passing if a page were registered twice under one key.
+    local pageKeys = {}
+    for i, page in ipairs(NS.Helpers.__pages()) do pageKeys[i] = page.key end
+    t.eq(table.concat(pageKeys, ","), "General,Categories", "every page builder ran, in rail order")
 
     -- The member list above survives a copy-across table intact, so on its own it
     -- asserts nothing the case name claims. THIS is the identity check: swap a
@@ -378,7 +384,7 @@ test("NS.Helpers IS the library instance, decorated in place", function()
     local realRenderField, seen = NS.Helpers.RenderField, 0
     NS.Helpers.RenderField = function(...) seen = seen + 1; return realRenderField(...) end
     local ok, err = pcall(function()
-        local pageCtx = NS.Helpers.__panelFor("Loot")
+        local pageCtx = NS.Helpers.__panelFor("Categories")
         NS.Helpers.RenderRows(pageCtx, { NS.Schema.FindByPath("Loot.enabled") })
     end)
     NS.Helpers.RenderField = realRenderField
@@ -407,9 +413,12 @@ test("every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh t
 
     -- And OnDefault FORWARDS rather than being an assignment taken at build time:
     -- every host parks defaultsOnClick after CreatePanel returns.
-    local loot = NS.Helpers.__panelFor("Loot")
+    -- The Categories page's forwarder resolves the ACTIVE TAB at click time, so the
+    -- footer control resets the category the player is looking at. Loot is the first
+    -- tab, hence the one a page nobody has clicked is showing.
+    local categories = NS.Helpers.__panelFor("Categories")
     NS.Schema.Set("Loot.enabled", false)
-    loot.panel.OnDefault()
+    categories.panel.OnDefault()
     t.eq(NS.Schema.Get("Loot.enabled"), NS.Defaults.Loot.enabled,
         "the footer control reaches the same body the header button does")
 end)
@@ -424,7 +433,7 @@ test("the settings panel refuses to render under combat rather than drawing half
     })
     local panel
     for _, sub in ipairs(fresh.env._settings.subcategories) do
-        if sub.name == "Loot" then panel = sub.frame end
+        if sub.name == "Categories" then panel = sub.frame end
     end
     panel:Show()
 
@@ -432,8 +441,9 @@ test("the settings panel refuses to render under combat rather than drawing half
     -- guard, deliberately, so the control exists on a page the user can see. What
     -- must not happen is the BODY: no scroll container, and therefore none of the
     -- ~50 per-string blocks a Loot render would create.
-    local pageCtx = fresh.NS.Helpers.__panelFor("Loot")
+    local pageCtx = fresh.NS.Helpers.__panelFor("Categories")
     t.nilv(pageCtx.scroll, "the page body was never built under lockdown")
+    t.nilv(pageCtx.__tabLayout, "and the tab strip was not placed either")
     t.eq(#pageCtx.refreshers, 0, "so nothing registered a refresher either")
     local msgs = fresh.env.DEFAULT_CHAT_FRAME.messages
     t.truthy(msgs[#msgs]:find("cannot open settings during combat", 1, true),
@@ -710,13 +720,22 @@ test("the Options stub carries the whole live surface", function()
         ROW_VSPACER       = true,
         SECTION_HEADING_H = true,
         BUTTON_PAIR_REL   = true,
+        -- Minor 13/14 published three more of them (the chrome gap, one tab row's
+        -- height, the banner floor) for a host that lays out its own strip. This
+        -- addon lays out none: settings/Panel.lua hands H.TabStrip a tab list and
+        -- the library places the buttons, so nothing here measures a band and a
+        -- stub copy of the numbers would be exactly the stale copy options-ui-§8
+        -- forbids. The FUNCTIONS of both minors are in the stub, by name.
+        CHROME_GAP        = true,
+        TAB_H             = true,
+        BANNER_H          = true,
         -- Live-only because nothing in this addon reads them: settings/Panel.lua
         -- resolves AceGUI itself, builds its own landing page and its own rows, and
         -- never asks the library to patch a scrollbar or restore one page's
-        -- defaults. `grep -rn "Helpers.\(AceGUI\|BuildLandingPage\|TextRow\|RestoreDefaults\|PatchAlwaysShowScrollbar\)" core settings modules` is empty.
+        -- defaults. `grep -rn "Helpers.\(AceGUI\|BuildLandingPage\|RestoreDefaults\|PatchAlwaysShowScrollbar\)" core settings modules` is empty.
+        -- TextRow LEFT this list when the Categories page took it for its footnote.
         AceGUI                   = true,
         BuildLandingPage         = true,
-        TextRow                  = true,
         RestoreDefaults          = true,
         PatchAlwaysShowScrollbar = true,
     })

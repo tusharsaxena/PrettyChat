@@ -201,3 +201,74 @@ test("an unregistered category is a silent no-op, not an error", function()
     local ok = pcall(Schema.NotifyPanelChange, "NeverOpened")
     t.truthy(ok, "notifying a page that was never opened is safe")
 end)
+
+-- ---- the page -> tab -> row partition ----------------------------------
+--
+-- The DESIGNED shape of the settings panel, written out as numbers. It is the
+-- case that catches a row drifting into the wrong tab, which is invisible in
+-- game until a player goes looking for a control that is no longer where the
+-- docs say it is. Every count here is also the count docs/settings-panel.md and
+-- docs/module-map.md print, so a disagreement between the schema and the docs
+-- surfaces here rather than at a reader's desk.
+--
+-- Two pages. "General" is the virtual category and holds exactly the master
+-- toggle; a page with one group draws NO tab strip (the library falls back to a
+-- plain scrolling page), which is why one tab is the honest entry for it rather
+-- than an omission. "Categories" holds one tab per message category, in
+-- CATEGORY_ORDER, and owns no rows of its own — its page key is deliberately not
+-- a category, so Schema.ResolveCategory("Categories") must stay nil.
+local PARTITION = {
+    { page = "General", tabs = {
+        { "General", 1 },
+    } },
+    { page = "Categories", tabs = {
+        { "Loot",       39 },
+        { "Currency",    9 },
+        { "Money",      17 },
+        { "Reputation", 29 },
+        { "Experience", 41 },
+        { "Honor",      13 },
+        { "Tradeskill", 17 },
+        { "Misc",        5 },
+    } },
+}
+
+test("every page's tabs hold the designed number of rows", function()
+    for _, page in ipairs(PARTITION) do
+        for _, tab in ipairs(page.tabs) do
+            local name, count = tab[1], tab[2]
+            t.eq(#Schema.RowsByCategory(name), count,
+                ("%s > %s holds %d rows"):format(page.page, name, count))
+        end
+    end
+end)
+
+test("the partition is total and disjoint — every row on exactly one tab", function()
+    local seen, total = {}, 0
+    for _, page in ipairs(PARTITION) do
+        for _, tab in ipairs(page.tabs) do
+            t.falsy(seen[tab[1]], tab[1] .. " appears on exactly one tab")
+            seen[tab[1]] = true
+            total = total + tab[2]
+        end
+    end
+    t.eq(total, #Schema.AllRows(), "the tabs account for every schema row, and no more")
+    for _, r in ipairs(Schema.AllRows()) do
+        t.truthy(seen[r.category], r.path .. " belongs to a tab the panel draws")
+    end
+end)
+
+test("the Categories tabs are CATEGORY_ORDER minus the virtual General", function()
+    -- Derived rather than restated in settings/Panel.lua, so the strip, `/pc list`
+    -- and `/pc test` cannot disagree about what comes first.
+    local designed = {}
+    for _, tab in ipairs(PARTITION[2].tabs) do designed[#designed + 1] = tab[1] end
+    local expected = {}
+    for _, c in ipairs(Schema.CATEGORY_ORDER) do
+        if c ~= "General" then expected[#expected + 1] = c end
+    end
+    t.eq(table.concat(designed, ","), table.concat(expected, ","),
+        "tab order follows the one display order")
+    t.nilv(Schema.ResolveCategory("Categories"),
+        "and the page name is not itself a category — no row is stored under it")
+end)
