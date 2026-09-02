@@ -1,4 +1,4 @@
--- tests/test_debuglog.lua — the on-screen debug console (core/DebugLog.lua):
+-- tests/test_debuglog.lua — the on-screen debug console (core/DebugLogSetup.lua):
 -- the two pure line formatters, the FONT_MONO constant, and the /pc debug
 -- seam (window toggle vs session-state on/off) plus the gated NS.Debug sink.
 

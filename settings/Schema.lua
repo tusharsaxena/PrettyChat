@@ -62,12 +62,13 @@ end
 -- was extracted to end. What stays here is the half a library cannot know: which
 -- stored path each leaf keeps, and the get/set closure behind it.
 --
--- PrettyChat is FRAMELESS — `grep -rn SetMovable core/ modules/ ui/` is empty and
--- this addon draws no positionable frame at all — so the composer omits EXACTLY
--- master scale, master alpha and lock frame, and the closing button is "Reset all
--- settings" alone rather than a pair. Nothing else is omitted: General visibility
--- STAYS, because this addon's display IS the chat text it rewrites, and `Never`
--- is a real, cheap master off-switch distinct from `Enable` (see
+-- PrettyChat is FRAMELESS — `grep -rn SetMovable core/ modules/ settings/`
+-- returns nothing but the two comments that say so, and this addon draws no
+-- positionable frame at all — so the composer omits EXACTLY master scale,
+-- master alpha and lock frame, and the closing button is "Reset all settings"
+-- alone rather than a pair. Nothing else is omitted: General visibility STAYS,
+-- because this addon's display IS the chat text it rewrites, and `Never` is a
+-- real, cheap master off-switch distinct from `Enable` (see
 -- PrettyChat:IsVisible in modules/Override.lua, which honours all four modes).
 --
 -- Installed from settings/OptionsSetup.lua rather than run here: the composers
@@ -450,7 +451,7 @@ function Schema.Set(path, value)
     if not row then return false end
     row.set(value)
     -- A session-only row stores nothing and moves no override: showing the debug
-    -- console must not drag a full pass over ~170 Blizzard globals behind it. The
+    -- console must not drag a full pass over 79 Blizzard globals behind it. The
     -- panel refresh below still runs, because the checkbox mirroring the window
     -- is what has to move.
     if not row.sessionOnly then
@@ -466,7 +467,7 @@ end
 
 -- Every row, in DECLARATION order — which is the order `/pc list` prints and the
 -- order the settings tree shows, so the two can never disagree. Returned as the
--- live table rather than a copy: callers iterate it, and a per-call copy of ~350
+-- live table rather than a copy: callers iterate it, and a per-call copy of 173
 -- rows on every `list` would be a real cost for no safety nobody asked for.
 function Schema.AllRows()
     return rows
@@ -478,7 +479,7 @@ end
 --
 -- Deliberately NOT the implementation behind the per-category Defaults button or
 -- `/pc resetall`. Both of those are bulk: driving them row by row through here
--- would run ApplyStrings once per row (~350 passes over ~170 globals) and emit one
+-- would run ApplyStrings once per row (173 passes over 79 globals) and emit one
 -- [Set] line per row into a 1500-line console buffer, which is exactly the per-item
 -- spam debug-logging-§9 forbids. PrettyChat:ResetCategory and PrettyChat:ResetAll
 -- stay the bulk implementations, each one pass and one summary line.
