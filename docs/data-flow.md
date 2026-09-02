@@ -1,6 +1,6 @@
 # Override pipeline
 
-How Blizzard's chat lines become PrettyChat's reformatted output. The engine lives in `modules/Override.lua` (`ApplyStrings`, the enable predicates, `ResetString` / `ResetCategory` / `ResetAll`); the pristine-values snapshot is taken in `core/PrettyChat.lua`'s `OnEnable`. It runs at `OnEnable` plus on every settings change.
+How Blizzard's chat lines become PrettyChat's reformatted output. The engine lives in `modules/Override.lua` (`ApplyStrings`, the enable predicates, `ResetString` / `ResetCategory` / `ResetAll`); the pristine-values snapshot is taken in `core/PrettyChat.lua`'s `OnEnable`. It runs at `OnEnable`, on every settings change, on a profile switch / copy / reset, and — only while `General.visibility` is a combat-scoped mode — at each combat boundary.
 
 ## Three steps
 
@@ -40,6 +40,7 @@ function PrettyChat:OnEnable()
             self.originalStrings[globalName] = _G[globalName]
         end
     end
+    self:SyncCombatWatch()          -- arms the combat watcher only for a combat-scoped visibility
     self:ApplyStrings()
 end
 ```
@@ -52,7 +53,9 @@ The snapshot only covers strings that exist in `NS.Defaults`. Adding a new `glob
 
 ```lua
 function PrettyChat:ApplyStrings()
-    local addonEnabled = self:IsAddonEnabled()
+    -- General visibility rides the SAME gate as the master toggle: `never`, or a combat
+    -- mode whose condition is not met, restores every original exactly as Enable off does.
+    local addonEnabled = self:IsAddonEnabled() and self:IsVisible()
     -- Deterministic iteration (PC-16): fixed CATEGORY_ORDER, sorted names within each
     -- category, so a global registered under two categories resolves the same way every
     -- reload. (Elided here: applied/restored counters; ApplyStrings returns them.)
@@ -80,7 +83,10 @@ Runs from:
 
 - `OnEnable` — initial pass after the snapshot.
 - `Schema.Set` (every settings mutation) — `Schema.Set` calls `ApplyStrings` directly after the row's `set()` writes the DB. Row `set()` closures themselves are pure DB writes; they do not trigger `ApplyStrings` so a future `Schema.SetMany` / preset-load can apply once per batch.
-- `PrettyChat:ResetString(cat, name)`, `PrettyChat:ResetCategory(cat)` and `PrettyChat:ResetAll()` — all three bypass `Schema.Set` (they clear stored entries wholesale rather than writing through a single row), so they call `ApplyStrings` and `Schema.NotifyPanelChange` themselves.
+- `PrettyChat:ResetString(cat, name)` and `PrettyChat:ResetCategory(cat)` — both bypass `Schema.Set` (they clear stored entries wholesale rather than writing through a single row), so they call `ApplyStrings` and `Schema.NotifyPanelChange` themselves.
+- `PrettyChat:ResetAll()` — **not** directly. It is a profile reset (`db:ResetProfile()`, options-ui-§12); the re-apply lands on the `OnProfileReset` callback below.
+- The three AceDB profile callbacks in `core/PrettyChat.lua`'s `OnInitialize` — `OnProfileChanged`, `OnProfileCopied` and `OnProfileReset`. One body, three tags: re-run the migrations, `SyncCombatWatch`, `ApplyStrings`, `Schema.NotifyPanelChange()` (nil → every category), then one summary line. Switching, copying or resetting a profile replaces every stored value at once, and nothing else would have reacted.
+- `PrettyChatCombatWatcher` — one `ApplyStrings` pass per combat **boundary**, and only while `General.visibility` is `inCombat` or `outOfCombat` (see [The three enable layers](#the-three-enable-layers)).
 
 `ApplyStrings` returns `(applied, restored)` counts rather than logging them itself, so each pass is summarized in **one** caller line (debug-logging-§8/§9): `[Reset] <cat|Cat.NAME|all> → applied N restored M` on a reset. A settings change logs only `[Set] <path> = <value>` at the write seam (debug-logging-§10) — the re-apply is implied and not re-echoed. `OnEnable` no longer logs a boot line (the session-only debug flag is off at load, so it would never render); the self-identifying `[Init]` summary rides the `DebugLog:SetEnabled` seam instead (debug-logging-§5). (Loot lines themselves never log: the addon hooks no events; it only swaps `_G[GLOBALNAME]`.)
 
@@ -91,6 +97,8 @@ Idempotent — calling it multiple times leaves `_G` in the same state.
 Resolved on every `ApplyStrings` pass, in this order:
 
 1. **`General.enabled`** (addon-wide master). Stored at `db.profile.enabled` (not under `categories`). When false, **every** Blizzard original is restored regardless of per-category and per-string state — the master switch wins outright. Customizations stay in the database, just unapplied.
+
+   **`General.visibility` is the master switch's second dimension and rides the same gate.** Stored at `db.profile.visibility` (cleared when it is back to `always`, so the default stores nothing). This addon draws no frame — its *display* is the chat text it rewrites — so the four canonical modes (options-ui-§15) are honoured by what `ApplyStrings` writes: `always` applies, `never` restores every original exactly as `Enable` off does, and `inCombat` / `outOfCombat` are resolved against `UnitAffectingCombat("player")` on every pass. `PrettyChat:IsVisible()` is that resolution, and `addonEnabled` above is `IsAddonEnabled() and IsVisible()` — one gate rather than two, so there is one answer to "why is my chat unchanged".
 2. **`<Category>.enabled`** (per-category). Stored at `db.profile.categories[Cat].enabled`. Falls back to the per-category default in `NS.Defaults[Cat].enabled` (always `true` today).
 3. **`<Category>.<GLOBALNAME>.enabled`** (per-string). Stored at `db.profile.categories[Cat].disabledStrings[NAME]`. Inverted: `disabledStrings[NAME] = true` means **disabled**; absent / nil means enabled.
 
@@ -114,9 +122,9 @@ Note this is the **PrettyChat default**, not the **Blizzard original**. The Bliz
 
 ## What this pipeline does NOT do
 
-- **No event subscriptions.** `OnEnable` snapshots and applies once; `ApplyStrings` re-runs only when settings change. The pipeline is not driven by `CHAT_MSG_*` or any other event.
+- **No chat-event subscriptions, and none at all on a default install.** The pipeline is never driven by `CHAT_MSG_*` and the addon registers no chat filter. Its **only** event subscription is `PrettyChatCombatWatcher`'s `PLAYER_REGEN_DISABLED` / `PLAYER_REGEN_ENABLED` pair, and the frame is created lazily on the first write that stores a combat-scoped `General.visibility` and its events are dropped the moment the mode leaves that pair (`PrettyChat:SyncCombatWatch`). With the shipped `always`, no frame is created and nothing is registered — which is what keeps the `performance-§12` exemption in [performance.md](./performance.md) intact.
 - **No per-message inspection.** The addon never sees individual chat lines — they go straight from WoW's chat frame through `string.format(_G[NAME], ...)` to the screen.
-- **No combat guards.** `ApplyStrings` is unprotected; `_G` writes don't taint. The only combat-aware path is `/pc config`, which refuses to open the panel during combat because Blizzard's category-switch is protected.
+- **No in-combat work, and no combat guard on the pipeline itself.** `ApplyStrings` is unprotected; `_G` writes don't taint. The combat watcher fires at the boundary — at most twice per fight, never during one. The only path that *refuses* under combat is opening the settings panel, because Blizzard's category-switch is protected.
 
 ## Known quirk: globals shared across categories
 

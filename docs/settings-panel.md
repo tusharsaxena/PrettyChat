@@ -53,7 +53,7 @@ All panel layout dimensions live in **`LibKa0s-Options-1.0`'s `LAYOUT` table**, 
 
 `General` is a *virtual category* — no entry in `NS.Defaults`, no per-string rows. It is built by `buildGeneralBody(ctx)`, which draws one explainer line and then hands the page to `H.RenderTabbedSchema`. Its one tab is `Master controls`, and **every control on it is composed, not hand-written**: `H.MasterControls` (`OptionsCompose 1`) owns the row set, its order and its wording, and `settings/Schema.lua` splices the result in at the head of the schema with the stored paths and defaults this addon already shipped.
 
-**PrettyChat is frameless.** `grep -rn SetMovable core/ modules/ settings/` is empty — the addon draws no positionable frame of any kind — so the composer omits **exactly** master scale, master alpha and lock frame, and the closing button is `Reset all settings` alone with no `Reset position` beside it. Nothing else is omitted.
+**PrettyChat is frameless.** `grep -rn SetMovable core/ modules/ settings/` returns nothing but the two comments that say so (`modules/Override.lua`, `settings/Schema.lua`) — the addon calls it nowhere and draws no positionable frame of any kind; its one `CreateFrame` is the eventless-by-default `PrettyChatCombatWatcher`, which has no size, no anchor and never becomes a display frame — so the composer omits **exactly** master scale, master alpha and lock frame, and the closing button is `Reset all settings` alone with no `Reset position` beside it. Nothing else is omitted.
 
 | Control | Stored path | Wire-up |
 |---------|-------------|---------|

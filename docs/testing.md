@@ -35,7 +35,7 @@ tests/
   - **distinct `CreateFontString` / `CreateTexture` objects.** The base aliases them onto the frame itself — a divergence its own README documents as deliberate — and the debug console hangs three FontStrings off one title bar, so an aliased one would make `frame.debugToggle.text` read back the window *title*;
   - `Show()`/`Hide()` **fire** the OnShow/OnHide scripts and hooks; the base tracks visibility only, and every settings page builds its body on first show;
   - a **recording** `DEFAULT_CHAT_FRAME`; the base's stub frame answers `AddMessage` from its metatable and keeps nothing, which would silence every chat assertion in the suite;
-  - `AceAddon:GetAddon`, which the base omits and five PrettyChat files call — `modules/Override.lua:8`, `settings/Schema.lua:3`, `settings/Panel.lua:15`, `settings/Slash.lua:15` and `settings/OptionsSetup.lua:90` (the last through the addon object, `addon:GetAddon("PrettyChat", true)`);
+  - `AceAddon:GetAddon`, which the base omits and five PrettyChat files call — `modules/Override.lua:8`, `settings/Schema.lua:3`, `settings/Panel.lua:18`, `settings/Slash.lua:15` and `settings/OptionsSetup.lua:174` (the last through the addon object, `addon:GetAddon("PrettyChat", true)`);
   - `SettingsPanel = nil`, so the private category-tree walk takes its guarded fallback rather than "succeeding" against a stub that answers every method;
   - `C_AddOns` / `GetAddOnMetadata`, deliberately absent from the base so the `core/EnvSetup.lua` seam's library-absent fallback branch stays drivable.
 

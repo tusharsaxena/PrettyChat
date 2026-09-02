@@ -13,7 +13,7 @@ The single source of truth is `defaults/Defaults.lua` — Schema, Config, and sl
        default = "|cffff0000Loot|cffffffff | |cff93c47dYou|cffffffff | |cffffffff+ %s|cffffffff",
    },
    ```
-   - `label` is what the panel shows as the block's full-width `Heading` above the Enable row (`GameFontNormalLarge`).
+   - `label` is what the panel shows on the string's **secondary tab** inside its category (options-ui-§13); the Blizzard `GLOBALNAME` is that tab's tooltip. There is no heading above the block any more — the tab that selects the string is its name.
    - `default` is the PrettyChat format. Match Blizzard's `%`-conversion signature exactly — see [Fix a broken format string](#fix-a-broken-format-string) below for what happens if you don't.
 2. `/reload` in-game. The schema rebuilds at file-load, so the new row appears in `/pc list <Category>`, on the category's tab of the Categories page, and the override pipeline starts targeting `_G[YOUR_GLOBAL_NAME]`.
 
@@ -48,7 +48,7 @@ No `settings/Panel.lua` edits — `buildCategoryBody` is generic and iterates wh
 
 A format string "breaks" when the panel-edited (or `/pc set`-edited) value's `%`-conversions don't match Blizzard's signature. Symptom: the chat line errors at `string.format` time, sometimes silently dropping the message, sometimes throwing a Lua error.
 
-1. Open the category's tab on the Categories page and read the **Original Format String** disabled input for the affected key. That's Blizzard's exact signature as **this** client loaded it — the `OnEnable` snapshot, through `NS.OriginalFormat`, the same source `/pc test` prints (PC-R-04). Out of game, `GlobalStrings/` carries the same data for the patch it was cut from, and `tests/test_defaults.lua` checks every default against it.
+1. Open the category's tab on the Categories page, pick the string on the secondary strip below the category's Enable row, and read the **Original Format String** disabled input. That's Blizzard's exact signature as **this** client loaded it — the `OnEnable` snapshot, through `NS.OriginalFormat`, the same source `/pc test` prints (PC-R-04). Out of game, `GlobalStrings/` carries the same data for the patch it was cut from, and `tests/test_defaults.lua` checks every default against it.
 2. Edit the **New Format String** input: keep every `%`-conversion (`%s`, `%d`, `%.1f`, `%2$s`, …) in the same order, but freely change surrounding text and `|cAARRGGBB...|r` color escapes.
 3. The Preview disabled `EditBox` (bottom-right of the block) renders the format with sample arguments substituted in via `NS.RenderSample` (which wraps `buildSampleArgs` from `modules/Override.lua`). It always reflects the saved value and updates after every commit (Enter). On `string.format` failure, the preview shows the error message instead.
 4. To revert: (a) click the per-string **Reset** button (bottom-left of the block — always visible, no-op when the value already equals the default — the simplest path); (b) set the format back to the PrettyChat default exactly — the auto-clear kicks in and removes the override (see [schema.md](./schema.md#auto-clear-on-default)); (c) disable the per-string Enable checkbox, which restores Blizzard's original via the snapshot path; or (d) the category page's header **Defaults** button — which is now the only category-scoped reset, since `/pc reset` takes a setting path (`LIBKA0S-10`).
