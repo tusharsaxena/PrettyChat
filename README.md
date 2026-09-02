@@ -4,7 +4,7 @@
 ![CurseForge Version](https://img.shields.io/curseforge/v/919766)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-277%2F277_passing-green)
+![Tests](https://img.shields.io/badge/Tests-295%2F295_passing-green)
 
 ![Logo](https://media.forgecdn.net/attachments/1659/647/prettychat-logo-v2-jpg.jpg)
 
@@ -65,8 +65,8 @@ PrettyChat appears in the game's Settings panel under **Ka0s Pretty Chat**. The 
 
 | Page | Covers |
 |------|--------|
-| **General** | The master **Enable PrettyChat** switch (turn it off and every message goes back to its original wording), a **Debug console** toggle (shows or hides a small on-screen log window for troubleshooting), a **Test** button that previews every message, and **Reset All to Defaults**. |
-| **Categories** | Everything PrettyChat rewrites, one tab per kind of message. |
+| **General** | One tab, **Master controls**: the master **Enable PrettyChat** switch (turn it off and every message goes back to its original wording), a **General visibility** dropdown (*Always*, *Only in combat*, *Only out of combat*, *Never* — a second master switch, so you can have PrettyChat only while you are fighting), a **Debug console** toggle (shows or hides a small on-screen log window for troubleshooting), a **Test** button that previews every message into that console, and **Reset all settings**. |
+| **Categories** | Everything PrettyChat rewrites, one tab per kind of message — and inside each, one tab per message, so you pick the line you want to change instead of scrolling past twenty of them. |
 
 The **Categories** page carries eight tabs across the top:
 
@@ -92,7 +92,7 @@ A few things worth knowing:
 - **The master switch always wins.** Turning off **Enable PrettyChat** (General page, or `/pc set General.enabled false`) restores every original message, whatever your other settings say. Your customizations are kept, just not applied.
 - **Three switches, checked in order:** master, then category, then the individual message. A message only uses your wording when all three are on.
 - **Editing wording and colors.** When you write your own version of a message, keep the little `%s` and `%d` placeholders — that's where the item name, amount, and so on get filled in. Drop or reorder one and the line will look broken, so copy the original as a starting point. (Editing from chat works too, but you have to double every `|` to `||`.)
-- **Getting back to defaults.** One message: its **Reset** button, or turn it off to restore the original. A whole category: the page's **Defaults** button. Everything: **Reset All to Defaults** on the General page, or `/pc resetall`.
+- **Getting back to defaults.** One message: its **Reset** button, or turn it off to restore the original. A whole category: the page's **Defaults** button. Everything: **Reset all settings** on the General page, or `/pc resetall`.
 
 ## FAQ
 
@@ -113,7 +113,7 @@ A few things worth knowing:
 | Nothing changed after installing | Make sure it's switched on: check the master switch, the category, and the message (`/pc get General.enabled` should be `true`). Run `/pc test` — if the preview looks formatted but real chat doesn't, another addon is changing the same messages after PrettyChat. |
 | A message I edited looks broken | Your wording dropped or misused a `%s` / `%d` placeholder. Restore the category with its **Defaults** button, or copy the original from the panel and edit around the placeholders. |
 | The settings panel won't open | Wait until you're fully loaded in, and note it won't open during combat. If the main page opens but a sub-page doesn't, click the sub-page's row in the settings list (**General** or **Categories**). |
-| I want a clean slate | One message: its **Reset** button, or `/pc reset setting`. One category: open its tab and use the page's **Defaults** button, which acts on the tab you are looking at. Everything: `/pc resetall`, or **Reset All to Defaults** on the General page. |
+| I want a clean slate | One message: its **Reset** button, or `/pc reset setting`. One category: open its tab and use the page's **Defaults** button, which acts on the tab you are looking at. Everything: `/pc resetall`, or **Reset all settings** on the General page. |
 | I opened the debug console but it's empty | The window and logging are separate switches. Opening the window (`/pc debug`) doesn't start logging — turn logging on first with `/pc debug on`, or the **Debug** toggle inside the window, then reproduce the problem. Use **Copy** to lift the log into a bug report. |
 | I edited a crafting message and my change won't stick | A couple of strings (item and multi-item crafting results) live under both **Loot** and **Tradeskill**. They share one game template, so whichever of the two you edited last, after a `/reload` the **Tradeskill** version wins. Edit it in one place — the panel's Enable tooltip flags these shared strings. |
 

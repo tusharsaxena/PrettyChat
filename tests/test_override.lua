@@ -131,6 +131,103 @@ test("a disabled category shifts its own strings from applied to restored", func
     addon:ResetAll()
 end)
 
+-- ---- General visibility -------------------------------------------
+--
+-- The setting is DECLARED by the composed Master controls block and HONOURED
+-- here, and these are the cases that make the second half true. A declared
+-- setting nothing reads is worse than an absent one (options-ui-§15).
+
+local function watcher() return env._frames.byName["PrettyChatCombatWatcher"] end
+
+test("visibility `never` restores every original, exactly as Enable off does", function()
+    addon:ResetAll()
+    local applied = addon:ApplyStrings()
+    t.truthy(applied > 0, "the default pass applies overrides")
+
+    Schema.Set("General.visibility", "never")
+    local applied2, restored2 = addon:ApplyStrings()
+    t.eq(applied2, 0, "never applies nothing")
+    t.eq(restored2, applied, "and restores exactly what it had applied")
+    t.eq(env[g], "ORIG:" .. g, "the Blizzard original is back in _G")
+
+    Schema.Set("General.visibility", "always")
+    t.eq(env[g], addon:GetStringValue(cat, g), "and `always` puts the override back")
+    addon:ResetAll()
+end)
+
+test("the two combat modes read the player's combat state, in both directions", function()
+    addon:ResetAll()
+    env.__inCombat = false
+
+    Schema.Set("General.visibility", "inCombat")
+    t.falsy(addon:IsVisible(), "inCombat is invisible out of combat")
+    t.eq(env[g], "ORIG:" .. g, "so the originals are the ones in _G")
+    env.__inCombat = true
+    addon:ApplyStrings()
+    t.truthy(addon:IsVisible(), "and visible in it")
+    t.eq(env[g], addon:GetStringValue(cat, g), "with the overrides applied")
+
+    Schema.Set("General.visibility", "outOfCombat")
+    t.falsy(addon:IsVisible(), "outOfCombat is the mirror image")
+    env.__inCombat = false
+    addon:ApplyStrings()
+    t.truthy(addon:IsVisible(), "visible once combat drops")
+    t.eq(env[g], addon:GetStringValue(cat, g), "and the overrides come back")
+
+    Schema.Set("General.visibility", "always")
+    addon:ResetAll()
+end)
+
+test("the combat watcher is armed only while a combat mode is stored", function()
+    -- This addon has no combat path at all by default, which is the ground of the
+    -- performance-§12 exemption in docs/ARCHITECTURE.md. Dies if SyncCombatWatch
+    -- registers unconditionally.
+    local fresh = ctx.loadAddon()
+    t.nilv(fresh.env._frames.byName["PrettyChatCombatWatcher"],
+        "a default install creates no watcher frame at all")
+
+    fresh.NS.Schema.Set("General.visibility", "inCombat")
+    local f = fresh.env._frames.byName["PrettyChatCombatWatcher"]
+    t.truthy(f, "a combat mode creates it")
+    t.truthy(f._events.PLAYER_REGEN_DISABLED, "and registers the combat-entry event")
+    t.truthy(f._events.PLAYER_REGEN_ENABLED,  "and the combat-exit event")
+
+    fresh.NS.Schema.Set("General.visibility", "always")
+    t.nilv(f._events.PLAYER_REGEN_DISABLED, "leaving the combat modes drops the first")
+    t.nilv(f._events.PLAYER_REGEN_ENABLED,  "and the second")
+end)
+
+test("the combat boundary re-applies the strings", function()
+    addon:ResetAll()
+    Schema.Set("General.visibility", "inCombat")
+    env.__inCombat = false
+    t.eq(env[g], "ORIG:" .. g, "out of combat, the originals stand")
+
+    env.__inCombat = true
+    watcher():FireScript("OnEvent", "PLAYER_REGEN_DISABLED")
+    t.eq(env[g], addon:GetStringValue(cat, g), "entering combat applies the overrides")
+
+    env.__inCombat = false
+    watcher():FireScript("OnEvent", "PLAYER_REGEN_ENABLED")
+    t.eq(env[g], "ORIG:" .. g, "and leaving it restores the originals")
+
+    Schema.Set("General.visibility", "always")
+    addon:ResetAll()
+end)
+
+test("a stored visibility arms the watcher at login, not only on a write", function()
+    Schema.Set("General.visibility", "outOfCombat")
+    local saved = addon.db.profile.visibility
+    t.eq(saved, "outOfCombat", "the mode is stored")
+    -- OnEnable is what a fresh session runs; re-run it and the watcher must come
+    -- back armed rather than waiting for the player to touch the dropdown.
+    watcher():UnregisterEvent("PLAYER_REGEN_DISABLED")
+    addon:SyncCombatWatch()
+    t.truthy(watcher()._events.PLAYER_REGEN_DISABLED, "the stored mode arms it")
+    Schema.Set("General.visibility", "always")
+    addon:ResetAll()
+end)
+
 -- ---- resets -------------------------------------------------------
 
 test("ResetCategory drops the whole category table", function()
@@ -142,11 +239,13 @@ test("ResetCategory drops the whole category table", function()
     t.eq(env[g], def, "and re-applies the default override to live chat")
 end)
 
-test("ResetCategory('General') clears only the master flag", function()
+test("ResetCategory('General') clears only the addon-wide keys", function()
     Schema.Set("General.enabled", false)
+    Schema.Set("General.visibility", "never")
     Schema.Set(cat .. "." .. g .. ".format", "CUSTOM %s")
     addon:ResetCategory("General")
     t.nilv(addon.db.profile.enabled, "the master override is cleared")
+    t.nilv(addon.db.profile.visibility, "and so is the visibility override")
     t.eq(Schema.Get(cat .. "." .. g .. ".format"), "CUSTOM %s",
         "per-category overrides survive a General reset")
     addon:ResetAll()
@@ -160,6 +259,16 @@ test("ResetAll clears the master flag and every category at once", function()
     t.nilv(addon.db.profile.enabled, "master flag cleared")
     t.truthy(next(addon.db.profile.categories) == nil, "every category table cleared")
     t.eq(env[g], def, "live chat is back on the shipped defaults")
+end)
+
+test("a visibility equal to the default stores nothing at all", function()
+    addon:ResetAll()
+    Schema.Set("General.visibility", "never")
+    t.eq(addon.db.profile.visibility, "never", "a real choice is stored")
+    Schema.Set("General.visibility", "always")
+    t.nilv(addon.db.profile.visibility,
+        "and choosing the default clears the key rather than writing it")
+    t.eq(addon:GetVisibility(), "always", "which still reads back as the default")
 end)
 
 -- ---- the Test preview engine -------------------------------------
@@ -182,6 +291,29 @@ test("Test prints a header, a per-category block, and a counted footer", functio
     t.eq(countMatching(out, "Formatted: "), strings, "one Formatted line per string")
     t.truthy(out[#out]:find(("end of test output %%(%d strings shown%%)"):format(strings)),
         "the footer counts the strings shown")
+end)
+
+test("Test writes every line to the sink it is given, and nothing to chat", function()
+    -- The settings panel's Test button hands in the debug console's writer; the
+    -- slash verb hands in nothing and gets NS.Print. Both must produce the SAME
+    -- report, which is why the sink is a parameter rather than two report bodies.
+    addon:ResetAll()
+    local chatAt, sunk = mark(), {}
+    addon:Test({ kind = "category", value = cat }, function(line) sunk[#sunk + 1] = line end)
+
+    t.eq(mark(), chatAt, "not one line reached the chat frame")
+    t.truthy(sunk[1]:find("sample of every format string", 1, true),
+        "the header went to the sink")
+    t.truthy(sunk[#sunk]:find("end of test output", 1, true), "and so did the footer")
+
+    -- Byte-for-byte the same report as the default sink's, header to footer.
+    local at = mark()
+    addon:Test({ kind = "category", value = cat })
+    local printed = lines(env, at)
+    t.eq(#printed, #sunk, "the two reports are the same length")
+    for i, line in ipairs(sunk) do
+        t.eq(NS.PREFIX .. line, printed[i], ("line %d is the same text"):format(i))
+    end
 end)
 
 test("Test previews the Blizzard original from the OnEnable snapshot", function()

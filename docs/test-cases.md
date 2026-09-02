@@ -125,7 +125,7 @@ badge and any count quoted in the docs must agree with it.
 - every string registration has both of its schema rows
 - each format row's schema default is the defaults-table default
 
-### test_schema.lua (24)
+### test_schema.lua (29)
 
 - resolves known setting paths and returns nil for unknown ones
 - resolves categories case-insensitively and by prefix
@@ -136,6 +136,11 @@ badge and any count quoted in the docs must agree with it.
 - load-time schema path validation resolved every path
 - the four row kinds are built with their documented shape
 - exactly one addon-wide row exists, under the virtual General category
+- the Master controls block is the composed one, in canonical order
+- every schema row on every page carries a group
+- no colour row exists, and none may appear without its class-colour companion
+- the visibility row is the canonical four-mode dropdown, not a boolean
+- the debug console row is session-only and re-applies nothing
 - RowsByCategory returns only that category, in registration order
 - a cross-registered global carries one format row per category
 - an exact category name beats any prefix interpretation
@@ -180,7 +185,7 @@ badge and any count quoted in the docs must agree with it.
 - ResetString clears both the custom format and the per-string disable
 - cross-registered global resolves to the last CATEGORY_ORDER registrant, stably
 
-### test_override.lua (17)
+### test_override.lua (24)
 
 - GetStringValue falls back to the defaults table until overridden
 - IsAddonEnabled treats an absent flag as default-true
@@ -189,10 +194,17 @@ badge and any count quoted in the docs must agree with it.
 - EnsureCategoryDB creates the sub-table once and reuses it
 - ApplyStrings returns applied/restored counts that sum to the surface
 - a disabled category shifts its own strings from applied to restored
+- visibility `never` restores every original, exactly as Enable off does
+- the two combat modes read the player's combat state, in both directions
+- the combat watcher is armed only while a combat mode is stored
+- the combat boundary re-applies the strings
+- a stored visibility arms the watcher at login, not only on a write
 - ResetCategory drops the whole category table
-- ResetCategory('General') clears only the master flag
+- ResetCategory('General') clears only the addon-wide keys
 - ResetAll clears the master flag and every category at once
+- a visibility equal to the default stores nothing at all
 - Test prints a header, a per-category block, and a counted footer
+- Test writes every line to the sink it is given, and nothing to chat
 - Test previews the Blizzard original from the OnEnable snapshot
 - a formatstring filter narrows the report to one string
 - a filter that matches nothing says so instead of printing an empty report
@@ -300,7 +312,7 @@ badge and any count quoted in the docs must agree with it.
 - /pc debug rejects an argument that is neither on, off, nor a toggle
 - every slash line carries the cyan [PC] tag
 
-### test_panel.lua (34)
+### test_panel.lua (40)
 
 - registration builds the parent category and two sub-pages
 - the strip carries one tab per message category, in CATEGORY_ORDER
@@ -309,19 +321,25 @@ badge and any count quoted in the docs must agree with it.
 - registration is a no-op on a client without the canvas Settings API
 - a second CreateOptionsPanel is a no-op, not a second Blizzard category
 - the General page builds its controls on first show
+- the General page draws a strip whose first tab is Master controls
+- the Debug console toggle is a schema row, not a bespoke session checkbox
 - a second show does not rebuild the page
 - the master checkbox is seeded from the schema, not assumed true
 - toggling the master checkbox writes through the single Schema path
 - the Debug console checkbox drives the window, never the logging flag
 - the checkbox re-syncs when the console is opened another way
-- the Test button prints the preview report
+- the Test button writes the report to the console, never into chat
+- /pc test still prints the same report to chat
 - Reset all asks for confirmation instead of resetting immediately
 - the Defaults button is deferred to first show, not built at registration
 - the General page has no Defaults button
 - the Defaults button resets the visible tab's category only
-- a category tab builds a toggle plus one block per string
-- string blocks are built in sorted global-name order
-- each block is the documented three-row 40/60 editor
+- a category tab builds a toggle, a secondary strip, and ONE string block
+- the category Enable stays ABOVE the secondary strip
+- secondary tabs are offered in sorted global-name order
+- clicking a secondary tab swaps the string block under it
+- the string you were on is remembered per category, and heals when stale
+- the string block is the documented three-row 40/60 editor
 - the read-only Original row shows this client's snapshot, or degrades without it
 - the per-string checkbox writes the string's enable path
 - the New edit box unescapes || to | before storing
@@ -350,13 +368,13 @@ badge and any count quoted in the docs must agree with it.
 | test_util.lua | 7 |
 | test_locale.lua | 7 |
 | test_defaults.lua | 15 |
-| test_schema.lua | 24 |
+| test_schema.lua | 29 |
 | test_render.lua | 12 |
 | test_apply.lua | 10 |
-| test_override.lua | 17 |
+| test_override.lua | 24 |
 | test_database.lua | 10 |
 | test_lifecycle.lua | 11 |
 | test_debuglog.lua | 25 |
 | test_slash.lua | 42 |
-| test_panel.lua | 34 |
-| **Total** | **277** |
+| test_panel.lua | 40 |
+| **Total** | **295** |

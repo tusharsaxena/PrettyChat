@@ -19,11 +19,22 @@ local CATEGORY_ORDER = {
 }
 Schema.CATEGORY_ORDER = CATEGORY_ORDER
 
--- Four row kinds. Path scheme:
+-- The page key every message-category row declares, and the name settings/Panel.lua
+-- registers that page under. Not a category: it is deliberately absent from
+-- CATEGORY_ORDER, whose entries are schema path segments
+-- (`/pc set Loot.enabled false`) and must stay resolvable by Schema.ResolveCategory.
+local CATEGORY_PAGE = "Categories"
+Schema.CATEGORY_PAGE = CATEGORY_PAGE
+
+-- Six row kinds. Path scheme:
 --   General.enabled                     → addon-wide master toggle (bool)
+--   General.visibility                  → addon-wide visibility mode (string enum)
+--   state.debugConsole                  → the console window's own toggle (session only)
 --   <Category>.enabled                  → category master toggle (bool)
 --   <Category>.<GLOBALNAME>.enabled     → per-string enable toggle (bool)
 --   <Category>.<GLOBALNAME>.format      → per-string format string
+-- The first three are the composed Master controls block below; the last three
+-- are this addon's own.
 -- The dot path doesn't map 1:1 onto db.profile.categories[...], so each
 -- row carries its own get/set closures rather than relying on a generic
 -- dot-walker.
@@ -42,33 +53,112 @@ end
 -- can apply once per batch instead of once per row. Callers must go
 -- through Schema.Set; never invoke row.set(value) directly.
 
--- The single addon-wide row. Lives under the "General" virtual
--- category. When false, ApplyStrings restores every Blizzard original
--- regardless of per-category / per-string toggles.
-local function buildAddonEnabledRow()
-    addRow({
-        path     = "General.enabled",
-        category = "General",
-        kind     = "addon_enabled",
-        type     = "bool",
-        label    = NS.L["Enable PrettyChat"],
-        -- The tooltip BODY lives on the row, not in the page builder: this row is
-        -- drawn by LibKa0s-Options-1.0's checkbox maker, which reads `tooltip`
-        -- (options-ui, "Row fields the flow engine reads"). A builder-side tooltip
-        -- would be a second source for the same text.
-        tooltip  = NS.L["Master switch for the addon. When off, all Blizzard originals are restored."],
-        default  = true,
-        get      = function() return PrettyChat:IsAddonEnabled() end,
-        set      = function(v)
+-- ---------------------------------------------------------------------
+-- The Master controls block (options-ui-§15) — the General page's one tab.
+--
+-- COMPOSED, never hand-written. LibKa0s-Options-1.0's MasterControls composer
+-- owns the canonical row set, its order and its wording; nine addons drawing the
+-- same tab from nine hand-written copies is exactly the drift OptionsCompose.lua
+-- was extracted to end. What stays here is the half a library cannot know: which
+-- stored path each leaf keeps, and the get/set closure behind it.
+--
+-- PrettyChat is FRAMELESS — `grep -rn SetMovable core/ modules/ ui/` is empty and
+-- this addon draws no positionable frame at all — so the composer omits EXACTLY
+-- master scale, master alpha and lock frame, and the closing button is "Reset all
+-- settings" alone rather than a pair. Nothing else is omitted: General visibility
+-- STAYS, because this addon's display IS the chat text it rewrites, and `Never`
+-- is a real, cheap master off-switch distinct from `Enable` (see
+-- PrettyChat:IsVisible in modules/Override.lua, which honours all four modes).
+--
+-- Installed from settings/OptionsSetup.lua rather than run here: the composers
+-- live ON the options instance, and that file is the NEXT TOC entry, so
+-- NS.Helpers does not exist yet while this one is running.
+-- ---------------------------------------------------------------------
+
+local MASTER_SPEC = {
+    prefix    = "",
+    page      = "General",
+    addonName = "PrettyChat",
+    frameless = true,
+    -- The stored paths this addon already ships, kept verbatim. A composer must
+    -- change what is DECLARED and how it is laid out, never what is stored — so
+    -- `General.enabled` stays where every SavedVariables file already has it.
+    keys      = {
+        enabled    = "General.enabled",
+        visibility = "General.visibility",
+    },
+    -- Passed explicitly even though both match the composer's own, for the same
+    -- reason `keys` is: the stored VALUE is the host's to declare, and saying so
+    -- is what stops a later library minor from silently re-defaulting a setting
+    -- players already have. It is also what lets the degraded stub in
+    -- settings/OptionsSetup.lua answer without a copy of the library's defaults.
+    defaults  = {
+        enabled    = true,
+        visibility = "always",
+    },
+    -- VERBATIM and unprefixed: session state lives outside the block's own
+    -- prefix, and this is the one row whose path the composer does not build.
+    debugConsolePath = "state.debugConsole",
+    -- options-ui-§12's global reset, through this addon's confirmation popup —
+    -- the destructive path and its guard are one act (settings/Panel.lua).
+    onResetAll = function() PrettyChat:ConfirmResetAll() end,
+}
+
+-- The host half of every composed row: the `kind` the rest of this file
+-- dispatches on, and the get/set pair the panel and the CLI both write through.
+-- Keyed by the FINAL path, so a `keys` entry above and its wiring here cannot
+-- drift apart without the install below reporting it.
+local MASTER_WIRING = {
+    ["General.enabled"] = {
+        kind = "addon_enabled",
+        get  = function() return PrettyChat:IsAddonEnabled() end,
+        set  = function(v)
             PrettyChat.db.profile.enabled = v and true or false
         end,
-    })
-end
+    },
+    ["General.visibility"] = {
+        kind = "addon_visibility",
+        get  = function() return PrettyChat:GetVisibility() end,
+        -- Stored only when it differs from the default, exactly as the per-string
+        -- format row clears itself: SavedVariables stays empty until a player has
+        -- actually chosen something.
+        set  = function(v)
+            PrettyChat.db.profile.visibility = (v ~= "always") and v or nil
+            PrettyChat:SyncCombatWatch()
+        end,
+    },
+    -- Session state, never persisted. It mirrors the console WINDOW's visibility
+    -- and never touches the logging flag — the two are separate controls and a
+    -- user who closes the console does not expect capture to stop. This is the
+    -- bespoke SessionCheckbox settings/Panel.lua used to draw through `pairWith`,
+    -- now a composed row like every other control on the tab.
+    ["state.debugConsole"] = {
+        kind = "debug_console",
+        get  = function() return NS.DebugLog:IsShown() end,
+        set  = function(v)
+            if v then NS.DebugLog:Show() else NS.DebugLog:Hide() end
+        end,
+    },
+}
 
+-- Canonical leaves the composer emitted that this addon has not wired. Empty,
+-- and it is the install below that keeps it so: a leaf the library adds in a
+-- later minor must be wired here rather than silently dropped, so it is reported
+-- through the same load-time channel an unresolved path takes.
+local unwiredMasterPaths = {}
+
+-- EVERY ROW ON EVERY PAGE CARRIES A `group` (options-ui-§13). These rows are not
+-- rendered through the flow engine — the Categories page hands H.TabStrip its tab
+-- list directly, because a category tab is one schema row followed by a bespoke
+-- 40/60 editor the engine cannot express — but the declaration is what an audit
+-- reads and what would partition the page correctly the day that stops being
+-- true. The group IS the category, which is the tab it is drawn under.
 local function buildCategoryRow(category)
     addRow({
         path     = category .. ".enabled",
         category = category,
+        page     = CATEGORY_PAGE,
+        group    = category,
         kind     = "category_enabled",
         type     = "bool",
         -- Routed through NS.L with a `%s` placeholder rather than concatenated
@@ -90,6 +180,8 @@ local function buildStringRows(category, globalName, strData)
     addRow({
         path       = category .. "." .. globalName .. ".enabled",
         category   = category,
+        page       = CATEGORY_PAGE,
+        group      = category,
         globalName = globalName,
         kind       = "string_enabled",
         type       = "bool",
@@ -106,6 +198,8 @@ local function buildStringRows(category, globalName, strData)
     addRow({
         path       = category .. "." .. globalName .. ".format",
         category   = category,
+        page       = CATEGORY_PAGE,
+        group      = category,
         globalName = globalName,
         kind       = "string_format",
         type       = "string",
@@ -126,9 +220,9 @@ end
 
 -- Build the schema once at file load. NS.Defaults is populated by
 -- Defaults.lua (loaded earlier by the TOC) and the addon object exists
--- (PrettyChat.lua's :NewAddon call ran), so closures bind to live values.
-buildAddonEnabledRow()
-
+-- (PrettyChat.lua's :NewAddon call ran), so closures bind to live values. The
+-- Master controls block is spliced in at the HEAD of this list a moment later,
+-- by Schema.InstallMasterControls.
 for _, category in ipairs(CATEGORY_ORDER) do
     local catData = NS.Defaults[category]
     if catData then
@@ -179,8 +273,14 @@ end
 -- ---------------------------------------------------------------------
 
 local function resolveBackingDefault(row)
-    if row.kind == "addon_enabled" then
-        return true                        -- General virtual master toggle
+    if row.kind == "addon_enabled" or row.kind == "addon_visibility" then
+        -- The composed addon-wide rows. Their backing default is the composer's
+        -- own, carried on the row, because the "General" category is virtual and
+        -- has no entry in NS.Defaults to resolve against.
+        return row.default ~= nil
+    end
+    if row.kind == "debug_console" then
+        return true                        -- session state; nothing stored to back
     end
     if row.kind == "category_enabled" then
         return NS.Defaults[row.category] ~= nil
@@ -190,17 +290,30 @@ local function resolveBackingDefault(row)
     return (cat and cat.strings and cat.strings[row.globalName] ~= nil) and true or false
 end
 
-Schema.validation = { checked = 0, failed = 0, misses = {} }
-for _, r in ipairs(rows) do
-    Schema.validation.checked = Schema.validation.checked + 1
-    if not resolveBackingDefault(r) then
+-- Re-runnable rather than a bare load-time loop: the Master controls block is
+-- spliced in after this file has finished (settings/OptionsSetup.lua), and a
+-- validation that had already been taken would have reported on a schema that was
+-- three rows short of the one the addon actually runs.
+local function runValidation()
+    Schema.validation = { checked = 0, failed = 0, misses = {} }
+    local function miss(path)
         Schema.validation.failed = Schema.validation.failed + 1
-        Schema.validation.misses[#Schema.validation.misses + 1] = r.path
+        Schema.validation.misses[#Schema.validation.misses + 1] = path
         if NS.Print then
-            NS.Print("schema: unresolved path (no backing default): " .. tostring(r.path))
+            NS.Print("schema: unresolved path (no backing default): " .. tostring(path))
         end
     end
+    for _, r in ipairs(rows) do
+        Schema.validation.checked = Schema.validation.checked + 1
+        if not resolveBackingDefault(r) then miss(r.path) end
+    end
+    for _, path in ipairs(unwiredMasterPaths) do
+        Schema.validation.checked = Schema.validation.checked + 1
+        miss(path)
+    end
 end
+
+runValidation()
 
 -- ---------------------------------------------------------------------
 -- Public API
@@ -208,6 +321,46 @@ end
 
 function Schema.FindByPath(path)
     return byPath[path]
+end
+
+--- Splice the composed Master controls block in at the HEAD of the schema.
+---
+--- Called once, from settings/OptionsSetup.lua, on BOTH of that file's paths — the
+--- composers are the options instance's, and the instance (or its stub) is the
+--- only thing that has them. Idempotent, because CreateOptionsPanel is public and
+--- cheap to reach twice.
+---
+--- The rows land first in declaration order, which is what makes "Master controls"
+--- the General page's FIRST tab and what puts them at the head of `/pc list`.
+--- `H.MasterControls` also hands back the hook that draws the group's closing
+--- button, which settings/Panel.lua wires as that group's `afterGroup`; the group
+--- NAME is the hook key, so renaming the group would detach it silently.
+function Schema.InstallMasterControls(H)
+    if Schema.masterAfterGroup then return end
+
+    local composed, tail = H.MasterControls(MASTER_SPEC)
+    local at = 0
+    for _, row in ipairs(composed or {}) do
+        local wiring = MASTER_WIRING[row.path]
+        if wiring then
+            row.category = "General"
+            row.kind     = wiring.kind
+            row.get      = wiring.get
+            row.set      = wiring.set
+            at = at + 1
+            table.insert(rows, at, row)
+            byPath[row.path] = row
+        else
+            -- A canonical leaf this addon has not wired. NOT installed as a
+            -- control that reads and writes nothing; reported instead, loudly and
+            -- at load, through the channel an unresolved path already takes.
+            unwiredMasterPaths[#unwiredMasterPaths + 1] = row.path
+        end
+    end
+
+    Schema.masterAfterGroup = tail or function() end
+    runValidation()
+    return composed
 end
 
 function Schema.Get(path)
@@ -296,7 +449,13 @@ function Schema.Set(path, value)
     local row = byPath[path]
     if not row then return false end
     row.set(value)
-    PrettyChat:ApplyStrings()
+    -- A session-only row stores nothing and moves no override: showing the debug
+    -- console must not drag a full pass over ~170 Blizzard globals behind it. The
+    -- panel refresh below still runs, because the checkbox mirroring the window
+    -- is what has to move.
+    if not row.sessionOnly then
+        PrettyChat:ApplyStrings()
+    end
     Schema.NotifyPanelChange(row.category)
     -- The single settings-change trace (debug-logging-§10): logged once here, at the write
     -- seam, as `[Set] <path> = <value>` (shared value formatter, so it reads like /pc get).

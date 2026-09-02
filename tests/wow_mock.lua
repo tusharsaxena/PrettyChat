@@ -61,7 +61,16 @@
 --  12.  StaticPopup_Show      — records into `_popupsShown`; the base no-ops it.
 --  13.  GameTooltip AddLine   — records into `.lines` so a tooltip body is assertable.
 --  14.  YES / NO / GameFont*  — plain globals the base has no reason to carry.
---  15.  _G = M               — see below.
+--  15.  frame RegisterEvent / UnregisterEvent
+--                             — RECORDED into `_events`, for the reason the base gives
+--                               for recording AceEvent's: the combat watcher in
+--                               modules/Override.lua registers its two events only
+--                               while a combat-scoped General visibility is stored, and
+--                               that gating is invisible to a test unless the frame
+--                               remembers what is currently registered. The base's
+--                               frame stub answers both from its PascalCase catch-all
+--                               and keeps nothing.
+--  16.  _G = M               — see below.
 --
 -- ── `_G` is the mock table itself ───────────────────────────────────────────
 --
@@ -95,6 +104,7 @@ local function newFrame(name)
         _shown    = true,
         _scripts  = {},   -- script name -> primary handler
         _hooks    = {},   -- script name -> { handler, ... }
+        _events   = {},   -- event name -> true while registered
         _width    = 600,
         _height   = 400,
         _children = {},
@@ -123,6 +133,19 @@ end
 
 function frameMethods:GetScript(script)
     return self._scripts[script]
+end
+
+-- Recorded rather than no-opped, so a suite can see WHICH events a frame is
+-- listening to right now — the gating in modules/Override.lua's combat watcher is
+-- exactly that question.
+function frameMethods:RegisterEvent(event)
+    self._events[event] = true
+    return self
+end
+
+function frameMethods:UnregisterEvent(event)
+    self._events[event] = nil
+    return self
 end
 
 function frameMethods:HookScript(script, handler)

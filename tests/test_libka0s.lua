@@ -455,8 +455,10 @@ test("with Options absent the schema still loads whole — the measured stub set
     -- member-answering, and the member set it requires MUST be determined by
     -- MEASUREMENT: delete a member, load with the library absent, and compare the
     -- resulting schema row count against a full load. PrettyChat's measured set is
-    -- EMPTY — nothing reaches NS.Helpers at file load — and these two numbers
-    -- agreeing is the only thing standing between that claim and a silent half-load.
+    -- exactly ONE member — MasterControls, which settings/Schema.lua composes the
+    -- General page's Master controls block through at load — and these two numbers
+    -- agreeing is the only thing standing between that claim and a silent
+    -- half-load. Delete the stub's MasterControls and this case goes red by three.
     local full = #NS.Schema.AllRows()
     local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
     t.truthy(full > 100, "the full load really does build a large schema")
@@ -738,6 +740,31 @@ test("the Options stub carries the whole live surface", function()
         BuildLandingPage         = true,
         RestoreDefaults          = true,
         PatchAlwaysShowScrollbar = true,
+        -- OptionsCompose 1. Four of the five composers are live-only because this
+        -- addon has none of the surfaces they compose: `grep -rn 'type = "color"'
+        -- settings defaults` is empty, and so is `grep -rn 'LSM30_' settings` —
+        -- the schema is bool and string only, with no swatch, no font picker, no
+        -- border and no status bar anywhere in it. MasterControls is the one this
+        -- addon does call, and it is NOT here: it is in the stub, doing real work,
+        -- because settings/Schema.lua composes the General page through it at
+        -- load. The five published CONSTANTS go with the four composers, for the
+        -- reason the layout constants above do — a stub copy of the library's
+        -- English or of its visibility value table is the copy that goes stale.
+        ColorPair                = true,
+        FontGroup                = true,
+        BorderGroup              = true,
+        BarGroup                 = true,
+        FONT_FLAGS               = true,
+        FONT_FLAGS_SORT          = true,
+        VISIBILITY_VALUES        = true,
+        VISIBILITY_SORT          = true,
+        CLASS_COLOR_NOTE         = true,
+        -- Read by settings/Panel.lua, but only inside the General page's builder
+        -- and only AFTER the EnsureScroll guard the degraded page returns at, so
+        -- it is never reached here. Spelling the literal into the stub would put
+        -- the tab's name — which is also the afterGroup hook's key — in two
+        -- places, and a rename would then detach the hook silently.
+        MASTER_GROUP             = true,
     })
 end)
 

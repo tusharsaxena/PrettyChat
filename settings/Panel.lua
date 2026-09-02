@@ -9,9 +9,11 @@ local addonName, NS = ...
 -- reached through NS.Helpers (settings/OptionsSetup.lua). What is left here is the
 -- part that is genuinely PrettyChat's: what each of its three kinds of page draws.
 --
--- The landing page, the General page and the Categories page's tab strip are the
--- library's own shapes. The per-string editor under a tab is not, and that is the
--- documented deviation this file has carried since PC-23 — see buildStringRow.
+-- The landing page, the General page and BOTH of the Categories page's strips are
+-- the library's own shapes: the primary one through H.TabStrip, the secondary one
+-- (a tab per format string, inside the scroll) through H.SubTabStrip. The
+-- per-string editor under a secondary tab is not, and that is the documented
+-- deviation this file has carried since PC-23 — see buildStringRow.
 
 local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 local AceGUI = LibStub("AceGUI-3.0")
@@ -49,64 +51,82 @@ StaticPopupDialogs["PRETTYCHAT_RESET_ALL"] = {
     OnAccept     = function() PrettyChat:ResetAll() end,
 }
 
+-- The one way into the destructive path, so the confirmation cannot be walked
+-- around. The composed Master controls block's `onResetAll` calls this
+-- (settings/Schema.lua) rather than naming the popup, which is registered here.
+function PrettyChat:ConfirmResetAll()
+    StaticPopup_Show("PRETTYCHAT_RESET_ALL")
+end
+
 -- ---------------------------------------------------------------------
--- General sub-page — addon-wide controls: the master Enable, the console
--- visibility checkbox, and the Test / Reset-all pair.
+-- General sub-page — one tab, `Master controls`, and every addon-wide control on
+-- it (options-ui-§15).
 --
--- Drawn entirely through the library. The master toggle is a schema row, so
--- it goes through the flow engine; the console checkbox is NOT a setting and
--- must never become one, so it arrives as the right half of that row through
--- the pairWith seam, wired to LibKa0s-DebugLog-1.0's ConsoleCheckbox() data
--- contract rather than to a path.
+-- Nothing is drawn by hand here any more. The three rows — Enable PrettyChat,
+-- General visibility, Debug console — are the COMPOSED block settings/Schema.lua
+-- splices in at the head of this page (H.MasterControls), so this body is a strip
+-- plus the group's closing acts. The bespoke SessionCheckbox that used to arrive
+-- through `pairWith` is gone with it: the console toggle is a composed row like
+-- every other control on the tab, and there is exactly one declaration of it.
+--
+-- A ONE-GROUP PAGE STILL DRAWS ITS STRIP. RenderTabbedSchema has done that since
+-- OptionsWidgets minor 13, and this page is why the rule matters here: it used to
+-- be the one page in the addon with no strip at all, which read as broken beside
+-- the Categories page rather than as simpler.
 -- ---------------------------------------------------------------------
+
+-- The report the Test button writes, and where it writes it.
+--
+-- To the DEBUG CONSOLE, not to chat: `PrettyChat:Test()` prints one line per
+-- format string plus a header and a footer — 500+ lines with every category
+-- enabled — into the chat frame this addon exists to keep readable. The console
+-- is a window with a scrollbar and a copy button, which is what a report that
+-- long actually needs. `/pc test` is unchanged and still prints to chat, because
+-- the sink is a PARAMETER on Test rather than a redirection of NS.Print.
+local function runTestIntoConsole()
+    NS.DebugLog:Show()
+    PrettyChat:Test(nil, function(line) NS.DebugLog:Add("Test", line) end)
+end
+
+-- The Master controls group's closing acts, wired as its `afterGroup`. The
+-- composer's own hook (Schema.masterAfterGroup) draws options-ui-§15's closing
+-- button — "Reset all settings", ALONE, because a frameless addon has no "Reset
+-- position" to pair it with — and Test sits above it: a preview verb no other
+-- Ka0s addon has, which is exactly why the canonical block does not carry it.
+local function generalAfterGroup(ctx)
+    H.InlineButtonPair(ctx, {
+        text    = L["Test"],
+        tooltip = L["Print a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` prints the same report to chat."],
+        onClick = runTestIntoConsole,
+    })
+    Schema.masterAfterGroup(ctx)
+end
 
 local function buildGeneralBody(ctx)
     H.ClearScroll(ctx)
     local scroll = H.EnsureScroll(ctx)
     if not scroll then return end
 
-    local desc = AceGUI:Create("Label")
-    desc:SetFullWidth(true)
-    desc:SetText(L["Addon-wide controls. The Enable toggle is the master switch — disable it and every Blizzard original is restored regardless of per-category settings."])
-    if desc.label and desc.label.SetFontObject and _G.GameFontHighlight then
-        desc.label:SetFontObject(_G.GameFontHighlight)
-    end
-    scroll:AddChild(desc)
+    H.TextRow(ctx, L["Addon-wide controls. Enable is the master switch and General visibility is its second dimension — with either off, every Blizzard original is restored regardless of per-category settings."],
+        { fontObject = "GameFontHighlight" })
     H.AddSpacer(scroll, H.ROW_VSPACER)
 
-    -- The console box mirrors the WINDOW's visibility and never touches the
-    -- logging flag; the two are separate controls and a user who closes the
-    -- console does not expect capture to stop. Both facts are the library's, in
-    -- the checkbox spec it hands over — including the tooltip, which composes
-    -- this addon's own slash from the console descriptor.
-    local pairWith = {
-        ["General.enabled"] = function(pairCtx, rowGroup)
-            H.SessionCheckbox(pairCtx, rowGroup, 0.5, NS.DebugLog:ConsoleCheckbox())
-        end,
-    }
-    H.RenderRows(ctx, { Schema.FindByPath("General.enabled") }, nil, pairWith)
-
-    H.InlineButtonPair(ctx,
-        {
-            text    = L["Test"],
-            tooltip = L["Print a sample of every active format string to chat so you can see what real loot/currency/XP messages will look like."],
-            onClick = function() PrettyChat:Test() end,
-        },
-        {
-            text    = L["Reset all to defaults"],
-            tooltip = L["Start over: reset the active profile to the addon defaults. The same thing the Profiles page's Reset Profile does. Your other profiles are left alone."],
-            -- Through the popup, never straight to the reset: this is the
-            -- destructive path and its confirmation is the guard.
-            onClick = function() StaticPopup_Show("PRETTYCHAT_RESET_ALL") end,
-        })
+    -- The group NAME is the hook key (options-ui-§15). Renaming the group would
+    -- detach the closing button and nothing would error, which is why the name
+    -- comes off the library rather than being spelled out again here.
+    H.RenderTabbedSchema(ctx, "General", { [H.MASTER_GROUP] = generalAfterGroup }, nil)
 end
 
 -- ---------------------------------------------------------------------
 -- Per-string block.
---   ─── <strData.label> ───                          (Heading, full width)
 --   [Enable]              | Original  [disabled EditBox]
 --   GLOBALNAME (gray)     | New       [editable EditBox]
 --   [Reset]               | Preview   [disabled EditBox, color rendered]
+--
+-- The Heading this block used to open with is GONE, replaced by the secondary
+-- tab that selects it (options-ui-§13): one tab per string, drawn by
+-- buildCategoryBody below. A heading repeating the name of the tab you are
+-- standing on is the label options-ui-§7 calls a second name for one thing.
 --
 -- Two-column 40/60 split, drawn by hand rather than by the library's flow
 -- engine. This is the documented deviation from options-ui-§6's 50/50 grid
@@ -132,19 +152,9 @@ end
 local LEFT_W  = 0.4
 local RIGHT_W = 0.6
 
-local function buildStringRow(scroll, category, globalName, strData, refreshers)
+local function buildStringRow(scroll, category, globalName, refreshers)
     local enabledPath = category .. "." .. globalName .. ".enabled"
     local formatPath  = category .. "." .. globalName .. ".format"
-
-    -- Heading: friendly label as section divider for this string
-    local heading = AceGUI:Create("Heading")
-    heading:SetText(strData.label)
-    heading:SetFullWidth(true)
-    heading:SetHeight(H.SECTION_HEADING_H)
-    if heading.label and heading.label.SetFontObject and _G.GameFontNormalLarge then
-        heading.label:SetFontObject(_G.GameFontNormalLarge)
-    end
-    scroll:AddChild(heading)
 
     -- Row 1: Enable | Original (disabled)
     local row1 = AceGUI:Create("SimpleGroup")
@@ -271,15 +281,51 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
 end
 
 -- ---------------------------------------------------------------------
--- One category's body — the category's own Enable row, then one per-string
--- block. The Enable row is a schema row and goes through the library's
--- checkbox maker at full width; the blocks below it are bespoke.
+-- One category's body — the category's own Enable row, then a SECONDARY tab
+-- strip with one tab per format string, then the selected string's editor.
 --
--- The scroll is the CALLER's now, not this function's. It used to own the
+-- The Enable row is a schema row and goes through the library's checkbox maker
+-- at full width; it stays ABOVE the secondary strip, because it governs every
+-- string in the category rather than the one on screen.
+--
+-- WHY A SECOND STRIP (options-ui-§13). A category tab used to be a vertical
+-- stack of up to twenty three-row editors — Experience is twenty, Loot is
+-- nineteen — so finding one string meant scrolling past every string sorted
+-- before it, and the page was a wall of identical boxes. One tab per string
+-- turns that into one click. It is drawn with H.SubTabStrip as ordinary content
+-- INSIDE the scroll rather than as a second pinned band: a division that is not
+-- page-wide must not push the whole page down twice, and the primary strip above
+-- it is the one thing that is page-wide.
+--
+-- The selection is the HOST's state — the library reads `value` and calls
+-- `onSelect` and never looks at either again — kept as ctx.activeSubTab, a TABLE
+-- keyed by the primary tab's category. That is what makes leaving Loot for
+-- Experience and coming back return to the string you were on. Session-only, and
+-- never persisted: which string you last looked at is not a setting.
+--
+-- The scroll is the CALLER's, not this function's. It used to own the
 -- ClearScroll/EnsureScroll pair because it was a whole page; it is one tab of
 -- the Categories page today, drawn under a strip and under that page's footnote,
 -- and a body that cleared the scroll itself would wipe the line above it.
 -- ---------------------------------------------------------------------
+
+-- Forward-declared: the secondary strip's onSelect re-renders the whole page,
+-- which is the function that draws this one.
+local buildCategoriesBody
+
+-- The string on screen for one category, healed against a global that no longer
+-- exists — the same stale-pointer guard activeCategory applies to the primary
+-- strip, and for the same reason: a pointer at a missing string renders an empty
+-- tab under a strip.
+local function activeString(ctx, category, catData, sortedNames)
+    ctx.activeSubTab = ctx.activeSubTab or {}
+    local key = ctx.activeSubTab[category]
+    if not (key and catData.strings[key]) then
+        key = sortedNames[1]
+    end
+    ctx.activeSubTab[category] = key
+    return key
+end
 
 local function buildCategoryBody(ctx, scroll, category, catData)
     local refreshers = {}
@@ -296,12 +342,48 @@ local function buildCategoryBody(ctx, scroll, category, catData)
     end
     table.sort(sortedNames)
 
-    for _, globalName in ipairs(sortedNames) do
-        buildStringRow(scroll, category, globalName, catData.strings[globalName], refreshers)
+    local selected = activeString(ctx, category, catData, sortedNames)
+
+    -- The strip's buttons are plain frames and need a frame to be parented to, so
+    -- they ride an empty full-width SimpleGroup added to the scroll. Layout nil,
+    -- because the library places every button itself and an AceGUI layout would
+    -- fight it. ClearScroll drains the library's own ledger BEFORE it releases
+    -- this group, so no button ever outlives the pooled frame it was parented to.
+    local host = AceGUI:Create("SimpleGroup")
+    host:SetLayout(nil)
+    host:SetFullWidth(true)
+    scroll:AddChild(host)
+
+    local tabs = {}
+    for i, globalName in ipairs(sortedNames) do
+        -- The friendly label names the tab; the Blizzard GLOBALNAME is the
+        -- tooltip, because it is what `/pc set` and `/pc test formatstring` take
+        -- and the caption inside the block is no longer the only place to read it.
+        tabs[i] = {
+            key     = globalName,
+            label   = catData.strings[globalName].label,
+            tooltip = globalName,
+        }
     end
 
-    -- The bespoke blocks are invisible to the library's ctx.refreshers, so they
-    -- register through the schema's own dispatch. Schema.NotifyPanelChange drives
+    local _, stripHeight = H.SubTabStrip(ctx, host.frame, {
+        tabs     = tabs,
+        value    = selected,
+        onSelect = function(key)
+            if key == ctx.activeSubTab[category] then return end
+            ctx.activeSubTab[category] = key
+            buildCategoriesBody(ctx)
+        end,
+    })
+    host:SetHeight(stripHeight or 0)
+    H.AddSpacer(scroll, H.ROW_VSPACER)
+
+    if selected then
+        buildStringRow(scroll, category, selected, refreshers)
+    end
+
+    -- The bespoke block is invisible to the library's ctx.refreshers, so it
+    -- registers through the schema's own dispatch. Schema.NotifyPanelChange drives
     -- both registries; see the comment there.
     Schema.RegisterRefresher(category, function()
         for _, fn in ipairs(refreshers) do pcall(fn) end
@@ -309,7 +391,8 @@ local function buildCategoryBody(ctx, scroll, category, catData)
 end
 
 -- ---------------------------------------------------------------------
--- Categories sub-page — one TAB per message category (options-ui-§13).
+-- Categories sub-page — one PRIMARY tab per message category, and inside each,
+-- one SECONDARY tab per format string (options-ui-§13).
 --
 -- Every category used to be a sub-page of its own: nine rows in the Blizzard
 -- left rail for one addon, eight of which were the same page with a different
@@ -319,23 +402,23 @@ end
 -- NOT H.RenderTabbedSchema, and that is the one thing to understand before
 -- editing this. RenderTabbedSchema partitions a page's SCHEMA ROWS by `group`
 -- and hands each partition to the flow engine; a category tab is one schema row
--- (the Enable) followed by N bespoke 40/60 editors the flow engine cannot
--- express (the options-ui-§6 deviation in docs/ARCHITECTURE.md). So the strip
--- is taken from the library directly through H.TabStrip and the body under it
--- is still buildCategoryBody, generated per category exactly as before. The tab
--- click re-renders through the same ClearScroll-then-draw path
+-- (the Enable) followed by a bespoke 40/60 editor the flow engine cannot express
+-- (the options-ui-§6 deviation in docs/ARCHITECTURE.md). So the strip is taken
+-- from the library directly through H.TabStrip and the body under it is still
+-- buildCategoryBody, generated per category exactly as before. Every row on this
+-- page still DECLARES its page and its group (settings/Schema.lua), so the
+-- partition is readable and assertable even though the flow engine never sees it.
+-- The tab click re-renders through the same ClearScroll-then-draw path
 -- RenderTabbedSchema's own onSelect takes, for the same reason: redrawing
 -- widgets inside an already-open panel was never a protected action, so the tab
 -- click needs no combat guard and carries none.
 -- ---------------------------------------------------------------------
 
 -- The page KEY, which is the untranslated form of its display name (the rail and
--- the header show L["Categories"]). Not a category name: it is deliberately
--- absent from CATEGORY_ORDER, whose entries are schema path segments
--- (`/pc set Loot.enabled false`) and must stay resolvable by
--- Schema.ResolveCategory. This page owns no rows of its own, which is also why
--- the page name is free to be translated where a category name is not.
-local CATEGORY_PAGE = "Categories"
+-- the header show L["Categories"]). Taken off the schema rather than restated
+-- here: every message-category row declares this page and this tab, and the two
+-- spellings drifting apart is the kind of thing nothing would say out loud.
+local CATEGORY_PAGE = Schema.CATEGORY_PAGE
 
 -- The tabs, in strip order: CATEGORY_ORDER minus the virtual "General", which
 -- is a page rather than a message category. Derived rather than restated, so
@@ -358,7 +441,7 @@ local function activeCategory(ctx)
     return TAB_ORDER[1]
 end
 
-local function buildCategoriesBody(ctx)
+function buildCategoriesBody(ctx)
     H.ClearScroll(ctx)
     local scroll = H.EnsureScroll(ctx)
     if not scroll then return end

@@ -157,8 +157,8 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 > Why: `H.TabStrip` (options-ui-§13) draws the strip, and the addon hands it `CATEGORY_ORDER` minus the virtual `General`. The active tab is the **disabled** button, which is how the selection is marked.
 
 - Steps: open Categories. Read the strip left to right. Click **Currency**, then **Misc**, then **Currency** again. Narrow the Settings window until the strip has to wrap.
-- Expected: eight tabs, in the order `Loot, Currency, Money, Reputation, Experience, Honor, Tradeskill, Misc` — the same order `/pc list` and `/pc test` print. The selected tab reads as attached to the page below it and does not highlight on hover; the others do. Each click swaps the body under the strip to that category's Enable row and its string blocks, with no flicker of the previous tab's rows and no duplicate heading. A wrapped strip lays out in two flush rows and the first row of controls sits **below** the whole strip, never underneath it.
-- Failure mode: every tab on its own row (the strip read a zero width and never re-placed itself), or a second copy of a category's blocks appearing under the first (the scroll was not cleared on the tab click).
+- Expected: eight tabs, in the order `Loot, Currency, Money, Reputation, Experience, Honor, Tradeskill, Misc` — the same order `/pc list` and `/pc test` print. The selected tab reads as attached to the page below it and does not highlight on hover; the others do. Each click swaps the body under the strip to that category's Enable row, its secondary strip, and one string editor, with no flicker of the previous tab's rows. A wrapped strip lays out in two flush rows and the first row of controls sits **below** the whole strip, never underneath it.
+- Failure mode: every tab on its own row (the strip read a zero width and never re-placed itself), or a second copy of a category's controls appearing under the first (the scroll was not cleared on the tab click).
 
 #### T-26b — The page's footnote
 
@@ -167,12 +167,12 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 - Steps: open Categories.
 - Expected: a gray line above the Enable checkbox reading "Strings on these tabs are rewritten only while the master Enable on the General page is on." It is there on every tab, and it is the first thing on the page.
 
-#### T-27 — Reset all to defaults popup
+#### T-27 — Reset all settings popup
 
-> Why: General → Reset all to defaults shows `PRETTYCHAT_RESET_ALL` StaticPopup; on Yes, `PrettyChat:ResetAll()` clears master + every category.
+> Why: General → Master controls → Reset all settings shows `PRETTYCHAT_RESET_ALL` StaticPopup; on Yes, `PrettyChat:ResetAll()` resets the active profile.
 
 - Setup: edit two formats across two categories, disable one string, set master to false.
-- Steps: open General → click "Reset all to defaults" → click Yes.
+- Steps: open General → click "Reset all settings" → click Yes.
 - Expected: popup appears with the confirm text. After Yes: master is back to true (default), every override is cleared, every disabled string is re-enabled. `/pc list` shows only defaults.
 
 #### T-28 — Edit + commit on Enter
@@ -195,7 +195,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 - Setup: ensure debug logging is **on** first (`/pc debug on`) so the next steps can prove the checkbox leaves the flag alone.
 - Steps:
-  1. `/pc config` → **General**. Note **Enable** and **Debug console** sit side by side on one row.
+  1. `/pc config` → **General** → the **Master controls** tab. Note **Enable PrettyChat** and **General visibility** sit side by side on the first row, and **Debug console** opens the second row on its own.
   2. Check **Debug console**. Expect: the console window **appears**. `/pc debug on` state is unchanged — the window header still reads `Debug: ON`, and no `debug logging ON/OFF` chat ack is printed by the checkbox.
   3. Uncheck **Debug console**. Expect: the window **hides**. Logging flag still unchanged (`NS.Debug` output would still be captured if the window were reopened).
   4. Re-check it, then close the window with its **×** button (or Esc). Expect: the General checkbox **unchecks itself live** (tracks the hide).
@@ -622,10 +622,12 @@ the title in `GameFontNormalHuge` with the gold divider tinted to it; the **Defa
 right at the same inset; the scrollbar gutter reserved on every page, short or long, with the bar
 grayed and inert where the content fits; the per-string 40/60 blocks.
 
-**Expected — deliberately different:** the General page's two checkboxes sit at a true 50/50 rather
+**Expected — deliberately different:** the General page's controls sit at a true 50/50 rather
 than 0.492 (label-inset controls, so the honest half is correct); the landing page's command rows
 have **single** spaces around the em dash, no color span on the dash itself, and a white
-description.
+description. Since the settings revamp the General page also carries a one-tab **Master controls**
+strip it did not have, a **General visibility** dropdown beside Enable, and **Reset all settings** in
+place of **Reset all to defaults** — see T-100 to T-103.
 
 #### T-96 — The panel refuses to render under combat, from the sidebar too
 
@@ -687,3 +689,84 @@ If a test fails:
 2. Note the WoW client build (`/dump GetBuildInfo()`).
 3. Determine which invariant in [ARCHITECTURE.md](./ARCHITECTURE.md) (Settings Schema / Taint Notes / Known Limitations) the failure violates.
 4. File or update an issue per [README.md § Issues and feature requests](../README.md#issues-and-feature-requests). Don't ship a "fix" that just makes the test pass — root-cause first.
+
+#### T-100 — The General page's Master controls strip
+
+**Why:** this page had no strip at all before the settings revamp — one group, one row, drawn
+straight through `H.RenderRows`. A one-group page draws a one-tab strip now (options-ui-§13), and
+the tab is the only thing naming the group once the heading is suppressed.
+
+**Steps:** `/pc config` → **General**.
+
+**Expected:** one tab, reading **Master controls**, drawn in the same band and the same art as the
+Categories page's eight. Below it, in this order and two to a line:
+
+```
+[Enable PrettyChat]   [General visibility ▾]
+[Debug console]
+[Test]
+[Reset all settings]
+```
+
+The explainer line sits above them. **Failure mode:** no strip (the page went back to `RenderRows`);
+a strip with a tab named `General` (the group was renamed, which also detaches the closing button's
+`afterGroup` hook silently); the Test or Reset button missing (the hook detached).
+
+#### T-101 — General visibility, all four modes
+
+**Why:** the setting is declared by the composed block and honoured by `ApplyStrings`. A declared
+setting nothing reads is worse than an absent one.
+
+**Steps:** with Loot enabled and a lootable target to hand:
+1. Leave **General visibility** on *Always*. Loot something — the line is PrettyChat's.
+2. Set it to *Never*. Loot again — the line is **Blizzard's original**, and every other category is
+   too. `/pc get General.visibility` reads `never`.
+3. Set it to *Only in combat*. Out of combat, loot — Blizzard's original. Pull a target, loot in
+   combat — PrettyChat's. Drop combat, loot — Blizzard's original again.
+4. Set it to *Only out of combat* and repeat step 3 with the expectations swapped.
+5. Set it back to *Always*.
+
+**Expected:** the change takes effect on the next chat line with no `/reload`, and the combat
+transitions flip it live. **Failure mode:** nothing changes (the mode is not in the `ApplyStrings`
+gate); the combat modes only take effect after a `/reload` (`SyncCombatWatch` never armed, or its
+events were registered on the wrong frame).
+
+#### T-102 — The secondary strip inside a category
+
+**Why:** a category tab used to stack up to twenty three-row editors; it is one tab per string now,
+drawn inside the scroll rather than as a second pinned band (options-ui-§13).
+
+**Steps:** `/pc config` → **Categories** → **Loot**.
+
+**Expected:** below the **Enable Loot** checkbox, a second strip of nineteen tabs, one per format
+string, labelled with the friendly names and in the same sorted order the blocks used to be stacked
+in. Hovering a tab shows its `GLOBALNAME`. Exactly **one** editor is drawn below the strip, and it
+has **no heading** — the tab is its name. Click through several: the editor swaps, no stray tab
+button is left behind, and the page does not shift downward. Now switch to **Experience**, pick a
+string there, switch back to **Loot** — you land on the Loot string you left, not the first one.
+Close the panel and reopen it: every category is back on its first string (the pointer is
+session-only and deliberately not persisted).
+
+**Failure mode:** stale tab buttons stacked on top of the new ones after switching category (the
+`__subTabKids` ledger was not drained before `ReleaseChildren`); the whole page pushed down twice
+(the strip was drawn as chrome instead of as content); a heading above the editor repeating the tab's
+own name.
+
+#### T-103 — Test writes to the console, `/pc test` writes to chat
+
+**Why:** the full report is 500+ lines, and the chat frame is what this addon exists to keep
+readable. The sink is a parameter on `Test`, not a redirection of `NS.Print`.
+
+**Steps:**
+1. `/pc config` → **General** → click **Test**.
+2. Then, from chat, `/pc test formatstring LOOT_ITEM_SELF`.
+
+**Expected:** (1) the debug console **opens** and fills with the report — `[Test]`-tagged lines,
+`Category:` headers in gold, `Name:` / `Original:` / `Formatted:` in green, the counted footer at the
+bottom — and **not one line lands in chat**. The console's **Copy** button gives you the whole
+report. (2) the slash form prints to chat exactly as it always did, `[PC]`-prefixed, and does not
+open the console.
+
+**Failure mode:** the button prints into chat (the sink was dropped); `/pc test` stops printing to
+chat (the sink was made the default rather than the caller's choice); the console opens empty (the
+report was written before the window existed).

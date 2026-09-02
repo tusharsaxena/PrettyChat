@@ -19,6 +19,7 @@ per-frame work. Its runtime is:
 | `OnInitialize` | AceDB open, migrations, two `RegisterChatCommand` calls |
 | `OnEnable` | one snapshot pass over ~81 Blizzard originals, one `ApplyStrings` pass, panel registration |
 | A settings change | one `ApplyStrings` pass |
+| A combat boundary, and only while `General.visibility` is `inCombat` / `outOfCombat` | one `ApplyStrings` pass |
 | Every other moment, combat included | **nothing** |
 
 ## The sweep — criterion (a), proven rather than asserted
@@ -38,17 +39,36 @@ Result, at the commit that carries this page:
 
 ```
 .luacheckrc:42:    "C_Timer",
+modules/Override.lua:  combatWatcher:SetScript("OnEvent", …)
+modules/Override.lua:      combatWatcher:RegisterEvent(event)
+modules/Override.lua:      combatWatcher:UnregisterEvent(event)
 ```
 
-**One hit, and it is not a call.** `.luacheckrc:42` declares `C_Timer` in `read_globals` — a lint
-declaration of an API this addon does not use. There is no per-event work to name because there are
-no events: **zero** `RegisterEvent`, **zero** `SetScript("OnUpdate"`, **zero** `C_Timer` call, zero
-ticker, zero repeating timer in `core/`, `defaults/`, `locales/`, `modules/`, `settings/` or the TOC.
+**One lint declaration and one opt-in combat-BOUNDARY watcher.** `.luacheckrc:42` declares `C_Timer`
+in `read_globals` — a lint declaration of an API this addon does not use. Still **zero**
+`SetScript("OnUpdate"`, **zero** `C_Timer` call, zero ticker and zero repeating timer anywhere in
+`core/`, `defaults/`, `locales/`, `modules/`, `settings/` or the TOC.
+
+The three `modules/Override.lua` hits are `PrettyChat:SyncCombatWatch`, and what matters about them
+is *when they are reached*:
+
+- the frame is **created lazily**, on the first write that stores `General.visibility` as `inCombat`
+  or `outOfCombat`. A default install (`always`) creates no frame and registers no event, so on the
+  shipped configuration this sweep's runtime answer is still zero;
+- both events are **unregistered** the moment the mode leaves that pair, so the subscription tracks
+  the setting rather than outliving it;
+- the handler fires at the combat **boundary** — `PLAYER_REGEN_DISABLED` on entry,
+  `PLAYER_REGEN_ENABLED` on exit — at most twice per fight, and never *during* one. Its whole body is
+  one `ApplyStrings` pass (~170 table writes, no allocation per string) and one gated debug line.
+
+`tests/test_override.lua` pins all three: no frame on a default load, both events registered on a
+combat-scoped write, both dropped on the way back out.
+
 The excluded paths are the vendored payloads (`libs/`, `tests/_kit/`), the generated data
 (`GlobalStrings/`) and the frozen evidence bundles (`docs/audits/`, `docs/reviews/`,
 `docs/automated-tests/`) — none of which is this addon's shipped runtime code.
 
-The addon's only lifecycle hooks are the two AceAddon callbacks above. Both run at login, neither
+The addon's other lifecycle hooks are the two AceAddon callbacks above. Both run at login, neither
 repeats, and neither can be reached while the player is in combat.
 
 ## Which of (b) and (c) applies — both
@@ -91,12 +111,16 @@ suspend/resume contract, `tests/perf.lua`, and `docs/perf-analysis/`.
 
 ## What ends the exemption
 
-**The first `OnUpdate` handler, repeating ticker, or in-combat event handler doing real work re-arms
-the full `performance-§12` wiring MUST.** Not "should be reconsidered" — re-arms. Adding an event
-subscription or a chat filter to this addon changes its compatibility contract anyway
-([ARCHITECTURE.md § Event Subscriptions](./ARCHITECTURE.md#event-subscriptions)); it also ends this
-page, and the change that ends it is exactly the change nobody will re-read this section during. Run
-the sweep above; if it returns a call, the exemption is over.
+**The first `OnUpdate` handler, repeating ticker, or event handler that runs DURING combat rather
+than at its boundary re-arms the full `performance-§12` wiring MUST.** Not "should be reconsidered" —
+re-arms. Adding an event subscription or a chat filter to this addon changes its compatibility
+contract anyway ([ARCHITECTURE.md § Event Subscriptions](./ARCHITECTURE.md#event-subscriptions)); it
+also ends this page, and the change that ends it is exactly the change nobody will re-read this
+section during. Run the sweep above; the question to ask of any hit it returns is not "is there an
+event?" — there is one now — but **"can this run while the player is fighting?"**. The General
+visibility watcher cannot: `PLAYER_REGEN_DISABLED` and `PLAYER_REGEN_ENABLED` are the boundary
+itself, and they are only registered while the player has chosen one of the two combat-scoped modes.
+Anything that answers yes ends the exemption.
 
 ## The one load-time cost that was measured, and removed (PC-R-05)
 

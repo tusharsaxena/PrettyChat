@@ -2,15 +2,17 @@
 
 `settings/Schema.lua` is the single source of truth for what's settable. At file-load (after `defaults/Defaults.lua` and `core/PrettyChat.lua`) it iterates `NS.Defaults` and builds a flat array of rows, one per settable value, exposed at `NS.Schema`.
 
-This doc covers: the four row kinds, the single write path that every settings mutation goes through, and the AceDB shape behind it.
+This doc covers: the six row kinds, the single write path that every settings mutation goes through, and the AceDB shape behind it.
 
 ## Row kinds
 
-Four row kinds, addressed by dot path:
+Six row kinds, addressed by dot path. The first three are the **composed** `Master controls` block (`H.MasterControls`, options-ui-§15); the last three are this addon's own:
 
 | Path | Kind | Type | Backed by |
 |------|------|------|-----------|
 | `General.enabled` | `addon_enabled` | bool | `db.profile.enabled` (addon-wide master toggle; `General` is a *virtual category* — no entry in `NS.Defaults`) |
+| `General.visibility` | `addon_visibility` | string enum | `db.profile.visibility` (`always` / `inCombat` / `outOfCombat` / `never`; cleared when set back to `always`, so the default stores nothing). Honoured in `ApplyStrings` through `PrettyChat:IsVisible`, and the two combat modes arm `PrettyChatCombatWatcher` |
+| `state.debugConsole` | `debug_console` | bool | **nothing** — `sessionOnly`, mirroring `NS.DebugLog:IsShown()`. Unprefixed and verbatim, because session state lives outside the block's own prefix. `Schema.Set` skips its `ApplyStrings` re-apply for this row |
 | `<Category>.enabled` | `category_enabled` | bool | `db.profile.categories[Cat].enabled` (via `IsCategoryEnabled` / `EnsureCategoryDB`) |
 | `<Category>.<GLOBALNAME>.enabled` | `string_enabled` | bool | `db.profile.categories[Cat].disabledStrings[NAME]` (**inverted**: `disabledStrings[NAME] = true` means *disabled*) |
 | `<Category>.<GLOBALNAME>.format` | `string_format` | string | `db.profile.categories[Cat].strings[NAME]` (with `NS.Defaults[Cat].strings[NAME].default` fallback) |
@@ -26,7 +28,9 @@ function Schema.Set(path, value)
     local row = byPath[path]
     if not row then return false end
     row.set(value)                              -- pure DB write
-    PrettyChat:ApplyStrings()                   -- reconcile live _G overrides
+    if not row.sessionOnly then                 -- the console toggle stores nothing
+        PrettyChat:ApplyStrings()               -- reconcile live _G overrides
+    end
     Schema.NotifyPanelChange(row.category)      -- refresh the affected page / tab
     NS.Debug("Set", "%s = %s", path, Schema.FormatValue(row, value))  -- [Set] trace (debug-logging-§10)
     return true
@@ -81,7 +85,7 @@ Three reset paths, all routed through `PrettyChat:Reset*` not directly through S
 
 All three are reachable from:
 
-- The per-string `Reset` button on each panel row (`ResetString` — always visible, a no-op when the string is already at default), the `Categories` page's `Defaults` button (in the page header, acting on the visible tab — no popup confirm), and the General sub-page's "Reset all to defaults" button (gated by the `PRETTYCHAT_RESET_ALL` StaticPopup).
+- The per-string `Reset` button on each panel row (`ResetString` — always visible, a no-op when the string is already at default), the `Categories` page's `Defaults` button (in the page header, acting on the visible tab — no popup confirm), and the `Master controls` tab's composed "Reset all settings" button (gated by the `PRETTYCHAT_RESET_ALL` StaticPopup, through `PrettyChat:ConfirmResetAll`).
 - `/pc reset <path>` (one row, through `Schema.ApplyDefault` → the single write seam) and `/pc resetall` (no in-chat confirmation — typing the command is itself the assertion). Category-scoped reset is the settings page's **Defaults** button; `/pc reset` has taken a path rather than a category since `LIBKA0S-10`.
 
 ## SavedVariables shape
@@ -115,9 +119,12 @@ The third arg (`true`) selects the `Default` profile name for every character. A
 
 Schema construction runs once at file-load (`settings/Schema.lua`). The order matters:
 
-1. `buildAddonEnabledRow()` — adds the single `General.enabled` row.
-2. For each `category` in `CATEGORY_ORDER` (skipping `General`):
+1. For each `category` in `CATEGORY_ORDER` (skipping `General`):
    - `buildCategoryRow(category)` — adds `<Cat>.enabled`.
    - For each `globalName` in `NS.Defaults[Cat].strings` (sorted alphabetically): `buildStringRows(...)` — adds `<Cat>.<NAME>.enabled` *and* `<Cat>.<NAME>.format`.
+2. `Schema.InstallMasterControls(NS.Helpers)` — called from `settings/OptionsSetup.lua`, the **next** TOC entry, because the composers live on the Options instance and it does not exist yet while `settings/Schema.lua` is running. It calls `H.MasterControls(MASTER_SPEC)`, stamps each returned row with `category = "General"` and this addon's `kind` / `get` / `set`, and splices them in at the **head** of `rows` — which is what makes `Master controls` the General page's first tab and what puts those rows at the head of `/pc list`. The hook that draws the group's closing button comes back on `Schema.masterAfterGroup`. A canonical leaf the library emits that this addon has **not** wired is never installed as a control that reads and writes nothing; it is reported at load through the same channel an unresolved path takes.
+3. `runValidation()` runs again after the splice, so `Schema.validation` describes the schema the addon actually runs rather than one three rows short of it.
+
+Every row carries a `page` and a `group`; the group is the tab the row is drawn under (options-ui-§13). The category rows are not rendered through the flow engine — the `Categories` page hands `H.TabStrip` its tab list directly — but they declare the partition anyway, and `tests/test_schema.lua` asserts that no row is missing either field.
 
 Closures bind to live values: `NS.Defaults` is populated by `defaults/Defaults.lua` (loaded earlier by the TOC) and the addon object exists (`core/PrettyChat.lua`'s `:NewAddon` ran before `settings/Schema.lua`).

@@ -32,6 +32,70 @@ function PrettyChat:IsAddonEnabled()
     return self.db.profile.enabled
 end
 
+-- ---------------------------------------------------------------------
+-- General visibility (options-ui-§15) — the master switch's second dimension.
+--
+-- Every other addon in the collection reads this against a frame it draws. This
+-- one draws no frame at all: its "display" is the chat text itself, so the four
+-- canonical modes are honoured by what ApplyStrings writes to _G[GLOBALNAME].
+-- `never` restores every Blizzard original exactly as `Enable` off does, and the
+-- two combat modes restore or re-apply them at the combat boundary.
+-- ---------------------------------------------------------------------
+
+function PrettyChat:GetVisibility()
+    if not (self.db and self.db.profile) then return "always" end
+    return self.db.profile.visibility or "always"
+end
+
+function PrettyChat:IsVisible()
+    local mode = self:GetVisibility()
+    if mode == "never"       then return false end
+    if mode == "inCombat"    then return UnitAffectingCombat("player") and true or false end
+    if mode == "outOfCombat" then return not UnitAffectingCombat("player") end
+    return true                            -- "always", and anything unrecognized
+end
+
+-- The combat watcher, and it exists ONLY while a combat-scoped mode is stored.
+--
+-- Two of the four modes need the combat boundary; the other two do not, and this
+-- addon has never had a combat path — which is the whole ground of the
+-- `performance-§12` exemption in docs/ARCHITECTURE.md. So the frame is created
+-- lazily on the first combat-scoped write and its two events are dropped again
+-- the moment the mode leaves that set: a default install registers nothing, runs
+-- nothing in combat, and the exemption stands unchanged.
+--
+-- A plain event frame rather than AceEvent-3.0: this addon does not embed it and
+-- adding a library for two events would be a dependency the DEPENDENCIES.md
+-- ledger has to carry forever. It is not a display frame and never becomes one —
+-- no size, no anchor, no SetMovable — so the composed Master controls tab stays
+-- correctly `frameless`.
+local COMBAT_SCOPED = { inCombat = true, outOfCombat = true }
+local combatWatcher
+
+function PrettyChat:SyncCombatWatch()
+    local wanted = COMBAT_SCOPED[self:GetVisibility()] and true or false
+    if not (wanted or combatWatcher) then return end
+
+    if not combatWatcher then
+        combatWatcher = CreateFrame("Frame", "PrettyChatCombatWatcher")
+        combatWatcher:SetScript("OnEvent", function()
+            local applied, restored = PrettyChat:ApplyStrings()
+            -- Bulk mutation (debug-logging-§8): one summary per boundary, never
+            -- one line per string.
+            NS.Debug("Visibility", "%s → applied %d restored %d",
+                PrettyChat:GetVisibility(), applied, restored)
+        end)
+    end
+
+    for _, event in ipairs({ "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }) do
+        if wanted then
+            combatWatcher:RegisterEvent(event)
+        else
+            combatWatcher:UnregisterEvent(event)
+        end
+    end
+end
+
 function PrettyChat:IsCategoryEnabled(category)
     local catDB = self.db.profile.categories[category]
     if catDB and catDB.enabled ~= nil then
@@ -67,7 +131,11 @@ function PrettyChat:ApplyStrings()
     -- makes that winner stable across /reload (documented last-writer:
     -- the later entry in CATEGORY_ORDER), instead of depending on
     -- non-deterministic hash order.
-    local addonEnabled = self:IsAddonEnabled()
+    -- The visibility mode rides the same gate as the master toggle: `never`, or a
+    -- combat mode whose condition is not met, restores every original exactly as
+    -- `Enable` off does. One gate rather than two, so there is one answer to
+    -- "why is my chat unchanged".
+    local addonEnabled = self:IsAddonEnabled() and self:IsVisible()
     local applied, restored = 0, 0
     for _, category in ipairs(NS.Schema.CATEGORY_ORDER) do
         local catData = NS.Defaults[category]
@@ -97,10 +165,12 @@ end
 
 function PrettyChat:ResetCategory(category)
     if category == "General" then
-        -- The General virtual category owns only db.profile.enabled
-        -- (no entry in db.profile.categories). Resetting it clears
-        -- the addon-wide override back to default (true).
+        -- The General virtual category owns the two addon-wide keys and nothing
+        -- else (no entry in db.profile.categories). Resetting it clears both back
+        -- to their defaults — enabled true, visibility "always".
         self.db.profile.enabled = nil
+        self.db.profile.visibility = nil
+        self:SyncCombatWatch()
     elseif self.db.profile.categories[category] then
         self.db.profile.categories[category] = nil
     end
@@ -268,31 +338,35 @@ end
 -- One string's three-line block: name, the rendered Blizzard original, the
 -- rendered configured value, then a blank separator. Returns true when either
 -- render errored.
-local function printStringRow(addon, category, globalName)
-    NS.Print(LABEL.name .. globalName)
+--
+-- `emit` is the report's OUTPUT SINK, threaded from Test rather than read off NS:
+-- the settings panel's Test button writes the whole report into the debug console
+-- while `/pc test` keeps writing it to chat, and both must be the same report.
+local function printStringRow(emit, addon, category, globalName)
+    emit(LABEL.name .. globalName)
 
     local origFmt = NS.OriginalFormat(addon, globalName)
     local origLine, origErr = renderOrError(origFmt)
-    NS.Print(LABEL.original .. origLine)
+    emit(LABEL.original .. origLine)
 
     local newFmt = addon:GetStringValue(category, globalName)
     local newLine, newErr = renderOrError(newFmt)
-    NS.Print(LABEL.formatted .. newLine)
+    emit(LABEL.formatted .. newLine)
 
-    NS.Print("")
+    emit("")
 
     return newErr or origErr
 end
 
 -- One category's block: the gold header, then every string row. Returns the
 -- printed / errored counts this block contributed.
-local function printCategoryBlock(addon, category, names)
-    NS.Print(Color.gold .. "Category: " .. category .. Color.reset)
-    NS.Print("")
+local function printCategoryBlock(emit, addon, category, names)
+    emit(Color.gold .. "Category: " .. category .. Color.reset)
+    emit("")
 
     local printed, errored = 0, 0
     for _, globalName in ipairs(names) do
-        if printStringRow(addon, category, globalName) then
+        if printStringRow(emit, addon, category, globalName) then
             errored = errored + 1
         else
             printed = printed + 1
@@ -301,13 +375,13 @@ local function printCategoryBlock(addon, category, names)
     return printed, errored
 end
 
-local function printFooter(printed, errored)
+local function printFooter(emit, printed, errored)
     local footer = ("end of test output (%d %s shown"):format(
         printed, printed == 1 and "string" or "strings")
     if errored > 0 then
         footer = footer .. (", %d errored"):format(errored)
     end
-    NS.Print(note(footer .. ")"))
+    emit(note(footer .. ")"))
 end
 
 -- Print every format string in a per-category block. For each string
@@ -323,12 +397,18 @@ end
 -- The slash dispatch (runTest) is responsible for canonicalizing the
 -- value before calling — Test only does an equality check.
 --
--- Every line routes through NS.Print, so each carries the [PC] prefix and
--- the report stays visually distinct from real chat traffic interleaved with it.
-function PrettyChat:Test(filter)
-    NS.Print(note("sample of every format string (preview ignores enable toggles):"))
+-- `sink` is where the report goes, and it DEFAULTS to NS.Print — so `/pc test`
+-- still lands in chat, one [PC]-prefixed line at a time, visually distinct from
+-- real traffic interleaved with it. The settings panel's Test button passes the
+-- debug console's writer instead: a 500-line preview belongs in a window with a
+-- scrollbar and a copy button, not in the chat frame the addon exists to keep
+-- readable. NS.Print's own destination is untouched either way — the sink is a
+-- parameter, not a redirection.
+function PrettyChat:Test(filter, sink)
+    local emit = sink or NS.Print
+    emit(note("sample of every format string (preview ignores enable toggles):"))
     if not self:IsAddonEnabled() then
-        NS.Print(note("(addon is currently disabled — these formats aren't being applied to live chat)"))
+        emit(note("(addon is currently disabled — these formats aren't being applied to live chat)"))
     end
 
     local printed, errored = 0, 0
@@ -338,16 +418,16 @@ function PrettyChat:Test(filter)
             local names = collectNames(NS.Defaults[category], filter)
             if #names > 0 then
                 emittedAny = true
-                local p, e = printCategoryBlock(self, category, names)
+                local p, e = printCategoryBlock(emit, self, category, names)
                 printed, errored = printed + p, errored + e
             end
         end
     end
 
     if not emittedAny then
-        NS.Print(note("(no matching strings)"))
+        emit(note("(no matching strings)"))
         return
     end
 
-    printFooter(printed, errored)
+    printFooter(emit, printed, errored)
 end

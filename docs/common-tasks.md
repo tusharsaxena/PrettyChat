@@ -71,6 +71,16 @@ See [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patc
 3. `/reload` in-game; verify the panel's "Original Format String" inputs still resolve.
 4. If Blizzard renamed any keys or changed signatures, update the corresponding entries in `defaults/Defaults.lua`.
 
+## Add an addon-wide setting
+
+Addon-wide settings live on the General page's one tab, `Master controls`, and that tab is **composed** — `H.MasterControls` owns its rows, their order and their wording (options-ui-§15). Do **not** hand-write a row into it.
+
+- A row the canonical block already has (a leaf this addon omits today: master scale, master alpha, lock frame) arrives by dropping `frameless = true` from `MASTER_SPEC` in `settings/Schema.lua`, and it is only correct to do that if the addon has grown a positionable frame. Add the leaf's wiring to `MASTER_WIRING` in the same change, or the install reports it as unwired at load and the row is never registered.
+- A row the canonical block does **not** have goes in `MASTER_SPEC.extra`, which the composer appends after the mandated rows and never interleaves with them.
+- A setting that is not addon-wide is not a Master controls row at all; it belongs to a category.
+
+Whatever you add, wire its `get` / `set` in `MASTER_WIRING` (keyed by the final stored path), honour it in the drawing code, and pin both ends: the row's shape in `tests/test_schema.lua`, the behaviour in `tests/test_override.lua`.
+
 ## Add a new slash command
 
 One row in the `COMMANDS` table near the top of `settings/Slash.lua`:
@@ -91,7 +101,7 @@ Two follow-ups the harness enforces:
 
 ## Adjust the per-string panel block layout
 
-The per-string block lives in `settings/Panel.lua`'s `buildStringRow(scroll, category, globalName, strData, refreshers)`. It renders a `Heading` followed by three Flow rows — Enable/Original, GLOBALNAME/New, Reset/Preview — and attaches a `refresh()` closure to `refreshers` so subsequent DB-mutations (`/pc set`, category toggle, Defaults click) re-sync this block's widgets.
+The per-string block lives in `settings/Panel.lua`'s `buildStringRow(scroll, category, globalName, refreshers)`. It renders three Flow rows — Enable/Original, GLOBALNAME/New, Reset/Preview — and attaches a `refresh()` closure to `refreshers` so subsequent DB-mutations (`/pc set`, category toggle, Defaults click) re-sync this block's widgets. It carries **no heading**: the secondary tab that selects the string is its name (options-ui-§13), and exactly one block is drawn per category tab.
 
 Each row is an AceGUI `SimpleGroup` with `Flow` layout containing two children at `LEFT_W = 0.4` / `RIGHT_W = 0.6` relative widths so the two columns align across rows. The right-column EditBoxes carry `:SetLabel("Original" / "New" / "Preview")`. `STRING_VSPACER` is this block's own and lives in `NS.Const`; the shared spacing it sits beside (`ROW_VSPACER`, `SECTION_HEADING_H`) is read off `NS.Helpers`, because the library owns the layout constants now (options-ui-§8). See [settings-panel.md](./settings-panel.md).
 
