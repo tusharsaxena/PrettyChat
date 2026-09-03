@@ -9,11 +9,12 @@ local addonName, NS = ...
 -- reached through NS.Helpers (settings/OptionsSetup.lua). What is left here is the
 -- part that is genuinely PrettyChat's: what each of its three kinds of page draws.
 --
--- The landing page, the General page and BOTH of the Categories page's strips are
--- the library's own shapes: the primary one through H.TabStrip, the secondary one
--- (a tab per format string, inside the scroll) through H.SubTabStrip. The
--- per-string editor under a secondary tab is not, and that is the documented
--- deviation this file has carried since PC-23 — see buildStringRow.
+-- The landing page, the General page and the Categories page's PRIMARY strip are
+-- the library's own shapes (H.TabStrip). Two things on the Categories page are
+-- not, and both are documented deviations recorded in docs/ARCHITECTURE.md: the
+-- per-string editor's column split (options-ui-§6, carried since PC-23), and the
+-- string LIST beside it, which §13 would have as a secondary strip — see
+-- buildCategoryBody for why twenty wrapped buttons stopped being one.
 
 local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 local AceGUI = LibStub("AceGUI-3.0")
@@ -83,22 +84,27 @@ end
 -- is a window with a scrollbar and a copy button, which is what a report that
 -- long actually needs. `/pc test` is unchanged and still prints to chat, because
 -- the sink is a PARAMETER on Test rather than a redirection of NS.Print.
-local function runTestIntoConsole()
+-- A METHOD, not a file-local, because settings/Schema.lua's MASTER_SPEC now names
+-- it: the Test button is the composer's `leadButton` and its click is declared
+-- beside the reset's, late-bound through PrettyChat exactly as
+-- `PrettyChat:ConfirmResetAll` already is. The verb stays here, where the panel's
+-- other acts are; only its declaration moved.
+function PrettyChat:TestToConsole()
     NS.DebugLog:Show()
     PrettyChat:Test(nil, function(line) NS.DebugLog:Add("Test", line) end)
 end
 
--- The Master controls group's closing acts, wired as its `afterGroup`. The
--- composer's own hook (Schema.masterAfterGroup) draws options-ui-§15's closing
--- button — "Reset all settings", ALONE, because a frameless addon has no "Reset
--- position" to pair it with — and Test sits above it: a preview verb no other
--- Ka0s addon has, which is exactly why the canonical block does not carry it.
+-- The Master controls group's closing acts, wired as its `afterGroup`.
+--
+-- THIS FUNCTION IS THE COMPOSER'S HOOK AND NOTHING ELSE NOW. It used to draw Test
+-- on a row of its own and then call the composer's hook, so the tab closed with
+-- two stacked buttons. §15 fixes the reset's wording and the composer is the only
+-- thing that writes it, so pairing them here would have meant a second copy of
+-- "Reset all settings" in this addon — the drift the composer was extracted to
+-- end. LibKa0s v1.25.0 (OptionsCompose minor 2) takes a `leadButton` instead, and
+-- puts the verb in the pair's empty right half — the one cell §15 leaves a
+-- frameless addon, which has no "Reset position" to fill it.
 local function generalAfterGroup(ctx)
-    H.InlineButtonPair(ctx, {
-        text    = L["Test"],
-        tooltip = L["Print a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` prints the same report to chat."],
-        onClick = runTestIntoConsole,
-    })
     Schema.masterAfterGroup(ctx)
 end
 
@@ -149,21 +155,51 @@ end
 -- escapes, so the rendered sample shows with its formatting intact.
 -- ---------------------------------------------------------------------
 
-local LEFT_W  = 0.4
-local RIGHT_W = 0.6
+-- The page's two columns. The LIST names the strings; the PANE edits the one you
+-- picked. 33/67 because the pane holds full format strings with their color
+-- escapes and needs every pixel it can get, while the list only ever holds a
+-- friendly label like "XP Gain (Exhausted, Group)".
+local LIST_W = 0.33
+local PANE_W = 0.67
 
-local function buildStringRow(scroll, category, globalName, refreshers)
+-- Inside the pane: the Enable tick and the GLOBALNAME caption share a line, and
+-- everything else is full width. The caption is the wider half because a Blizzard
+-- global is long (COMBATLOG_XPGAIN_FIRSTPERSON_RAID) and the tick's label is one
+-- word.
+local TICK_W    = 0.3
+local CAPTION_W = 0.7
+
+-- How wide Reset is inside the pane. Not full width: it is one act at the foot of
+-- a column of fields, and a full-width red bar under four boxes reads as the
+-- subject of the pane rather than as its last control.
+local RESET_W = 0.4
+
+-- The colors the list wears. Gold is the collection's "this is the selected one"
+-- throughout the panel; grey is every other entry. Nothing else distinguishes
+-- them -- no highlight texture, deliberately: AceGUI's InteractiveLabel forwards
+-- SetHighlight to Texture:SetTexture, whose four-number form is the deprecated
+-- color API, and the client answers it with a solid green block over the label.
+local LIST_SELECTED   = "|cffffd100"
+local LIST_UNSELECTED = "|cff909090"
+
+--- One string's editor, into the RIGHT-hand column.
+---
+--- Reset restores BOTH per-string dimensions (custom format + enable state) via
+--- PrettyChat:ResetString, matching the category/all resets. The Preview EditBox
+--- uses InputBoxTemplate, whose backing FontString renders WoW `|c…|r` color
+--- escapes, so the rendered sample shows with its formatting intact.
+local function buildStringRow(pane, category, globalName, refreshers)
     local enabledPath = category .. "." .. globalName .. ".enabled"
     local formatPath  = category .. "." .. globalName .. ".format"
 
-    -- Row 1: Enable | Original (disabled)
+    -- Row 1: Enable | GLOBALNAME
     local row1 = AceGUI:Create("SimpleGroup")
     row1:SetLayout("Flow")
     row1:SetFullWidth(true)
 
     local enable = AceGUI:Create("CheckBox")
     enable:SetLabel(L["Enable"])
-    enable:SetRelativeWidth(LEFT_W)
+    enable:SetRelativeWidth(TICK_W)
     enable:SetCallback("OnValueChanged", function(_, _, value)
         NS.Schema.Set(enabledPath, value and true or false)
     end)
@@ -191,9 +227,18 @@ local function buildStringRow(scroll, category, globalName, refreshers)
     H.AttachTooltip(enable, L["Enable"], enableTooltip)
     row1:AddChild(enable)
 
+    -- The Blizzard GLOBALNAME, beside the tick rather than under it. It is what
+    -- `/pc set` and `/pc test formatstring` take, so it is the one identifier on
+    -- this pane a player has to be able to copy out of it.
+    local captionLbl = AceGUI:Create("Label")
+    captionLbl:SetRelativeWidth(CAPTION_W)
+    captionLbl:SetText(Color.gray .. globalName .. Color.reset)
+    row1:AddChild(captionLbl)
+    pane:AddChild(row1)
+
     local origInput = AceGUI:Create("EditBox")
     origInput:SetLabel(L["Original"])
-    origInput:SetRelativeWidth(RIGHT_W)
+    origInput:SetFullWidth(true)
     origInput:SetDisabled(true)
     -- The LIVE snapshot this client took at OnEnable, through the one reader
     -- `/pc test` also uses — not the shipped GlobalStrings/ dump, which is a
@@ -206,55 +251,44 @@ local function buildStringRow(scroll, category, globalName, refreshers)
     origInput:SetText((origValue:gsub("|", "||")))
     H.AttachTooltip(origInput, L["Original Format String"],
         L["Blizzard's original format. Read-only."])
-    row1:AddChild(origInput)
-    scroll:AddChild(row1)
-
-    -- Row 2: GLOBALNAME caption | New (editable)
-    local row2 = AceGUI:Create("SimpleGroup")
-    row2:SetLayout("Flow")
-    row2:SetFullWidth(true)
-
-    local captionLbl = AceGUI:Create("Label")
-    captionLbl:SetRelativeWidth(LEFT_W)
-    captionLbl:SetText(Color.gray .. globalName .. Color.reset)
-    row2:AddChild(captionLbl)
+    pane:AddChild(origInput)
 
     local newInput = AceGUI:Create("EditBox")
     newInput:SetLabel(L["New"])
-    newInput:SetRelativeWidth(RIGHT_W)
+    newInput:SetFullWidth(true)
     newInput:SetCallback("OnEnterPressed", function(_, _, value)
         NS.Schema.Set(formatPath, (value or ""):gsub("||", "|"))
     end)
     H.AttachTooltip(newInput, L["New Format String"],
         L["Your replacement. Type `||` for a literal `|` (color codes use this)."])
-    row2:AddChild(newInput)
-    scroll:AddChild(row2)
+    pane:AddChild(newInput)
 
-    -- Row 3: Reset | Preview (disabled, rendered with color escapes)
-    local row3 = AceGUI:Create("SimpleGroup")
-    row3:SetLayout("Flow")
-    row3:SetFullWidth(true)
+    local previewInput = AceGUI:Create("EditBox")
+    previewInput:SetLabel(L["Preview"])
+    previewInput:SetFullWidth(true)
+    previewInput:SetDisabled(true)
+    H.AttachTooltip(previewInput, L["Preview"],
+        L["The current format rendered with sample arguments."])
+    pane:AddChild(previewInput)
 
+    -- Reset LAST, under the three fields it undoes, and held off them by the gap
+    -- that used to separate one whole string block from the next. It was beside
+    -- the first of the fields, where a destructive act sat level with the one
+    -- control on the pane that cannot change.
+    H.AddSpacer(pane, Const.STRING_VSPACER)
+    local resetRow = AceGUI:Create("SimpleGroup")
+    resetRow:SetLayout("Flow")
+    resetRow:SetFullWidth(true)
     local resetBtn = AceGUI:Create("Button")
     resetBtn:SetText(L["Reset"])
-    resetBtn:SetRelativeWidth(LEFT_W)
+    resetBtn:SetRelativeWidth(RESET_W)
     resetBtn:SetCallback("OnClick", function()
         PrettyChat:ResetString(category, globalName)
     end)
     H.AttachTooltip(resetBtn, L["Reset"],
         L["Restore this string to its default."])
-    row3:AddChild(resetBtn)
-
-    local previewInput = AceGUI:Create("EditBox")
-    previewInput:SetLabel(L["Preview"])
-    previewInput:SetRelativeWidth(RIGHT_W)
-    previewInput:SetDisabled(true)
-    H.AttachTooltip(previewInput, L["Preview"],
-        L["The current format rendered with sample arguments."])
-    row3:AddChild(previewInput)
-    scroll:AddChild(row3)
-
-    H.AddSpacer(scroll, Const.STRING_VSPACER)
+    resetRow:AddChild(resetBtn)
+    pane:AddChild(resetRow)
 
     -- Refresh closure: re-syncs every widget in this block from the DB.
     -- Called on category-level changes (Enable toggled, Defaults pressed,
@@ -281,27 +315,32 @@ local function buildStringRow(scroll, category, globalName, refreshers)
 end
 
 -- ---------------------------------------------------------------------
--- One category's body — the category's own Enable row, then a SECONDARY tab
--- strip with one tab per format string, then the selected string's editor.
+-- One category's body — the category's own Enable row, then TWO COLUMNS: a list
+-- of the category's format strings, and the editor for the one selected.
 --
 -- The Enable row is a schema row and goes through the library's checkbox maker
--- at full width; it stays ABOVE the secondary strip, because it governs every
--- string in the category rather than the one on screen.
+-- at full width; it stays ABOVE the columns, because it governs every string in
+-- the category rather than the one on screen.
 --
--- WHY A SECOND STRIP (options-ui-§13). A category tab used to be a vertical
--- stack of up to twenty three-row editors — Experience is twenty, Loot is
--- nineteen — so finding one string meant scrolling past every string sorted
--- before it, and the page was a wall of identical boxes. One tab per string
--- turns that into one click. It is drawn with H.SubTabStrip as ordinary content
--- INSIDE the scroll rather than as a second pinned band: a division that is not
--- page-wide must not push the whole page down twice, and the primary strip above
--- it is the one thing that is page-wide.
+-- A LIST, NOT A SECONDARY STRIP, and that is a deviation from options-ui-§13
+-- recorded in docs/ARCHITECTURE.md beside the §6 one this page already carries.
+-- §13 permits a secondary strip inside one primary tab and this page had one —
+-- but a strip is packed HORIZONTALLY and wraps, and Experience registers twenty
+-- strings with names like "XP Gain (Exhausted, Group)". That is five rows of
+-- buttons stacked above the editor they select: the chrome was taller than the
+-- content and the reader had to scan a paragraph of buttons to find one. The same
+-- twenty read down a column in one glance, and the pattern is the one every
+-- settings window with a long subject list uses.
 --
--- The selection is the HOST's state — the library reads `value` and calls
--- `onSelect` and never looks at either again — kept as ctx.activeSubTab, a TABLE
--- keyed by the primary tab's category. That is what makes leaving Loot for
--- Experience and coming back return to the string you were on. Session-only, and
--- never persisted: which string you last looked at is not a setting.
+-- What §13 is protecting survives intact: the division is drawn as ordinary
+-- content INSIDE the scroll rather than as a second pinned band (a division that
+-- is not page-wide must not push the whole page down twice), there is no third
+-- level, and the selection is session-only.
+--
+-- The selection is the HOST's state, kept as ctx.activeSubTab, a TABLE keyed by
+-- the primary tab's category. That is what makes leaving Loot for Experience and
+-- coming back return to the string you were on. Session-only, and never
+-- persisted: which string you last looked at is not a setting.
 --
 -- The scroll is the CALLER's, not this function's. It used to own the
 -- ClearScroll/EnsureScroll pair because it was a whole page; it is one tab of
@@ -327,6 +366,36 @@ local function activeString(ctx, category, catData, sortedNames)
     return key
 end
 
+--- The left-hand column: one clickable entry per string, the selected one gold.
+---
+--- An AceGUI InteractiveLabel per entry, NOT raw frames. A raw frame parented to
+--- a pooled AceGUI container rides it back into AceGUI's process-wide pool when
+--- ClearScroll releases it and reappears on whatever asks for a SimpleGroup next;
+--- an InteractiveLabel is an AceGUI widget, so the pool owns it and the problem
+--- does not arise.
+---
+--- The selection is carried by COLOR alone. No highlight texture: AceGUI forwards
+--- SetHighlight to Texture:SetTexture, and its four-number form is the deprecated
+--- color API -- the client answers it with a solid green block across the whole
+--- label.
+local function buildStringList(list, ctx, category, catData, sortedNames, selected)
+    for _, globalName in ipairs(sortedNames) do
+        local entry = AceGUI:Create("InteractiveLabel")
+        entry:SetFullWidth(true)
+        local color = (globalName == selected) and LIST_SELECTED or LIST_UNSELECTED
+        entry:SetText(color .. catData.strings[globalName].label .. Color.reset)
+        -- The Blizzard GLOBALNAME as the tooltip, because the label is the
+        -- friendly name and the global is what `/pc set` takes.
+        H.AttachTooltip(entry, catData.strings[globalName].label, globalName)
+        entry:SetCallback("OnClick", function()
+            if globalName == ctx.activeSubTab[category] then return end
+            ctx.activeSubTab[category] = globalName
+            buildCategoriesBody(ctx)
+        end)
+        list:AddChild(entry)
+    end
+end
+
 local function buildCategoryBody(ctx, scroll, category, catData)
     local refreshers = {}
 
@@ -344,42 +413,26 @@ local function buildCategoryBody(ctx, scroll, category, catData)
 
     local selected = activeString(ctx, category, catData, sortedNames)
 
-    -- The strip's buttons are plain frames and need a frame to be parented to, so
-    -- they ride an empty full-width SimpleGroup added to the scroll. Layout nil,
-    -- because the library places every button itself and an AceGUI layout would
-    -- fight it. ClearScroll drains the library's own ledger BEFORE it releases
-    -- this group, so no button ever outlives the pooled frame it was parented to.
-    local host = AceGUI:Create("SimpleGroup")
-    host:SetLayout(nil)
-    host:SetFullWidth(true)
-    scroll:AddChild(host)
+    -- TWO COLUMNS: the list of strings, and the editor for the one you picked.
+    local split = AceGUI:Create("SimpleGroup")
+    split:SetLayout("Flow")
+    split:SetFullWidth(true)
 
-    local tabs = {}
-    for i, globalName in ipairs(sortedNames) do
-        -- The friendly label names the tab; the Blizzard GLOBALNAME is the
-        -- tooltip, because it is what `/pc set` and `/pc test formatstring` take
-        -- and the caption inside the block is no longer the only place to read it.
-        tabs[i] = {
-            key     = globalName,
-            label   = catData.strings[globalName].label,
-            tooltip = globalName,
-        }
-    end
+    local list = AceGUI:Create("SimpleGroup")
+    list:SetLayout("List")
+    list:SetRelativeWidth(LIST_W)
+    split:AddChild(list)
 
-    local _, stripHeight = H.SubTabStrip(ctx, host.frame, {
-        tabs     = tabs,
-        value    = selected,
-        onSelect = function(key)
-            if key == ctx.activeSubTab[category] then return end
-            ctx.activeSubTab[category] = key
-            buildCategoriesBody(ctx)
-        end,
-    })
-    host:SetHeight(stripHeight or 0)
-    H.AddSpacer(scroll, H.ROW_VSPACER)
+    local pane = AceGUI:Create("SimpleGroup")
+    pane:SetLayout("List")
+    pane:SetRelativeWidth(PANE_W)
+    split:AddChild(pane)
 
+    scroll:AddChild(split)
+
+    buildStringList(list, ctx, category, catData, sortedNames, selected)
     if selected then
-        buildStringRow(scroll, category, selected, refreshers)
+        buildStringRow(pane, category, selected, refreshers)
     end
 
     -- The bespoke block is invisible to the library's ctx.refreshers, so it

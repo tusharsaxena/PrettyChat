@@ -157,7 +157,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 > Why: `H.TabStrip` (options-ui-§13) draws the strip, and the addon hands it `CATEGORY_ORDER` minus the virtual `General`. The active tab is the **disabled** button, which is how the selection is marked.
 
 - Steps: open Categories. Read the strip left to right. Click **Currency**, then **Misc**, then **Currency** again. Narrow the Settings window until the strip has to wrap.
-- Expected: eight tabs, in the order `Loot, Currency, Money, Reputation, Experience, Honor, Tradeskill, Misc` — the same order `/pc list` and `/pc test` print. The selected tab reads as attached to the page below it and does not highlight on hover; the others do. Each click swaps the body under the strip to that category's Enable row, its secondary strip, and one string editor, with no flicker of the previous tab's rows. A wrapped strip lays out in two flush rows and the first row of controls sits **below** the whole strip, never underneath it.
+- Expected: eight tabs, in the order `Loot, Currency, Money, Reputation, Experience, Honor, Tradeskill, Misc` — the same order `/pc list` and `/pc test` print. The selected tab reads as attached to the page below it and does not highlight on hover; the others do. Each click swaps the body under the strip to that category's Enable row, its string list and one string editor, with no flicker of the previous tab's rows. A wrapped strip lays out in two flush rows and the first row of controls sits **below** the whole strip, never underneath it.
 - Failure mode: every tab on its own row (the strip read a zero width and never re-placed itself), or a second copy of a category's controls appearing under the first (the scroll was not cleared on the tab click).
 
 #### T-26b — The page's footnote
@@ -704,13 +704,18 @@ Categories page's eight. Below it, in this order and two to a line:
 ```
 [Enable PrettyChat]   [General visibility ▾]
 [Debug console]
-[Test]
-[Reset all settings]
+[Test]                [Reset all settings]
 ```
+
+**Test and Reset all settings are ONE row**, the verb on the left. They were stacked; the verb is the
+composer's `leadButton` now (LibKa0s v1.25.0), which puts it in the pair's empty right half — the
+cell §15 leaves a frameless addon, which has no *Reset position*.
 
 The explainer line sits above them. **Failure mode:** no strip (the page went back to `RenderRows`);
 a strip with a tab named `General` (the group was renamed, which also detaches the closing button's
-`afterGroup` hook silently); the Test or Reset button missing (the hook detached).
+`afterGroup` hook silently); the Test or Reset button missing (the hook detached); the two on
+separate rows again (the `leadButton` was dropped from `MASTER_SPEC`, or the addon went back to
+drawing the pair itself — which also means a second copy of the reset's wording).
 
 #### T-101 — General visibility, all four modes
 
@@ -731,26 +736,34 @@ transitions flip it live. **Failure mode:** nothing changes (the mode is not in 
 gate); the combat modes only take effect after a `/reload` (`SyncCombatWatch` never armed, or its
 events were registered on the wrong frame).
 
-#### T-102 — The secondary strip inside a category
+#### T-102 — The string list inside a category
 
-**Why:** a category tab used to stack up to twenty three-row editors; it is one tab per string now,
-drawn inside the scroll rather than as a second pinned band (options-ui-§13).
+**Why:** a category tab used to stack up to twenty three-row editors. It was one secondary TAB per
+string next, and twenty tabs wrap to five rows of buttons — chrome taller than the editor they
+select. It is a **list down the left** now, with the editor beside it (a recorded `options-ui-§13`
+deviation).
 
 **Steps:** `/pc config` → **Categories** → **Loot**.
 
-**Expected:** below the **Enable Loot** checkbox, a second strip of nineteen tabs, one per format
-string, labelled with the friendly names and in the same sorted order the blocks used to be stacked
-in. Hovering a tab shows its `GLOBALNAME`. Exactly **one** editor is drawn below the strip, and it
-has **no heading** — the tab is its name. Click through several: the editor swaps, no stray tab
-button is left behind, and the page does not shift downward. Now switch to **Experience**, pick a
-string there, switch back to **Loot** — you land on the Loot string you left, not the first one.
-Close the panel and reopen it: every category is back on its first string (the pointer is
-session-only and deliberately not persisted).
+**Expected:** below the **Enable Loot** checkbox, two columns. The left third is a list of nineteen
+entries, one per format string, labelled with the friendly names and in the same sorted order the
+blocks used to be stacked in; hovering one shows its `GLOBALNAME`. **Exactly one entry is gold** —
+the selected one — and every other is grey; nothing lights up behind an entry on hover, and in
+particular no green block. The right two thirds hold **one** editor, with **no heading** — the entry
+is its name — reading `[Enable] GLOBALNAME`, then **Original**, **New** and **Preview** at full
+width, then **Reset** at the foot.
 
-**Failure mode:** stale tab buttons stacked on top of the new ones after switching category (the
-`__subTabKids` ledger was not drained before `ReleaseChildren`); the whole page pushed down twice
-(the strip was drawn as chrome instead of as content); a heading above the editor repeating the tab's
-own name.
+Click through several entries: the editor swaps, the gold moves with it, and the page does not shift.
+Now open **Experience**, whose twenty entries are the case the list exists for: the list is one
+column you can scan, not five rows of buttons. Pick a string there, switch back to **Loot** — you
+land on the Loot string you left, not the first one. Close the panel and reopen it: every category is
+back on its first string (the pointer is session-only and deliberately not persisted).
+
+**Failure mode:** a wrapping strip of buttons instead of a list (the change was reverted); more than
+one gold entry, or none (the selection is drawn from something other than the live pointer); a green
+block behind an entry on hover (`SetHighlight` given colour numbers — AceGUI forwards them to
+`Texture:SetTexture`, whose four-number form is the deprecated colour API); a heading above the
+editor repeating the entry's own name; the format boxes narrower than the pane.
 
 #### T-103 — Test writes to the console, `/pc test` writes to chat
 

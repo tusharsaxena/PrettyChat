@@ -36,14 +36,36 @@ end
 -- nothing else. Spacers and the sub-strip's own host are childless SimpleGroups
 -- and are skipped; the category Enable checkbox is added straight to the scroll
 -- rather than into a row, so it is skipped too.
-local function stringBlock(scroll)
-    local rows = {}
+--- The Categories page's TWO COLUMNS: the list of strings, and the editor pane
+--- for the one selected. Found by the list's own contents — a SimpleGroup whose
+--- first child is an InteractiveLabel is the list and nothing else on the page is
+--- — rather than by position, which a spacer moves.
+local function stringSplit(scroll)
     for _, child in ipairs(scroll.children) do
-        if child.type == "SimpleGroup" and #child.children > 0 then
-            rows[#rows + 1] = child
+        if child.type == "SimpleGroup" and #child.children == 2 then
+            local left = child.children[1]
+            if left.type == "SimpleGroup" and left.children[1]
+               and left.children[1].type == "InteractiveLabel" then
+                return { list = left, pane = child.children[2] }
+            end
         end
     end
-    return { rows = rows }
+end
+
+--- The editor pane's controls, by the shape buildStringRow lays them out in:
+--- [Enable][GLOBALNAME] on one row, then Original, New and Preview full width,
+--- then Reset on a row of its own.
+local function paneParts(pane)
+    local kids = pane.children
+    return {
+        enable  = kids[1].children[1],
+        caption = kids[1].children[2],
+        orig    = kids[2],
+        new     = kids[3],
+        preview = kids[4],
+        -- kids[5] is the spacer that holds Reset off the fields it undoes.
+        reset   = kids[6].children[1],
+    }
 end
 
 local ctx = _G.PC_TEST
@@ -84,13 +106,18 @@ end
 -- The SECONDARY strip's buttons, in strip order, off the library's own ledger.
 -- Like the primary strip's they are plain Blizzard frames, so env._widgets never
 -- sees them; unlike the primary strip's they live inside the scroll.
-local function subTabButtons(pageKey)
-    return NS.Helpers.__panelFor(pageKey).__subTabKids or {}
+--- The list entries for the page's current category, in the order drawn.
+local function listEntries(pageKey)
+    local split = stringSplit(NS.Helpers.__panelFor(pageKey).scroll)
+    return split and split.list.children or {}
 end
 
-local function subTabNames(pageKey)
+--- Their labels, with the selection color stripped so a case can compare names.
+local function listNames(pageKey)
     local names = {}
-    for i, b in ipairs(subTabButtons(pageKey)) do names[i] = b.text end
+    for i, entry in ipairs(listEntries(pageKey)) do
+        names[i] = (entry.text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
+    end
     return names
 end
 
@@ -206,6 +233,33 @@ test("the General page builds its controls on first show", function()
     t.nilv(Schema.refreshers["General"], "no host refresher is registered for it")
     t.truthy(#NS.Helpers.__panelFor("General").refreshers > 0,
         "the library registered a refresher per widget it built")
+end)
+
+-- TEST AND RESET ALL SETTINGS ARE ONE ROW. Test used to sit on a row of its own
+-- above the reset, because §15 fixes the reset's wording and the composer is the
+-- only thing that writes it -- so putting them side by side meant either drawing
+-- the pair here (a second copy of "Reset all settings" in this addon, which is
+-- the drift the composer exists to end) or a seam in the library. It is the seam:
+-- `leadButton` on MASTER_SPEC, shipped in LibKa0s v1.25.0 (OptionsCompose minor
+-- 2), which puts the host's verb in the pair's empty right half -- the one cell
+-- §15 leaves a frameless addon.
+--
+-- red under: drawing the pair in settings/Panel.lua again, or putting Test on the
+-- right (the reset closes the tab).
+test("the General page closes with [Test] [Reset all settings] on ONE row", function()
+    local pair
+    for _, w in ipairs(generalWidgets) do
+        if w.type == "SimpleGroup" and w.children then
+            local texts = {}
+            for _, child in ipairs(w.children) do
+                if child.type == "Button" then texts[#texts + 1] = child.text end
+            end
+            if #texts == 2 then pair = texts end
+        end
+    end
+    t.truthy(pair, "the tab's closing buttons are not on one row")
+    t.eq(pair[1], L["Test"], "the host's verb leads")
+    t.eq(pair[2], "Reset all settings", "and the reset still closes the tab")
 end)
 
 test("the General page draws a strip whose first tab is Master controls", function()
@@ -390,63 +444,94 @@ test("a category tab builds a toggle, a secondary strip, and ONE string block", 
     -- page and REUSED across tab switches (ClearScroll releases its children, not
     -- the container), so a re-render adds no ScrollFrame to find.
     lootScroll  = NS.Helpers.__panelFor("Categories").scroll
-    lootBlock   = stringBlock(lootScroll)
+    lootBlock   = paneParts(stringSplit(lootScroll).pane)
 
     local strings = #sortedNames("Loot")
 
     t.truthy(byLabel(lootWidgets, "CheckBox", "Enable Loot"), "the category master toggle")
-    -- The nineteen editors this tab used to stack are nineteen SECONDARY TABS,
-    -- and exactly one of them is drawn (options-ui-§13). Dies if the strip is
-    -- removed and the blocks are stacked again.
-    t.eq(#subTabButtons("Categories"), strings, "one secondary tab per registered string")
-    t.eq(#lootBlock.rows, 3, "and one string block on screen, not nineteen")
+    -- The nineteen editors this tab used to stack are nineteen entries in a LIST
+    -- down the left, with exactly one of them open in the pane beside it. They
+    -- were a wrapping secondary strip, which at nineteen entries is five rows of
+    -- buttons above the editor they select.
+    t.eq(#listEntries("Categories"), strings, "one list entry per registered string")
+    t.truthy(lootBlock.new, "and one editor pane beside it, not nineteen")
     t.truthy(Schema.refreshers["Loot"], "the page registered its refresher")
 end)
 
-test("the category Enable stays ABOVE the secondary strip", function()
+test("the category Enable stays ABOVE the two columns", function()
     -- It governs every string in the category rather than the one on screen, so it
-    -- must not read as part of the selected string's block.
-    local order = {}
-    for _, child in ipairs(lootScroll.children) do order[#order + 1] = child end
-    local enableAt, hostAt
-    for i, child in ipairs(order) do
+    -- must not read as part of the selected string's editor.
+    local enableAt, splitAt
+    for i, child in ipairs(lootScroll.children) do
         if child.type == "CheckBox" and child.labelText == "Enable Loot" then enableAt = i end
-        -- The strip's host: a full-width SimpleGroup with no AceGUI children and a
-        -- height the strip measured, which no spacer has.
-        if not hostAt and child.type == "SimpleGroup" and #child.children == 0
-           and (child.height or 0) > 0 and enableAt then hostAt = i end
+        if not splitAt and child.type == "SimpleGroup" and #child.children == 2
+           and child.children[1].children
+           and child.children[1].children[1]
+           and child.children[1].children[1].type == "InteractiveLabel" then splitAt = i end
     end
     t.truthy(enableAt, "the category toggle is on the page")
-    t.truthy(hostAt, "and so is the secondary strip")
-    t.truthy(enableAt < hostAt, "with the toggle above it")
+    t.truthy(splitAt, "and so are the list and its pane")
+    t.truthy(enableAt < splitAt, "with the toggle above them")
 end)
 
-test("secondary tabs are offered in sorted global-name order", function()
+test("the list offers the strings in sorted global-name order", function()
     local sorted = sortedNames("Loot")
     local labels = {}
     for i, globalName in ipairs(sorted) do
         labels[i] = NS.Defaults.Loot.strings[globalName].label
     end
-    t.eq(table.concat(subTabNames("Categories"), "|"), table.concat(labels, "|"),
-        "the strip is the same sorted order the stack of blocks used to be")
+    t.eq(table.concat(listNames("Categories"), "|"), table.concat(labels, "|"),
+        "the list is the same sorted order the stack of blocks used to be")
 end)
 
-test("clicking a secondary tab swaps the string block under it", function()
+-- THE LIST IS A LIST, NOT A STRIP, and the selection is carried by COLOR.
+--
+-- options-ui-§13 permits a secondary strip inside one primary tab, and this page
+-- had one — but a strip is packed horizontally and wraps, and Experience
+-- registers twenty strings: five rows of buttons above the editor they select,
+-- which is what prompted the change. A vertical list of twenty is one column the
+-- reader scans. The §13 deviation is recorded in docs/ARCHITECTURE.md beside the
+-- §6 one this page already carries.
+--
+-- No highlight texture on the entries, deliberately: AceGUI forwards SetHighlight
+-- to Texture:SetTexture, whose four-number form is the deprecated color API, and
+-- the client paints a solid green block across the label.
+--
+-- red under: going back to H.SubTabStrip, or marking the selection with anything
+-- the mock cannot see (an entry that looks selected and is not is the failure).
+test("the selected entry is the gold one, and it is the one in the pane", function()
+    local sorted = sortedNames("Loot")
+    local pageCtx = NS.Helpers.__panelFor("Categories")
+    local entries = listEntries("Categories")
+
+    local gold = {}
+    for i, entry in ipairs(entries) do
+        if entry.text:find("|cffffd100", 1, true) then gold[#gold + 1] = i end
+    end
+    t.eq(#gold, 1, "exactly one entry is marked selected")
+    t.eq(sorted[gold[1]], pageCtx.activeSubTab.Loot, "and it is the one the pane is editing")
+
+    for _, entry in ipairs(entries) do
+        t.falsy(entry.highlight, "an entry must set no highlight texture")
+    end
+end)
+
+test("clicking a list entry swaps the editor beside it", function()
     -- The selection is the HOST's state — ctx.activeSubTab, a table keyed by the
-    -- primary tab — and the library only reports the click. Dies if the key stops
-    -- being per-category, or if onSelect stops re-rendering.
+    -- primary tab. Dies if the key stops being per-category, or if the click stops
+    -- re-rendering.
     local pageCtx = NS.Helpers.__panelFor("Categories")
     local sorted  = sortedNames("Loot")
-    subTabButtons("Categories")[2]:FireScript("OnClick")
+    listEntries("Categories")[2]:Fire("OnClick")
 
     t.eq(pageCtx.activeSubTab.Loot, sorted[2], "the pointer moved to the second string")
-    local caption = stringBlock(pageCtx.scroll).rows[2].children[1]
-    t.truthy(caption.text:find(sorted[2], 1, true), "and the block under it is that string's")
+    local caption = paneParts(stringSplit(pageCtx.scroll).pane).caption
+    t.truthy(caption.text:find(sorted[2], 1, true), "and the pane beside it is that string's")
 
     -- Back to the first, which is what every case below reads.
-    subTabButtons("Categories")[1]:FireScript("OnClick")
+    listEntries("Categories")[1]:Fire("OnClick")
     lootScroll = pageCtx.scroll
-    lootBlock  = stringBlock(lootScroll)
+    lootBlock  = paneParts(stringSplit(lootScroll).pane)
     t.eq(pageCtx.activeSubTab.Loot, sorted[1], "and back again")
 end)
 
@@ -459,8 +544,11 @@ test("the string you were on is remembered per category, and heals when stale", 
     table.sort(lootSorted)
 
     -- Move to Loot's third string, leave for Money, come back.
-    local third = pageCtx.__subTabKids[3]
-    third:FireScript("OnClick")
+    -- The FRESH instance's list, not the suite-wide one: `listEntries` reads the
+    -- module-level NS, and clicking there would move the page every case below
+    -- reads. That is what it did on the first attempt at this rewrite.
+    local third = stringSplit(pageCtx.scroll).list.children[3]
+    third:Fire("OnClick")
     t.eq(pageCtx.activeSubTab.Loot, lootSorted[3], "the pointer moved")
     for _, b in ipairs(pageCtx.__tabLayout.buttons) do
         if b.text == "Money" then b:FireScript("OnClick") end
@@ -480,26 +568,32 @@ test("the string you were on is remembered per category, and heals when stale", 
     t.eq(pageCtx.activeSubTab.Loot, lootSorted[1], "a stale pointer heals to the first string")
 end)
 
-test("the string block is the documented three-row 40/60 editor", function()
+test("the editor pane is Enable+name, then Original / New / Preview, then Reset", function()
+    -- The order is the reading order: what this string IS, what Blizzard says,
+    -- what you say instead, what that comes out as, and the way back. Reset moved
+    -- to the FOOT of the pane — it used to sit level with the read-only Original
+    -- box, which put a destructive act beside the one control that cannot change.
+    -- red under: reordering the pane, or making Original or Preview editable.
     local block = lootBlock
-    t.eq(#block.rows, 3, "three rows per string")
 
-    local enable, orig = block.rows[1].children[1], block.rows[1].children[2]
-    local caption, new = block.rows[2].children[1], block.rows[2].children[2]
-    local reset, preview = block.rows[3].children[1], block.rows[3].children[2]
+    t.eq(block.enable.type,  "CheckBox", "the tick")
+    t.eq(block.caption.type, "Label",    "the GLOBALNAME beside it")
+    t.eq(block.orig.type,    "EditBox",  "Original")
+    t.eq(block.new.type,     "EditBox",  "New")
+    t.eq(block.preview.type, "EditBox",  "Preview")
+    t.eq(block.reset.type,   "Button",   "and Reset at the foot")
 
-    t.eq(enable.type, "CheckBox",  "row 1 left: Enable checkbox")
-    t.eq(orig.type,   "EditBox",   "row 1 right: Original")
-    t.eq(caption.type, "Label",    "row 2 left: GLOBALNAME caption")
-    t.eq(new.type,    "EditBox",   "row 2 right: New")
-    t.eq(reset.type,  "Button",    "row 3 left: Reset")
-    t.eq(preview.type, "EditBox",  "row 3 right: Preview")
+    t.truthy(block.orig.fullWidth,    "Original spans the pane")
+    t.truthy(block.new.fullWidth,     "so does New")
+    t.truthy(block.preview.fullWidth, "and Preview")
+    t.truthy(block.orig.disabled,     "Original is read-only")
+    t.truthy(block.preview.disabled,  "Preview is read-only")
+    t.falsy(block.new.disabled,       "New is editable while the string is enabled")
 
-    t.eq(enable.relativeWidth, 0.4, "left column is 40%")
-    t.eq(orig.relativeWidth,   0.6, "right column is 60%")
-    t.truthy(orig.disabled,    "Original is read-only")
-    t.truthy(preview.disabled, "Preview is read-only")
-    t.falsy(new.disabled,      "New is editable while the string is enabled")
+    -- The columns themselves, off the split rather than off any one widget.
+    local split = stringSplit(lootScroll)
+    t.eq(split.list.relativeWidth, 0.33, "the list takes a third")
+    t.eq(split.pane.relativeWidth, 0.67, "and the editor the rest")
 end)
 
 test("the read-only Original row shows this client's snapshot, or degrades without it", function()
@@ -513,7 +607,7 @@ test("the read-only Original row shows this client's snapshot, or degrades witho
     for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
     table.sort(sorted)
     local first = sorted[1]
-    local orig = lootBlock.rows[1].children[2]
+    local orig = lootBlock.orig
 
     t.eq(addon.originalStrings[first], "ORIG:" .. first, "the snapshot holds this client's value")
     t.eq(orig.text, (addon.originalStrings[first]:gsub("|", "||")),
@@ -535,15 +629,16 @@ test("the read-only Original row shows this client's snapshot, or degrades witho
     t.nilv(fresh.env[LATE], "and no live global carries it either")
 
     panelFrame(fresh.env, "Categories"):Show()
-    -- Its own secondary TAB now rather than its own block in a stack, so the tab
-    -- has to be clicked before the block exists to read.
+    -- Its own LIST ENTRY now rather than its own block in a stack, so the entry
+    -- has to be clicked before the editor exists to read.
     local pageCtx = fresh.NS.Helpers.__panelFor("Categories")
     local lateLabel = fresh.NS.Defaults.Loot.strings[LATE].label
-    for _, b in ipairs(pageCtx.__subTabKids) do
-        if b.text == lateLabel then b:FireScript("OnClick") end
+    local lateSplit = stringSplit(pageCtx.scroll)
+    for _, entry in ipairs(lateSplit.list.children) do
+        if entry.text:find(lateLabel, 1, true) then entry:Fire("OnClick") end
     end
-    t.eq(pageCtx.activeSubTab.Loot, LATE, "the late registration was offered as its own tab")
-    local lateOrig = stringBlock(pageCtx.scroll).rows[1].children[2]
+    t.eq(pageCtx.activeSubTab.Loot, LATE, "the late registration was offered as its own entry")
+    local lateOrig = paneParts(stringSplit(pageCtx.scroll).pane).orig
     t.eq(lateOrig.text, L["(original not available)"], "the placeholder is shown instead")
 end)
 
@@ -552,7 +647,7 @@ test("the per-string checkbox writes the string's enable path", function()
     for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
     table.sort(sorted)
     local globalName = sorted[1]
-    local enable = lootBlock.rows[1].children[1]
+    local enable = lootBlock.enable
 
     enable:Fire("OnValueChanged", false)
     t.eq(Schema.Get("Loot." .. globalName .. ".enabled"), false, "the DB took the write")
@@ -570,7 +665,7 @@ test("the New edit box unescapes || to | before storing", function()
     for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
     table.sort(sorted)
     local globalName = sorted[1]
-    local newInput = lootBlock.rows[2].children[2]
+    local newInput = lootBlock.new
 
     newInput:Fire("OnEnterPressed", "||cffff0000Custom|| %s")
     t.eq(Schema.Get("Loot." .. globalName .. ".format"), "|cffff0000Custom| %s",
@@ -580,16 +675,16 @@ test("the New edit box unescapes || to | before storing", function()
 end)
 
 test("the Preview box renders the live format with sample arguments", function()
-    local newInput = lootBlock.rows[2].children[2]
-    local preview  = lootBlock.rows[3].children[2]
+    local newInput = lootBlock.new
+    local preview  = lootBlock.preview
     newInput:Fire("OnEnterPressed", "You got %s x%d")
     t.eq(preview.text, NS.RenderSample("You got %s x%d"), "preview matches the shared renderer")
     t.eq(preview.text, "You got Sample x42", "with the documented placeholder values")
 end)
 
 test("the Preview box surfaces an unrenderable format instead of blanking", function()
-    local newInput = lootBlock.rows[2].children[2]
-    local preview  = lootBlock.rows[3].children[2]
+    local newInput = lootBlock.new
+    local preview  = lootBlock.preview
     newInput:Fire("OnEnterPressed", "%y")
     t.truthy((preview.text or ""):find("invalid", 1, true)
           or (preview.text or "") ~= "", "the format error is shown in the preview box")
@@ -602,15 +697,15 @@ test("the per-string Reset button restores both dimensions", function()
     local globalName = sorted[1]
     local block = lootBlock
 
-    block.rows[1].children[1]:Fire("OnValueChanged", false)
-    block.rows[2].children[2]:Fire("OnEnterPressed", "CUSTOM %s")
-    block.rows[3].children[1]:Fire("OnClick")
+    block.enable:Fire("OnValueChanged", false)
+    block.new:Fire("OnEnterPressed", "CUSTOM %s")
+    block.reset:Fire("OnClick")
 
     t.truthy(addon:IsStringEnabled("Loot", globalName), "reset re-enables the string")
     t.eq(Schema.Get("Loot." .. globalName .. ".format"),
         NS.Defaults.Loot.strings[globalName].default, "and restores the default format")
-    t.eq(block.rows[1].children[1].value, true, "the checkbox re-syncs")
-    t.eq(block.rows[2].children[2].text,
+    t.eq(block.enable.value, true, "the checkbox re-syncs")
+    t.eq(block.new.text,
         NS.Defaults.Loot.strings[globalName].default:gsub("|", "||"),
         "the New box re-syncs, pipe-doubled")
 end)
@@ -620,12 +715,12 @@ test("disabling the category grays the per-string controls", function()
     local catBox = byLabel(lootWidgets, "CheckBox", "Enable Loot")
 
     catBox:Fire("OnValueChanged", false)
-    t.truthy(block.rows[1].children[1].disabled, "the per-string Enable box grays out")
-    t.truthy(block.rows[2].children[2].disabled, "the New format box grays out")
+    t.truthy(block.enable.disabled, "the per-string Enable box grays out")
+    t.truthy(block.new.disabled, "the New format box grays out")
 
     catBox:Fire("OnValueChanged", true)
-    t.falsy(block.rows[1].children[1].disabled, "re-enabling restores them")
-    t.falsy(block.rows[2].children[2].disabled, "including the format box")
+    t.falsy(block.enable.disabled, "re-enabling restores them")
+    t.falsy(block.new.disabled, "including the format box")
 end)
 
 test("a master-toggle change refreshes every built page, not just its own", function()
@@ -633,10 +728,10 @@ test("a master-toggle change refreshes every built page, not just its own", func
     -- per-string disabled state depends on the master switch.
     local block = lootBlock
     Schema.Set("General.enabled", false)
-    t.truthy(block.rows[1].children[1].disabled,
+    t.truthy(block.enable.disabled,
         "the Loot page grayed out from a General-page write")
     Schema.Set("General.enabled", true)
-    t.falsy(block.rows[1].children[1].disabled, "and came back")
+    t.falsy(block.enable.disabled, "and came back")
 end)
 
 test("a slash-command write re-syncs the open panel", function()
@@ -647,7 +742,7 @@ test("a slash-command write re-syncs the open panel", function()
     local globalName = sorted[1]
 
     NS.Schema.Set("Loot." .. globalName .. ".format", "FROM SLASH %s")
-    t.eq(lootBlock.rows[2].children[2].text, "FROM SLASH %s",
+    t.eq(lootBlock.new.text, "FROM SLASH %s",
         "the New box shows the value the slash command stored")
     addon:ResetAll()
 end)
@@ -667,13 +762,13 @@ test("a cross-registered string warns about the shared Blizzard global", functio
     end
     t.truthy(index, "one of them lives on the Loot page")
 
-    -- One block on screen, so the shared string's secondary tab is selected first.
+    -- One editor on screen, so the shared string's list entry is selected first.
     local pageCtx = NS.Helpers.__panelFor("Categories")
-    subTabButtons("Categories")[index]:FireScript("OnClick")
-    local sharedBlock = stringBlock(pageCtx.scroll)
+    listEntries("Categories")[index]:Fire("OnClick")
+    local sharedBlock = paneParts(stringSplit(pageCtx.scroll).pane)
 
     env.GameTooltip.lines = nil
-    sharedBlock.rows[1].children[1]:Fire("OnEnter")
+    sharedBlock.enable:Fire("OnEnter")
     local joined = table.concat(env.GameTooltip.lines or {}, "\n")
     t.truthy(joined:find("Shared with", 1, true), "the tooltip names the conflict")
     t.truthy(joined:find("last category to apply wins", 1, true),
@@ -709,8 +804,8 @@ test("clicking a tab swaps the body and drops the tab it left", function()
     t.eq(NS.Helpers.__panelFor("Categories").activeTab, "Money", "the strip moved")
     t.truthy(byLabel(widgetsSince(env, mark), "CheckBox", "Enable Money"),
         "and the body under it is Money's")
-    t.eq(#subTabButtons("Categories"), 8, "with one secondary tab per Money string")
-    t.eq(#stringBlock(lootScroll).rows, 3, "and one string block under them")
+    t.eq(#listEntries("Categories"), 8, "with one list entry per Money string")
+    t.truthy(paneParts(stringSplit(lootScroll).pane).new, "and one editor beside them")
     t.nilv(Schema.refreshers["Loot"], "the tab we left unregistered its refresher")
     t.truthy(Schema.refreshers["Money"], "and the tab we arrived on registered one")
 

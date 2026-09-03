@@ -103,6 +103,21 @@ local MASTER_SPEC = {
     -- options-ui-§12's global reset, through this addon's confirmation popup —
     -- the destructive path and its guard are one act (settings/Panel.lua).
     onResetAll = function() PrettyChat:ConfirmResetAll() end,
+    -- THE ONE VERB THIS ADDON HAS THAT NO OTHER KA0S ADDON DOES, closing the tab
+    -- beside the reset (LibKa0s v1.25.0, OptionsCompose minor 2). It is declared
+    -- here rather than drawn in settings/Panel.lua because §15 fixes the reset's
+    -- wording and the composer is the only thing that writes it: drawing the pair
+    -- host-side would have put a second copy of "Reset all settings" in this
+    -- addon, which is the drift the composer exists to end. A frameless addon has
+    -- no "Reset position", so the pair's right half is free and the verb takes it.
+    --
+    -- Late-bound through PrettyChat for the same reason onResetAll is: the body
+    -- lives in settings/Panel.lua, which loads after this file.
+    leadButton = {
+        text    = NS.L["Test"],
+        tooltip = NS.L["Print a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` prints the same report to chat."],
+        onClick = function() PrettyChat:TestToConsole() end,
+    },
 }
 
 -- The host half of every composed row: the `kind` the rest of this file

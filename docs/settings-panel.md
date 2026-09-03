@@ -2,7 +2,7 @@
 
 `settings/Panel.lua` builds the settings panel directly on Blizzard's modern `Settings.RegisterCanvasLayoutCategory` / `Settings.RegisterCanvasLayoutSubcategory` API and renders body content with AceGUI. PrettyChat appears under **Ka0s Pretty Chat**; the parent page hosts the logo, tagline, and slash-command list (read-only orientation), and **two** sub-pages hold the actionable controls.
 
-**Every page draws a strip** (options-ui-§13), and the `Categories` page draws two — a primary strip of message categories, and inside each of those, a secondary strip with one tab per format string.
+**Every page draws a strip** (options-ui-§13). The `Categories` page draws one — a primary strip of message categories — and inside each of those, a two-column split: a **list** of that category's format strings on the left, and the editor for the selected one on the right.
 
 | Page | Primary tabs (strip order) | Secondary tabs | Rows |
 |---|---|---|---|
@@ -11,7 +11,7 @@
 
 Row counts are schema rows (`Schema.RowsByCategory`), i.e. one category `enabled` plus two per format string, and are pinned by the page/tab partition case in `tests/test_schema.lua`. Every tab's controls are the same shape, so the numbers are the only thing that differs between them. **Every row carries a `page` and a `group`** — the group IS the tab it is drawn under — which `tests/test_schema.lua` also pins; a page whose rows carry no group is reported by the library and rendered strip-less.
 
-The primary strip is `H.TabStrip`'s and the secondary one is `H.SubTabStrip`'s (options-ui-§13). The primary strip replaced eight sub-pages — one per category — in the pass recorded in [scope.md](./scope.md#resolved-decisions); what survived of that decision, and what did not, is written out there.
+The primary strip is `H.TabStrip`'s. The string list beside the editor is the host's, and is a recorded `options-ui-§13` deviation — see *Why a list, not a second strip* below. The primary strip replaced eight sub-pages — one per category — in the pass recorded in [scope.md](./scope.md#resolved-decisions); what survived of that decision, and what did not, is written out there.
 
 The `General` page drew **no strip at all** until this pass: one group, one row, `H.RenderRows`. A one-group page draws a one-tab strip as of `OptionsWidgets` minor 13, and this page is why the rule matters — it was the page that read as broken beside `Categories` rather than as simpler.
 
@@ -39,7 +39,7 @@ The library's `CreatePanel` stamps every page with the same layout, and hosts **
 
 The parent page renders its title plain (`"Ka0s Pretty Chat"`) via `opts.isMain = true`. Sub-pages prefix the title to read as a breadcrumb: `"Ka0s Pretty Chat ▸ Loot"`. The chevron is an inline-atlas escape (` |A:common-icon-forwardarrow:16:16|a `) so it renders as a real texture, not a font glyph — font-agnostic and locale-safe. If a future client retires the atlas, swap to `NPE_RightClick` or `chevron-collapse` (same escape syntax, just the atlas name changes). The Blizzard left-tree label always stays unprefixed (driven by `panel.name`) so the indented tree doesn't repeat the parent name.
 
-All panel layout dimensions live in **`LibKa0s-Options-1.0`'s `LAYOUT` table**, not in this addon — options-ui-§8 forbids a host copy, because every Ka0s panel renders identically only if every panel reads one set of values, and a host copy is the copy that goes stale. Where `settings/Panel.lua` needs one for a widget it draws itself it reads it off the instance (`NS.Helpers.ROW_VSPACER` and `NS.Helpers.SECTION_HEADING_H` today; `BUTTON_PAIR_REL` is published too, and is applied for it by `InlineButtonPair`). The tab strip's own geometry (`CHROME_GAP`, `TAB_H`, `BANNER_H`) is published on the instance for a host that lays out a strip by hand; this addon lays out none — it hands `TabStrip` a tab list and the library places the buttons — so it reads none of the three. `core/Constants.lua` keeps only `SECTION_TOP_SPACER` / `SECTION_BOTTOM_SPACER` (the landing page's own body, which is the host's half) and `STRING_VSPACER` (the bespoke 40/60 editor, which the library has no equivalent for).
+All panel layout dimensions live in **`LibKa0s-Options-1.0`'s `LAYOUT` table**, not in this addon — options-ui-§8 forbids a host copy, because every Ka0s panel renders identically only if every panel reads one set of values, and a host copy is the copy that goes stale. Where `settings/Panel.lua` needs one for a widget it draws itself it reads it off the instance (`NS.Helpers.ROW_VSPACER` and `NS.Helpers.SECTION_HEADING_H` today; `BUTTON_PAIR_REL` is published too, and is applied for it by `InlineButtonPair`). The tab strip's own geometry (`CHROME_GAP`, `TAB_H`, `BANNER_H`) is published on the instance for a host that lays out a strip by hand; this addon lays out none — it hands `TabStrip` a tab list and the library places the buttons — so it reads none of the three. `core/Constants.lua` keeps only `SECTION_TOP_SPACER` / `SECTION_BOTTOM_SPACER` (the landing page's own body, which is the host's half) and `STRING_VSPACER` (the gap above the editor's Reset button, which the library has no equivalent for).
 
 ## Always-visible scrollbar
 
@@ -77,20 +77,25 @@ The General sub-page does not show a `Defaults` button in the header — the in-
 1. **The primary strip** — `H.TabStrip(ctx, { tabs, value, onSelect })`, one tab per message category, in `CATEGORY_ORDER` minus the virtual `General`. The tab order is *derived* from that array rather than restated, so the strip, `/pc list` and `/pc test` cannot disagree about what comes first. Loot leads because it is what a player opens the page to change; Misc trails because it is the drawer.
 2. **One footnote line**, gray, above the controls: *"Strings on these tabs are rewritten only while the master Enable on the General page is on."* Every switch and every format box on every tab is inert while the master is off, and that toggle lives on the other page — a player who enables a category, sees nothing change in chat and has no sentence to explain it has been misled by the page rather than by the setting.
 3. **The active tab's body**, `buildCategoryBody(ctx, scroll, category, catData)`:
-   1. **Enable `<Category>`** checkbox, bound to the `<Cat>.enabled` schema row. It stays **above** the secondary strip, because it governs every string in the category rather than the one on screen.
+   1. **Enable `<Category>`** checkbox, bound to the `<Cat>.enabled` schema row. It stays **above** the two columns, because it governs every string in the category rather than the one on screen.
    2. A 2× row spacer.
-   3. **The secondary strip** — `H.SubTabStrip(ctx, host.frame, { tabs, value, onSelect })`, one tab per format string in `catData.strings`, sorted by global name, labelled with the string's friendly label and tooltipped with its `GLOBALNAME`.
-   4. **One** per-string editor: the selected string's, and only that one.
+   3. **The split** — one Flow `SimpleGroup` holding two `SimpleGroup` columns at `LIST_W` (`0.33`) and `PANE_W` (`0.67`).
+   4. **The list**, `buildStringList` — one `InteractiveLabel` per format string in `catData.strings`, sorted by global name, showing the string's friendly label and tooltipped with its `GLOBALNAME`. The selected entry is gold, every other grey.
+   5. **One** per-string editor in the right column: the selected string's, and only that one.
 
-### Why a second strip
+### Why a list, not a second strip
 
-A category tab used to be a vertical stack of up to twenty three-row editors — Experience is twenty, Loot is nineteen — so finding one string meant scrolling past every string sorted before it, and the page was a wall of identical boxes. One tab per string turns that into one click, and the tab *is* the block's name, which is why the `Heading` each block used to open with is gone (a heading repeating the tab you are standing on is the second name for one thing that `options-ui-§7` warns about).
+A category tab used to be a vertical stack of up to twenty three-row editors — Experience is twenty, Loot is nineteen — so finding one string meant scrolling past every string sorted before it, and the page was a wall of identical boxes. Choosing the string instead of scrolling to it is the fix, and it was a **secondary strip** (`H.SubTabStrip`, `options-ui-§13`) first.
 
-It is drawn as **ordinary content inside the scroll**, not as a second pinned band: a division that is not page-wide must not push the whole page down twice, and the primary strip above it is the one thing that is page-wide. The buttons are parented to an empty full-width `SimpleGroup` the page adds as an AceGUI child; `H.ClearScroll` drains the library's `__subTabKids` ledger **before** `ReleaseChildren` returns that group to AceGUI's pool, so no button ever outlives the frame it was parented to.
+**A strip is packed horizontally, and twenty tabs wrap.** Names like *XP Gain (Exhausted, Group)* came out as **five rows of buttons** above the editor they select: chrome taller than its content, and a paragraph of buttons to scan for one name. The same twenty read down a column at a glance, which is what every settings window with a long subject list does. It is a recorded deviation — `options-ui-§13` in [ARCHITECTURE.md](./ARCHITECTURE.md#documented-deviations) — and what §13 is protecting survives it: the division is ordinary content **inside the scroll** rather than a second pinned band (a division that is not page-wide must not push the whole page down twice), there is no third level, and the selection is session-only.
+
+The entry that selects a string *is* its name, which is why the `Heading` each block used to open with is gone (a heading repeating what you clicked to get here is the second name for one thing that `options-ui-§7` warns about).
+
+The entries are AceGUI `InteractiveLabel`s, **not** raw frames: a raw frame parented to a pooled AceGUI container rides it back into AceGUI's process-wide pool when `ClearScroll` releases it, and turns up on whatever asks for a `SimpleGroup` next. The selection is carried by **colour alone** — no highlight texture, because AceGUI forwards `SetHighlight` to `Texture:SetTexture`, whose four-number form is the deprecated colour API, and the client answers it with a solid green block across the label.
 
 **The selection is the host's state.** The library reads `spec.value`, calls `spec.onSelect`, and never looks at either again. `settings/Panel.lua` keeps it as `ctx.activeSubTab`, a **table keyed by the primary tab's category** — so leaving Loot for Experience and coming back returns you to the string you were on, and each category heals its own stale pointer to its first string. Session-only, never persisted: which string you last looked at is not a setting.
 
-**Why not `H.RenderTabbedSchema` here.** That helper partitions a page's *schema rows* by `group` and hands each partition to the flow engine. A category tab is one schema row (the Enable) followed by a bespoke 40/60 editor the flow engine cannot express — the `options-ui-§6` deviation in [ARCHITECTURE.md](./ARCHITECTURE.md#documented-deviations). So the page takes both **strips** from the library and keeps generating its bodies per category, exactly as it did when each was a page. Every row on the page still *declares* its `page` and `group` (`settings/Schema.lua`), so the partition is readable and assertable even though the flow engine never sees it — and the day the editor can be expressed by the flow engine, the switch is a one-line change. The `General` page does go through `RenderTabbedSchema`. The tab click re-renders through the same `ClearScroll`-then-draw path `RenderTabbedSchema`'s own `onSelect` takes, and carries no combat guard for the same reason it does not: redrawing widgets inside an already-open panel was never a protected action.
+**Why not `H.RenderTabbedSchema` here.** That helper partitions a page's *schema rows* by `group` and hands each partition to the flow engine. A category tab is one schema row (the Enable) followed by a bespoke 33/67 split the flow engine cannot express — the `options-ui-§6` deviation in [ARCHITECTURE.md](./ARCHITECTURE.md#documented-deviations). So the page takes its **primary strip** from the library and keeps generating its bodies per category, exactly as it did when each was a page. Every row on the page still *declares* its `page` and `group` (`settings/Schema.lua`), so the partition is readable and assertable even though the flow engine never sees it — and the day the editor can be expressed by the flow engine, the switch is a one-line change. The `General` page does go through `RenderTabbedSchema`. The tab click re-renders through the same `ClearScroll`-then-draw path `RenderTabbedSchema`'s own `onSelect` takes, and carries no combat guard for the same reason it does not: redrawing widgets inside an already-open panel was never a protected action.
 
 **Refresher hygiene.** `Schema.refreshers` is keyed by *category*, not by page, so an entry left behind by the tab the player just left is a closure over released AceGUI widgets that the next master-toggle fan-out would still reach. `buildCategoriesBody` drops every category's entry before it draws, and the body it draws re-registers the one now on screen.
 
@@ -98,21 +103,25 @@ It is drawn as **ordinary content inside the scroll**, not as a second pinned ba
 
 ## Per-string block
 
-The selected format string renders as a 3-row × 2-column grid inside the category panel. Its **`Heading` is gone** — the secondary tab that selects the string is its name now:
+The selected format string renders in the **right-hand column**, `PANE_W` (67%) of the page. Its **`Heading` is gone** — the list entry that selects the string is its name now:
 
 ```
-[Enable]            | Original [disabled EditBox]
-GLOBALNAME (gray)   | New      [editable EditBox]
-[Reset]             | Preview  [disabled EditBox]
+[Enable]  GLOBALNAME (gray)
+Original  [disabled EditBox]
+New       [editable EditBox]
+Preview   [disabled EditBox]
+[Reset]
 ```
 
-| Row | Left (40%) | Right (60%) |
-|-----|------------|-------------|
-| 1 | `[Enable]` checkbox | Original format `EditBox` (disabled, `:SetLabel("Original")`), seeded from `NS.OriginalFormat(PrettyChat, globalName)` — the `OnEnable` snapshot of this client's `_G`, the same source `/pc test` prints (PC-R-04) |
-| 2 | `GLOBALNAME` caption (gray) | New format `EditBox` (editable, `:SetLabel("New")`, commits on Enter) |
-| 3 | `[Reset]` button | Preview `EditBox` (disabled, `:SetLabel("Preview")`, `NS.RenderSample` output) |
+| Row | Contents |
+|-----|----------|
+| 1 | `[Enable]` checkbox at `TICK_W` (30% of the pane) beside the `GLOBALNAME` caption at `CAPTION_W` (70%) — the global is long, and it is what `/pc set` and `/pc test formatstring` take |
+| 2 | Original format `EditBox`, full width (disabled, `:SetLabel("Original")`), seeded from `NS.OriginalFormat(PrettyChat, globalName)` — the `OnEnable` snapshot of this client's `_G`, the same source `/pc test` prints (PC-R-04) |
+| 3 | New format `EditBox`, full width (editable, `:SetLabel("New")`, commits on Enter) |
+| 4 | Preview `EditBox`, full width (disabled, `:SetLabel("Preview")`, `NS.RenderSample` output) |
+| 5 | `[Reset]` button at `RESET_W` (40% of the pane), on a row of its own, held off the fields by `Const.STRING_VSPACER` — the gap that used to separate one whole string block from the next |
 
-Each row is its own AceGUI `SimpleGroup` with `Flow` layout; the left child uses `:SetRelativeWidth(LEFT_W)` (`0.4`) and the right uses `:SetRelativeWidth(RIGHT_W)` (`0.6`), so the two columns align across all three rows. The right-column EditBox labels (`Original` / `New` / `Preview`) sit above each input via AceGUI's built-in label slot — left-column widgets vertically align with the EditBox itself, not the label.
+The three format boxes are **full width inside the pane**, which is the width the `options-ui-§6` deviation exists to buy: they hold colour-escaped format strings that a half-width cell clips. Their labels sit above each input via AceGUI's built-in label slot. **Reset moved to the foot** — it used to sit level with the read-only Original box, which put a destructive act beside the one control that cannot change; under the three fields it undoes, it reads as what it is.
 
 State derived per block in the block's `refresh()` closure (run on first build and on every `Schema.NotifyPanelChange`):
 
@@ -139,7 +148,7 @@ NS.Schema.Set(formatPath, value:gsub("||", "|"))          -- on commit
 **Two refresher registries coexist, and `Schema.NotifyPanelChange` is the one place that knows about both.**
 
 - Every widget the library's own makers built registered a closure on its page's `ctx.refreshers`. `NS.Helpers.RefreshScalars()` runs those — the *in-place* tier: re-read the value, `SetValue` it, no rebuild.
-- The bespoke 40/60 per-string blocks are drawn by hand and are invisible to that registry, so `buildCategoryBody` registers one closure per category through `Schema.RegisterRefresher`.
+- The bespoke per-string editor and its string list are drawn by hand and are invisible to that registry, so `buildCategoryBody` registers one closure per category through `Schema.RegisterRefresher`.
 
 ```lua
 -- settings/Schema.lua

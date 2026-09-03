@@ -312,7 +312,7 @@ badge and any count quoted in the docs must agree with it.
 - /pc debug rejects an argument that is neither on, off, nor a toggle
 - every slash line carries the cyan [PC] tag
 
-### test_panel.lua (40)
+### test_panel.lua (42)
 
 - registration builds the parent category and two sub-pages
 - the strip carries one tab per message category, in CATEGORY_ORDER
@@ -321,6 +321,7 @@ badge and any count quoted in the docs must agree with it.
 - registration is a no-op on a client without the canvas Settings API
 - a second CreateOptionsPanel is a no-op, not a second Blizzard category
 - the General page builds its controls on first show
+- the General page closes with [Test] [Reset all settings] on ONE row
 - the General page draws a strip whose first tab is Master controls
 - the Debug console toggle is a schema row, not a bespoke session checkbox
 - a second show does not rebuild the page
@@ -335,11 +336,12 @@ badge and any count quoted in the docs must agree with it.
 - the General page has no Defaults button
 - the Defaults button resets the visible tab's category only
 - a category tab builds a toggle, a secondary strip, and ONE string block
-- the category Enable stays ABOVE the secondary strip
-- secondary tabs are offered in sorted global-name order
-- clicking a secondary tab swaps the string block under it
+- the category Enable stays ABOVE the two columns
+- the list offers the strings in sorted global-name order
+- the selected entry is the gold one, and it is the one in the pane
+- clicking a list entry swaps the editor beside it
 - the string you were on is remembered per category, and heals when stale
-- the string block is the documented three-row 40/60 editor
+- the editor pane is Enable+name, then Original / New / Preview, then Reset
 - the read-only Original row shows this client's snapshot, or degrades without it
 - the per-string checkbox writes the string's enable path
 - the New edit box unescapes || to | before storing
@@ -376,5 +378,5 @@ badge and any count quoted in the docs must agree with it.
 | test_lifecycle.lua | 11 |
 | test_debuglog.lua | 25 |
 | test_slash.lua | 42 |
-| test_panel.lua | 40 |
-| **Total** | **295** |
+| test_panel.lua | 42 |
+| **Total** | **297** |
