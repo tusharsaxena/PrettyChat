@@ -36,20 +36,20 @@ end
 -- nothing else. Spacers and the sub-strip's own host are childless SimpleGroups
 -- and are skipped; the category Enable checkbox is added straight to the scroll
 -- rather than into a row, so it is skipped too.
---- The Categories page's TWO COLUMNS: the list of strings, and the editor pane
---- for the one selected. Found by the list's own contents — a SimpleGroup whose
---- first child is an InteractiveLabel is the list and nothing else on the page is
---- — rather than by position, which a spacer moves.
-local function stringSplit(scroll)
+--- The Categories page's TreeGroup: the string list in its own bordered pane, and
+--- the editor for the selected string as its children.
+local function stringTreeOf(scroll)
     for _, child in ipairs(scroll.children) do
-        if child.type == "SimpleGroup" and #child.children == 2 then
-            local left = child.children[1]
-            if left.type == "SimpleGroup" and left.children[1]
-               and left.children[1].type == "InteractiveLabel" then
-                return { list = left, pane = child.children[2] }
-            end
-        end
+        if child.type == "TreeGroup" then return child end
     end
+end
+
+--- The two halves by name, for the cases that read them that way. `list` and
+--- `pane` are the SAME widget, because a TreeGroup is both: its `tree` is the
+--- left pane and its children are the right.
+local function stringSplit(scroll)
+    local tree = stringTreeOf(scroll)
+    return tree and { list = tree, pane = tree } or nil
 end
 
 --- The editor pane's controls, by the shape buildStringRow lays them out in:
@@ -106,19 +106,24 @@ end
 -- The SECONDARY strip's buttons, in strip order, off the library's own ledger.
 -- Like the primary strip's they are plain Blizzard frames, so env._widgets never
 -- sees them; unlike the primary strip's they live inside the scroll.
---- The list entries for the page's current category, in the order drawn.
+--- The tree's rows for the page's current category, in the order offered.
 local function listEntries(pageKey)
-    local split = stringSplit(NS.Helpers.__panelFor(pageKey).scroll)
-    return split and split.list.children or {}
+    local tree = stringTreeOf(NS.Helpers.__panelFor(pageKey).scroll)
+    return (tree and tree.tree) or {}
 end
 
---- Their labels, with the selection color stripped so a case can compare names.
+--- Their labels, in order.
 local function listNames(pageKey)
     local names = {}
-    for i, entry in ipairs(listEntries(pageKey)) do
-        names[i] = (entry.text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
-    end
+    for i, row in ipairs(listEntries(pageKey)) do names[i] = row.text end
     return names
+end
+
+--- Select one, the way the widget reports a click: OnGroupSelected carrying the
+--- row's `value`, which is the Blizzard GLOBALNAME.
+local function selectEntry(pageKey, index)
+    local tree = stringTreeOf(NS.Helpers.__panelFor(pageKey).scroll)
+    tree:Fire("OnGroupSelected", tree.tree[index].value)
 end
 
 -- The category's global names in the order the strip offers them, which is the
@@ -458,20 +463,17 @@ test("a category tab builds a toggle, a secondary strip, and ONE string block", 
     t.truthy(Schema.refreshers["Loot"], "the page registered its refresher")
 end)
 
-test("the category Enable stays ABOVE the two columns", function()
+test("the category Enable stays ABOVE the tree", function()
     -- It governs every string in the category rather than the one on screen, so it
     -- must not read as part of the selected string's editor.
-    local enableAt, splitAt
+    local enableAt, treeAt
     for i, child in ipairs(lootScroll.children) do
         if child.type == "CheckBox" and child.labelText == "Enable Loot" then enableAt = i end
-        if not splitAt and child.type == "SimpleGroup" and #child.children == 2
-           and child.children[1].children
-           and child.children[1].children[1]
-           and child.children[1].children[1].type == "InteractiveLabel" then splitAt = i end
+        if not treeAt and child.type == "TreeGroup" then treeAt = i end
     end
     t.truthy(enableAt, "the category toggle is on the page")
-    t.truthy(splitAt, "and so are the list and its pane")
-    t.truthy(enableAt < splitAt, "with the toggle above them")
+    t.truthy(treeAt, "and so is the tree")
+    t.truthy(enableAt < treeAt, "with the toggle above it")
 end)
 
 test("the list offers the strings in sorted global-name order", function()
@@ -484,52 +486,176 @@ test("the list offers the strings in sorted global-name order", function()
         "the list is the same sorted order the stack of blocks used to be")
 end)
 
--- THE LIST IS A LIST, NOT A STRIP, and the selection is carried by COLOR.
+-- THE LIST IS ACEGUI'S TreeGroup, which is the widget every AceConfig options
+-- window with a left nav is made of — so the bordered pane, the bar behind the
+-- selected row, the row spacing and the tree pane's own scrollbar are the
+-- widget's and this addon draws none of them.
 --
--- options-ui-§13 permits a secondary strip inside one primary tab, and this page
--- had one — but a strip is packed horizontally and wraps, and Experience
--- registers twenty strings: five rows of buttons above the editor they select,
--- which is what prompted the change. A vertical list of twenty is one column the
--- reader scans. The §13 deviation is recorded in docs/ARCHITECTURE.md beside the
--- §6 one this page already carries.
+-- It was a secondary strip (options-ui-§13) first: a strip is packed horizontally
+-- and wraps, and Experience registers twenty strings — five rows of buttons above
+-- the editor they select. The first attempt at a list was a hand-built column of
+-- InteractiveLabels carrying the selection in the text COLOUR alone, which is a
+-- column of coloured text and not a selector: no box, no bar, no spacing. The §13
+-- deviation is recorded in docs/ARCHITECTURE.md beside the §6 one this page
+-- already carries.
 --
--- No highlight texture on the entries, deliberately: AceGUI forwards SetHighlight
--- to Texture:SetTexture, whose four-number form is the deprecated color API, and
--- the client paints a solid green block across the label.
---
--- red under: going back to H.SubTabStrip, or marking the selection with anything
--- the mock cannot see (an entry that looks selected and is not is the failure).
-test("the selected entry is the gold one, and it is the one in the pane", function()
-    local sorted = sortedNames("Loot")
+-- red under: going back to a strip or to hand-drawn labels; handing the tree rows
+-- whose `value` is not the GLOBALNAME (which is what the click reports back and
+-- what ctx.activeSubTab stores).
+test("the tree is handed one row per string, keyed by GLOBALNAME", function()
+    local sorted  = sortedNames("Loot")
     local pageCtx = NS.Helpers.__panelFor("Categories")
-    local entries = listEntries("Categories")
+    local tree    = stringTreeOf(pageCtx.scroll)
 
-    local gold = {}
-    for i, entry in ipairs(entries) do
-        if entry.text:find("|cffffd100", 1, true) then gold[#gold + 1] = i end
+    t.eq(tree.type, "TreeGroup", "the list is AceGUI's own container")
+    t.eq(#tree.tree, #sorted, "one row per registered string")
+    for i, row in ipairs(tree.tree) do
+        t.eq(row.value, sorted[i], "row " .. i .. " is keyed by its Blizzard global")
+        t.eq(row.text, NS.Defaults.Loot.strings[sorted[i]].label, "and shows the friendly label")
     end
-    t.eq(#gold, 1, "exactly one entry is marked selected")
-    t.eq(sorted[gold[1]], pageCtx.activeSubTab.Loot, "and it is the one the pane is editing")
-
-    for _, entry in ipairs(entries) do
-        t.falsy(entry.highlight, "an entry must set no highlight texture")
-    end
+    t.eq(tree.selected, pageCtx.activeSubTab.Loot, "the open string is the selected row")
+    t.truthy(tree.treeWidth and tree.treeWidth > 175,
+        "the pane is widened past AceGUI's 175 default, which clips this addon's longest label")
 end)
 
-test("clicking a list entry swaps the editor beside it", function()
+-- THE TREE FILLS THE PAGE. It asked for a height clamped to [260, 380], which is
+-- a box floating in a mostly empty page on any panel taller than that — and the
+-- panel is resizable, so no constant can be right.
+--
+-- The height cannot be computed at render time: the settings canvas has no height
+-- until it has laid itself out, and the first page a reader opens is rendered
+-- before that happens (the library says so at its own `replaceOnResize`, and
+-- PanelMaster's page band was the same bug). So the render sets a floor and the
+-- scroll's OnSizeChanged fits it to what is actually there.
+--
+-- red under: dropping the hook (the box stays at its floor forever); using
+-- SetScript instead of HookScript (AceGUI's ScrollFrame drives its own
+-- OnSizeChanged, and clobbering it breaks the scrollbar); re-fitting on every
+-- event rather than on a CHANGE (SetHeight triggers a layout, which fires this).
+test("the tree grows to fill the page when the canvas reports its height", function()
+    local pageCtx = NS.Helpers.__panelFor("Categories")
+    local tree    = stringTreeOf(pageCtx.scroll)
+    local scrollF = pageCtx.scroll.frame
+
+    t.truthy(scrollF.__scripts and scrollF.__scripts.OnSizeChanged,
+        "the scroll carries no resize hook, so the tree can never learn its height")
+
+    -- Geometry the client would report once the canvas is laid out: a 600px
+    -- viewport whose top is 70px above the tree (the footnote, the Enable row and
+    -- their spacers).
+    --
+    -- SAVED AND PUT BACK, never rawset to nil: the kit's stub DEFINES GetHeight
+    -- (it returns a real 0, fidelity rule 2), so clearing the key would erase that
+    -- definition and leave the metatable's blanket no-op answering the FRAME for
+    -- it — which is a table, and every later case that measures would die on it.
+    local realH, realTop = scrollF.GetHeight, scrollF.GetTop
+    local realTreeTop = rawget(tree.frame, "GetTop")
+    rawset(scrollF, "GetHeight", function() return 600 end)
+    rawset(scrollF, "GetTop",    function() return 1000 end)
+    rawset(tree.frame, "GetTop", function() return 930 end)
+
+    scrollF:__fire("OnSizeChanged", 800, 600)
+    t.eq(tree.height, math.floor((600 - 70) * 0.9),
+        "the tree takes 90% of what is left under the controls above it")
+
+    -- Counted on the TREE, not on the scroll: HookScript keeps AceGUI's own
+    -- OnSizeChanged handler, which lays the scroll out on every event by design.
+    -- What must not repeat is OUR resize.
+    local resizes = 0
+    local realSetHeight = tree.SetHeight
+    rawset(tree, "SetHeight", function(self, v) resizes = resizes + 1; return realSetHeight(self, v) end)
+    scrollF:__fire("OnSizeChanged", 800, 600)
+    rawset(tree, "SetHeight", realSetHeight)
+    t.eq(resizes, 0, "the same geometry must be a no-op — SetHeight relayouts, which fires this hook")
+
+    -- A canvas that reports nothing must not collapse the box.
+    rawset(scrollF, "GetHeight", function() return 0 end)
+    scrollF:__fire("OnSizeChanged", 800, 0)
+    t.eq(tree.height, math.floor((600 - 70) * 0.9), "a zero height is not a height to fit to")
+
+    rawset(scrollF, "GetHeight", realH)
+    rawset(scrollF, "GetTop", realTop)
+    rawset(tree.frame, "GetTop", realTreeTop)
+end)
+
+-- THE TREE MANAGES ITS OWN HEIGHT UNLESS TOLD NOT TO, and this is the one that
+-- made every earlier attempt at sizing it look like it had done nothing.
+--
+-- AceGUI's TreeGroup ends every layout pass with
+--
+--     ["LayoutFinished"] = function(self, width, height)
+--         if self.noAutoHeight then return end
+--         self:SetHeight((height or 0) + 20)
+--     end
+--
+-- so whatever height the page sets is OVERWRITTEN by the content's own height on
+-- the next layout — the editor is about 240px, which is why the box kept coming
+-- back at ~260 however carefully the fit computed 400-odd. `SetAutoAdjustHeight
+-- (false)` sets `noAutoHeight`, which is AceGUI's own way of saying the host owns
+-- this container's height.
+--
+-- red under: dropping the call. The fit still runs and still computes the right
+-- number; the widget just throws it away, which is exactly the failure that
+-- shipped twice.
+test("the tree is told to stop managing its own height", function()
+    local tree = stringTreeOf(NS.Helpers.__panelFor("Categories").scroll)
+    t.eq(tree.autoAdjustHeight, false,
+        "AceGUI's LayoutFinished will overwrite every height the page sets without this")
+end)
+
+-- THE RESIZE HOOK IS NOT ENOUGH, and this is the case that says why.
+--
+-- `ctx.scroll.frame` is anchored TOPLEFT/BOTTOMRIGHT to `ctx.body`, so it takes
+-- its height when the page's chrome is anchored — which happens EARLIER in the
+-- same render than the tree that hooks it. The one OnSizeChanged that mattered
+-- has already fired by the time the hook exists, and on a panel nobody resizes,
+-- no other ever arrives. The render-time fit cannot cover it either: AceGUI has
+-- not laid the tree out yet, so its frame has no position to measure from.
+--
+-- So the render also schedules ONE fit for the next frame, when the layout has
+-- settled. That is the pass that actually sizes the box in a live client.
+--
+-- red under: dropping the C_Timer.After, or scheduling it per render without the
+-- change guard (every category click would then queue another resize).
+test("the render schedules a fit for the frame after the layout", function()
+    local pageCtx = NS.Helpers.__panelFor("Categories")
+    local scrollF = pageCtx.scroll.frame
+
+    -- Re-render with the queue empty, so what is left in it is this render's.
+    env.__timers = {}
+    NS.Helpers.RefreshPanel(pageCtx, true)
+    t.truthy(#env.__timers > 0, "the render queued nothing to run after the layout")
+
+    local tree = stringTreeOf(pageCtx.scroll)
+    local realH, realTop = scrollF.GetHeight, scrollF.GetTop
+    local realTreeTop = rawget(tree.frame, "GetTop")
+    rawset(scrollF, "GetHeight", function() return 600 end)
+    rawset(scrollF, "GetTop",    function() return 1000 end)
+    rawset(tree.frame, "GetTop", function() return 930 end)
+
+    env.__fireTimers()
+    t.eq(tree.height, math.floor((600 - 70) * 0.9),
+        "the scheduled pass is what sizes the box on a panel nobody resizes")
+
+    rawset(scrollF, "GetHeight", realH)
+    rawset(scrollF, "GetTop", realTop)
+    rawset(tree.frame, "GetTop", realTreeTop)
+end)
+
+test("selecting a row swaps the editor beside it", function()
     -- The selection is the HOST's state — ctx.activeSubTab, a table keyed by the
-    -- primary tab. Dies if the key stops being per-category, or if the click stops
-    -- re-rendering.
+    -- primary tab. Dies if the key stops being per-category, or if the handler
+    -- stops re-rendering.
     local pageCtx = NS.Helpers.__panelFor("Categories")
     local sorted  = sortedNames("Loot")
-    listEntries("Categories")[2]:Fire("OnClick")
+    selectEntry("Categories", 2)
 
     t.eq(pageCtx.activeSubTab.Loot, sorted[2], "the pointer moved to the second string")
     local caption = paneParts(stringSplit(pageCtx.scroll).pane).caption
     t.truthy(caption.text:find(sorted[2], 1, true), "and the pane beside it is that string's")
 
     -- Back to the first, which is what every case below reads.
-    listEntries("Categories")[1]:Fire("OnClick")
+    selectEntry("Categories", 1)
     lootScroll = pageCtx.scroll
     lootBlock  = paneParts(stringSplit(lootScroll).pane)
     t.eq(pageCtx.activeSubTab.Loot, sorted[1], "and back again")
@@ -547,8 +673,8 @@ test("the string you were on is remembered per category, and heals when stale", 
     -- The FRESH instance's list, not the suite-wide one: `listEntries` reads the
     -- module-level NS, and clicking there would move the page every case below
     -- reads. That is what it did on the first attempt at this rewrite.
-    local third = stringSplit(pageCtx.scroll).list.children[3]
-    third:Fire("OnClick")
+    local freshTree = stringTreeOf(pageCtx.scroll)
+    freshTree:Fire("OnGroupSelected", freshTree.tree[3].value)
     t.eq(pageCtx.activeSubTab.Loot, lootSorted[3], "the pointer moved")
     for _, b in ipairs(pageCtx.__tabLayout.buttons) do
         if b.text == "Money" then b:FireScript("OnClick") end
@@ -590,10 +716,11 @@ test("the editor pane is Enable+name, then Original / New / Preview, then Reset"
     t.truthy(block.preview.disabled,  "Preview is read-only")
     t.falsy(block.new.disabled,       "New is editable while the string is enabled")
 
-    -- The columns themselves, off the split rather than off any one widget.
-    local split = stringSplit(lootScroll)
-    t.eq(split.list.relativeWidth, 0.33, "the list takes a third")
-    t.eq(split.pane.relativeWidth, 0.67, "and the editor the rest")
+    -- The container itself: one TreeGroup, full width, with a height it had to be
+    -- told (a TreeGroup inside a scroll has no natural one).
+    local tree = stringTreeOf(lootScroll)
+    t.truthy(tree.fullWidth, "the tree spans the page")
+    t.truthy((tree.height or 0) >= 260, "and is tall enough for the editor beside it")
 end)
 
 test("the read-only Original row shows this client's snapshot, or degrades without it", function()
@@ -633,9 +760,9 @@ test("the read-only Original row shows this client's snapshot, or degrades witho
     -- has to be clicked before the editor exists to read.
     local pageCtx = fresh.NS.Helpers.__panelFor("Categories")
     local lateLabel = fresh.NS.Defaults.Loot.strings[LATE].label
-    local lateSplit = stringSplit(pageCtx.scroll)
-    for _, entry in ipairs(lateSplit.list.children) do
-        if entry.text:find(lateLabel, 1, true) then entry:Fire("OnClick") end
+    local lateTree = stringTreeOf(pageCtx.scroll)
+    for _, row in ipairs(lateTree.tree) do
+        if row.text == lateLabel then lateTree:Fire("OnGroupSelected", row.value) end
     end
     t.eq(pageCtx.activeSubTab.Loot, LATE, "the late registration was offered as its own entry")
     local lateOrig = paneParts(stringSplit(pageCtx.scroll).pane).orig
@@ -762,9 +889,9 @@ test("a cross-registered string warns about the shared Blizzard global", functio
     end
     t.truthy(index, "one of them lives on the Loot page")
 
-    -- One editor on screen, so the shared string's list entry is selected first.
+    -- One editor on screen, so the shared string's row is selected first.
     local pageCtx = NS.Helpers.__panelFor("Categories")
-    listEntries("Categories")[index]:Fire("OnClick")
+    selectEntry("Categories", index)
     local sharedBlock = paneParts(stringSplit(pageCtx.scroll).pane)
 
     env.GameTooltip.lines = nil

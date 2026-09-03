@@ -13,7 +13,7 @@ The single source of truth is `defaults/Defaults.lua` — Schema, Config, and sl
        default = "|cffff0000Loot|cffffffff | |cff93c47dYou|cffffffff | |cffffffff+ %s|cffffffff",
    },
    ```
-   - `label` is what the panel shows as the string's **entry in the list** down the left of its category tab; the Blizzard `GLOBALNAME` is that entry's tooltip, and is also shown beside the Enable tick in the editor. There is no heading above the editor — the entry that selects the string is its name.
+   - `label` is what the panel shows as the string's **row in the tree** down the left of its category tab, and the Blizzard `GLOBALNAME` is that row's `value` — what the click reports back and what the editor shows beside the Enable tick. There is no heading above the editor — the entry that selects the string is its name.
    - `default` is the PrettyChat format. Match Blizzard's `%`-conversion signature exactly — see [Fix a broken format string](#fix-a-broken-format-string) below for what happens if you don't.
 2. `/reload` in-game. The schema rebuilds at file-load, so the new row appears in `/pc list <Category>`, on the category's tab of the Categories page, and the override pipeline starts targeting `_G[YOUR_GLOBAL_NAME]`.
 

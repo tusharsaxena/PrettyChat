@@ -373,6 +373,24 @@ local function build()
         if (wtype == "Label" or wtype == "Heading") and not w.label then
             w.label = newFrame()
         end
+        -- TreeGroup's own surface, recorded rather than swallowed: the Categories
+        -- page hands it the string list and reads the selection back out of it, so
+        -- a no-op SetTree would leave "which strings are offered, and which is
+        -- open" unanswerable from a case. SelectByValue FIRES OnGroupSelected in
+        -- the real widget (AceGUIContainer-TreeGroup.lua's Select), which is why
+        -- the page's handler carries a guard -- so it fires here too, or the guard
+        -- would be untested.
+        if wtype == "TreeGroup" then
+            w.SetTree = function(self, t) self.tree = t; return self end
+            w.SetTreeWidth = function(self, px, sizable)
+                self.treeWidth, self.treeSizable = px, sizable; return self
+            end
+            w.SelectByValue = function(self, value)
+                self.selected = value
+                self:Fire("OnGroupSelected", value)
+                return self
+            end
+        end
         created[#created + 1] = w
         return w
     end

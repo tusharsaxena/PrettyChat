@@ -2,7 +2,7 @@
 
 `settings/Panel.lua` builds the settings panel directly on Blizzard's modern `Settings.RegisterCanvasLayoutCategory` / `Settings.RegisterCanvasLayoutSubcategory` API and renders body content with AceGUI. PrettyChat appears under **Ka0s Pretty Chat**; the parent page hosts the logo, tagline, and slash-command list (read-only orientation), and **two** sub-pages hold the actionable controls.
 
-**Every page draws a strip** (options-ui-§13). The `Categories` page draws one — a primary strip of message categories — and inside each of those, a two-column split: a **list** of that category's format strings on the left, and the editor for the selected one on the right.
+**Every page draws a strip** (options-ui-§13). The `Categories` page draws one — a primary strip of message categories — and inside each of those, an AceGUI **`TreeGroup`**: that category's format strings listed in the tree pane on the left, the editor for the selected one in the content pane on the right.
 
 | Page | Primary tabs (strip order) | Secondary tabs | Rows |
 |---|---|---|---|
@@ -11,7 +11,7 @@
 
 Row counts are schema rows (`Schema.RowsByCategory`), i.e. one category `enabled` plus two per format string, and are pinned by the page/tab partition case in `tests/test_schema.lua`. Every tab's controls are the same shape, so the numbers are the only thing that differs between them. **Every row carries a `page` and a `group`** — the group IS the tab it is drawn under — which `tests/test_schema.lua` also pins; a page whose rows carry no group is reported by the library and rendered strip-less.
 
-The primary strip is `H.TabStrip`'s. The string list beside the editor is the host's, and is a recorded `options-ui-§13` deviation — see *Why a list, not a second strip* below. The primary strip replaced eight sub-pages — one per category — in the pass recorded in [scope.md](./scope.md#resolved-decisions); what survived of that decision, and what did not, is written out there.
+The primary strip is `H.TabStrip`'s. The string list beside the editor is AceGUI's `TreeGroup`, and choosing a list over a second strip is a recorded `options-ui-§13` deviation — see *Why a list, not a second strip* below. The primary strip replaced eight sub-pages — one per category — in the pass recorded in [scope.md](./scope.md#resolved-decisions); what survived of that decision, and what did not, is written out there.
 
 The `General` page drew **no strip at all** until this pass: one group, one row, `H.RenderRows`. A one-group page draws a one-tab strip as of `OptionsWidgets` minor 13, and this page is why the rule matters — it was the page that read as broken beside `Categories` rather than as simpler.
 
@@ -79,9 +79,17 @@ The General sub-page does not show a `Defaults` button in the header — the in-
 3. **The active tab's body**, `buildCategoryBody(ctx, scroll, category, catData)`:
    1. **Enable `<Category>`** checkbox, bound to the `<Cat>.enabled` schema row. It stays **above** the two columns, because it governs every string in the category rather than the one on screen.
    2. A 2× row spacer.
-   3. **The split** — one Flow `SimpleGroup` holding two `SimpleGroup` columns at `LIST_W` (`0.33`) and `PANE_W` (`0.67`).
-   4. **The list**, `buildStringList` — one `InteractiveLabel` per format string in `catData.strings`, sorted by global name, showing the string's friendly label and tooltipped with its `GLOBALNAME`. The selected entry is gold, every other grey.
-   5. **One** per-string editor in the right column: the selected string's, and only that one.
+   3. **The `TreeGroup`** — full width, `SetTreeWidth(TREE_W, false)` (200px, past AceGUI's 175 default, which clips *Item Looted Multiple (Other)*), and a height it has to be **told**, because a `TreeGroup` inside a scroll has no natural one.
+
+      **The height is fitted to the page, not constant.** `treeHeight(#strings)` (`#strings × 18 + 20`, clamped to `[260, 380]`) is only the render-time **guess**: the settings canvas has no height until it has laid itself out, and the first page a reader opens is rendered before that happens — the library documents the same thing for *width* at its own `replaceOnResize`, and PanelMaster's page band was this bug. `fitTree(ctx)` then takes **`TREE_FILL`** (90%) of what is left under the controls above it and applies that, from a `HookScript` on the scroll's `OnSizeChanged`.
+
+      **`SetAutoAdjustHeight(false)` first, or none of this survives.** AceGUI's `TreeGroup` ends every layout pass with `if self.noAutoHeight then return end; self:SetHeight((height or 0) + 20)` — it sizes itself to its *content*, which here is the editor at about 240px. Any height the page sets is overwritten on the next layout, whenever it was set, which is why the box kept coming back at ~260 while the fit below was computing 400-odd correctly. The flag is AceGUI's own way of saying the host owns this container's height.
+
+      **The hook alone does not do it either, and that is the part that took two passes.** `ctx.scroll.frame` is anchored `TOPLEFT`/`BOTTOMRIGHT` to `ctx.body`, so it takes its height when the page's chrome is anchored — *earlier in the same render* than the tree that installs the hook. The one `OnSizeChanged` that mattered has already fired by the time the hook exists, and on a panel nobody resizes no other ever arrives. The render-time call cannot cover it either: AceGUI has not laid the tree out yet, so its frame has no position to measure from. So the render also schedules **one** fit with `C_Timer.After(0, …)` — the client's own way of saying *after this frame's layout* — and that is the pass that actually sizes the box. The hook stays for real resizes.
+
+      Three things the fit has to get right, each of which has bitten something in this collection: it is a **`HookScript`**, because AceGUI's `ScrollFrame` drives its own scrollbar from that script and `SetScript` would replace it; it reads the current tree off **`ctx.__pcTree`** rather than closing over one, because the hook is installed once per panel and the ctx outlives every render while the widget does not; and it fits only on a **change** in the wanted height, because `SetHeight` relayouts and the relayout fires the same hook. The space above the tree is **measured** (`scrollTop − treeTop`) rather than assumed — the footnote wraps at some widths and not others. 90% rather than 100%: a box flush to the scroll's bottom edge reads as clipped rather than as sized.
+   4. **The tree** — `SetTree`, one row per format string in `catData.strings`, sorted by global name, each `{ value = GLOBALNAME, text = friendly label }`. The `value` is what `OnGroupSelected` reports back and what `ctx.activeSubTab` stores.
+   5. **One** per-string editor, added as the `TreeGroup`'s children so it lands in the content pane: the selected string's, and only that one.
 
 ### Why a list, not a second strip
 
@@ -91,7 +99,9 @@ A category tab used to be a vertical stack of up to twenty three-row editors —
 
 The entry that selects a string *is* its name, which is why the `Heading` each block used to open with is gone (a heading repeating what you clicked to get here is the second name for one thing that `options-ui-§7` warns about).
 
-The entries are AceGUI `InteractiveLabel`s, **not** raw frames: a raw frame parented to a pooled AceGUI container rides it back into AceGUI's process-wide pool when `ClearScroll` releases it, and turns up on whatever asks for a `SimpleGroup` next. The selection is carried by **colour alone** — no highlight texture, because AceGUI forwards `SetHighlight` to `Texture:SetTexture`, whose four-number form is the deprecated colour API, and the client answers it with a solid green block across the label.
+**The list is AceGUI's `TreeGroup` and not a hand-built column**, and that distinction is the difference between a selector and a column of coloured text. The first attempt drew one `InteractiveLabel` per string and marked the selection with the text colour alone: no bordered pane, no bar behind the selected row, no row spacing. `TreeGroup` is the container every AceConfig options window with a left nav is made of, so all of that — the border round both panes, the highlight bar, the spacing, and the tree pane's own scrollbar once the list outgrows the height — is the widget's, and this addon draws none of it.
+
+**Select first, wire second.** `SelectByValue` **fires `OnGroupSelected`** (AceGUI's `Select` does), so a callback wired before the initial selection would re-enter the page render from inside its own build. The handler also guards on the value already being the active one, which covers the click path: the handler re-renders, the re-render selects, and the selection fires again.
 
 **The selection is the host's state.** The library reads `spec.value`, calls `spec.onSelect`, and never looks at either again. `settings/Panel.lua` keeps it as `ctx.activeSubTab`, a **table keyed by the primary tab's category** — so leaving Loot for Experience and coming back returns you to the string you were on, and each category heals its own stale pointer to its first string. Session-only, never persisted: which string you last looked at is not a setting.
 

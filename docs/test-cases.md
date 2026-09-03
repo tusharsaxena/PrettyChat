@@ -312,7 +312,7 @@ badge and any count quoted in the docs must agree with it.
 - /pc debug rejects an argument that is neither on, off, nor a toggle
 - every slash line carries the cyan [PC] tag
 
-### test_panel.lua (42)
+### test_panel.lua (45)
 
 - registration builds the parent category and two sub-pages
 - the strip carries one tab per message category, in CATEGORY_ORDER
@@ -336,10 +336,13 @@ badge and any count quoted in the docs must agree with it.
 - the General page has no Defaults button
 - the Defaults button resets the visible tab's category only
 - a category tab builds a toggle, a secondary strip, and ONE string block
-- the category Enable stays ABOVE the two columns
+- the category Enable stays ABOVE the tree
 - the list offers the strings in sorted global-name order
-- the selected entry is the gold one, and it is the one in the pane
-- clicking a list entry swaps the editor beside it
+- the tree is handed one row per string, keyed by GLOBALNAME
+- the tree grows to fill the page when the canvas reports its height
+- the tree is told to stop managing its own height
+- the render schedules a fit for the frame after the layout
+- selecting a row swaps the editor beside it
 - the string you were on is remembered per category, and heals when stale
 - the editor pane is Enable+name, then Original / New / Preview, then Reset
 - the read-only Original row shows this client's snapshot, or degrades without it
@@ -378,5 +381,5 @@ badge and any count quoted in the docs must agree with it.
 | test_lifecycle.lua | 11 |
 | test_debuglog.lua | 25 |
 | test_slash.lua | 42 |
-| test_panel.lua | 42 |
-| **Total** | **297** |
+| test_panel.lua | 45 |
+| **Total** | **300** |

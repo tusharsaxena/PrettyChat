@@ -155,12 +155,34 @@ end
 -- escapes, so the rendered sample shows with its formatting intact.
 -- ---------------------------------------------------------------------
 
--- The page's two columns. The LIST names the strings; the PANE edits the one you
--- picked. 33/67 because the pane holds full format strings with their color
--- escapes and needs every pixel it can get, while the list only ever holds a
--- friendly label like "XP Gain (Exhausted, Group)".
-local LIST_W = 0.33
-local PANE_W = 0.67
+-- The tree pane's width, in pixels, because that is the unit AceGUI's TreeGroup
+-- takes. 200 rather than its own 175 default: the longest label this addon
+-- registers is "Item Looted Multiple (Other)", which 175 clips.
+local TREE_W = 200
+
+-- The tree's line height and chrome, from AceGUI's own arithmetic
+-- (AceGUIContainer-TreeGroup.lua computes its visible line count as
+-- `(treeframe height - 20) / 18`). Read here so the height this page asks for is
+-- a number of LINES rather than a guess that happens to fit.
+local TREE_LINE_H   = 18
+local TREE_CHROME_H = 20
+
+-- The height the whole widget asks for. A TreeGroup inside a scroll has to be
+-- told one -- it has no natural height.
+--
+-- TREE_MIN_H is the FLOOR and the render-time guess: the editor needs about this
+-- much whatever the list holds, and the render cannot do better than guess
+-- because the settings canvas has no height until it has laid itself out (the
+-- library documents that for WIDTH at its own replaceOnResize, and it is the same
+-- pass). TREE_MAX_H caps the guess so a twenty-string category does not open a
+-- box taller than the panel before the fit below corrects it.
+--
+-- TREE_FILL is what the fit takes of the space actually under the controls above
+-- it. Not 1.0: a box flush to the bottom edge of the scroll reads as clipped
+-- rather than as sized, and the remainder is what says the page ends there.
+local TREE_MIN_H = 260
+local TREE_MAX_H = 380
+local TREE_FILL  = 0.9
 
 -- Inside the pane: the Enable tick and the GLOBALNAME caption share a line, and
 -- everything else is full width. The caption is the wider half because a Blizzard
@@ -173,14 +195,6 @@ local CAPTION_W = 0.7
 -- a column of fields, and a full-width red bar under four boxes reads as the
 -- subject of the pane rather than as its last control.
 local RESET_W = 0.4
-
--- The colors the list wears. Gold is the collection's "this is the selected one"
--- throughout the panel; grey is every other entry. Nothing else distinguishes
--- them -- no highlight texture, deliberately: AceGUI's InteractiveLabel forwards
--- SetHighlight to Texture:SetTexture, whose four-number form is the deprecated
--- color API, and the client answers it with a solid green block over the label.
-local LIST_SELECTED   = "|cffffd100"
-local LIST_UNSELECTED = "|cff909090"
 
 --- One string's editor, into the RIGHT-hand column.
 ---
@@ -366,34 +380,59 @@ local function activeString(ctx, category, catData, sortedNames)
     return key
 end
 
---- The left-hand column: one clickable entry per string, the selected one gold.
----
---- An AceGUI InteractiveLabel per entry, NOT raw frames. A raw frame parented to
---- a pooled AceGUI container rides it back into AceGUI's process-wide pool when
---- ClearScroll releases it and reappears on whatever asks for a SimpleGroup next;
---- an InteractiveLabel is an AceGUI widget, so the pool owns it and the problem
---- does not arise.
----
---- The selection is carried by COLOR alone. No highlight texture: AceGUI forwards
---- SetHighlight to Texture:SetTexture, and its four-number form is the deprecated
---- color API -- the client answers it with a solid green block across the whole
---- label.
-local function buildStringList(list, ctx, category, catData, sortedNames, selected)
-    for _, globalName in ipairs(sortedNames) do
-        local entry = AceGUI:Create("InteractiveLabel")
-        entry:SetFullWidth(true)
-        local color = (globalName == selected) and LIST_SELECTED or LIST_UNSELECTED
-        entry:SetText(color .. catData.strings[globalName].label .. Color.reset)
-        -- The Blizzard GLOBALNAME as the tooltip, because the label is the
-        -- friendly name and the global is what `/pc set` takes.
-        H.AttachTooltip(entry, catData.strings[globalName].label, globalName)
-        entry:SetCallback("OnClick", function()
-            if globalName == ctx.activeSubTab[category] then return end
-            ctx.activeSubTab[category] = globalName
-            buildCategoriesBody(ctx)
-        end)
-        list:AddChild(entry)
+--- The tree's rows, in the order they are offered.
+local function stringTree(catData, sortedNames)
+    local tree = {}
+    for i, globalName in ipairs(sortedNames) do
+        tree[i] = { value = globalName, text = catData.strings[globalName].label }
     end
+    return tree
+end
+
+--- How tall the widget asks to be BEFORE the canvas has a height, in whole tree
+--- lines, clamped. fitTree below replaces this with the real answer.
+local function treeHeight(count)
+    local wanted = count * TREE_LINE_H + TREE_CHROME_H
+    if wanted < TREE_MIN_H then return TREE_MIN_H end
+    if wanted > TREE_MAX_H then return TREE_MAX_H end
+    return wanted
+end
+
+--- Fit the tree to the space left under the controls above it.
+---
+--- Reads the CURRENT tree off the ctx rather than closing over one: the hook is
+--- installed once per panel and the ctx outlives every render, while the widget
+--- does not — a handler holding one tree would go on resizing it after the page
+--- had been redrawn around a new one. Same rule, and the same reason, as the
+--- library's own replaceOnResize.
+---
+--- `used` is measured rather than assumed: the footnote wraps at some widths and
+--- not others, so the height above the tree is not a constant this file could
+--- write down. Both reads are guarded — a frame that has not been positioned
+--- answers nil, and nil arithmetic here would take the whole render down.
+local function fitTree(ctx)
+    local tree   = ctx.__pcTree
+    local scroll = ctx.scroll
+    if not (tree and tree.frame and scroll and scroll.frame) then return end
+
+    -- Type-guarded like the two reads below it, and for the same reason: a frame
+    -- the client has not positioned answers nothing useful, and this runs from a
+    -- resize hook that fires before the canvas has settled.
+    local height = scroll.frame:GetHeight()
+    if type(height) ~= "number" or height <= 0 then return end
+
+    local scrollTop, treeTop = scroll.frame:GetTop(), tree.frame:GetTop()
+    local used = (type(scrollTop) == "number" and type(treeTop) == "number")
+        and (scrollTop - treeTop) or 0
+    local wanted = math.floor((height - used) * TREE_FILL)
+    if wanted < TREE_MIN_H then wanted = TREE_MIN_H end
+
+    -- Guarded on a CHANGE, because SetHeight relayouts and the relayout fires this
+    -- same hook: answering every event would be an endless resize.
+    if ctx.__pcTreeH == wanted then return end
+    ctx.__pcTreeH = wanted
+    tree:SetHeight(wanted)
+    if scroll.DoLayout then scroll:DoLayout() end
 end
 
 local function buildCategoryBody(ctx, scroll, category, catData)
@@ -413,26 +452,84 @@ local function buildCategoryBody(ctx, scroll, category, catData)
 
     local selected = activeString(ctx, category, catData, sortedNames)
 
-    -- TWO COLUMNS: the list of strings, and the editor for the one you picked.
-    local split = AceGUI:Create("SimpleGroup")
-    split:SetLayout("Flow")
-    split:SetFullWidth(true)
+    -- ONE TreeGroup: the list of strings in its own bordered pane, and the editor
+    -- for the selected one in the content pane beside it. AceGUI's own container,
+    -- which is what draws this shape everywhere else in the game -- every
+    -- AceConfig options window with a left nav is one of these -- so the selected
+    -- row's highlight bar, the border round both panes, the row spacing and the
+    -- tree pane's own scrollbar when the list outgrows it are all the widget's.
+    --
+    -- It replaced a hand-built column of InteractiveLabels that carried the
+    -- selection in the text COLOR alone. That was a column of coloured text, not a
+    -- selector: no box, no bar behind the selected row, no spacing.
+    local tree = AceGUI:Create("TreeGroup")
+    tree:SetFullWidth(true)
+    tree:SetLayout("List")
+    -- THE HOST OWNS THIS CONTAINER'S HEIGHT. Without it, AceGUI's TreeGroup ends
+    -- every layout pass with
+    --
+    --     if self.noAutoHeight then return end
+    --     self:SetHeight((height or 0) + 20)
+    --
+    -- so the box collapses to whatever the EDITOR happens to need (about 260px)
+    -- and every height set below is overwritten on the next layout, whenever it
+    -- was set. The tree pane is a list of a length the page does not choose; how
+    -- tall the box is is a question about the PAGE, not about its contents.
+    tree:SetAutoAdjustHeight(false)
+    tree:SetTreeWidth(TREE_W, false)
+    tree:SetHeight(treeHeight(#sortedNames))
+    tree:SetTree(stringTree(catData, sortedNames))
+    scroll:AddChild(tree)
 
-    local list = AceGUI:Create("SimpleGroup")
-    list:SetLayout("List")
-    list:SetRelativeWidth(LIST_W)
-    split:AddChild(list)
+    -- SELECT FIRST, WIRE SECOND. SelectByValue fires OnGroupSelected in the real
+    -- widget (AceGUIContainer-TreeGroup.lua's Select does), so a callback wired
+    -- before this line would re-enter the page render from inside its own build.
+    -- The guard below is the second half of that, and covers the click path: the
+    -- handler re-renders, the re-render selects, and the selection fires again.
+    if selected then tree:SelectByValue(selected) end
+    tree:SetCallback("OnGroupSelected", function(_, _, value)
+        if not value or value == ctx.activeSubTab[category] then return end
+        ctx.activeSubTab[category] = value
+        buildCategoriesBody(ctx)
+    end)
 
-    local pane = AceGUI:Create("SimpleGroup")
-    pane:SetLayout("List")
-    pane:SetRelativeWidth(PANE_W)
-    split:AddChild(pane)
-
-    scroll:AddChild(split)
-
-    buildStringList(list, ctx, category, catData, sortedNames, selected)
     if selected then
-        buildStringRow(pane, category, selected, refreshers)
+        buildStringRow(tree, category, selected, refreshers)
+    end
+
+    -- Parked for the fit, which runs later and on a hook that outlives this
+    -- render. The remembered height is cleared with it: a new tree has not been
+    -- fitted yet, whatever the last one measured.
+    ctx.__pcTree, ctx.__pcTreeH = tree, nil
+
+    -- HookScript, never SetScript: AceGUI's own ScrollFrame drives its scrollbar
+    -- from this script, and replacing it would trade a fitted tree for a scroll
+    -- that no longer knows its own range. Installed once per panel, for the same
+    -- reason the handler reads the ctx -- see fitTree.
+    local frame = scroll.frame
+    if not ctx.__pcTreeHooked and frame and frame.HookScript then
+        ctx.__pcTreeHooked = true
+        frame:HookScript("OnSizeChanged", function() fitTree(ctx) end)
+    end
+    -- Best effort now, for the render that arrives after the canvas already has a
+    -- height -- every one but the first.
+    fitTree(ctx)
+
+    -- AND ONE PASS NEXT FRAME, which is the one that actually sizes the box.
+    --
+    -- The hook above cannot cover the first render: ctx.scroll.frame is anchored
+    -- to ctx.body, so it takes its height when the page's chrome is anchored --
+    -- EARLIER in this same render than this line -- and the one OnSizeChanged that
+    -- mattered has fired before the hook exists. On a panel nobody resizes, no
+    -- other ever arrives. The call above cannot cover it either: AceGUI has not
+    -- laid this tree out yet, so its frame has no position for fitTree to measure
+    -- from.
+    --
+    -- A frame later, both are true. C_Timer.After(0, ...) is the client's own way
+    -- of saying "after this frame's layout"; guarded because a settings page must
+    -- still load on a client that answers nothing for it.
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0, function() fitTree(ctx) end)
     end
 
     -- The bespoke block is invisible to the library's ctx.refreshers, so it

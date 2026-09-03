@@ -745,24 +745,36 @@ deviation).
 
 **Steps:** `/pc config` → **Categories** → **Loot**.
 
-**Expected:** below the **Enable Loot** checkbox, two columns. The left third is a list of nineteen
-entries, one per format string, labelled with the friendly names and in the same sorted order the
-blocks used to be stacked in; hovering one shows its `GLOBALNAME`. **Exactly one entry is gold** —
-the selected one — and every other is grey; nothing lights up behind an entry on hover, and in
-particular no green block. The right two thirds hold **one** editor, with **no heading** — the entry
-is its name — reading `[Enable] GLOBALNAME`, then **Original**, **New** and **Preview** at full
-width, then **Reset** at the foot.
+**Expected:** below the **Enable Loot** checkbox, a **bordered two-pane box** — AceGUI's `TreeGroup`,
+the same widget every AceConfig options window's left nav is made of, so it should look like
+RPGLootFeed's or any Ace-based addon's. The left pane, 200px wide, lists nineteen entries, one per
+format string, labelled with the friendly names and in the same sorted order the blocks used to be
+stacked in. **The selected entry carries a highlight bar**, not just a different text colour. The
+right pane holds **one** editor, with **no heading** — the entry is its name — reading
+`[Enable] GLOBALNAME`, then **Original**, **New** and **Preview** at full width, then **Reset** at the
+foot.
 
-Click through several entries: the editor swaps, the gold moves with it, and the page does not shift.
-Now open **Experience**, whose twenty entries are the case the list exists for: the list is one
-column you can scan, not five rows of buttons. Pick a string there, switch back to **Loot** — you
-land on the Loot string you left, not the first one. Close the panel and reopen it: every category is
-back on its first string (the pointer is session-only and deliberately not persisted).
+**The box fills the page.** It takes about 90% of the space under the Enable row, so there is a
+margin at the bottom and no dead space below it. **Resize the Settings window** by dragging its edge:
+both panes follow, and the tree pane's scrollbar appears and disappears as the height changes. Open
+Categories **first, on a fresh login**, before any other page — a box stuck at about **260px** with
+the page empty beneath it is the failure to look for, and it has two possible causes: the
+next-frame fit is not running, or `SetAutoAdjustHeight(false)` was dropped and AceGUI's own
+`LayoutFinished` is resizing the box back down to fit the editor. (The resize hook alone cannot
+cover that case: the scroll takes its height earlier in the same render than the tree that hooks it,
+so on a panel nobody drags, the only pass that ever sizes the box is the scheduled one.)
 
-**Failure mode:** a wrapping strip of buttons instead of a list (the change was reverted); more than
-one gold entry, or none (the selection is drawn from something other than the live pointer); a green
-block behind an entry on hover (`SetHighlight` given colour numbers — AceGUI forwards them to
-`Texture:SetTexture`, whose four-number form is the deprecated colour API); a heading above the
+Click through several entries: the editor swaps, the highlight moves with it, and the page does not
+shift. Now open **Experience**, whose twenty entries are the case the list exists for: they read down
+one column, and the pane scrolls **itself** rather than growing the page. Pick a string there, switch
+back to **Loot** — you land on the Loot string you left, not the first one. Close the panel and
+reopen it: every category is back on its first string (the pointer is session-only and deliberately
+not persisted).
+
+**Failure mode:** a wrapping strip of buttons (the §13 strip is back); a bare column of coloured text
+with no box and no bar (the hand-built `InteractiveLabel` list is back — that is what this looked
+like before the `TreeGroup`); the longest label clipped (the tree pane went back to AceGUI's 175px
+default); the editor clipped at the bottom (the height clamp's floor is too low); a heading above the
 editor repeating the entry's own name; the format boxes narrower than the pane.
 
 #### T-103 — Test writes to the console, `/pc test` writes to chat
