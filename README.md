@@ -66,7 +66,7 @@ PrettyChat appears in the game's Settings panel under **Ka0s Pretty Chat**. The 
 | Page | Covers |
 |------|--------|
 | **General** | One tab, **Master controls**: the master **Enable PrettyChat** switch (turn it off and every message goes back to its original wording), a **General visibility** dropdown (*Always*, *Only in combat*, *Only out of combat*, *Never* — a second master switch, so you can have PrettyChat only while you are fighting), a **Debug console** toggle (shows or hides a small on-screen log window for troubleshooting), a **Test** button that previews every message into that console, and **Reset all settings**. |
-| **Categories** | Everything PrettyChat rewrites, one tab per kind of message — and inside each, one tab per message, so you pick the line you want to change instead of scrolling past twenty of them. |
+| **Categories** | Everything PrettyChat rewrites, one tab per kind of message — and inside each, a list of that kind's messages down the left, so you pick the line you want to change instead of scrolling past twenty of them. |
 
 The **Categories** page carries eight tabs across the top:
 
@@ -81,7 +81,7 @@ The **Categories** page carries eight tabs across the top:
 | **Tradeskill** | Crafting items and opening locks. |
 | **Misc** | A couple of leftovers: quest XP rewards and zone exploration. |
 
-On each tab, every message has an **Enable** checkbox and its own **Reset** button. For each one you can see the original wording, type your own replacement, and watch a live **Preview** update as you edit. Turn a message off and it goes back to its original.
+On each tab, pick a message from the list down the left and its editor opens beside it: an **Enable** checkbox, its own **Reset** button, the original wording, a box for your own replacement, and a live **Preview** that updates as you edit. Turn a message off and it goes back to its original.
 
 ## How it works
 
