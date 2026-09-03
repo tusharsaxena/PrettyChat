@@ -57,6 +57,10 @@ function PrettyChat:OnInitialize()
                 if NS.Database and NS.Database.RunMigrations then
                     NS.Database.RunMigrations(self.db)
                 end
+                -- Before the re-apply, not after: the incoming profile may store
+                -- a combat-scoped General visibility the outgoing one did not, and
+                -- ApplyStrings has to read the mode the watcher is now armed for.
+                self:SyncCombatWatch()
                 local applied, restored = self:ApplyStrings()
                 if NS.Schema and NS.Schema.NotifyPanelChange then
                     NS.Schema.NotifyPanelChange()   -- nil -> every category
@@ -80,6 +84,10 @@ function PrettyChat:OnEnable()
             self.originalStrings[globalName] = _G[globalName]
         end
     end
+    -- A stored General visibility of `inCombat` / `outOfCombat` arms the combat
+    -- watcher for this session; `always` and `never` arm nothing at all, so the
+    -- default install still registers no combat event (modules/Override.lua).
+    self:SyncCombatWatch()
     self:ApplyStrings()
 
     -- Settings.RegisterCanvasLayoutCategory is allowed in OnEnable for a

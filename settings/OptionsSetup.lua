@@ -24,11 +24,13 @@ if not lib then
     -- of the schema silently disappears — taking `list`, `get`, `set` and `reset`
     -- with it.
     --
-    -- PrettyChat's measured load-time set is EMPTY. settings/Schema.lua builds the
-    -- whole schema from defaults/Defaults.lua and touches nothing here;
-    -- settings/Panel.lua reaches this table only inside page builders, which run at
-    -- CreateOptionsPanel time. tests/test_libka0s.lua pins that by loading with the
-    -- library absent and comparing the row count against a full load — those two
+    -- PrettyChat's measured load-time set is exactly ONE member: MasterControls.
+    -- settings/Schema.lua builds the rest of the schema from defaults/Defaults.lua
+    -- and touches nothing here, and settings/Panel.lua reaches this table only
+    -- inside page builders, which run at CreateOptionsPanel time — but the General
+    -- page's Master controls block is COMPOSED, and the composer is reached at the
+    -- bottom of this file. tests/test_libka0s.lua pins the set by loading with the
+    -- library absent and comparing the row count against a full load: those two
     -- numbers agreeing is the whole thing standing between this stub and a silent
     -- half-load, and the reason the set is measured rather than reasoned about.
     --
@@ -82,6 +84,15 @@ if not lib then
         TabStrip             = function() return nil end,
         PageBanner           = function() return nil end,
         RenderTabbedSchema   = function() return {} end,
+        -- OptionsWidgets 13 — the page-header block and the SECONDARY strip the
+        -- Categories page draws one of per string. Both sit after the same
+        -- EnsureScroll guard, so the degraded page returns before either is
+        -- reached; declared as no-ops rather than lookalikes, for the reason
+        -- above. __releaseSubTabs is the ledger drain ClearScroll calls, and
+        -- ClearScroll is a no-op here, so this is too.
+        PageHeader           = function() return nil end,
+        SubTabStrip          = function() return nil end,
+        __releaseSubTabs     = function() end,
         -- The library's own pure arithmetic, published for a host that lays out a
         -- strip of its own. This addon lays out none — it hands TabStrip a tab list
         -- and the library does the placing — so these answer the shape their live
@@ -93,6 +104,56 @@ if not lib then
         __layoutTabs         = function() return {} end,
         __tabPlacement       = function() return {}, 0 end,
         __releaseChrome      = function() end,
+        -- The strip's measured row pitch and the seam that forgets it. Zero is
+        -- the honest degraded answer for the same reason __tabBand's is: with no
+        -- AceGUI there is no tab art to measure.
+        __tabArtHeight       = function() return 0 end,
+        __resetTabArtHeight  = function() end,
+        -- ── the ONE stub member that is reached at LOAD ──────────────────
+        --
+        -- options-ui-§1's degradation rule is LOAD-COMPLETING, and the measured
+        -- set above is no longer empty: settings/Schema.lua composes the General
+        -- page's Master controls block through this member, at the moment this
+        -- file finishes. A no-op here would delete `General.enabled` and
+        -- `General.visibility` from a degraded install's schema — and with them
+        -- `/pc set General.enabled false`, which is this addon's off switch and
+        -- has nothing to do with whether a panel can be drawn.
+        --
+        -- It emits the LEAVES and the stored shape (path, type, and the DEFAULTS
+        -- THE CALLER HANDED IN) and nothing the library presents with: no label,
+        -- no tooltip, no visibility value table, no order / group / startsLine.
+        -- Those are OptionsCompose.lua's own copy and a stub copy of them is
+        -- exactly the nine-way drift it was extracted to end (anti-pattern #47).
+        -- Nothing on this path could render them anyway — there is no panel, and
+        -- the settings CLI is equally absent — so these rows exist to be read and
+        -- written, not shown. The closing button hook is a no-op for the same
+        -- reason InlineButtonPair above is.
+        MasterControls       = function(spec)
+            spec = spec or {}
+            local keys, defaults, omit = spec.keys or {}, spec.defaults or {}, spec.omit or {}
+            local out = {}
+            local function leaf(name, rowType)
+                if omit[name] then return end
+                out[#out + 1] = {
+                    path    = (spec.prefix or "") .. (keys[name] or name),
+                    type    = rowType,
+                    default = defaults[name],
+                }
+            end
+            leaf("enabled", "bool")
+            leaf("visibility", "string")
+            if not spec.frameless then
+                leaf("scale", "number")
+                leaf("alpha", "number")
+                leaf("locked", "bool")
+            end
+            out[#out + 1] = {
+                path        = spec.debugConsolePath or "state.debugConsole",
+                type        = "bool",
+                sessionOnly = true,
+            }
+            return out, function() end
+        end,
         RegisterOptionsPage  = function() end,
         RefreshAllPanels     = function() end,
         -- Options minor 8. Two parameters it never reads, so the degraded shape matches
@@ -120,16 +181,22 @@ if not lib then
         --
         -- What keeps the nil from reaching anything is ONE guard, not a no-op maker:
         -- every page body in settings/Panel.lua opens with `local scroll =
-        -- H.EnsureScroll(ctx)` followed by `if not scroll then return end` (`:65-66`,
-        -- `:363-364`, `:415-416`), and the stub's EnsureScroll returns nil. The three
-        -- consumers sit AFTER that return — `H.AddSpacer(scroll, H.ROW_VSPACER * 2)`
-        -- at `:291`, which would raise on `nil * 2` rather than no-op, and
-        -- `heading:SetHeight(H.SECTION_HEADING_H)` at `:143` and `:458`. So a body
-        -- that ever draws before its EnsureScroll guard raises on this path; keep the
-        -- guard first, and keep the constants out of the stub. The Categories page's
-        -- H.TabStrip call sits after the same guard, which is why the strip needs no
-        -- second one.
+        -- H.EnsureScroll(ctx)` followed by `if not scroll then return end`, and the
+        -- stub's EnsureScroll returns nil. Both consumers sit AFTER that return —
+        -- `H.AddSpacer(scroll, H.ROW_VSPACER * 2)` in buildCategoryBody, which would
+        -- raise on `nil * 2` rather than no-op, and `heading:SetHeight(
+        -- H.SECTION_HEADING_H)` on the landing page. So a body that ever draws
+        -- before its EnsureScroll guard raises on this path; keep the guard first,
+        -- and keep the constants out of the stub. H.TabStrip, H.SubTabStrip,
+        -- H.RenderTabbedSchema and H.MASTER_GROUP all sit after the same guard,
+        -- which is why the strips need no second one.
     }
+
+    -- The composed Master controls rows, spliced into the schema at the head of
+    -- the General page — on THIS path too, through the stub above, because those
+    -- rows are SETTINGS rather than widgets and a degraded install still stores,
+    -- reads and writes them. See Schema.InstallMasterControls.
+    NS.Schema.InstallMasterControls(NS.Helpers)
     return
 end
 
@@ -187,3 +254,12 @@ NS.Helpers = lib:New({
     --   onAceGUI                  — settings/Panel.lua resolves AceGUI itself, at
     --     file load, and has since before the adoption.
 })
+
+-- The Master controls block (options-ui-§15). Composed HERE rather than in
+-- settings/Schema.lua because the composers live on the INSTANCE and the instance
+-- is this file's — which is also why this line sits after `lib:New`, and why the
+-- degraded branch above carries the same call against its own stub. The rows land
+-- at the head of the General page's schema; the hook that draws the group's
+-- closing button comes back on Schema.masterAfterGroup, and settings/Panel.lua
+-- wires it as that group's `afterGroup`.
+NS.Schema.InstallMasterControls(NS.Helpers)

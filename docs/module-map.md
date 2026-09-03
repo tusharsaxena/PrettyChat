@@ -18,8 +18,10 @@ defaults/Defaults.lua  ──▶ NS.Defaults (categories + format strings)
                           _G[GLOBALNAME]   ◀── WoW chat code reads lazily on every line
 
 GlobalStrings/  ──▶ NOT LOADED (PC-R-05) — repo-only reference data for tests/test_defaults.lua
-                       │
-                       └──▶ settings/Panel.lua "Original Format String" disabled input
+
+OnEnable snapshot ──▶ addon.originalStrings ──▶ NS.OriginalFormat(addon, GLOBALNAME)
+                       ├──▶ settings/Panel.lua "Original Format String" disabled input
+                       └──▶ /pc test's Original line
 ```
 
 ## Namespace publishing pattern
@@ -41,7 +43,7 @@ Public surfaces are exposed on `NS`:
 | `NS.Util` | `core/Util.lua` (`trim` / `note` / `cmd`) + `core/CoreSetup.lua` (`SafeToString` / `IsConcatSafe`) | `settings/Slash.lua`, `modules/Override.lua`, `core/DebugLogSetup.lua` (`trim` / `note` / `cmd` string helpers; secret-safe `SafeToString` / `IsConcatSafe`) |
 | `NS.Database` | `core/Database.lua` | `core/PrettyChat.lua` (`OnInitialize` merges `global.schemaVersion` defaults + runs `RunMigrations`) |
 | `NS.DebugLog` / `NS.Debug(tag, fmt, …)` | `core/DebugLogSetup.lua` | every file (on-screen debug console; `NS.Debug` gated on session-only `NS.State.debug`, routed to the console, driven by `/pc debug` through the `DebugLog:SetEnabled` seam) |
-| `NS.Print(msg)` / `NS.Format(fmt, …)` | `core/CoreSetup.lua` | every file (secret-safe cyan `[PC]` chat-output chokepoint, built by `LibKa0s-Core-1.0` and reclaimed from AceConsole's embed) |
+| `NS.Print(msg)` / `NS.Format(fmt, …)` | `core/CoreSetup.lua` | `NS.Print` — every file (secret-safe cyan `[PC]` chat-output chokepoint, built by `LibKa0s-Core-1.0` and reclaimed from AceConsole's embed). **`NS.Format` has no caller in the addon's own source**; it is published on both the library and the degraded path so the first caller added later is not nil in exactly the install the fallback exists for |
 | `NS.ProfileDefaults` | `defaults/Profile.lua` | `core/PrettyChat.lua` (`OnInitialize` merges it with `NS.Database.defaults` for `AceDB:New`) |
 | `NS.Defaults` | `defaults/Defaults.lua` | `settings/Schema.lua`, `modules/Override.lua`, `settings/Slash.lua`, `settings/Panel.lua` (category → format-string defaults) |
 | `NS.L` | `locales/enUS.lua` | `settings/Panel.lua`, `settings/Slash.lua`, `settings/Schema.lua` (English-key localization; `__index` returns the key) |
@@ -63,8 +65,8 @@ The object is registered in `core/PrettyChat.lua`; its methods hang off that sha
 
 ```lua
 -- Lifecycle (core/PrettyChat.lua)
-PrettyChat:OnInitialize()              -- AceDB, slash registration ("/pc" + "/prettychat")
-PrettyChat:OnEnable()                  -- snapshot Blizzard originals → ApplyStrings → RegisterPanels
+PrettyChat:OnInitialize()              -- AceDB, migrations, the three AceDB profile callbacks, slash registration ("/pc" + "/prettychat")
+PrettyChat:OnEnable()                  -- snapshot Blizzard originals → SyncCombatWatch → ApplyStrings → RegisterPanels
 PrettyChat:OpenConfig()                -- a one-line delegate to NS.Helpers.OpenOptionsPanel(); the library owns the combat gate, the OpenToCategory call and the pcall'd left-tree expansion
 
 -- Override pipeline (modules/Override.lua — also see data-flow.md)
@@ -72,11 +74,15 @@ PrettyChat:ApplyStrings()              -- writes enabled overrides to _G; restor
 PrettyChat:ResetString(category, globalName)  -- clears BOTH per-string dimensions (custom format + disable flag) + ApplyStrings + NotifyPanelChange
 PrettyChat:ResetCategory(category)     -- clears one category's overrides + ApplyStrings + NotifyPanelChange
 PrettyChat:ResetAll()                  -- db:ResetProfile() -- a PROFILE reset (options-ui-§12). OnProfileReset re-runs the migrations, re-applies every string and notifies the panel
-PrettyChat:Test(filter?)               -- prints a per-category Original-vs-Formatted block per string (ignores enable toggles); filter is nil | {kind="category", value=…} | {kind="formatstring", value=…}
+PrettyChat:Test(filter, sink)          -- prints a per-category Original-vs-Formatted block per string (ignores enable toggles); filter is nil | {kind="category", value=…} | {kind="formatstring", value=…}; sink defaults to NS.Print, and the General page's Test button passes the debug console's writer instead
+PrettyChat:ConfirmResetAll()           -- the ONE way into ResetAll: raises the PRETTYCHAT_RESET_ALL StaticPopup (settings/Panel.lua)
 
 -- Read helpers (used by Schema closures, ApplyStrings, panel widgets)
 PrettyChat:GetStringValue(category, globalName)   -- user override falling back to NS.Defaults
 PrettyChat:IsAddonEnabled()                       -- nil → default true
+PrettyChat:GetVisibility()                        -- the stored General visibility mode; nil → "always"
+PrettyChat:IsVisible()                            -- that mode resolved against UnitAffectingCombat; rides the same ApplyStrings gate as the master toggle
+PrettyChat:SyncCombatWatch()                      -- arms/drops PrettyChatCombatWatcher's two events; a frame exists only while the mode is inCombat / outOfCombat
 PrettyChat:IsCategoryEnabled(category)            -- nil → default true (from NS.Defaults)
 PrettyChat:IsStringEnabled(category, globalName)  -- false iff disabledStrings[NAME] == true
 PrettyChat:EnsureCategoryDB(category)             -- creates db.profile.categories[Cat] if missing, returns it
@@ -99,9 +105,13 @@ NS.Schema.ApplyDefault(row)                    -- restore ONE row to row.default
 NS.Schema.validation                           -- { checked, failed, misses } from the load-time path validator; asserted by the suite
 NS.Schema.FormatValue(row, value)              -- type-aware display string (bool → true/false; string → format with `|` doubled to `||`); shared by /pc list rows and the get/set echo
 NS.Schema.ResolveCategory(name)                -- case-insensitive "loot" → "Loot"; falls back to unambiguous prefix
-NS.Schema.NotifyPanelChange(category?)         -- invokes the closure registered for `category`; nil or "General" runs every closure
+NS.Schema.NotifyPanelChange(category?)         -- drives BOTH refresher registries: NS.Helpers.RefreshScalars() for library-made widgets, then the closure
+                                               -- registered for `category`; nil or "General" runs every closure
                                                -- (per-string disabled state depends on master, so master changes cascade)
 NS.Schema.RegisterRefresher(category, fn)      -- settings/Panel.lua registers one per DRAWN category tab (nil drops it)
+NS.Schema.InstallMasterControls(H)             -- splices the COMPOSED Master controls block in at the HEAD of rows; called from settings/OptionsSetup.lua on both its paths, idempotent
+NS.Schema.masterAfterGroup                     -- the composer's own hook, drawing the group's closing "Reset all settings" button; settings/Panel.lua wires it as that group's afterGroup
+NS.Schema.CATEGORY_PAGE                        -- the page key every message-category row declares ("Categories"); deliberately NOT a member of CATEGORY_ORDER
 NS.Schema.crossRegisteredGlobals               -- map of globalName → {Cat1, Cat2, …} for globals registered under >1 category
 NS.Schema.CATEGORY_ORDER                       -- canonical display order (also drives /pc list, the Categories tab strip)
 ```
@@ -121,7 +131,7 @@ The single chokepoint for addon chat output. Use this, not raw `print()` or `sel
 
 `PrettyChat.toc` is the source of truth. Order is dependency, not alphabetical:
 
-1. Libraries — LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, then **`libs\LibKa0s\LibKa0s.xml`** (after Ace3, library-stack-§7), which pulls in Core → Env → Pool → Item → Media → Widgets → DebugLog → Slash → Options → OptionsWidgets → OptionsScroll → Perf → PerfPanel, in that XML order. (`AceConfig-3.0` was removed from `libs/` — no live consumer; re-vendor it if a future feature needs it.)
+1. Libraries — LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, then **`libs\LibKa0s\LibKa0s.xml`** (after Ace3, library-stack-§7), which pulls in Core → Env → Pool → Item → Media → Widgets → DebugLog → Slash → Options → OptionsWidgets → OptionsCompose → OptionsScroll → Perf → PerfPanel, in that XML order. (`AceConfig-3.0` was removed from `libs/` — no live consumer; re-vendor it if a future feature needs it.)
 2. `locales/enUS.lua` — populates `NS.L` (English-key metatable + enUS manifest). Loads first among addon files (toc-file-§5 section order); it only builds `NS.L` and has no earlier-load dependency.
 3. `core/EnvSetup.lua` — the `LibKa0s-Env-1.0` seam. Publishes `NS.Meta` / `NS.Version`. Side-effect-free; the first `core/` file, so any later file can call it. **This position is load-bearing**: `core/Namespace.lua`, `settings/Panel.lua` and `settings/Slash.lua` all read the TOC at FILE SCOPE, so the seam has to exist first.
 4. `core/MediaSetup.lua` — the `LibKa0s-Media-1.0` seam. Publishes `NS.Icon` / `NS.MediaFont` and registers the library's shipped media with LibSharedMedia at file load. **This position is load-bearing**: `core/Constants.lua` below resolves `FONT_MONO` through `NS.MediaFont` at load, so the seam has to exist first.
@@ -137,10 +147,10 @@ The single chokepoint for addon chat output. Use this, not raw `print()` or `sel
 14. `defaults/Defaults.lua` — populates `NS.Defaults`.
 15. `GlobalStrings/` — **not in the load order at all** since PC-R-05. The panel resolves "Original" values from the `OnEnable` snapshot through `NS.OriginalFormat`; the chunks are repo-only reference data that `tests/test_defaults.lua` loads directly.
 16. `modules/Override.lua` — attaches the override engine to the addon object (`ApplyStrings`, enable-cascade predicates, `ResetString` / `ResetCategory` / `ResetAll`, `Test`) and defines `NS.RenderSample` and `NS.OriginalFormat`.
-17. `settings/Schema.lua` — builds `rows` / `byPath` from `NS.Defaults` (which is loaded earlier) and runs the load-time path validator. Closures bind to live values.
-18. `settings/OptionsSetup.lua` — the `LibKa0s-Options-1.0` seam. Populates `NS.Helpers` (the instance itself). After `settings/Schema.lua`, whose `Get`/`Set`/`RowsByCategory` the descriptor reads, and before `settings/Panel.lua`, which takes it as a file-scope upvalue and registers its pages at file load (options-ui-§1).
+17. `settings/Schema.lua` — builds `rows` / `byPath` from `NS.Defaults` (which is loaded earlier) and runs the load-time path validator. Closures bind to live values. It also declares the `Master controls` spec and its host wiring, but does **not** compose it: the composers live on the Options instance, which the next file creates.
+18. `settings/OptionsSetup.lua` — the `LibKa0s-Options-1.0` seam. Populates `NS.Helpers` (the instance itself), then calls `NS.Schema.InstallMasterControls(NS.Helpers)`, which splices the composed `Master controls` block in at the head of the schema. After `settings/Schema.lua`, whose `Get`/`Set`/`RowsByCategory` the descriptor reads and whose install seam this file drives, and before `settings/Panel.lua`, which takes it as a file-scope upvalue and registers its pages at file load (options-ui-§1). **`MasterControls` is the one member the degraded stub in this file has to do real work for**, because it is the one reached at load.
 19. `settings/Slash.lua` — the `COMMANDS` table and the `LibKa0s-Slash-1.0` descriptor, publishing `NS.COMMANDS` and `NS.SlashCommands`. After Schema so the descriptor's `get`/`set`/`findRow`/`allRows` can reach it.
-20. `settings/Panel.lua` — the page bodies (landing, `General`, `Categories` and the per-category body the last of those draws under its tab strip). Registers each page with `NS.Helpers.RegisterOptionsPage` at file load and declares it with `SetRenderer`, which owns the first-`OnShow` deferral, the every-`OnShow` Defaults button and the combat refusal. Exposes `NS.Config.RegisterPanels` (the library's `CreateOptionsPanel`, called from `PrettyChat:OnEnable`) and `NS.Config.BuildMain`. Its bespoke per-string blocks register through `NS.Schema.RegisterRefresher`; every library-made widget registers on its page's own ctx. After `settings/Slash.lua`, because the landing page renders `NS.SlashCommands:LandingRows()`.
+20. `settings/Panel.lua` — the page bodies (landing, `General`, `Categories`, the per-category body the last of those draws under its primary tab strip, and inside that an AceGUI `TreeGroup`: the category's string list beside the one per-string editor). Registers each page with `NS.Helpers.RegisterOptionsPage` at file load and declares it with `SetRenderer`, which owns the first-`OnShow` deferral, the every-`OnShow` Defaults button and the combat refusal. Exposes `NS.Config.RegisterPanels` (the library's `CreateOptionsPanel`, called from `PrettyChat:OnEnable`) and `NS.Config.BuildMain`. Its bespoke per-string blocks register through `NS.Schema.RegisterRefresher`; every library-made widget registers on its page's own ctx. After `settings/Slash.lua`, because the landing page renders `NS.SlashCommands:LandingRows()`.
 
 If you add a new file, put it in the right place in `PrettyChat.toc`.
 
@@ -181,11 +191,11 @@ Source `.lua` is grouped under `core/`, `defaults/`, `locales/`, `modules/`, and
 
 | File | Responsibility |
 |------|----------------|
-| `modules/Override.lua` | The override engine, attached to the shared addon object. Houses `ApplyStrings` (deterministic `CATEGORY_ORDER` + sorted iteration), `Test`, the read helpers (`GetStringValue` / `IsAddonEnabled` / `IsCategoryEnabled` / `IsStringEnabled` / `EnsureCategoryDB`), `ResetString` / `ResetCategory` / `ResetAll`, and `NS.RenderSample(fmt)` shared with the panel's per-row Preview EditBox. |
+| `modules/Override.lua` | The override engine, attached to the shared addon object. Houses `ApplyStrings` (deterministic `CATEGORY_ORDER` + sorted iteration), `Test(filter, sink)` — whose `sink` defaults to `NS.Print` so `/pc test` writes to chat and the settings button writes to the debug console — the read helpers (`GetStringValue` / `IsAddonEnabled` / `IsCategoryEnabled` / `IsStringEnabled` / `EnsureCategoryDB`), the General-visibility pair (`GetVisibility` / `IsVisible`) with the opt-in `SyncCombatWatch` that arms `PrettyChatCombatWatcher` only for the two combat-scoped modes, `ResetString` / `ResetCategory` / `ResetAll`, and `NS.RenderSample(fmt)` shared with the panel's per-row Preview EditBox. |
 | `settings/Schema.lua` | Builds a flat `rows` array and `byPath` lookup from `NS.Defaults` at file-load, plus a load-time path validator (`Schema.validation`), `AllRows`, `ApplyDefault` and the type-aware `Schema.FormatValue`. Exposes `NS.Schema` — the **single write path** shared by the slash CLI and the panel. `NotifyPanelChange` drives **both** refresher registries: the library's ctx-scoped one (via `NS.Helpers.RefreshScalars`) and the schema's own, which the bespoke per-string blocks use. Owns `CATEGORY_ORDER`. See [schema.md](./schema.md). |
-| `settings/OptionsSetup.lua` | The `LibKa0s-Options-1.0` seam. Publishes `NS.Helpers` — **the instance itself**, decorated in place, never a copy-across table. Supplies the brand, `mainPanelName`, the `get`/`set`/`applyDefault` write seam, `rowsForPage`/`allRows`, and the landing-page hook. Its library-absent branch is the one documented **load-completing** stub (options-ui-§1): PrettyChat's measured load-time member set is empty, which `tests/test_libka0s.lua` pins by comparing schema row counts across a library-absent load. |
+| `settings/OptionsSetup.lua` | The `LibKa0s-Options-1.0` seam. Publishes `NS.Helpers` — **the instance itself**, decorated in place, never a copy-across table. Supplies the brand, `mainPanelName`, the `get`/`set`/`applyDefault` write seam, `rowsForPage`/`allRows`, and the landing-page hook. Its library-absent branch is the one documented **load-completing** stub (options-ui-§1): PrettyChat's measured load-time member set is exactly **one**, `MasterControls`, because the General page's Master controls block is composed at the bottom of this file — which `tests/test_libka0s.lua` pins by comparing schema row counts across a library-absent load. |
 | `settings/Slash.lua` | Owns the ordered `COMMANDS` table of **positional triples** (`help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `test`, `debug`) — the host's, passed to the library as plain data — and the `LibKa0s-Slash-1.0` descriptor with its two hooks: `format` (the `\|` → `\|\|` doubling) and `parse` (free text containing spaces). Four verbs stay host-owned: `list`'s two reserved sub-keywords and its category filter, `resetall`, `test`, `debug`. Publishes `NS.COMMANDS` and `NS.SlashCommands`. See [slash-dispatch.md](./slash-dispatch.md). |
-| `settings/Panel.lua` | The page **bodies**, and nothing else. `buildGeneralBody` draws the virtual `General` page entirely through the library (`RenderRows` + the `pairWith` seam for the console checkbox + `InlineButtonPair`); `buildCategoriesBody` draws the `Categories` page — an `H.TabStrip` of the eight message categories, a footnote, and then `buildCategoryBody` for the active tab, which uses `RenderField` for the category's Enable row and then the bespoke 40/60 `buildStringRow` blocks; `buildParentBody` is the landing page, handed over as the descriptor's `buildMain`. **Two** pages register through `H.RegisterOptionsPage` at file load and declare themselves with `H.SetRenderer`, which owns the first-OnShow deferral, the every-OnShow Defaults button and the combat refusal. Exposes `NS.Config.RegisterPanels` and `NS.Config.BuildMain`. See [settings-panel.md](./settings-panel.md). |
+| `settings/Panel.lua` | The page **bodies**, and nothing else. `buildGeneralBody` draws the virtual `General` page through the library — one explainer `TextRow`, then `H.RenderTabbedSchema` over its one composed `Master controls` tab, whose `afterGroup` hook draws the host `Test` button and then the composer's own `Schema.masterAfterGroup` closing button; `buildCategoriesBody` draws the `Categories` page — an `H.TabStrip` of the eight message categories, a footnote, and then `buildCategoryBody` for the active tab, which uses `RenderField` for the category's Enable row and then an AceGUI `TreeGroup`: `stringTree` (one row per format string, keyed by `GLOBALNAME`) in its tree pane, with **one** `buildStringRow` editor for the selected string added as its children; `buildParentBody` is the landing page, handed over as the descriptor's `buildMain`. **Two** pages register through `H.RegisterOptionsPage` at file load and declare themselves with `H.SetRenderer`, which owns the first-OnShow deferral, the every-OnShow Defaults button and the combat refusal. Exposes `NS.Config.RegisterPanels` and `NS.Config.BuildMain`. See [settings-panel.md](./settings-panel.md). |
 
 ### GlobalStrings sub-tree
 

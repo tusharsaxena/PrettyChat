@@ -286,14 +286,22 @@ test("cross-registered globals are identified with their real categories", funct
     end
 end)
 
+-- The composed Master controls block, which is the whole of the General page:
+-- Enable PrettyChat, General visibility, Debug console. Written out as a number
+-- because it is what the defaults table CANNOT imply — those three rows are
+-- LibKa0s-Options-1.0's canonical block rather than this addon's data
+-- (options-ui-§15), and the frameless omission of master scale, master alpha and
+-- lock frame is what makes it three rather than six.
+local MASTER_ROWS = 3
+
 test("the schema builds exactly the rows the defaults imply", function()
-    -- 1 addon-wide row + 1 row per backed category + 2 rows per string
+    -- the Master controls block + 1 row per backed category + 2 rows per string
     -- registration. Any drift means Schema and Defaults disagree.
     local backedCategories = 0
     for _, c in ipairs(ORDER) do
         if NS.Defaults[c] then backedCategories = backedCategories + 1 end
     end
-    local expected = 1 + backedCategories + (#entries * 2)
+    local expected = MASTER_ROWS + backedCategories + (#entries * 2)
 
     local actual = 0
     for _, c in ipairs(ORDER) do

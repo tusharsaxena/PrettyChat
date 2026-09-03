@@ -88,7 +88,100 @@ test("exactly one addon-wide row exists, under the virtual General category", fu
         if r.kind == "addon_enabled" then addonRows = addonRows + 1 end
     end
     t.eq(addonRows, 1, "one master switch, not one per category")
-    t.eq(#Schema.RowsByCategory("General"), 1, "and General hosts nothing else")
+    -- Three now, and all three are the composed Master controls block
+    -- (options-ui-§15). MOVED here rather than added beside what was already
+    -- drawn: the console toggle used to be a bespoke SessionCheckbox
+    -- settings/Panel.lua drew through `pairWith`, and there is exactly one
+    -- declaration of it.
+    t.eq(#Schema.RowsByCategory("General"), 3, "and General hosts the whole block")
+end)
+
+test("the Master controls block is the composed one, in canonical order", function()
+    -- Not hand-written (options-ui-§15): these rows are H.MasterControls' own, so
+    -- what is pinned here is the LEAVES, their ORDER, and PrettyChat's frameless
+    -- omission — master scale, master alpha and lock frame. Dies if a leaf is
+    -- added by hand, reordered, or if `frameless` is dropped from the spec.
+    local generalRows = Schema.RowsByCategory("General")
+    local paths = {}
+    for i, r in ipairs(generalRows) do paths[i] = r.path end
+    t.eq(table.concat(paths, ","),
+        "General.enabled,General.visibility,state.debugConsole",
+        "enable, visibility, console — the frameless block, in that order")
+
+    for _, path in ipairs({ "General.scale", "General.alpha", "General.locked" }) do
+        t.nilv(Schema.FindByPath(path), path .. " is omitted: this addon draws no frame")
+    end
+
+    -- The block leads the whole schema, which is what makes Master controls the
+    -- General page's FIRST tab and what puts it at the head of `/pc list`.
+    t.eq(Schema.AllRows()[1].path, "General.enabled", "and it is spliced in at the head")
+end)
+
+test("every schema row on every page carries a group", function()
+    -- A page whose rows carry no `group` is REPORTED and rendered untabbed by the
+    -- library (options-ui-§13), which is a strip-less page nobody asked for. Dies
+    -- the moment a row is added without one.
+    for _, r in ipairs(Schema.AllRows()) do
+        t.truthy(r.group, r.path .. " declares the tab it is drawn on")
+        t.truthy(r.page,  r.path .. " declares the page it belongs to")
+    end
+end)
+
+test("no colour row exists, and none may appear without its class-colour companion", function()
+    -- options-ui-§17 requires every non-palette colour swatch to carry a
+    -- `useClassColor<Surface>` companion IMMEDIATELY after it, and forbids
+    -- `disabledIf` on a swatch outright (the swatch is still read for its alpha, so
+    -- graying it would say something untrue). PrettyChat has NONE — the schema is
+    -- bool and string only, which is why `colorDecode`/`colorEncode` are the two
+    -- descriptor fields settings/OptionsSetup.lua deliberately does not pass.
+    --
+    -- Not a vacuous loop: the count is asserted, so this case dies the moment a
+    -- colour row is hand-written into the schema instead of composed through
+    -- H.ColorPair (which supplies the companion and the `startsLine` for free).
+    local rows, colours = Schema.AllRows(), 0
+    for i, r in ipairs(rows) do
+        if r.type == "color" then
+            colours = colours + 1
+            t.falsy(r.disabledIf, r.path .. " must never carry disabledIf")
+            local companion = rows[i + 1]
+            t.truthy(companion and companion.type == "bool"
+                and companion.label == "Use class color",
+                r.path .. " is followed by its Use class color companion")
+            t.truthy(r.classColorSource, r.path .. " declares which class it means")
+        end
+    end
+    t.eq(colours, 0, "this addon ships no colour rows at all")
+end)
+
+test("the visibility row is the canonical four-mode dropdown, not a boolean", function()
+    -- options-ui-§15: a boolean can only ever answer two of the four. PrettyChat
+    -- never shipped a "show only in combat" checkbox, so there is no stored shape
+    -- to migrate — what there is instead is this row, with all four modes honoured
+    -- by modules/Override.lua (tests/test_override.lua pins that end).
+    local visRow = Schema.FindByPath("General.visibility")
+    t.eq(visRow.type, "string", "a string enum")
+    t.eq(visRow.default, "always", "defaulting to always")
+    local modes = {}
+    for key in pairs(visRow.values or {}) do modes[#modes + 1] = key end
+    table.sort(modes)
+    t.eq(table.concat(modes, ","), "always,inCombat,never,outOfCombat",
+        "and it offers exactly the four canonical modes")
+end)
+
+test("the debug console row is session-only and re-applies nothing", function()
+    -- It stores nothing — the console's visibility is not a setting — and it must
+    -- not drag a pass over ~170 Blizzard globals behind it. Dies if the
+    -- `sessionOnly` guard in Schema.Set is removed.
+    local consoleRow = Schema.FindByPath("state.debugConsole")
+    t.truthy(consoleRow.sessionOnly, "the row declares itself session-only")
+    t.nilv(consoleRow.default, "and carries no stored default")
+
+    Schema.Set(row.path, "SENTINEL %s")
+    env[row.globalName] = "UNTOUCHED"
+    Schema.Set("state.debugConsole", true)
+    t.eq(env[row.globalName], "UNTOUCHED", "toggling the console re-applied nothing")
+    Schema.Set("state.debugConsole", false)
+    Schema.Set(row.path, row.default)
 end)
 
 test("RowsByCategory returns only that category, in registration order", function()
@@ -211,34 +304,43 @@ end)
 -- docs/module-map.md print, so a disagreement between the schema and the docs
 -- surfaces here rather than at a reader's desk.
 --
--- Two pages. "General" is the virtual category and holds exactly the master
--- toggle; a page with one group draws NO tab strip (the library falls back to a
--- plain scrolling page), which is why one tab is the honest entry for it rather
--- than an omission. "Categories" holds one tab per message category, in
--- CATEGORY_ORDER, and owns no rows of its own — its page key is deliberately not
--- a category, so Schema.ResolveCategory("Categories") must stay nil.
+-- Two pages, and BOTH draw a strip (options-ui-§13). "General" is the virtual
+-- category and holds exactly the composed Master controls block, on a ONE-TAB
+-- strip — a single tab is still a strip as of OptionsWidgets minor 13, and this
+-- page is why the rule matters: it was the one page in the addon without one.
+-- "Categories" holds one tab per message category, in CATEGORY_ORDER, and owns no
+-- rows of its own — its page key is deliberately not a category, so
+-- Schema.ResolveCategory("Categories") must stay nil.
+--
+-- `tab` is the GROUP the rows declare; `category` is where they are stored. They
+-- differ on exactly one tab, and listing both is the point: the General page's
+-- rows are stored under the virtual "General" category and drawn under a tab
+-- called "Master controls".
 local PARTITION = {
     { page = "General", tabs = {
-        { "General", 1 },
+        { tab = "Master controls", category = "General", rows = 3 },
     } },
     { page = "Categories", tabs = {
-        { "Loot",       39 },
-        { "Currency",    9 },
-        { "Money",      17 },
-        { "Reputation", 29 },
-        { "Experience", 41 },
-        { "Honor",      13 },
-        { "Tradeskill", 17 },
-        { "Misc",        5 },
+        { tab = "Loot",       category = "Loot",       rows = 39 },
+        { tab = "Currency",   category = "Currency",   rows =  9 },
+        { tab = "Money",      category = "Money",      rows = 17 },
+        { tab = "Reputation", category = "Reputation", rows = 29 },
+        { tab = "Experience", category = "Experience", rows = 41 },
+        { tab = "Honor",      category = "Honor",      rows = 13 },
+        { tab = "Tradeskill", category = "Tradeskill", rows = 17 },
+        { tab = "Misc",       category = "Misc",       rows =  5 },
     } },
 }
 
 test("every page's tabs hold the designed number of rows", function()
     for _, page in ipairs(PARTITION) do
         for _, tab in ipairs(page.tabs) do
-            local name, count = tab[1], tab[2]
-            t.eq(#Schema.RowsByCategory(name), count,
-                ("%s > %s holds %d rows"):format(page.page, name, count))
+            t.eq(#Schema.RowsByCategory(tab.category), tab.rows,
+                ("%s > %s holds %d rows"):format(page.page, tab.tab, tab.rows))
+            for _, r in ipairs(Schema.RowsByCategory(tab.category)) do
+                t.eq(r.group, tab.tab, r.path .. " declares the tab it is drawn on")
+                t.eq(r.page, page.page, r.path .. " declares the page it is drawn on")
+            end
         end
     end
 end)
@@ -247,9 +349,9 @@ test("the partition is total and disjoint — every row on exactly one tab", fun
     local seen, total = {}, 0
     for _, page in ipairs(PARTITION) do
         for _, tab in ipairs(page.tabs) do
-            t.falsy(seen[tab[1]], tab[1] .. " appears on exactly one tab")
-            seen[tab[1]] = true
-            total = total + tab[2]
+            t.falsy(seen[tab.category], tab.tab .. " appears on exactly one tab")
+            seen[tab.category] = true
+            total = total + tab.rows
         end
     end
     t.eq(total, #Schema.AllRows(), "the tabs account for every schema row, and no more")
@@ -262,7 +364,7 @@ test("the Categories tabs are CATEGORY_ORDER minus the virtual General", functio
     -- Derived rather than restated in settings/Panel.lua, so the strip, `/pc list`
     -- and `/pc test` cannot disagree about what comes first.
     local designed = {}
-    for _, tab in ipairs(PARTITION[2].tabs) do designed[#designed + 1] = tab[1] end
+    for _, tab in ipairs(PARTITION[2].tabs) do designed[#designed + 1] = tab.tab end
     local expected = {}
     for _, c in ipairs(Schema.CATEGORY_ORDER) do
         if c ~= "General" then expected[#expected + 1] = c end

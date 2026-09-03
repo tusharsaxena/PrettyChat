@@ -49,6 +49,9 @@ read_globals = {
     "DEFAULT_CHAT_FRAME",
     "GameTooltip",
     "InCombatLockdown",
+    -- The General visibility modes: read at every ApplyStrings pass, and the
+    -- transition the combat watcher's two events answer.
+    "UnitAffectingCombat",
     "GetAddOnMetadata",
     "UIParent",
     "YES",

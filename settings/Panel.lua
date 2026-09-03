@@ -9,9 +9,12 @@ local addonName, NS = ...
 -- reached through NS.Helpers (settings/OptionsSetup.lua). What is left here is the
 -- part that is genuinely PrettyChat's: what each of its three kinds of page draws.
 --
--- The landing page, the General page and the Categories page's tab strip are the
--- library's own shapes. The per-string editor under a tab is not, and that is the
--- documented deviation this file has carried since PC-23 — see buildStringRow.
+-- The landing page, the General page and the Categories page's PRIMARY strip are
+-- the library's own shapes (H.TabStrip). Two things on the Categories page are
+-- not, and both are documented deviations recorded in docs/ARCHITECTURE.md: the
+-- per-string editor's column split (options-ui-§6, carried since PC-23), and the
+-- string LIST beside it, which §13 would have as a secondary strip — see
+-- buildCategoryBody for why twenty wrapped buttons stopped being one.
 
 local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 local AceGUI = LibStub("AceGUI-3.0")
@@ -49,64 +52,87 @@ StaticPopupDialogs["PRETTYCHAT_RESET_ALL"] = {
     OnAccept     = function() PrettyChat:ResetAll() end,
 }
 
+-- The one way into the destructive path, so the confirmation cannot be walked
+-- around. The composed Master controls block's `onResetAll` calls this
+-- (settings/Schema.lua) rather than naming the popup, which is registered here.
+function PrettyChat:ConfirmResetAll()
+    StaticPopup_Show("PRETTYCHAT_RESET_ALL")
+end
+
 -- ---------------------------------------------------------------------
--- General sub-page — addon-wide controls: the master Enable, the console
--- visibility checkbox, and the Test / Reset-all pair.
+-- General sub-page — one tab, `Master controls`, and every addon-wide control on
+-- it (options-ui-§15).
 --
--- Drawn entirely through the library. The master toggle is a schema row, so
--- it goes through the flow engine; the console checkbox is NOT a setting and
--- must never become one, so it arrives as the right half of that row through
--- the pairWith seam, wired to LibKa0s-DebugLog-1.0's ConsoleCheckbox() data
--- contract rather than to a path.
+-- Nothing is drawn by hand here any more. The three rows — Enable PrettyChat,
+-- General visibility, Debug console — are the COMPOSED block settings/Schema.lua
+-- splices in at the head of this page (H.MasterControls), so this body is a strip
+-- plus the group's closing acts. The bespoke SessionCheckbox that used to arrive
+-- through `pairWith` is gone with it: the console toggle is a composed row like
+-- every other control on the tab, and there is exactly one declaration of it.
+--
+-- A ONE-GROUP PAGE STILL DRAWS ITS STRIP. RenderTabbedSchema has done that since
+-- OptionsWidgets minor 13, and this page is why the rule matters here: it used to
+-- be the one page in the addon with no strip at all, which read as broken beside
+-- the Categories page rather than as simpler.
 -- ---------------------------------------------------------------------
+
+-- The report the Test button writes, and where it writes it.
+--
+-- To the DEBUG CONSOLE, not to chat: `PrettyChat:Test()` prints one line per
+-- format string plus a header and a footer — 500+ lines with every category
+-- enabled — into the chat frame this addon exists to keep readable. The console
+-- is a window with a scrollbar and a copy button, which is what a report that
+-- long actually needs. `/pc test` is unchanged and still prints to chat, because
+-- the sink is a PARAMETER on Test rather than a redirection of NS.Print.
+-- A METHOD, not a file-local, because settings/Schema.lua's MASTER_SPEC now names
+-- it: the Test button is the composer's `leadButton` and its click is declared
+-- beside the reset's, late-bound through PrettyChat exactly as
+-- `PrettyChat:ConfirmResetAll` already is. The verb stays here, where the panel's
+-- other acts are; only its declaration moved.
+function PrettyChat:TestToConsole()
+    NS.DebugLog:Show()
+    PrettyChat:Test(nil, function(line) NS.DebugLog:Add("Test", line) end)
+end
+
+-- The Master controls group's closing acts, wired as its `afterGroup`.
+--
+-- THIS FUNCTION IS THE COMPOSER'S HOOK AND NOTHING ELSE NOW. It used to draw Test
+-- on a row of its own and then call the composer's hook, so the tab closed with
+-- two stacked buttons. §15 fixes the reset's wording and the composer is the only
+-- thing that writes it, so pairing them here would have meant a second copy of
+-- "Reset all settings" in this addon — the drift the composer was extracted to
+-- end. LibKa0s v1.25.0 (OptionsCompose minor 2) takes a `leadButton` instead, and
+-- puts the verb in the pair's empty right half — the one cell §15 leaves a
+-- frameless addon, which has no "Reset position" to fill it.
+local function generalAfterGroup(ctx)
+    Schema.masterAfterGroup(ctx)
+end
 
 local function buildGeneralBody(ctx)
     H.ClearScroll(ctx)
     local scroll = H.EnsureScroll(ctx)
     if not scroll then return end
 
-    local desc = AceGUI:Create("Label")
-    desc:SetFullWidth(true)
-    desc:SetText(L["Addon-wide controls. The Enable toggle is the master switch — disable it and every Blizzard original is restored regardless of per-category settings."])
-    if desc.label and desc.label.SetFontObject and _G.GameFontHighlight then
-        desc.label:SetFontObject(_G.GameFontHighlight)
-    end
-    scroll:AddChild(desc)
+    H.TextRow(ctx, L["Addon-wide controls. Enable is the master switch and General visibility is its second dimension — with either off, every Blizzard original is restored regardless of per-category settings."],
+        { fontObject = "GameFontHighlight" })
     H.AddSpacer(scroll, H.ROW_VSPACER)
 
-    -- The console box mirrors the WINDOW's visibility and never touches the
-    -- logging flag; the two are separate controls and a user who closes the
-    -- console does not expect capture to stop. Both facts are the library's, in
-    -- the checkbox spec it hands over — including the tooltip, which composes
-    -- this addon's own slash from the console descriptor.
-    local pairWith = {
-        ["General.enabled"] = function(pairCtx, rowGroup)
-            H.SessionCheckbox(pairCtx, rowGroup, 0.5, NS.DebugLog:ConsoleCheckbox())
-        end,
-    }
-    H.RenderRows(ctx, { Schema.FindByPath("General.enabled") }, nil, pairWith)
-
-    H.InlineButtonPair(ctx,
-        {
-            text    = L["Test"],
-            tooltip = L["Print a sample of every active format string to chat so you can see what real loot/currency/XP messages will look like."],
-            onClick = function() PrettyChat:Test() end,
-        },
-        {
-            text    = L["Reset all to defaults"],
-            tooltip = L["Start over: reset the active profile to the addon defaults. The same thing the Profiles page's Reset Profile does. Your other profiles are left alone."],
-            -- Through the popup, never straight to the reset: this is the
-            -- destructive path and its confirmation is the guard.
-            onClick = function() StaticPopup_Show("PRETTYCHAT_RESET_ALL") end,
-        })
+    -- The group NAME is the hook key (options-ui-§15). Renaming the group would
+    -- detach the closing button and nothing would error, which is why the name
+    -- comes off the library rather than being spelled out again here.
+    H.RenderTabbedSchema(ctx, "General", { [H.MASTER_GROUP] = generalAfterGroup }, nil)
 end
 
 -- ---------------------------------------------------------------------
 -- Per-string block.
---   ─── <strData.label> ───                          (Heading, full width)
 --   [Enable]              | Original  [disabled EditBox]
 --   GLOBALNAME (gray)     | New       [editable EditBox]
 --   [Reset]               | Preview   [disabled EditBox, color rendered]
+--
+-- The Heading this block used to open with is GONE, replaced by the secondary
+-- tab that selects it (options-ui-§13): one tab per string, drawn by
+-- buildCategoryBody below. A heading repeating the name of the tab you are
+-- standing on is the label options-ui-§7 calls a second name for one thing.
 --
 -- Two-column 40/60 split, drawn by hand rather than by the library's flow
 -- engine. This is the documented deviation from options-ui-§6's 50/50 grid
@@ -129,31 +155,65 @@ end
 -- escapes, so the rendered sample shows with its formatting intact.
 -- ---------------------------------------------------------------------
 
-local LEFT_W  = 0.4
-local RIGHT_W = 0.6
+-- The tree pane's width, in pixels, because that is the unit AceGUI's TreeGroup
+-- takes. 200 rather than its own 175 default: the longest label this addon
+-- registers is "Item Looted Multiple (Other)", which 175 clips.
+local TREE_W = 200
 
-local function buildStringRow(scroll, category, globalName, strData, refreshers)
+-- The tree's line height and chrome, from AceGUI's own arithmetic
+-- (AceGUIContainer-TreeGroup.lua computes its visible line count as
+-- `(treeframe height - 20) / 18`). Read here so the height this page asks for is
+-- a number of LINES rather than a guess that happens to fit.
+local TREE_LINE_H   = 18
+local TREE_CHROME_H = 20
+
+-- The height the whole widget asks for. A TreeGroup inside a scroll has to be
+-- told one -- it has no natural height.
+--
+-- TREE_MIN_H is the FLOOR and the render-time guess: the editor needs about this
+-- much whatever the list holds, and the render cannot do better than guess
+-- because the settings canvas has no height until it has laid itself out (the
+-- library documents that for WIDTH at its own replaceOnResize, and it is the same
+-- pass). TREE_MAX_H caps the guess so a twenty-string category does not open a
+-- box taller than the panel before the fit below corrects it.
+--
+-- TREE_FILL is what the fit takes of the space actually under the controls above
+-- it. Not 1.0: a box flush to the bottom edge of the scroll reads as clipped
+-- rather than as sized, and the remainder is what says the page ends there.
+local TREE_MIN_H = 260
+local TREE_MAX_H = 380
+local TREE_FILL  = 0.9
+
+-- Inside the pane: the Enable tick and the GLOBALNAME caption share a line, and
+-- everything else is full width. The caption is the wider half because a Blizzard
+-- global is long (COMBATLOG_XPGAIN_FIRSTPERSON_RAID) and the tick's label is one
+-- word.
+local TICK_W    = 0.3
+local CAPTION_W = 0.7
+
+-- How wide Reset is inside the pane. Not full width: it is one act at the foot of
+-- a column of fields, and a full-width red bar under four boxes reads as the
+-- subject of the pane rather than as its last control.
+local RESET_W = 0.4
+
+--- One string's editor, into the RIGHT-hand column.
+---
+--- Reset restores BOTH per-string dimensions (custom format + enable state) via
+--- PrettyChat:ResetString, matching the category/all resets. The Preview EditBox
+--- uses InputBoxTemplate, whose backing FontString renders WoW `|c…|r` color
+--- escapes, so the rendered sample shows with its formatting intact.
+local function buildStringRow(pane, category, globalName, refreshers)
     local enabledPath = category .. "." .. globalName .. ".enabled"
     local formatPath  = category .. "." .. globalName .. ".format"
 
-    -- Heading: friendly label as section divider for this string
-    local heading = AceGUI:Create("Heading")
-    heading:SetText(strData.label)
-    heading:SetFullWidth(true)
-    heading:SetHeight(H.SECTION_HEADING_H)
-    if heading.label and heading.label.SetFontObject and _G.GameFontNormalLarge then
-        heading.label:SetFontObject(_G.GameFontNormalLarge)
-    end
-    scroll:AddChild(heading)
-
-    -- Row 1: Enable | Original (disabled)
+    -- Row 1: Enable | GLOBALNAME
     local row1 = AceGUI:Create("SimpleGroup")
     row1:SetLayout("Flow")
     row1:SetFullWidth(true)
 
     local enable = AceGUI:Create("CheckBox")
     enable:SetLabel(L["Enable"])
-    enable:SetRelativeWidth(LEFT_W)
+    enable:SetRelativeWidth(TICK_W)
     enable:SetCallback("OnValueChanged", function(_, _, value)
         NS.Schema.Set(enabledPath, value and true or false)
     end)
@@ -181,9 +241,18 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
     H.AttachTooltip(enable, L["Enable"], enableTooltip)
     row1:AddChild(enable)
 
+    -- The Blizzard GLOBALNAME, beside the tick rather than under it. It is what
+    -- `/pc set` and `/pc test formatstring` take, so it is the one identifier on
+    -- this pane a player has to be able to copy out of it.
+    local captionLbl = AceGUI:Create("Label")
+    captionLbl:SetRelativeWidth(CAPTION_W)
+    captionLbl:SetText(Color.gray .. globalName .. Color.reset)
+    row1:AddChild(captionLbl)
+    pane:AddChild(row1)
+
     local origInput = AceGUI:Create("EditBox")
     origInput:SetLabel(L["Original"])
-    origInput:SetRelativeWidth(RIGHT_W)
+    origInput:SetFullWidth(true)
     origInput:SetDisabled(true)
     -- The LIVE snapshot this client took at OnEnable, through the one reader
     -- `/pc test` also uses — not the shipped GlobalStrings/ dump, which is a
@@ -196,55 +265,44 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
     origInput:SetText((origValue:gsub("|", "||")))
     H.AttachTooltip(origInput, L["Original Format String"],
         L["Blizzard's original format. Read-only."])
-    row1:AddChild(origInput)
-    scroll:AddChild(row1)
-
-    -- Row 2: GLOBALNAME caption | New (editable)
-    local row2 = AceGUI:Create("SimpleGroup")
-    row2:SetLayout("Flow")
-    row2:SetFullWidth(true)
-
-    local captionLbl = AceGUI:Create("Label")
-    captionLbl:SetRelativeWidth(LEFT_W)
-    captionLbl:SetText(Color.gray .. globalName .. Color.reset)
-    row2:AddChild(captionLbl)
+    pane:AddChild(origInput)
 
     local newInput = AceGUI:Create("EditBox")
     newInput:SetLabel(L["New"])
-    newInput:SetRelativeWidth(RIGHT_W)
+    newInput:SetFullWidth(true)
     newInput:SetCallback("OnEnterPressed", function(_, _, value)
         NS.Schema.Set(formatPath, (value or ""):gsub("||", "|"))
     end)
     H.AttachTooltip(newInput, L["New Format String"],
         L["Your replacement. Type `||` for a literal `|` (color codes use this)."])
-    row2:AddChild(newInput)
-    scroll:AddChild(row2)
+    pane:AddChild(newInput)
 
-    -- Row 3: Reset | Preview (disabled, rendered with color escapes)
-    local row3 = AceGUI:Create("SimpleGroup")
-    row3:SetLayout("Flow")
-    row3:SetFullWidth(true)
+    local previewInput = AceGUI:Create("EditBox")
+    previewInput:SetLabel(L["Preview"])
+    previewInput:SetFullWidth(true)
+    previewInput:SetDisabled(true)
+    H.AttachTooltip(previewInput, L["Preview"],
+        L["The current format rendered with sample arguments."])
+    pane:AddChild(previewInput)
 
+    -- Reset LAST, under the three fields it undoes, and held off them by the gap
+    -- that used to separate one whole string block from the next. It was beside
+    -- the first of the fields, where a destructive act sat level with the one
+    -- control on the pane that cannot change.
+    H.AddSpacer(pane, Const.STRING_VSPACER)
+    local resetRow = AceGUI:Create("SimpleGroup")
+    resetRow:SetLayout("Flow")
+    resetRow:SetFullWidth(true)
     local resetBtn = AceGUI:Create("Button")
     resetBtn:SetText(L["Reset"])
-    resetBtn:SetRelativeWidth(LEFT_W)
+    resetBtn:SetRelativeWidth(RESET_W)
     resetBtn:SetCallback("OnClick", function()
         PrettyChat:ResetString(category, globalName)
     end)
     H.AttachTooltip(resetBtn, L["Reset"],
         L["Restore this string to its default."])
-    row3:AddChild(resetBtn)
-
-    local previewInput = AceGUI:Create("EditBox")
-    previewInput:SetLabel(L["Preview"])
-    previewInput:SetRelativeWidth(RIGHT_W)
-    previewInput:SetDisabled(true)
-    H.AttachTooltip(previewInput, L["Preview"],
-        L["The current format rendered with sample arguments."])
-    row3:AddChild(previewInput)
-    scroll:AddChild(row3)
-
-    H.AddSpacer(scroll, Const.STRING_VSPACER)
+    resetRow:AddChild(resetBtn)
+    pane:AddChild(resetRow)
 
     -- Refresh closure: re-syncs every widget in this block from the DB.
     -- Called on category-level changes (Enable toggled, Defaults pressed,
@@ -271,15 +329,111 @@ local function buildStringRow(scroll, category, globalName, strData, refreshers)
 end
 
 -- ---------------------------------------------------------------------
--- One category's body — the category's own Enable row, then one per-string
--- block. The Enable row is a schema row and goes through the library's
--- checkbox maker at full width; the blocks below it are bespoke.
+-- One category's body — the category's own Enable row, then TWO COLUMNS: a list
+-- of the category's format strings, and the editor for the one selected.
 --
--- The scroll is the CALLER's now, not this function's. It used to own the
+-- The Enable row is a schema row and goes through the library's checkbox maker
+-- at full width; it stays ABOVE the columns, because it governs every string in
+-- the category rather than the one on screen.
+--
+-- A LIST, NOT A SECONDARY STRIP, and that is a deviation from options-ui-§13
+-- recorded in docs/ARCHITECTURE.md beside the §6 one this page already carries.
+-- §13 permits a secondary strip inside one primary tab and this page had one —
+-- but a strip is packed HORIZONTALLY and wraps, and Experience registers twenty
+-- strings with names like "XP Gain (Exhausted, Group)". That is five rows of
+-- buttons stacked above the editor they select: the chrome was taller than the
+-- content and the reader had to scan a paragraph of buttons to find one. The same
+-- twenty read down a column in one glance, and the pattern is the one every
+-- settings window with a long subject list uses.
+--
+-- What §13 is protecting survives intact: the division is drawn as ordinary
+-- content INSIDE the scroll rather than as a second pinned band (a division that
+-- is not page-wide must not push the whole page down twice), there is no third
+-- level, and the selection is session-only.
+--
+-- The selection is the HOST's state, kept as ctx.activeSubTab, a TABLE keyed by
+-- the primary tab's category. That is what makes leaving Loot for Experience and
+-- coming back return to the string you were on. Session-only, and never
+-- persisted: which string you last looked at is not a setting.
+--
+-- The scroll is the CALLER's, not this function's. It used to own the
 -- ClearScroll/EnsureScroll pair because it was a whole page; it is one tab of
 -- the Categories page today, drawn under a strip and under that page's footnote,
 -- and a body that cleared the scroll itself would wipe the line above it.
 -- ---------------------------------------------------------------------
+
+-- Forward-declared: the secondary strip's onSelect re-renders the whole page,
+-- which is the function that draws this one.
+local buildCategoriesBody
+
+-- The string on screen for one category, healed against a global that no longer
+-- exists — the same stale-pointer guard activeCategory applies to the primary
+-- strip, and for the same reason: a pointer at a missing string renders an empty
+-- tab under a strip.
+local function activeString(ctx, category, catData, sortedNames)
+    ctx.activeSubTab = ctx.activeSubTab or {}
+    local key = ctx.activeSubTab[category]
+    if not (key and catData.strings[key]) then
+        key = sortedNames[1]
+    end
+    ctx.activeSubTab[category] = key
+    return key
+end
+
+--- The tree's rows, in the order they are offered.
+local function stringTree(catData, sortedNames)
+    local tree = {}
+    for i, globalName in ipairs(sortedNames) do
+        tree[i] = { value = globalName, text = catData.strings[globalName].label }
+    end
+    return tree
+end
+
+--- How tall the widget asks to be BEFORE the canvas has a height, in whole tree
+--- lines, clamped. fitTree below replaces this with the real answer.
+local function treeHeight(count)
+    local wanted = count * TREE_LINE_H + TREE_CHROME_H
+    if wanted < TREE_MIN_H then return TREE_MIN_H end
+    if wanted > TREE_MAX_H then return TREE_MAX_H end
+    return wanted
+end
+
+--- Fit the tree to the space left under the controls above it.
+---
+--- Reads the CURRENT tree off the ctx rather than closing over one: the hook is
+--- installed once per panel and the ctx outlives every render, while the widget
+--- does not — a handler holding one tree would go on resizing it after the page
+--- had been redrawn around a new one. Same rule, and the same reason, as the
+--- library's own replaceOnResize.
+---
+--- `used` is measured rather than assumed: the footnote wraps at some widths and
+--- not others, so the height above the tree is not a constant this file could
+--- write down. Both reads are guarded — a frame that has not been positioned
+--- answers nil, and nil arithmetic here would take the whole render down.
+local function fitTree(ctx)
+    local tree   = ctx.__pcTree
+    local scroll = ctx.scroll
+    if not (tree and tree.frame and scroll and scroll.frame) then return end
+
+    -- Type-guarded like the two reads below it, and for the same reason: a frame
+    -- the client has not positioned answers nothing useful, and this runs from a
+    -- resize hook that fires before the canvas has settled.
+    local height = scroll.frame:GetHeight()
+    if type(height) ~= "number" or height <= 0 then return end
+
+    local scrollTop, treeTop = scroll.frame:GetTop(), tree.frame:GetTop()
+    local used = (type(scrollTop) == "number" and type(treeTop) == "number")
+        and (scrollTop - treeTop) or 0
+    local wanted = math.floor((height - used) * TREE_FILL)
+    if wanted < TREE_MIN_H then wanted = TREE_MIN_H end
+
+    -- Guarded on a CHANGE, because SetHeight relayouts and the relayout fires this
+    -- same hook: answering every event would be an endless resize.
+    if ctx.__pcTreeH == wanted then return end
+    ctx.__pcTreeH = wanted
+    tree:SetHeight(wanted)
+    if scroll.DoLayout then scroll:DoLayout() end
+end
 
 local function buildCategoryBody(ctx, scroll, category, catData)
     local refreshers = {}
@@ -296,12 +450,90 @@ local function buildCategoryBody(ctx, scroll, category, catData)
     end
     table.sort(sortedNames)
 
-    for _, globalName in ipairs(sortedNames) do
-        buildStringRow(scroll, category, globalName, catData.strings[globalName], refreshers)
+    local selected = activeString(ctx, category, catData, sortedNames)
+
+    -- ONE TreeGroup: the list of strings in its own bordered pane, and the editor
+    -- for the selected one in the content pane beside it. AceGUI's own container,
+    -- which is what draws this shape everywhere else in the game -- every
+    -- AceConfig options window with a left nav is one of these -- so the selected
+    -- row's highlight bar, the border round both panes, the row spacing and the
+    -- tree pane's own scrollbar when the list outgrows it are all the widget's.
+    --
+    -- It replaced a hand-built column of InteractiveLabels that carried the
+    -- selection in the text COLOR alone. That was a column of coloured text, not a
+    -- selector: no box, no bar behind the selected row, no spacing.
+    local tree = AceGUI:Create("TreeGroup")
+    tree:SetFullWidth(true)
+    tree:SetLayout("List")
+    -- THE HOST OWNS THIS CONTAINER'S HEIGHT. Without it, AceGUI's TreeGroup ends
+    -- every layout pass with
+    --
+    --     if self.noAutoHeight then return end
+    --     self:SetHeight((height or 0) + 20)
+    --
+    -- so the box collapses to whatever the EDITOR happens to need (about 260px)
+    -- and every height set below is overwritten on the next layout, whenever it
+    -- was set. The tree pane is a list of a length the page does not choose; how
+    -- tall the box is is a question about the PAGE, not about its contents.
+    tree:SetAutoAdjustHeight(false)
+    tree:SetTreeWidth(TREE_W, false)
+    tree:SetHeight(treeHeight(#sortedNames))
+    tree:SetTree(stringTree(catData, sortedNames))
+    scroll:AddChild(tree)
+
+    -- SELECT FIRST, WIRE SECOND. SelectByValue fires OnGroupSelected in the real
+    -- widget (AceGUIContainer-TreeGroup.lua's Select does), so a callback wired
+    -- before this line would re-enter the page render from inside its own build.
+    -- The guard below is the second half of that, and covers the click path: the
+    -- handler re-renders, the re-render selects, and the selection fires again.
+    if selected then tree:SelectByValue(selected) end
+    tree:SetCallback("OnGroupSelected", function(_, _, value)
+        if not value or value == ctx.activeSubTab[category] then return end
+        ctx.activeSubTab[category] = value
+        buildCategoriesBody(ctx)
+    end)
+
+    if selected then
+        buildStringRow(tree, category, selected, refreshers)
     end
 
-    -- The bespoke blocks are invisible to the library's ctx.refreshers, so they
-    -- register through the schema's own dispatch. Schema.NotifyPanelChange drives
+    -- Parked for the fit, which runs later and on a hook that outlives this
+    -- render. The remembered height is cleared with it: a new tree has not been
+    -- fitted yet, whatever the last one measured.
+    ctx.__pcTree, ctx.__pcTreeH = tree, nil
+
+    -- HookScript, never SetScript: AceGUI's own ScrollFrame drives its scrollbar
+    -- from this script, and replacing it would trade a fitted tree for a scroll
+    -- that no longer knows its own range. Installed once per panel, for the same
+    -- reason the handler reads the ctx -- see fitTree.
+    local frame = scroll.frame
+    if not ctx.__pcTreeHooked and frame and frame.HookScript then
+        ctx.__pcTreeHooked = true
+        frame:HookScript("OnSizeChanged", function() fitTree(ctx) end)
+    end
+    -- Best effort now, for the render that arrives after the canvas already has a
+    -- height -- every one but the first.
+    fitTree(ctx)
+
+    -- AND ONE PASS NEXT FRAME, which is the one that actually sizes the box.
+    --
+    -- The hook above cannot cover the first render: ctx.scroll.frame is anchored
+    -- to ctx.body, so it takes its height when the page's chrome is anchored --
+    -- EARLIER in this same render than this line -- and the one OnSizeChanged that
+    -- mattered has fired before the hook exists. On a panel nobody resizes, no
+    -- other ever arrives. The call above cannot cover it either: AceGUI has not
+    -- laid this tree out yet, so its frame has no position for fitTree to measure
+    -- from.
+    --
+    -- A frame later, both are true. C_Timer.After(0, ...) is the client's own way
+    -- of saying "after this frame's layout"; guarded because a settings page must
+    -- still load on a client that answers nothing for it.
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0, function() fitTree(ctx) end)
+    end
+
+    -- The bespoke block is invisible to the library's ctx.refreshers, so it
+    -- registers through the schema's own dispatch. Schema.NotifyPanelChange drives
     -- both registries; see the comment there.
     Schema.RegisterRefresher(category, function()
         for _, fn in ipairs(refreshers) do pcall(fn) end
@@ -309,7 +541,8 @@ local function buildCategoryBody(ctx, scroll, category, catData)
 end
 
 -- ---------------------------------------------------------------------
--- Categories sub-page — one TAB per message category (options-ui-§13).
+-- Categories sub-page — one PRIMARY tab per message category, and inside each,
+-- one SECONDARY tab per format string (options-ui-§13).
 --
 -- Every category used to be a sub-page of its own: nine rows in the Blizzard
 -- left rail for one addon, eight of which were the same page with a different
@@ -319,23 +552,23 @@ end
 -- NOT H.RenderTabbedSchema, and that is the one thing to understand before
 -- editing this. RenderTabbedSchema partitions a page's SCHEMA ROWS by `group`
 -- and hands each partition to the flow engine; a category tab is one schema row
--- (the Enable) followed by N bespoke 40/60 editors the flow engine cannot
--- express (the options-ui-§6 deviation in docs/ARCHITECTURE.md). So the strip
--- is taken from the library directly through H.TabStrip and the body under it
--- is still buildCategoryBody, generated per category exactly as before. The tab
--- click re-renders through the same ClearScroll-then-draw path
+-- (the Enable) followed by a bespoke 40/60 editor the flow engine cannot express
+-- (the options-ui-§6 deviation in docs/ARCHITECTURE.md). So the strip is taken
+-- from the library directly through H.TabStrip and the body under it is still
+-- buildCategoryBody, generated per category exactly as before. Every row on this
+-- page still DECLARES its page and its group (settings/Schema.lua), so the
+-- partition is readable and assertable even though the flow engine never sees it.
+-- The tab click re-renders through the same ClearScroll-then-draw path
 -- RenderTabbedSchema's own onSelect takes, for the same reason: redrawing
 -- widgets inside an already-open panel was never a protected action, so the tab
 -- click needs no combat guard and carries none.
 -- ---------------------------------------------------------------------
 
 -- The page KEY, which is the untranslated form of its display name (the rail and
--- the header show L["Categories"]). Not a category name: it is deliberately
--- absent from CATEGORY_ORDER, whose entries are schema path segments
--- (`/pc set Loot.enabled false`) and must stay resolvable by
--- Schema.ResolveCategory. This page owns no rows of its own, which is also why
--- the page name is free to be translated where a category name is not.
-local CATEGORY_PAGE = "Categories"
+-- the header show L["Categories"]). Taken off the schema rather than restated
+-- here: every message-category row declares this page and this tab, and the two
+-- spellings drifting apart is the kind of thing nothing would say out loud.
+local CATEGORY_PAGE = Schema.CATEGORY_PAGE
 
 -- The tabs, in strip order: CATEGORY_ORDER minus the virtual "General", which
 -- is a page rather than a message category. Derived rather than restated, so
@@ -358,7 +591,7 @@ local function activeCategory(ctx)
     return TAB_ORDER[1]
 end
 
-local function buildCategoriesBody(ctx)
+function buildCategoriesBody(ctx)
     H.ClearScroll(ctx)
     local scroll = H.EnsureScroll(ctx)
     if not scroll then return end

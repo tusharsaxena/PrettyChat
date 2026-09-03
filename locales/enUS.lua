@@ -10,9 +10,13 @@ local addonName, NS = ...
 -- user-facing string surface — every string wrapped in `L[...]` at a
 -- call site appears here.
 --
--- Three entries LEFT this manifest when the addon adopted LibKa0s: "Defaults"
--- (the options header button), "Debug console" and its tooltip (the console
--- visibility checkbox). Those strings are the library's now — lib.STRINGS on
+-- Entries LEAVE this manifest whenever a string changes hands. Three left when
+-- the addon adopted LibKa0s: "Defaults" (the options header button), "Debug
+-- console" and its tooltip (the console visibility checkbox). Four more left
+-- with the settings revamp, when the General page's controls became the COMPOSED
+-- Master controls block (options-ui-§15): "Enable PrettyChat" and its tooltip,
+-- and the "Reset all to defaults" button and its tooltip, which the composer
+-- draws as "Reset all settings". Those strings are the library's now — lib.STRINGS on
 -- LibKa0s-Options-1.0 and LibKa0s-DebugLog-1.0 — and are therefore no longer
 -- translatable from this folder. That is a real, if small, narrowing of the
 -- translatable surface, and it is deliberate rather than an oversight: the
@@ -28,14 +32,12 @@ NS.L = L
 
 -- enUS manifest (identity mappings — documents the translatable surface).
 local enUS = {
-    -- General sub-page
-    "Addon-wide controls. The Enable toggle is the master switch — disable it and every Blizzard original is restored regardless of per-category settings.",
-    "Enable PrettyChat",
-    "Master switch for the addon. When off, all Blizzard originals are restored.",
+    -- General sub-page. Every control on its one tab is the library's now; what
+    -- is left here is the page's own explainer, the Test verb this addon alone
+    -- has, and the reset confirmation's wording.
+    "Addon-wide controls. Enable is the master switch and General visibility is its second dimension — with either off, every Blizzard original is restored regardless of per-category settings.",
     "Test",
-    "Print a sample of every active format string to chat so you can see what real loot/currency/XP messages will look like.",
-    "Reset all to defaults",
-    "Start over: reset the active profile to the addon defaults. The same thing the Profiles page's Reset Profile does. Your other profiles are left alone.",
+    "Print a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` prints the same report to chat.",
     "Reset this profile to the addon's defaults? Everything you have configured or added in it is discarded — your other profiles are not affected.",
     -- Categories sub-page (the tab strip). The page name is a heading rather
     -- than a schema path segment, so unlike the category names interpolated

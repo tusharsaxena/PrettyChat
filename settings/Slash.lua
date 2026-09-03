@@ -291,7 +291,7 @@ end
 -- Kept host-owned rather than delegated to CliResetAll, for the same reason the
 -- per-category Defaults button is: PrettyChat:ResetAll wipes the profile and
 -- re-applies in ONE pass with ONE [Reset] summary line, where the library's
--- row-by-row form would run ApplyStrings ~171 times and emit ~171 [Set] lines into
+-- row-by-row form would run ApplyStrings 173 times and emit 173 [Set] lines into
 -- a 1500-line console buffer (debug-logging-§9).
 function runResetAll()
     PrettyChat:ResetAll()

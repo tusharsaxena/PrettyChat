@@ -13,7 +13,7 @@ The single source of truth is `defaults/Defaults.lua` — Schema, Config, and sl
        default = "|cffff0000Loot|cffffffff | |cff93c47dYou|cffffffff | |cffffffff+ %s|cffffffff",
    },
    ```
-   - `label` is what the panel shows as the block's full-width `Heading` above the Enable row (`GameFontNormalLarge`).
+   - `label` is what the panel shows as the string's **row in the tree** down the left of its category tab, and the Blizzard `GLOBALNAME` is that row's `value` — what the click reports back and what the editor shows beside the Enable tick. There is no heading above the editor — the entry that selects the string is its name.
    - `default` is the PrettyChat format. Match Blizzard's `%`-conversion signature exactly — see [Fix a broken format string](#fix-a-broken-format-string) below for what happens if you don't.
 2. `/reload` in-game. The schema rebuilds at file-load, so the new row appears in `/pc list <Category>`, on the category's tab of the Categories page, and the override pipeline starts targeting `_G[YOUR_GLOBAL_NAME]`.
 
@@ -48,7 +48,7 @@ No `settings/Panel.lua` edits — `buildCategoryBody` is generic and iterates wh
 
 A format string "breaks" when the panel-edited (or `/pc set`-edited) value's `%`-conversions don't match Blizzard's signature. Symptom: the chat line errors at `string.format` time, sometimes silently dropping the message, sometimes throwing a Lua error.
 
-1. Open the category's tab on the Categories page and read the **Original Format String** disabled input for the affected key. That's Blizzard's exact signature as **this** client loaded it — the `OnEnable` snapshot, through `NS.OriginalFormat`, the same source `/pc test` prints (PC-R-04). Out of game, `GlobalStrings/` carries the same data for the patch it was cut from, and `tests/test_defaults.lua` checks every default against it.
+1. Open the category's tab on the Categories page, pick the string from the list below the category's Enable row, and read the **Original** disabled input in the pane beside it. That's Blizzard's exact signature as **this** client loaded it — the `OnEnable` snapshot, through `NS.OriginalFormat`, the same source `/pc test` prints (PC-R-04). Out of game, `GlobalStrings/` carries the same data for the patch it was cut from, and `tests/test_defaults.lua` checks every default against it.
 2. Edit the **New Format String** input: keep every `%`-conversion (`%s`, `%d`, `%.1f`, `%2$s`, …) in the same order, but freely change surrounding text and `|cAARRGGBB...|r` color escapes.
 3. The Preview disabled `EditBox` (bottom-right of the block) renders the format with sample arguments substituted in via `NS.RenderSample` (which wraps `buildSampleArgs` from `modules/Override.lua`). It always reflects the saved value and updates after every commit (Enter). On `string.format` failure, the preview shows the error message instead.
 4. To revert: (a) click the per-string **Reset** button (bottom-left of the block — always visible, no-op when the value already equals the default — the simplest path); (b) set the format back to the PrettyChat default exactly — the auto-clear kicks in and removes the override (see [schema.md](./schema.md#auto-clear-on-default)); (c) disable the per-string Enable checkbox, which restores Blizzard's original via the snapshot path; or (d) the category page's header **Defaults** button — which is now the only category-scoped reset, since `/pc reset` takes a setting path (`LIBKA0S-10`).
@@ -71,6 +71,16 @@ See [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patc
 3. `/reload` in-game; verify the panel's "Original Format String" inputs still resolve.
 4. If Blizzard renamed any keys or changed signatures, update the corresponding entries in `defaults/Defaults.lua`.
 
+## Add an addon-wide setting
+
+Addon-wide settings live on the General page's one tab, `Master controls`, and that tab is **composed** — `H.MasterControls` owns its rows, their order and their wording (options-ui-§15). Do **not** hand-write a row into it.
+
+- A row the canonical block already has (a leaf this addon omits today: master scale, master alpha, lock frame) arrives by dropping `frameless = true` from `MASTER_SPEC` in `settings/Schema.lua`, and it is only correct to do that if the addon has grown a positionable frame. Add the leaf's wiring to `MASTER_WIRING` in the same change, or the install reports it as unwired at load and the row is never registered.
+- A row the canonical block does **not** have goes in `MASTER_SPEC.extra`, which the composer appends after the mandated rows and never interleaves with them.
+- A setting that is not addon-wide is not a Master controls row at all; it belongs to a category.
+
+Whatever you add, wire its `get` / `set` in `MASTER_WIRING` (keyed by the final stored path), honour it in the drawing code, and pin both ends: the row's shape in `tests/test_schema.lua`, the behaviour in `tests/test_override.lua`.
+
 ## Add a new slash command
 
 One row in the `COMMANDS` table near the top of `settings/Slash.lua`:
@@ -91,7 +101,7 @@ Two follow-ups the harness enforces:
 
 ## Adjust the per-string panel block layout
 
-The per-string block lives in `settings/Panel.lua`'s `buildStringRow(scroll, category, globalName, strData, refreshers)`. It renders a `Heading` followed by three Flow rows — Enable/Original, GLOBALNAME/New, Reset/Preview — and attaches a `refresh()` closure to `refreshers` so subsequent DB-mutations (`/pc set`, category toggle, Defaults click) re-sync this block's widgets.
+The per-string editor lives in `settings/Panel.lua`'s `buildStringRow(pane, category, globalName, refreshers)`, which draws into the RIGHT-hand column: `[Enable] [GLOBALNAME]` on one row, then **Original**, **New** and **Preview** at full width, then **Reset** at the foot. It attaches a `refresh()` closure to `refreshers` so subsequent DB-mutations (`/pc set`, category toggle, Defaults click) re-sync its widgets. It carries **no heading**: the list entry that selects the string is its name, and exactly one editor is drawn per category tab.
 
 Each row is an AceGUI `SimpleGroup` with `Flow` layout containing two children at `LEFT_W = 0.4` / `RIGHT_W = 0.6` relative widths so the two columns align across rows. The right-column EditBoxes carry `:SetLabel("Original" / "New" / "Preview")`. `STRING_VSPACER` is this block's own and lives in `NS.Const`; the shared spacing it sits beside (`ROW_VSPACER`, `SECTION_HEADING_H`) is read off `NS.Helpers`, because the library owns the layout constants now (options-ui-§8). See [settings-panel.md](./settings-panel.md).
 
