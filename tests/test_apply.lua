@@ -84,15 +84,46 @@ test("a disabled category leaves other categories applied", function()
 end)
 
 test("a string with no snapshot is left alone rather than blanked", function()
-    -- ApplyStrings only restores globals it snapshotted in OnEnable; a
-    -- global with no original must not be written to nil.
-    inst.addon.originalStrings[g] = nil
+    -- ApplyStrings only restores globals it snapshotted in OnEnable; a global the
+    -- pass never saw must not be written to nil. The KEY SET is what is dropped
+    -- here, not the stored value -- since PC-R-07 the value's nil-ness means "this
+    -- client does not define the global" and is restored, so nilling it would now
+    -- be the neighbouring case rather than this one. The two are one line apart
+    -- in the code and opposite in what they must do, which is the whole reason the
+    -- key set exists.
+    inst.addon.snapshotKeys[g] = nil
     env[g] = "SOMETHING ELSE"
     Schema.Set("General.enabled", false)
     t.eq(env[g], "SOMETHING ELSE", "an unsnapshotted global is skipped, not cleared")
-    inst.addon.originalStrings[g] = orig
+    inst.addon.snapshotKeys[g] = true
     Schema.Set("General.enabled", true)
     t.eq(env[g], def, "and normal service resumes once it is back")
+end)
+
+test("a global this client does not define is restored to nil, not left overridden", function()
+    -- PC-R-07: the restore arm used to gate on the SNAPSHOT'S TRUTHINESS, and the
+    -- snapshot of a global the running client never defined is nil. The elseif
+    -- fell through, so the override this addon had written survived every
+    -- disable and only a /reload took it back off. Blizzard retires and renames
+    -- GLOBALNAMEs across expansions, so "registered in defaults, absent from this
+    -- client" is the ordinary case rather than a contrived one -- and the
+    -- override that will not come off is the one the player reports as a bug in
+    -- the master switch.
+    local fresh = ctx.loadAddon()
+    local ABSENT = "PRETTYCHAT_ABSENT_FROM_THIS_CLIENT"
+    fresh.NS.Defaults.Loot.strings[ABSENT] =
+        { label = "Absent from this client", default = "a format with no conversions" }
+    t.nilv(fresh.env[ABSENT], "this client defines no such global")
+
+    -- Re-snapshot through the addon's own pass rather than hand-writing the
+    -- bookkeeping: the case exists to prove what OnEnable records for a global
+    -- that is not there, and a hand-written entry would assert the test's typing.
+    fresh.addon:SnapshotOriginals()
+    fresh.addon:ApplyStrings()
+    t.eq(fresh.env[ABSENT], "a format with no conversions", "the override is applied to it")
+
+    fresh.NS.Schema.Set("General.enabled", false)
+    t.nilv(fresh.env[ABSENT], "and disabling puts it back to the nothing it was")
 end)
 
 test("repeated applies are idempotent across the whole surface", function()

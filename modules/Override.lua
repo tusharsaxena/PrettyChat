@@ -151,7 +151,14 @@ function PrettyChat:ApplyStrings()
                 if catEnabled and self:IsStringEnabled(category, globalName) then
                     _G[globalName] = self:GetStringValue(category, globalName)
                     applied = applied + 1
-                elseif self.originalStrings and self.originalStrings[globalName] then
+                elseif self.snapshotKeys and self.snapshotKeys[globalName] then
+                    -- The KEY SET decides, never the snapshotted value: a global
+                    -- this client does not define snapshots as nil, and restoring
+                    -- it to nil is the correct undo (PC-R-07). A global registered
+                    -- since the last /reload is in neither table and is left
+                    -- alone, which is the case this arm still has to skip. The
+                    -- two tables are filled by the same pass, so a key here
+                    -- guarantees an entry (possibly nil) there.
                     _G[globalName] = self.originalStrings[globalName]
                     restored = restored + 1
                 end

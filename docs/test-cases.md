@@ -174,7 +174,7 @@ badge and any count quoted in the docs must agree with it.
 - a non-string format is rejected like an empty one
 - a real Blizzard-style default renders without error
 
-### test_apply.lua (10)
+### test_apply.lua (11)
 
 - override is applied by default when all three layers are on
 - master toggle off restores original, back on reapplies
@@ -183,6 +183,7 @@ badge and any count quoted in the docs must agree with it.
 - the cascade is a conjunction — every layer must be on to apply
 - a disabled category leaves other categories applied
 - a string with no snapshot is left alone rather than blanked
+- a global this client does not define is restored to nil, not left overridden
 - repeated applies are idempotent across the whole surface
 - ResetString clears both the custom format and the per-string disable
 - cross-registered global resolves to the last CATEGORY_ORDER registrant, stably
@@ -227,10 +228,11 @@ badge and any count quoted in the docs must agree with it.
 - the runner stamps the current version even with no steps to run
 - migrating emits no debug noise when nothing ran
 
-### test_lifecycle.lua (11)
+### test_lifecycle.lua (12)
 
 - the addon object and the bootstrap namespace are one table
 - OnInitialize provisions both AceDB namespaces
+- OnInitialize merges into a fresh table, never into NS.ProfileDefaults
 - OnInitialize registers /pc and its /prettychat alias
 - OnEnable snapshots a Blizzard original for every registered global
 - OnEnable applies the overrides so live chat is rewritten at load
@@ -378,11 +380,11 @@ badge and any count quoted in the docs must agree with it.
 | test_defaults.lua | 15 |
 | test_schema.lua | 31 |
 | test_render.lua | 12 |
-| test_apply.lua | 10 |
+| test_apply.lua | 11 |
 | test_override.lua | 24 |
 | test_database.lua | 10 |
-| test_lifecycle.lua | 11 |
+| test_lifecycle.lua | 12 |
 | test_debuglog.lua | 25 |
 | test_slash.lua | 42 |
 | test_panel.lua | 46 |
-| **Total** | **303** |
+| **Total** | **305** |

@@ -17,10 +17,20 @@ function PrettyChat:OnInitialize()
     -- Start from the profile defaults (defaults/Profile.lua) and merge
     -- Database's `global` defaults (schemaVersion) so AceDB provisions both
     -- the profile and global namespaces.
-    local defaults = NS.ProfileDefaults
+    --
+    -- A FRESH TABLE, not an alias onto NS.ProfileDefaults. `local defaults =
+    -- NS.ProfileDefaults` followed by a write is the same table under two names,
+    -- and the published one then means "the profile defaults" before this line
+    -- and "the profile defaults plus whatever Database wanted merged" after it.
+    -- Nothing else reads NS.ProfileDefaults today, which is precisely why the
+    -- divergence would sit there until the first reader arrived. The copy is
+    -- shallow on purpose: AceDB is handed the same `profile` sub-table either
+    -- way, so what is being protected here is the published table's KEY SET.
+    local defaults = {}
+    for k, v in pairs(NS.ProfileDefaults) do defaults[k] = v end
     if NS.Database and NS.Database.defaults then
         for k, v in pairs(NS.Database.defaults) do
-            defaults[k] = defaults[k] or v
+            if defaults[k] == nil then defaults[k] = v end
         end
     end
 
@@ -77,13 +87,34 @@ function PrettyChat:OnInitialize()
     self:RegisterChatCommand("prettychat", "OnSlashCommand")
 end
 
-function PrettyChat:OnEnable()
+--- Take this client's pristine value for every registered global.
+---
+--- Its own method rather than four lines inside OnEnable because the snapshot is
+--- what modules/Override.lua's restore arm consults, and a restore is only ever
+--- as good as what was recorded here.
+---
+--- TWO TABLES, AND THE SECOND ONE IS THE POINT (PC-R-07). `originalStrings` holds
+--- the values; `snapshotKeys` holds the fact that the pass looked. They cannot be
+--- one table, because the pristine value of a global THIS client does not define
+--- is nil, and nil is also what an absent entry looks like. The restore arm used
+--- to read the value's truthiness and so could not tell "the client never had
+--- this string" from "we never recorded it" -- and answered the first with the
+--- behaviour owed to the second, leaving the override in place until a /reload.
+--- Blizzard retires and renames GLOBALNAMEs every expansion, so that is the
+--- ordinary case on any client older or newer than the defaults were written for.
+function PrettyChat:SnapshotOriginals()
     self.originalStrings = {}
+    self.snapshotKeys    = {}
     for _, catData in pairs(NS.Defaults) do
         for globalName in pairs(catData.strings) do
             self.originalStrings[globalName] = _G[globalName]
+            self.snapshotKeys[globalName]    = true
         end
     end
+end
+
+function PrettyChat:OnEnable()
+    self:SnapshotOriginals()
     -- A stored General visibility of `inCombat` / `outOfCombat` arms the combat
     -- watcher for this session; `always` and `never` arm nothing at all, so the
     -- default install still registers no combat event (modules/Override.lua).

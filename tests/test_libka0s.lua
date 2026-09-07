@@ -686,13 +686,18 @@ local function coreSurface(instance)
         Format       = instance.NS.Format,
         IsConcatSafe = instance.NS.Util.IsConcatSafe,
         SafeToString = instance.NS.Util.SafeToString,
+        -- PC-A-05: published PAST the degraded branch's `return`, so the live arm
+        -- had it and the stub arm did not. Nothing calls it yet, which is the
+        -- whole hazard -- the first caller would work everywhere the library is
+        -- installed and answer nil in the one install this branch exists for.
+        MakeCloseButton = instance.NS.MakeCloseButton,
     }
 end
 
 test("the Core stub carries the whole live surface", function()
     local live = coreSurface(parityLive)
     -- Non-vacuity: a projection that read nothing would pass parity trivially.
-    for _, key in ipairs({ "Print", "Format", "IsConcatSafe", "SafeToString" }) do
+    for _, key in ipairs({ "Print", "Format", "IsConcatSafe", "SafeToString", "MakeCloseButton" }) do
         t.eq(type(live[key]), "function", "the live Core seam publishes " .. key)
     end
     ctx.assertSurfaceParity(live, coreSurface(parityBare), "Core stub")
