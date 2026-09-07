@@ -125,13 +125,15 @@ badge and any count quoted in the docs must agree with it.
 - every string registration has both of its schema rows
 - each format row's schema default is the defaults-table default
 
-### test_schema.lua (29)
+### test_schema.lua (31)
 
 - resolves known setting paths and returns nil for unknown ones
 - resolves categories case-insensitively and by prefix
 - master toggle round-trips through the single write path
 - Set on a format pushes the override to _G via ApplyStrings
 - re-setting a format to its default auto-clears the stored override
+- a format write with a surplus conversion is refused
+- a format whose conversions prefix the default's is stored
 - Set on an unknown path is a no-op returning false
 - load-time schema path validation resolved every path
 - the four row kinds are built with their documented shape
@@ -373,7 +375,7 @@ badge and any count quoted in the docs must agree with it.
 | test_util.lua | 7 |
 | test_locale.lua | 7 |
 | test_defaults.lua | 15 |
-| test_schema.lua | 29 |
+| test_schema.lua | 31 |
 | test_render.lua | 12 |
 | test_apply.lua | 10 |
 | test_override.lua | 24 |
@@ -382,4 +384,4 @@ badge and any count quoted in the docs must agree with it.
 | test_debuglog.lua | 25 |
 | test_slash.lua | 42 |
 | test_panel.lua | 45 |
-| **Total** | **300** |
+| **Total** | **302** |

@@ -66,6 +66,11 @@ local enUS = {
     "New",
     "New Format String",
     "Your replacement. Type `||` for a literal `|` (color codes use this).",
+    -- The write gate's refusal (PC-R-01), shown wherever the write came from:
+    -- the panel's New box, `/pc set`, or a preset load. The four placeholders are
+    -- the schema path, the signature asked for, the Blizzard global and the
+    -- signature it supplies.
+    "Not saved — %s asks for %s; %s supplies %s. A format may drop trailing conversions but must not add or retype one.",
     "Reset",
     "Restore this string to its default.",
     "Preview",

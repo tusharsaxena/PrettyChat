@@ -794,27 +794,59 @@ test("the New edit box unescapes || to | before storing", function()
     local globalName = sorted[1]
     local newInput = lootBlock.new
 
-    newInput:Fire("OnEnterPressed", "||cffff0000Custom|| %s")
-    t.eq(Schema.Get("Loot." .. globalName .. ".format"), "|cffff0000Custom| %s",
+    newInput:Fire("OnEnterPressed", "||cffff0000Custom||")
+    t.eq(Schema.Get("Loot." .. globalName .. ".format"), "|cffff0000Custom|",
         "doubled pipes collapse to literal pipes on the way in")
-    t.eq(newInput.text, "||cffff0000Custom|| %s",
+    t.eq(newInput.text, "||cffff0000Custom||",
         "and the refresh re-doubles them for display")
 end)
 
 test("the Preview box renders the live format with sample arguments", function()
-    local newInput = lootBlock.new
-    local preview  = lootBlock.preview
-    newInput:Fire("OnEnterPressed", "You got %s x%d")
+    -- Driven on a string whose SHIPPED DEFAULT carries the two conversions this
+    -- case types in, rather than on whatever sorts first: the write gate
+    -- (PC-R-01) refuses a format asking for more than the default supplies, and
+    -- the Loot list opens on BATTLE_PET_LOOT_RECEIVED, which — like Blizzard's own
+    -- string — takes no arguments at all.
+    local pageCtx = NS.Helpers.__panelFor("Categories")
+    local sorted  = sortedNames("Loot")
+    local index
+    for i, globalName in ipairs(sorted) do
+        local seq = NS.ConversionSequence(NS.Defaults.Loot.strings[globalName].default)
+        if seq.n == 2 and seq[1] == "string" and seq[2] == "int" then index = i break end
+    end
+    t.truthy(index, "the Loot page offers a `%s x%d` string to preview")
+
+    selectEntry("Categories", index)
+    local block   = paneParts(stringSplit(pageCtx.scroll).pane)
+    local preview = block.preview
+    block.new:Fire("OnEnterPressed", "You got %s x%d")
     t.eq(preview.text, NS.RenderSample("You got %s x%d"), "preview matches the shared renderer")
     t.eq(preview.text, "You got Sample x42", "with the documented placeholder values")
+
+    -- Back to the first row, which is the block every case below reads.
+    addon:ResetAll()
+    selectEntry("Categories", 1)
+    lootScroll = pageCtx.scroll
+    lootBlock  = paneParts(stringSplit(lootScroll).pane)
 end)
 
 test("the Preview box surfaces an unrenderable format instead of blanking", function()
-    local newInput = lootBlock.new
-    local preview  = lootBlock.preview
-    newInput:Fire("OnEnterPressed", "%y")
-    t.truthy((preview.text or ""):find("invalid", 1, true)
-          or (preview.text or "") ~= "", "the format error is shown in the preview box")
+    -- Seeded into the DB rather than typed into the box: the write gate (PC-R-01)
+    -- refuses `%y` now, and a refused write leaves the default in place — so
+    -- driving this through the box would assert on a perfectly renderable string
+    -- and pass without ever exercising the error path. What is still reachable is
+    -- a value stored BEFORE the gate, and the refusal itself calls
+    -- NotifyPanelChange, which is the same refresh this fires.
+    local globalName = sortedNames("Loot")[1]
+    local catDB = addon:EnsureCategoryDB("Loot")
+    catDB.strings = catDB.strings or {}
+    catDB.strings[globalName] = "%y"
+    NS.Schema.NotifyPanelChange("Loot")
+
+    local preview = lootBlock.preview
+    t.truthy((preview.text or ""):find("invalid", 1, true),
+        "the format error is shown in the preview box")
+    addon:ResetAll()
 end)
 
 test("the per-string Reset button restores both dimensions", function()
@@ -825,7 +857,7 @@ test("the per-string Reset button restores both dimensions", function()
     local block = lootBlock
 
     block.enable:Fire("OnValueChanged", false)
-    block.new:Fire("OnEnterPressed", "CUSTOM %s")
+    block.new:Fire("OnEnterPressed", "CUSTOM")
     block.reset:Fire("OnClick")
 
     t.truthy(addon:IsStringEnabled("Loot", globalName), "reset re-enables the string")
@@ -868,8 +900,8 @@ test("a slash-command write re-syncs the open panel", function()
     table.sort(sorted)
     local globalName = sorted[1]
 
-    NS.Schema.Set("Loot." .. globalName .. ".format", "FROM SLASH %s")
-    t.eq(lootBlock.new.text, "FROM SLASH %s",
+    NS.Schema.Set("Loot." .. globalName .. ".format", "FROM SLASH")
+    t.eq(lootBlock.new.text, "FROM SLASH",
         "the New box shows the value the slash command stored")
     addon:ResetAll()
 end)

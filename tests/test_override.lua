@@ -56,8 +56,10 @@ local function mark() return #env.DEFAULT_CHAT_FRAME.messages end
 test("GetStringValue falls back to the defaults table until overridden", function()
     addon:ResetAll()
     t.eq(addon:GetStringValue(cat, g), def, "unset string resolves to its default")
-    Schema.Set(cat .. "." .. g .. ".format", "CUSTOM %s")
-    t.eq(addon:GetStringValue(cat, g), "CUSTOM %s", "stored override wins")
+    -- No conversion in the sentinel: `g` is whatever sorts first in Loot, and the
+    -- write gate refuses a format asking for more than that row's default supplies.
+    Schema.Set(cat .. "." .. g .. ".format", "CUSTOM")
+    t.eq(addon:GetStringValue(cat, g), "CUSTOM", "stored override wins")
     addon:ResetAll()
 end)
 
@@ -232,7 +234,7 @@ end)
 
 test("ResetCategory drops the whole category table", function()
     Schema.Set(cat .. ".enabled", false)
-    Schema.Set(cat .. "." .. g .. ".format", "CUSTOM %s")
+    Schema.Set(cat .. "." .. g .. ".format", "CUSTOM")
     t.truthy(addon.db.profile.categories[cat], "category table exists before reset")
     addon:ResetCategory(cat)
     t.nilv(addon.db.profile.categories[cat], "reset removes the category table")
@@ -242,18 +244,18 @@ end)
 test("ResetCategory('General') clears only the addon-wide keys", function()
     Schema.Set("General.enabled", false)
     Schema.Set("General.visibility", "never")
-    Schema.Set(cat .. "." .. g .. ".format", "CUSTOM %s")
+    Schema.Set(cat .. "." .. g .. ".format", "CUSTOM")
     addon:ResetCategory("General")
     t.nilv(addon.db.profile.enabled, "the master override is cleared")
     t.nilv(addon.db.profile.visibility, "and so is the visibility override")
-    t.eq(Schema.Get(cat .. "." .. g .. ".format"), "CUSTOM %s",
+    t.eq(Schema.Get(cat .. "." .. g .. ".format"), "CUSTOM",
         "per-category overrides survive a General reset")
     addon:ResetAll()
 end)
 
 test("ResetAll clears the master flag and every category at once", function()
     Schema.Set("General.enabled", false)
-    Schema.Set(cat .. "." .. g .. ".format", "CUSTOM %s")
+    Schema.Set(cat .. "." .. g .. ".format", "CUSTOM")
     Schema.Set("Money.enabled", false)
     addon:ResetAll()
     t.nilv(addon.db.profile.enabled, "master flag cleared")
@@ -361,7 +363,14 @@ test("Test warns when the addon is disabled but still previews", function()
 end)
 
 test("an unrenderable override is reported as an error line, not a crash", function()
-    Schema.Set(cat .. "." .. g .. ".format", "%y bad conversion")
+    -- Written straight into the DB rather than through Schema.Set, because the
+    -- write gate (PC-R-01) refuses this format now. The case is about what the
+    -- REPORT does with an unrenderable value that is ALREADY STORED, which is
+    -- still reachable: a SavedVariables file written before the gate existed, or
+    -- hand-edited since. The report must not stop being able to show it.
+    local catDB = addon:EnsureCategoryDB(cat)
+    catDB.strings = catDB.strings or {}
+    catDB.strings[g] = "%y bad conversion"
     local at = mark()
     local ok = pcall(function() addon:Test({ kind = "formatstring", value = g }) end)
     local out = lines(env, at)
