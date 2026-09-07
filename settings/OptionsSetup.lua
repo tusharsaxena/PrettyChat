@@ -73,6 +73,13 @@ if not lib then
         RenderGrid           = function() end,
         TextRow              = function() end,
         SetRenderer          = function() end,
+        -- The landing page's whole body. It is a no-op rather than a lookalike for
+        -- the reason every other renderer here is: the alternative is a second copy
+        -- of the logo/notes/sections layout in the host, which is what the live path
+        -- stopped carrying (anti-pattern #47, options-ui-§1). Nothing is lost on this
+        -- arm — CreateOptionsPanel is a no-op too, so there is no main page to draw a
+        -- body into, and the announcer above has already said why.
+        BuildLandingPage     = function() end,
         -- Options minor 13/14 — the tabbed page and the page banner. TabStrip is
         -- reached for real on the live path now (settings/Panel.lua's Categories
         -- page draws its strip with it), and it is reached AFTER the EnsureScroll

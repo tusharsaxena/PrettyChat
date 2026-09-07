@@ -1013,6 +1013,31 @@ test("the parent page lists every slash command through the one row formatter", 
         "the old double-spaced, white-wrapped dash is gone")
 end)
 
+-- The whole reason the landing body is the library's renderer and not a copy of
+-- it. A Texture is not an AceGUI child, so ReleaseChildren does not take it with
+-- the group -- and AceGUI POOLS the group's frame. Without an OnRelease that
+-- hides the texture, the next widget to acquire that frame inherits a 300px logo,
+-- and the pool is shared with every other addon in the session, so the widget that
+-- inherits it is very often not ours. The cross-addon half is docs/smoke-tests.md
+-- § S3; what a case can pin is that the release hook exists and does hide it.
+test("the landing logo is hidden when its group goes back to AceGUI's pool", function()
+    parentPanel:Show()
+
+    local logoGroup
+    for _, w in ipairs(env._widgets) do
+        if w.type == "SimpleGroup" and w.height == 300 then logoGroup = w end
+    end
+    t.truthy(logoGroup, "the landing page draws a full-size group to carry the logo")
+
+    local onRelease = logoGroup.callbacks and logoGroup.callbacks["OnRelease"]
+    t.eq(type(onRelease), "function", "and registers an OnRelease on it")
+
+    -- The mock's CreateTexture answers the frame itself, so the frame's shown-ness
+    -- IS the texture's.
+    t.truthy(logoGroup.frame:IsShown(), "the logo is shown while the page is up")
+    logoGroup:Fire("OnRelease")
+    t.falsy(logoGroup.frame:IsShown(), "and hidden the moment AceGUI takes the group back")
+end)
 test("the parent page shows the TOC tagline", function()
     local labels = {}
     for _, w in ipairs(env._widgets) do

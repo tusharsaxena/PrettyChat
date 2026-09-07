@@ -216,6 +216,30 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
   6. Click the **clear** mark (the middle of the three title-bar marks). Expect: the log empties, the counter resets to **`0 / 1500 lines`**, and the scrollbar goes **inert** (thumb parked, mouse disabled) but stays **visible** — the right gutter width is unchanged.
 - Failure mode: `attempt to call a nil value` on first open ⇒ the old C getters are being called (#41). Thumb direction inverted (top = newest) ⇒ flip the `sliderValue ↔ offset` sign (`offset = maxOffset − value`). Counter never updates ⇒ `UpdateStatus` isn't wired into `Add`/`Clear`. Bar hidden when the log fits, or gutter width jumps ⇒ the always-shown/inert rule (`options-ui-§10`) regressed.
 
+#### T-29c — The landing logo does not ride AceGUI's shared frame pool
+
+> Why: a Texture is not an AceGUI child, so `ReleaseChildren` does not take the logo away with the
+> `SimpleGroup` that carries it — and AceGUI **pools that group's frame across every addon in the
+> session**. The library's `BuildLandingPage` hides the texture on `OnRelease`
+> (`libs/LibKa0s/OptionsWidgets.lua:323`); the hand-copied body this addon used to carry set no
+> `OnRelease` at all, so the next widget handed that frame inherited a 300px logo. The leak lands in
+> *somebody else's* panel, which is why no headless case and no PrettyChat-only pass can see it —
+> `tests/test_panel.lua` pins that the release hook exists and hides the texture, and step 2 below is
+> the only check on what that hook is actually for.
+
+- Setup: at least one other AceGUI-drawn settings panel loaded. Another Ka0s addon is easiest —
+  BankLedger and PanelMaster both draw wide groups.
+- Steps:
+  1. Open **Settings → AddOns → Ka0s Pretty Chat**. Land on the landing page and let it draw.
+  2. Without closing the window, page to another addon's settings.
+  3. Page back and forth three or four times, visiting every page of both addons.
+  4. Close the window, `/reload`, and repeat once.
+- Expected: the logo appears on PrettyChat's landing page and **nowhere else**. No ghost texture and
+  no unexplained 300px vertical gap on any page of any addon.
+- Failure mode: a 300px image, or a 300px hole where nothing drew one, in any panel ⇒ the landing
+  body is drawing its own logo again instead of going through `H.BuildLandingPage`, or the library's
+  `OnRelease` stopped being set.
+
 ### L — Slash command surface
 
 #### T-30 — `/pc list` no-arg

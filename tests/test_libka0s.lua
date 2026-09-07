@@ -737,7 +737,6 @@ test("the Options stub carries the whole live surface", function()
         -- defaults. `grep -rn "Helpers.\(AceGUI\|BuildLandingPage\|RestoreDefaults\|PatchAlwaysShowScrollbar\)" core settings modules` is empty.
         -- TextRow LEFT this list when the Categories page took it for its footnote.
         AceGUI                   = true,
-        BuildLandingPage         = true,
         RestoreDefaults          = true,
         PatchAlwaysShowScrollbar = true,
         -- OptionsCompose 1. Four of the five composers are live-only because this

@@ -314,7 +314,7 @@ badge and any count quoted in the docs must agree with it.
 - /pc debug rejects an argument that is neither on, off, nor a toggle
 - every slash line carries the cyan [PC] tag
 
-### test_panel.lua (45)
+### test_panel.lua (46)
 
 - registration builds the parent category and two sub-pages
 - the strip carries one tab per message category, in CATEGORY_ORDER
@@ -360,6 +360,7 @@ badge and any count quoted in the docs must agree with it.
 - the page says its controls are read only while the master switch is on
 - clicking a tab swaps the body and drops the tab it left
 - the parent page lists every slash command through the one row formatter
+- the landing logo is hidden when its group goes back to AceGUI's pool
 - the parent page shows the TOC tagline
 
 ## Totals
@@ -383,5 +384,5 @@ badge and any count quoted in the docs must agree with it.
 | test_lifecycle.lua | 11 |
 | test_debuglog.lua | 25 |
 | test_slash.lua | 42 |
-| test_panel.lua | 45 |
-| **Total** | **302** |
+| test_panel.lua | 46 |
+| **Total** | **303** |

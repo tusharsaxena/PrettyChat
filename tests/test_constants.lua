@@ -45,10 +45,12 @@ test("the [PC] chat tag is cyan-wrapped and trailing-spaced", function()
 end)
 
 test("the host's own layout constants are positive numbers", function()
-    -- Only the three that are genuinely this addon's. The panel metrics that used
-    -- to sit beside them are LibKa0s-Options-1.0's LAYOUT table now.
+    -- One left, and it is genuinely this addon's: the gap that bottoms a string
+    -- entry in the bespoke editor, which the library has no equivalent for. Every
+    -- other panel metric this addon once declared is LibKa0s-Options-1.0's LAYOUT
+    -- table now.
     for _, name in ipairs({
-        "SECTION_TOP_SPACER", "SECTION_BOTTOM_SPACER", "STRING_VSPACER",
+        "STRING_VSPACER",
     }) do
         t.eq(type(Const[name]), "number", name .. " is a number")
         t.truthy((Const[name] or 0) > 0, name .. " is positive")
@@ -63,6 +65,10 @@ test("no host copy of a library layout constant has grown back", function()
     for _, name in ipairs({
         "PANEL_PADDING_X", "PANEL_HEADER_TOP", "PANEL_HEADER_HEIGHT",
         "PANEL_DEFAULTS_W", "BUTTON_PAIR_REL", "SECTION_HEADING_H", "ROW_VSPACER",
+        -- The two the landing page kept while it drew its own heading spacers.
+        -- BuildLandingPage draws them from LAYOUT now, so they are the library's
+        -- like the seven before them.
+        "SECTION_TOP_SPACER", "SECTION_BOTTOM_SPACER",
     }) do
         t.nilv(Const[name], name .. " is the library's, not a host copy")
     end
