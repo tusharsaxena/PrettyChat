@@ -26,10 +26,11 @@ OnEnable snapshot ──▶ addon.originalStrings ──▶ NS.OriginalFormat(ad
 
 ## Namespace publishing pattern
 
-Every file captures the addon namespace with the same idiom at the top:
+Every file captures the addon namespace with the same idiom at the top, and takes the folder name beside it only where it reads one:
 
 ```lua
-local addonName, NS = ...
+local _, NS = ...          -- the eleven files that never read the folder name
+local addonName, NS = ...  -- the seven that do (see ARCHITECTURE.md)
 ```
 
 Public surfaces are exposed on `NS`:

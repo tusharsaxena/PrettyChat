@@ -137,6 +137,43 @@ about it rather than letting condition two go unread.
 The line figures in the census are dated measurements and nothing asserts them, so an ordinary edit
 to a large file does not redden this gate. Membership is the invariant, not the numbers.
 
+## The no-blanket-suppression gate
+
+`tests/test_lintconfig.lua` guards the thing that makes `luacheck .` worth running: that 0/0 is a
+statement about the code and not about `.luacheckrc`.
+
+Until `M4c-06` this repo carried `ignore = { "212/self", "212/event", "211/addonName" }` at the top
+level. The entries were already spelt in luacheck's `<code>/<variable>` form, which is what made it
+look narrow and easy to leave alone — but the **scope** was every file in the repository, and scope
+is what `M4-11` is about: an ignore that silences the wall reads as coverage and provides none.
+
+Removing the line reported **sixteen** findings, and eleven of them were not conventions at all —
+eleven files opened `local addonName, NS = ...` over a folder name they never read. Those were
+fixed at source, not re-parked in a smaller suppression. A twelfth thing the blanket hid was one of
+its own entries: `212/event` matched nothing in this addon and never had. Five findings remained,
+each a method receiver a calling convention forces, and each now sits in a `files[...]` stanza
+naming one file, with a comment saying which obligation forces it.
+
+The gate checks four things, all the same rule from different sides:
+
+| Case | What it refuses |
+|------|-----------------|
+| no top-level `ignore` | the blanket itself, in any spelling |
+| no wholesale class switch | `unused_args = false` and eight relatives — the blanket as a switch |
+| every `files[...]` ignore is narrow | a stanza keyed on a directory whose entry names no variable |
+| no bare inline `-- luacheck: ignore` | the blanket wearing a different hat, one line at a time |
+
+It reads `.luacheckrc` **as Lua**, under a sandbox whose environment auto-creates tables the way
+luacheck's own config loader does, so what the gate inspects is the table luacheck obeys rather
+than text that a different spelling would slip past. Like the cap gate and the EOL gate it **fails
+rather than skips** when it cannot look: no config, an unreadable one, a chunk that will not
+compile, no `io.popen`, no git — every one of those is a red, because a gate that goes quiet when
+it is blind reports success.
+
+Adding a suppression is not forbidden; adding a *wide* one is. Name the file in the stanza key, or
+narrow the entry to `<code>/<variable>`, or put `-- luacheck: ignore <code>` beside the single line
+that earns it — and say in a comment why the code is correct as written.
+
 ## Test-case inventory & badge sync (`testing-§5`)
 
 The authoritative case count lives in the **generated** inventory [`test-cases.md`](./test-cases.md) — every case, grouped by suite, with per-suite and grand totals. It is produced by the runner's `--list` mode, never hand-edited:

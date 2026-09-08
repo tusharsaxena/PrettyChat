@@ -26,6 +26,13 @@ badge and any count quoted in the docs must agree with it.
 - layoutcap: every census row carries a disposition that can be followed
 - layoutcap: every row claiming layout-§1's generated-data carve-out still earns all three of its conditions
 
+### test_lintconfig.lua (4)
+
+- lintconfig: .luacheckrc sets no top-level ignore
+- lintconfig: .luacheckrc switches no warning class off wholesale
+- lintconfig: every files[...] ignore is narrowed to a file or a name
+- lintconfig: no source file carries a bare inline luacheck ignore
+
 ### test_libka0s.lua (28)
 
 - the locale-table matcher catches both offending spellings and clears the legal one
@@ -406,6 +413,7 @@ badge and any count quoted in the docs must agree with it.
 | test_harness.lua | 4 |
 | test_vendor_sync.lua | 2 |
 | test_layout_cap.lua | 5 |
+| test_lintconfig.lua | 4 |
 | test_libka0s.lua | 28 |
 | test_surface_parity.lua | 4 |
 | test_envsetup.lua | 9 |
@@ -426,4 +434,4 @@ badge and any count quoted in the docs must agree with it.
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **324** |
+| **Total** | **328** |

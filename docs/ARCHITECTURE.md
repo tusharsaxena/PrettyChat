@@ -73,7 +73,7 @@ Topic detail: [module-map.md](./module-map.md).
 
 ## Namespace publishing pattern
 
-Every file opens with `local addonName, NS = ...` — the addon-wide namespace table WoW passes to each chunk. Modules publish their public surface onto `NS`; nothing is exported through a global. The addon object **is** that same `NS` table (`core/PrettyChat.lua` passes `NS` to `:NewAddon`, architecture-§2), so the AceAddon methods hang off it and `LibStub("AceAddon-3.0"):GetAddon("PrettyChat")` returns the very same table.
+Every file opens by destructuring the two values WoW passes each chunk — the addon FOLDER name and the addon-wide namespace table. Seven files read both and spell the header `local addonName, NS = ...`: `core/Namespace.lua`, `core/CoreSetup.lua`, `core/EnvSetup.lua`, `core/MediaSetup.lua`, `core/DebugLogSetup.lua`, `core/PrettyChat.lua` (which hands the folder name to `:NewAddon`) and `settings/Panel.lua` (which builds `Interface\\AddOns\\<folder>` from it). The other eleven never read the folder name and open `local _, NS = ...` — `M4c-06` corrected them when the blanket `211/addonName` suppression that had been hiding them came out of `.luacheckrc`. A copied header naming a value the file does not use is dead code, not a convention. Modules publish their public surface onto `NS`; nothing is exported through a global. The addon object **is** that same `NS` table (`core/PrettyChat.lua` passes `NS` to `:NewAddon`, architecture-§2), so the AceAddon methods hang off it and `LibStub("AceAddon-3.0"):GetAddon("PrettyChat")` returns the very same table.
 
 | Member | Set by | Used by |
 |--------|--------|---------|

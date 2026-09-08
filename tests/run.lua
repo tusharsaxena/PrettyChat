@@ -56,6 +56,12 @@ Kit.run{
         -- kind of case: it loads no addon and asserts nothing about behaviour, it reads the
         -- repository itself and compares it against what a document claims about it.
         "test_layout_cap",
+        -- The "no blanket suppression" gate (lint-§1, `M4-11`). Third of the three
+        -- repository-reading gates for the same reason the other two sit here: it loads no
+        -- addon and asserts nothing about behaviour, it reads `.luacheckrc` and the tracked
+        -- set and compares them against a rule. It is what keeps the top-level `ignore`
+        -- `M4c-06` removed from being one line for anyone to re-add.
+        "test_lintconfig",
         "test_libka0s",
         -- The four degradation-stub parity cases, split out of test_libka0s by M4-09 so the
         -- gate sits at the path all nine addons carry it at. Immediately after test_libka0s
