@@ -37,6 +37,9 @@ core\MediaSetup.lua
 core\Constants.lua
 core\Namespace.lua
 core\State.lua
+# core\Util.lua loads AFTER core\Constants.lua and the position is load-bearing: Util takes
+# NS.Const.Color — which core\Constants.lua publishes — as a file-scope upvalue, so a Util
+# that loaded first would index a nil NS.Const and raise before the addon ever runs.
 core\Util.lua
 core\Database.lua
 core\PrettyChat.lua
@@ -54,4 +57,8 @@ modules\Override.lua
 settings\Schema.lua
 settings\OptionsSetup.lua
 settings\Slash.lua
+# settings\Panel.lua loads AFTER settings\OptionsSetup.lua and settings\Schema.lua, and the
+# position is load-bearing: Panel takes NS.Helpers — which settings\OptionsSetup.lua publishes
+# — and NS.Schema as file-scope upvalues, and then CALLS Helpers.RegisterOptionsPage at file
+# scope for both of its pages, so both seams have to resolve before this line is reached.
 settings\Panel.lua

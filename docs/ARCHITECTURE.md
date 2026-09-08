@@ -32,11 +32,13 @@ OnEnable snapshot ─▶ addon.originalStrings ─▶ NS.OriginalFormat(addon, G
 
 Modular layout (`core/`, `defaults/`, `locales/`, `modules/`, `settings/`) — the single Ka0s layout (`layout-§1`). Load order is `PrettyChat.toc` (dependency, not alphabetical): libraries first — **including `libs\LibKa0s\LibKa0s.xml`, after Ace3** — then `locales/enUS → core/EnvSetup → core/MediaSetup → core/Constants → core/Namespace → core/State → core/Util → core/Database → core/PrettyChat → core/CoreSetup → core/DebugLogSetup → defaults/Profile → defaults/Defaults → modules/Override → settings/Schema → settings/OptionsSetup → settings/Slash → settings/Panel`.
 
-**Five positions in that order are load-bearing and are pinned by tests, not by convention:**
+**Six positions in that order are load-bearing and are pinned by tests, not by convention:**
 
 - `core/EnvSetup.lua` sits **before** `core/Namespace.lua`, and therefore before `settings/Slash.lua` and `settings/Panel.lua` too, because all three read the TOC at FILE SCOPE — `NS.version`, `VERSION` and `TOC_NOTES` each resolve once at load and keep the answer for the whole session. All three call the seam unguarded, so a seam published later raises on the first load instead of pinning the reported version to a literal for good; `tests/test_envsetup.lua` pins what each of the three actually resolved to, which no raise can tell you.
 
 - `core/MediaSetup.lua` sits **before** `core/Constants.lua`, because `Const.FONT_MONO` is resolved through `NS.MediaFont` at load. A seam published afterwards would leave every install silently on `STANDARD_TEXT_FONT` — a console that reads perfectly well in the wrong face, which is the kind of regression nobody files.
+
+- `core/Util.lua` sits **after** `core/Constants.lua`, because `Color` is taken there as a file-scope upvalue off `NS.Const` — resolved once, at load, and kept for the session. There is no guard and no fallback, so a `Util` that loaded first indexes a nil `NS.Const` and raises during load; nothing asserts this one directly because the harness cannot build an instance at all when it is wrong, which is a louder failure than an assertion.
 
 - `core/CoreSetup.lua` sits **immediately after** `core/PrettyChat.lua`, because that file passes `NS` to `AceAddon:NewAddon` and AceConsole embeds its own `:Print` over the namespace — CoreSetup's last two lines are the reclaim (anti-pattern #36). It also sits **before** `settings/Schema.lua`, the only load-time `NS.Print` caller. Nothing in the repo takes the printer as a file-scope upvalue, so the window between those two is wide.
 - `core/DebugLogSetup.lua` sits after Constants (the mono font path), State (the flag) and CoreSetup (the printer), and before every module that calls `NS.Debug` (debug-logging-§1).
