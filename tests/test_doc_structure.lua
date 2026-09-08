@@ -302,3 +302,56 @@ test("the README's settings table is page-granular, not per-tab", function()
         .. "one row per settings subcategory — and puts the per-tab breakdown in "
         .. "docs/settings-panel.md, which is where options-ui-§13's strip makes it derivable")
 end)
+
+-- ── The smoke suite's non-English-client section ───────────────────────────────
+
+-- WHAT IT PROVES, AND WHAT IT DOES NOT. That docs/smoke-tests.md still carries a section addressed
+-- to a non-English client, that the section names the locale to run it on, and that it says what a
+-- failure looks like rather than only what a pass does. It proves nothing whatever about that
+-- section having been RUN -- a checklist is a checklist, and this repository has no client.
+--
+-- WHY THIS REPOSITORY IN PARTICULAR. This addon's entire function is overwriting localized _G chat
+-- format strings, and for 797 lines its smoke document had no locale step at all. Its own header
+-- already named "positional %n$s formats" as something stock Lua cannot exercise, and nothing
+-- followed that sentence anywhere. tests/test_defaults.lua checks every override against Blizzard's
+-- real signature -- out of GlobalStrings/, which is an enUS dump. So the arity a German client
+-- passes is checked against the arity an English one does, and the suite is green either way.
+--
+-- The failure vocabulary is matched loosely on purpose: this file says "Failure mode" in some tests
+-- and "Expected" in others, and pinning one spelling would redden the tree for a rewording.
+local LOCALE_HEADING = "[Nn]on%-English client"
+local FAILURE_WORDS = { "Failure", "failure", "Fail", "the finding" }
+
+test("docs/smoke-tests.md carries a non-English-client section", function()
+    local body = read("docs/smoke-tests.md")
+
+    local capture, level, section = false, nil, {}
+    for line in (body .. "\n"):gmatch("([^\n]*)\n") do
+        local hashes = line:match("^(#+)%s")
+        if hashes and capture and #hashes <= level then break end
+        if hashes and not capture and line:match(LOCALE_HEADING) then
+            capture, level = true, #hashes
+        end
+        if capture then section[#section + 1] = line end
+    end
+    assertTrue(capture, "docs/smoke-tests.md has no heading naming a non-English client. The step "
+        .. "is unconditional (M5-08): where an addon reads nothing localized the section still "
+        .. "ships and says what it checked and why it came back empty")
+
+    local text = table.concat(section, "\n")
+    assertTrue(text:find("deDE", 1, true) or text:find("frFR", 1, true),
+        "the non-English-client section names no client to run it on -- deDE and frFR are the two "
+        .. "the collection's other locale steps use")
+
+    local named = false
+    for _, word in ipairs(FAILURE_WORDS) do
+        if text:find(word, 1, true) then named = true break end
+    end
+    assertTrue(named, "the non-English-client section says what passing looks like and never what "
+        .. "failing looks like. A step whose only outcome is 'it works' is unfalsifiable in a "
+        .. "client the operator booted specially")
+
+    assertTrue(#section >= 10, "the non-English-client section is " .. #section .. " lines -- a "
+        .. "heading with a sentence under it records the gap as coverage, which is the failure "
+        .. "M5-08 was filed for")
+end)

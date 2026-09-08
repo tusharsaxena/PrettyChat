@@ -869,3 +869,109 @@ open the console.
 **Failure mode:** the button prints into chat (the sink was dropped); `/pc test` stops printing to
 chat (the sink was made the default rather than the caller's choice); the console opens empty (the
 report was written before the window existed).
+
+## N — Non-English client
+
+**Session 6 of the 2026-09-07 remediation plan, owned by `M5-08`. NOT YET RUN — no WoW client was
+available when it landed. Nothing in this section has been performed and no test in it is recorded
+as passed.** Run on a client set to **deDE or frFR**, the two the collection's other locale steps
+use (`ConsumableMaster/docs/smoke-tests.md` § 3c, `KickCD/docs/smoke-tests.md` § 9b).
+
+**Why this addon needed this section more than any other in the collection.** Its entire function is
+overwriting **localized** `_G` chat format strings, and for 797 lines this document had no locale
+step at all. The header at the top of this file already names "positional `%n$s` formats" among the
+things stock Lua cannot exercise, and until now nothing followed that sentence.
+
+What the harness cannot see, precisely: `tests/test_defaults.lua` checks every override against
+Blizzard's real signature — but the signatures it loads come from `GlobalStrings/`, which is an
+**enUS** dump. Its rule is that an override may ask for fewer conversions than Blizzard passes and
+must never ask for more, "the missing argument raises". That rule is enforced against the arguments
+an **English** client hands over. A locale whose string for the same global carries fewer
+conversions, or orders them positionally, is checked against nothing — and the header of that same
+file records what this class of defect looks like when it reaches players:
+`FACTION_STANDING_INCREASED_GUARDIAN` put a name into `%d` and "raised in a live client, for every
+user, on a routine reputation gain".
+
+**English output is this addon's design, not a defect.** Every override replaces the client's
+sentence with PrettyChat's own layout, and the labels in that layout — `Loot`, `Bonus`, `You`,
+`Money` — are hardcoded English. On a German client the overridden lines therefore read in English.
+That is what the addon does. Do not file it. What these tests look for is an **error**, an
+**artifact**, or the wrong **original**.
+
+#### T-104 — The snapshot holds the client's own strings, and the restore gives them back
+
+**Why:** `PrettyChat:SnapshotOriginals` (`core/PrettyChat.lua:105-114`) reads `_G[globalName]` at
+`OnEnable`, so on this client it is capturing German. `ApplyStrings`'s restore arm
+(`modules/Override.lua:155-164`) writes those values back. A restore is only ever as good as what
+the snapshot recorded, and nothing outside a live client can say what it recorded.
+
+**Steps:**
+1. `/pc test formatstring LOOT_ITEM_SELF`, and read the `Original:` line.
+2. `/pc set General.enabled false`. Loot something, gain reputation, take repair gold.
+3. `/pc set General.enabled true`. Trigger the same three lines again.
+
+**Expected:** (1) the `Original:` line renders the **client's own German sentence**, not an English
+one. (2) with the master toggle off, all three chat lines are the client's untouched German. (3)
+with it back on, all three are PrettyChat's layout again.
+
+**Failure mode:** an English `Original:` line on a German client — the snapshot is reading something
+other than `_G`, and every restore in the addon is then handing players text their client never
+wrote. A disable that leaves the lines in English is the same defect seen from the other end.
+
+**Record the `Original:` line verbatim for one global from each of the eight categories** —
+`LOOT_ITEM_SELF`, `CURRENCY_GAINED`, `LOOT_MONEY`, `FACTION_STANDING_INCREASED_GUARDIAN`,
+`COMBATLOG_XPGAIN_FIRSTPERSON`, `COMBATLOG_HONORGAIN`, `CREATED_ITEM` and `ERR_QUEST_REWARD_EXP_I`.
+Their real signatures on this locale exist nowhere in this repository — `GlobalStrings/` can only
+ever answer for enUS — and the fourth is the very global whose argument list raised for every user
+once already.
+
+#### T-105 — One real line from every category, watching for the raise
+
+**Why:** this is the failure `tests/test_defaults.lua`'s header documents, in the one condition that
+file cannot check. An override written against the enUS signature asks for exactly what an English
+client passes; if this locale passes fewer, the format call raises on an ordinary chat line.
+
+**Steps:** with every category enabled, trigger one line from each of the eight in turn — loot an
+item, receive a currency, take money, gain reputation, gain XP (grouped, so the guardian and
+exhaustion variants fire), gain honor, craft something, and complete a quest for its XP reward.
+Watch the chat frame and the error frame together (`/console scriptErrors 1`).
+
+**Expected:** eight rendered lines in PrettyChat's layout, and **no Lua error**.
+
+**Failure mode:** a `bad argument #N to 'format'` raise (this locale passes fewer arguments than the
+enUS signature the default was written against); a literal `%s`, `%d` or `%1$s` left in the rendered
+line (a conversion nothing filled, or a positional form the override does not carry); or a line that
+renders the client's own German sentence while the category is enabled (the override was written to
+a global this client does not define — see T-106).
+
+#### T-106 — Globals this client does not define
+
+**Why:** `SnapshotOriginals` records the KEY and a nil VALUE for a global the client never had, and
+`ApplyStrings` then writes the override into a global nothing reads. Locales are the ordinary way a
+global goes missing, alongside Blizzard's own renames.
+
+**Steps:** `/pc test` (the full report; the console form via **General → Test** is easier to read),
+and scan the `Original:` lines for empties.
+
+**Expected:** every one of the addon's registered globals has a non-empty `Original:` on this client.
+
+**Failure mode:** an empty or `nil` original. That is not itself a crash — it is an override that
+does nothing at all on this locale, silently, while the settings panel shows it enabled. Record
+every global that comes back empty; the list is the finding.
+
+#### T-107 — Nothing else moved
+
+**Why:** the rest of this suite ran on English, and a localized string reaching a path that assumed
+an English one shows up as an error rather than as a wrong word.
+
+**Steps:** walk **T-01**, **T-02**, **T-10** and **T-52a** once on this client.
+
+**Expected:** identical behavior to English throughout.
+
+**Failure mode:** any Lua error at all.
+
+**Sign-off without a non-English client.** There is none for T-104 to T-106. `tests/test_defaults.lua`
+compares against an enUS dump by construction, `tests/test_locale.lua` checks this addon's own `NS.L`
+manifest and never the client's string table, and the mock defines whatever globals the cases need in
+English. T-107 alone is covered by the rest of this file. Until the pass runs, the honest state of
+this section is unrun, and it is recorded that way rather than as coverage.
