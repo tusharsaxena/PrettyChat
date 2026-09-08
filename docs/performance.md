@@ -20,6 +20,7 @@ per-frame work. Its runtime is:
 | `OnEnable` | one snapshot pass over ~81 Blizzard originals, one `ApplyStrings` pass, panel registration |
 | A settings change | one `ApplyStrings` pass |
 | A combat boundary, and only while `General.visibility` is `inCombat` / `outOfCombat` | one `ApplyStrings` pass |
+| A settings-panel category render, and only while the player has that panel open | one AceGUI tree build, and **one** `C_Timer.After(0, …)` fit for the frame after the layout |
 | Every other moment, combat included | **nothing** |
 
 ## The sweep — criterion (a), proven rather than asserted
@@ -32,31 +33,59 @@ before trusting this page.
 ```sh
 grep -rEn 'RegisterEvent|RegisterUnitEvent|RegisterAllEvents|SetScript\("On(Update|Event)"|C_Timer|ScheduleRepeatingTimer|ScheduleTimer|NewTicker' \
   . --exclude-dir=.git --exclude-dir=libs --exclude-dir=_kit --exclude-dir=GlobalStrings \
-    --exclude-dir=audits --exclude-dir=reviews --exclude-dir=automated-tests
+    --exclude-dir=docs
 ```
 
-Result, at the commit that carries this page:
+`docs/` is excluded **because this page is inside it**. Without that exclusion the sweep matches its
+own prose, and every edit to the page shifts the line numbers the page prints — a result that cannot
+reproduce by construction, which is exactly the failure this page exists to prevent. The frozen
+evidence bundles that used to be excluded by name (`audits/`, `reviews/`, `automated-tests/`) live
+under `docs/` and are covered by it. The rest are the vendored payloads (`libs/`, `tests/_kit/`) and
+the generated data (`GlobalStrings/`). **Nothing that ships is excluded**, and `tests/` is deliberately
+still in scope.
+
+Result, verbatim, at the commit that carries this page — **nine lines across five files**:
 
 ```
-.luacheckrc:42:    "C_Timer",
-modules/Override.lua:  combatWatcher:SetScript("OnEvent", …)
-modules/Override.lua:      combatWatcher:RegisterEvent(event)
-modules/Override.lua:      combatWatcher:UnregisterEvent(event)
+.luacheckrc:48:    "C_Timer",
+modules/Override.lua:82:        combatWatcher:SetScript("OnEvent", function()
+modules/Override.lua:93:            combatWatcher:RegisterEvent(event)
+settings/Panel.lua:530:    -- A frame later, both are true. C_Timer.After(0, ...) is the client's own way
+settings/Panel.lua:533:    if C_Timer and C_Timer.After then
+settings/Panel.lua:534:        C_Timer.After(0, function() fitTree(ctx) end)
+tests/test_panel.lua:612:-- red under: dropping the C_Timer.After, or scheduling it per render without the
+tests/wow_mock.lua:64:--  15.  frame RegisterEvent / UnregisterEvent
+tests/wow_mock.lua:141:function frameMethods:RegisterEvent(event)
 ```
 
-**One lint declaration and one opt-in combat-BOUNDARY watcher.** `.luacheckrc:42` declares `C_Timer`
-in `read_globals` — a lint declaration of an API this addon does not use. Still **zero**
-`SetScript("OnUpdate"`, **zero** `C_Timer` call, zero ticker and zero repeating timer anywhere in
-`core/`, `defaults/`, `locales/`, `modules/`, `settings/` or the TOC.
+Reconciled, so a future drift is visible rather than arguable. One is a lint declaration
+(`.luacheckrc:48`). Three are the pattern names appearing **inside comments** — `settings/Panel.lua:530`,
+`tests/test_panel.lua:612`, `tests/wow_mock.lua:64` — which describe the discipline rather than doing
+anything. One is the headless harness's own mock (`tests/wow_mock.lua:141` defines
+`frameMethods:RegisterEvent`, which no client ever runs). The remaining **four are call sites in
+shipped code**, and they are the two sections below: the combat watcher, and one next-frame layout
+fit in the settings panel.
 
-The three `modules/Override.lua` hits are `PrettyChat:SyncCombatWatch`, and what matters about them
-is *when they are reached*:
+One thing the grep does *not* return, said out loud so nobody re-adds it: `combatWatcher:UnregisterEvent`
+at `modules/Override.lua:95` **does not match**, because the pattern spells `RegisterEvent` with a
+capital R and `UnregisterEvent` spells it lowercase. An earlier revision of this page printed that
+line inside its result block; the command above cannot produce it, and a result block holding a line
+its own command cannot return is worse than no result block at all.
+
+**Zero `SetScript("OnUpdate"`, zero ticker, zero repeating timer** anywhere in `core/`, `defaults/`,
+`locales/`, `modules/`, `settings/` or the TOC. That is the part of the old claim that survives.
+What does not survive is *"zero `C_Timer` call"*: `.luacheckrc:48` declares `C_Timer` in
+`read_globals`, and since 2026-09-03 that declaration has a real consumer.
+
+### The combat watcher — `modules/Override.lua:82`, `:93`
+
+Both hits are `PrettyChat:SyncCombatWatch`, and what matters about them is *when they are reached*:
 
 - the frame is **created lazily**, on the first write that stores `General.visibility` as `inCombat`
   or `outOfCombat`. A default install (`always`) creates no frame and registers no event, so on the
-  shipped configuration this sweep's runtime answer is still zero;
-- both events are **unregistered** the moment the mode leaves that pair, so the subscription tracks
-  the setting rather than outliving it;
+  shipped configuration this half of the sweep's runtime answer is still zero;
+- both events are **unregistered** the moment the mode leaves that pair (`modules/Override.lua:95`),
+  so the subscription tracks the setting rather than outliving it;
 - the handler fires at the combat **boundary** — `PLAYER_REGEN_DISABLED` on entry,
   `PLAYER_REGEN_ENABLED` on exit — at most twice per fight, and never *during* one. Its whole body is
   one `ApplyStrings` pass (~170 table writes, no allocation per string) and one gated debug line.
@@ -64,9 +93,37 @@ is *when they are reached*:
 `tests/test_override.lua` pins all three: no frame on a default load, both events registered on a
 combat-scoped write, both dropped on the way back out.
 
-The excluded paths are the vendored payloads (`libs/`, `tests/_kit/`), the generated data
-(`GlobalStrings/`) and the frozen evidence bundles (`docs/audits/`, `docs/reviews/`,
-`docs/automated-tests/`) — none of which is this addon's shipped runtime code.
+### The settings panel's next-frame fit — `settings/Panel.lua:533-534`
+
+**A guarded one-shot `C_Timer.After(0, …)` on the settings-panel render path, and nothing else.** It
+arrived on 2026-09-03 with the string-list revamp (`92c43f5`), after this page's sweep was last taken,
+which is why the page went on asserting zero. Its disposition:
+
+- **Where it is reached from.** `buildCategoryBody` only — the render of a Categories page inside the
+  options panel. Not `OnInitialize`, not `OnEnable`, not `ApplyStrings`, not the combat watcher.
+  Reaching it at all takes a player opening the settings panel and selecting a category, and
+  `LibKa0s-Options-1.0`'s `OpenOptionsPanel` refuses to open under `InCombatLockdown()`
+  ([ARCHITECTURE.md § Taint Notes](./ARCHITECTURE.md#taint-notes)), so the ordinary way in is closed
+  during a fight.
+- **What it is for.** The AceGUI `TreeGroup` cannot be sized during the render that builds it: the
+  scroll frame takes its height when the page's chrome is anchored, *earlier in the same render*, and
+  AceGUI has not laid the tree out yet, so there is no position to measure from. `C_Timer.After(0, …)`
+  is the client's own idiom for *after this frame's layout*, and it is the pass that actually sizes
+  the box. The two-pass reasoning is at [settings-panel.md](./settings-panel.md) and in-code above
+  the call.
+- **What it costs.** One callback, one frame later. `fitTree` reads two heights and does at most one
+  `SetHeight`, behind a change guard so re-rendering the same tree does not queue a stack of resizes.
+  It is guarded on `C_Timer and C_Timer.After` so the panel still loads on a client that answers
+  nothing for the API.
+- **Why it does not touch criterion (a).** Criterion (a) names three things: an `OnUpdate` handler, a
+  repeating ticker, and an event handler doing more than occasional work while the player is in
+  combat. A one-shot next-frame hop off a UI render is none of the three. Even in the one residual
+  case — a panel already open when a pull starts, re-rendered mid-fight — the work is a single
+  deferred layout measurement, not per-frame and not repeating, and it schedules exactly one
+  callback per render rather than one per category click.
+
+`tests/test_panel.lua:614` pins it: the render schedules exactly one fit for the following frame, and
+the case goes red if the hop is dropped or if the change guard stops holding.
 
 The addon's other lifecycle hooks are the two AceAddon callbacks above. Both run at login, neither
 repeats, and neither can be reached while the player is in combat.
@@ -105,7 +162,7 @@ suspend/resume contract, `tests/perf.lua`, and `docs/perf-analysis/`.
   this one — *no `tests/perf.lua` to run* — and it MUST be said out loud in the release notes rather
   than left to read as measured. Note that the vendored runner currently writes the shorter of the two
   sanctioned reasons, `no tests/perf.lua — this addon ships no offline scenarios`
-  (`tests/_kit/run-automated-tests.sh:223`), which does not name `performance-§12`. `tests/_kit/` is a
+  (`tests/_kit/run-automated-tests.sh:263`), which does not name `performance-§12`. `tests/_kit/` is a
   vendored payload and is never patched here, so **the release notes carry the exemption by name**
   until the kit does.
 
@@ -117,10 +174,12 @@ re-arms. Adding an event subscription or a chat filter to this addon changes its
 contract anyway ([ARCHITECTURE.md § Event Subscriptions](./ARCHITECTURE.md#event-subscriptions)); it
 also ends this page, and the change that ends it is exactly the change nobody will re-read this
 section during. Run the sweep above; the question to ask of any hit it returns is not "is there an
-event?" — there is one now — but **"can this run while the player is fighting?"**. The General
+event?" — there are two now — but **"can this run while the player is fighting?"**. The General
 visibility watcher cannot: `PLAYER_REGEN_DISABLED` and `PLAYER_REGEN_ENABLED` are the boundary
 itself, and they are only registered while the player has chosen one of the two combat-scoped modes.
-Anything that answers yes ends the exemption.
+The settings panel's next-frame fit cannot be *reached* in a fight by the ordinary route — the panel
+refuses to open under lockdown — and it is a one-shot off a UI render rather than a ticker in any
+case. Anything that answers yes ends the exemption.
 
 ## The one load-time cost that was measured, and removed (PC-R-05)
 
