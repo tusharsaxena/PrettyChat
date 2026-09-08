@@ -56,7 +56,7 @@ Kit.run{
         -- kind of case: it loads no addon and asserts nothing about behaviour, it reads the
         -- repository itself and compares it against what a document claims about it.
         "test_layout_cap",
-        -- The "no blanket suppression" gate (lint-§1, `M4-11`). Third of the three
+        -- The "no blanket suppression" gate (lint.md, `M4-11`). Third of the three
         -- repository-reading gates for the same reason the other two sit here: it loads no
         -- addon and asserts nothing about behaviour, it reads `.luacheckrc` and the tracked
         -- set and compares them against a rule. It is what keeps the top-level `ignore`

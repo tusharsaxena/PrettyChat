@@ -26,7 +26,7 @@ exclude_files = {
     "tests/_kit/",
 }
 
--- NO TOP-LEVEL `ignore`, and none is coming back (lint-§1, `M4-11`). This file carried
+-- NO TOP-LEVEL `ignore`, and none is coming back (lint.md, `M4-11`). This file carried
 -- `ignore = { "212/self", "212/event", "211/addonName" }` until `M4c-06`. Two of those three
 -- entries named something real, but a top-level ignore reaches all 43 files, so it silenced those
 -- codes in every file that has no business producing them too. Removing the line reported SIXTEEN
@@ -108,7 +108,7 @@ files["tests/"] = {
 }
 
 -- ---------------------------------------------------------------------------
--- The narrowed 212s (lint-§1, `M4c-06`)
+-- The narrowed 212s (lint.md, `M4c-06`)
 -- ---------------------------------------------------------------------------
 --
 -- Every stanza below names ONE file, and every entry inside it names the code AND the variable, in
