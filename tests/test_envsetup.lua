@@ -86,7 +86,7 @@ test("EnvSetup: every file-scope read resolved through the seam", function()
         m.GetAddOnMetadata = function(_, k) return meta[k] end
     end })
 
-    -- core/Namespace.lua:7
+    -- core/Namespace.lua's `NS.version` assignment.
     t.eq(other.NS.version, "9.9.9", "NS.version was seeded through the seam, not the literal")
 
     -- settings/Slash.lua:24 — reachable only through what `/pc version` prints.
@@ -96,7 +96,7 @@ test("EnvSetup: every file-scope read resolved through the seam", function()
     t.truthy(printed:find("9.9.9", 1, true) ~= nil,
         "/pc version printed '" .. printed .. "', so its file-scope read missed the seam")
 
-    -- settings/Panel.lua:25 — the tagline is only drawn when TOC_NOTES is non-empty.
+    -- settings/Panel.lua's `TOC_NOTES` — the tagline is only drawn when it is non-empty.
     local parent = other.env._settings.categories[1] and other.env._settings.categories[1].frame
     t.truthy(parent ~= nil, "no parent settings panel was registered")
     parent:Show()

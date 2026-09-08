@@ -184,8 +184,8 @@ end)
 test("the Slash stub carries the whole live surface", function()
     ctx.assertSurfaceParity(parityBare.NS.SlashCommands, "LibKa0s-Slash-1.0", {
         -- Live-only because the degraded PrintHelp writes its own header inline and
-        -- nothing else asks for one: settings/Panel.lua:368 is the addon's only
-        -- caller of the help-index surface and it takes LandingRows, on a page that
+        -- nothing else asks for one: settings/Panel.lua's `NS.SlashCommands:LandingRows()`
+        -- call is the addon's only reader of the help-index surface, on a page that
         -- never builds without the library. The day a degraded caller appears, this
         -- entry is what has to be deleted first.
         HelpHeader = true,

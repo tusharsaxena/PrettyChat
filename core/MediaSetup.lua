@@ -57,6 +57,17 @@ local Media = LibStub and LibStub("LibKa0s-Media-1.0", true)
 --- The seam is published anyway so the first window this addon does build asks the
 --- catalog rather than typing a path.
 ---
+--- ONE HAND-TYPED TEXTURE PATH REMAINS, and it is not a gap in this rule.
+--- settings/Panel.lua's `LOGO_PATH` concatenates
+--- "Interface\\AddOns\\<addon>\\media\\logos\\prettychat.logo.tga" by hand, because a
+--- per-addon LOGO is not a catalog entry and could not be one: the catalog holds
+--- the marks the collection SHARES -- one `close`, one set of glyphs, drawn the
+--- same in nine addons -- and resolves them per folder. Branding art is the
+--- opposite, one file per addon that nothing else ever asks for, so a catalog key
+--- for it would have exactly one caller and would still need the folder. What the
+--- library does own there is the SIZE, and Panel.lua deliberately does not name it
+--- (options-ui-§8).
+---
 --- @param name string  an entry of the library's `ICONS` catalog, e.g. "close"
 --- @return string|nil
 function NS.Icon(name)

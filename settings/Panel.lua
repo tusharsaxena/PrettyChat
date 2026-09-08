@@ -653,8 +653,9 @@ end
 -- texture, the next widget handed that frame inherits a 300px logo. The pool is
 -- shared with every addon in the session, so the panel that grew one was usually
 -- somebody else's, which is why nothing in tests/ and nothing a PrettyChat-only
--- smoke pass does could ever see it. The library sets the hook at
--- OptionsWidgets.lua:323; that hook is the whole reason this is a call and not a
+-- smoke pass does could ever see it. The library sets that hook itself, in the
+-- logo block of libs/LibKa0s/OptionsWidgets.lua -- a `SetCallback("OnRelease", ...)`
+-- that hides the texture; that hook is the whole reason this is a call and not a
 -- copy.
 --
 -- No logoSize is passed: the library defaults it to its own LANDING_LOGO, and a
