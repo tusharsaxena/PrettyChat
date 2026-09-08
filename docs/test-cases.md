@@ -18,6 +18,14 @@ badge and any count quoted in the docs must agree with it.
 - libs/LibKa0s is the LibKa0s release CLAUDE.md says this addon bundles
 - tests/_kit is the test kit that shipped with that release
 
+### test_layout_cap.lua (5)
+
+- layoutcap: PrettyChat.toc is still the only load list this gate has to read
+- layoutcap: every authored file over 1500 lines is named in the ARCHITECTURE.md census
+- layoutcap: no census row outlives the breach it records
+- layoutcap: every census row carries a disposition that can be followed
+- layoutcap: every row claiming layout-§1's generated-data carve-out still earns all three of its conditions
+
 ### test_libka0s.lua (28)
 
 - the locale-table matcher catches both offending spellings and clears the legal one
@@ -378,6 +386,7 @@ badge and any count quoted in the docs must agree with it.
 |-------|------:|
 | test_harness.lua | 4 |
 | test_vendor_sync.lua | 2 |
+| test_layout_cap.lua | 5 |
 | test_libka0s.lua | 28 |
 | test_surface_parity.lua | 4 |
 | test_envsetup.lua | 9 |
@@ -396,4 +405,4 @@ badge and any count quoted in the docs must agree with it.
 | test_slash.lua | 42 |
 | test_panel.lua | 46 |
 | test_eol.lua | 1 |
-| **Total** | **306** |
+| **Total** | **311** |

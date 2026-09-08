@@ -45,7 +45,7 @@ What the mocks deliberately do *not* model is layout: they answer "which widget,
 
 Both `lua tests/run.lua` and `luacheck .` must be green before any commit. Lint config is `.luacheckrc` (`std=lua51`; excludes `libs/`, `GlobalStrings/`, `tests/_kit/`, `docs/audits`, `docs/reviews`). The suites register named `test(name, fn)` cases; the `Tests` badge in the README badge row shows the pass/total.
 
-**The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 40 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the six seam files are inside the set that was actually checked:
+**The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 41 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the six seam files are inside the set that was actually checked:
 
 ```sh
 luacheck . --formatter plain | tail -1     # and read the file count it reports
@@ -104,6 +104,38 @@ Run **both** of each pair and read the difference between them:
 `tests/test_vendor_sync.lua` runs the same comparison mechanically whenever the sibling checkout is present. It is a ten-line call into the shared gate `tests/_kit/vendor_sync.lua`, vendored from LibKa0s like the rest of the kit rather than hand-copied here. It reads raw bytes and applies **exactly one** normalization — CR stripped from the working-tree side, because the other side is a `git show` blob (LF) while this working tree is CRLF — so a line-ending-only difference passes and a single content byte fails. A missing sibling is the one case where it can go quiet, and it reports **SKIP with that reason** rather than passing silently, which is why the commands above stay written down here.
 
 **Which tag it compares against comes from the root [`CLAUDE.md`](../CLAUDE.md).** The gate greps the `Bundles [LibKa0s](…) vX.Y.Z (MIT).` provenance line out of that file — kit revision 9 moved it there from `README.md`, with **no fallback**, because the README is the player's page and no longer carries a bundled-library inventory at all. So the line moves in the same commit as the vendored bytes: bump `libs/LibKa0s/` or `tests/_kit/` without moving it and this gate fails, naming `CLAUDE.md`.
+
+## The 1500-line cap gate
+
+`tests/test_layout_cap.lua` compares two things: every authored `.lua` git tracks, and the census
+under *Files over the 1500-line cap* in [ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both
+directions, so a file that crosses the cap unremarked and a row left behind for a file that has
+stopped breaching are each a red.
+
+`layout-§1` binds **every authored file the repository tracks**, `tests/` included, and carves out
+vendored code (`libs/`, `tests/_kit/`) and generated non-shipping data. A red is cleared by giving
+the file one of the three terminal states the rule allows — peel it, open an issue naming the seam
+a peel would follow, or ratify a register row with a re-check trigger — and then adding its row to
+the census. It is not cleared by raising `CAP`, and it must not be cleared by dropping the suite
+from the runner's list: `Kit.assertSuiteInventory` reddens on that too, which is the point of
+having one.
+
+**The part specific to this repo is the carve-out, and it is checked rather than trusted.**
+PrettyChat has no cap breach; what it has is `GlobalStrings/GlobalStrings.lua`, 23,842 lines of
+generated dump, exempt only while all three of the carve-out's conditions hold — a comment at the
+top saying it is generated, no load list carrying it, a `.pkgmeta` entry keeping it out of the zip.
+Each of those is one line in one file, and each is the kind of line that gets edited for an
+unrelated reason. So the suite re-derives the exemption from the TOC, `.pkgmeta` and the file's own
+banner on every run instead of carrying the path in a skip list. Break any one condition and the
+failure names which one, because the alternative is a `layout-§1` MUST switching itself back on in
+silence. Sibling repos with no generated data have no equivalent case.
+
+The one thing that would blind it is a second load list — a non-vendored `.xml` beside
+`PrettyChat.toc` — so the arrival of one is itself a failing case, telling you to teach the gate
+about it rather than letting condition two go unread.
+
+The line figures in the census are dated measurements and nothing asserts them, so an ordinary edit
+to a large file does not redden this gate. Membership is the invariant, not the numbers.
 
 ## Test-case inventory & badge sync (`testing-§5`)
 
