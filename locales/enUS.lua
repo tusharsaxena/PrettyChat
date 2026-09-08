@@ -89,5 +89,26 @@ local enUS = {
     "Print sample chat lines — `/pc test [all | category <name> | formatstring <NAME>]`",
     "Debug console — `/pc debug` shows it; `on`/`off` toggle logging",
     "Print the addon version",
+    -- Slash-command and `/pc test` OUTPUT, as opposed to the verb descriptions
+    -- above. Each key is a WHOLE sentence with `%s`/`%d` where the data goes, and
+    -- each one was a concatenation of prose and data until M4-21; the routing is
+    -- byte-identical because `L` falls back to the key. What is NOT here is the
+    -- residue `tests/test_locale.lua` records with a reason per site: a line whose
+    -- prose is split across two color spans cannot become one key without moving
+    -- the `|c…|r` escapes inside translatable text, and wrapping the halves
+    -- separately is the fragment-keying PC-R-06 removed.
+    "schema not ready yet",
+    "unknown command '%s'",
+    "v%s slash commands",
+    "Categories (%d)",
+    "Format strings (%d)",
+    "unknown category '%s'. Valid: ",
+    "unknown format string '%s' — try ",
+    "all settings reset to defaults",
+    "debug console unavailable",
+    -- The `/pc test` report's own lines (modules/Override.lua).
+    "sample of every format string (preview ignores enable toggles):",
+    "(addon is currently disabled — these formats aren't being applied to live chat)",
+    "(no matching strings)",
 }
 for _, s in ipairs(enUS) do L[s] = s end

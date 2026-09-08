@@ -108,7 +108,7 @@ badge and any count quoted in the docs must agree with it.
 - trim keeps interior whitespace intact
 - note and cmd wrap text in the documented slash colors
 
-### test_locale.lua (7)
+### test_locale.lua (11)
 
 - NS.L is published as a table
 - an unknown key falls back to itself verbatim
@@ -117,6 +117,10 @@ badge and any count quoted in the docs must agree with it.
 - every localized call site is in the enUS manifest
 - the manifest carries no entry that nothing references
 - every slash-command description is localized
+- the literal scan sees the sources it is meant to guard
+- every user-facing literal is routed through L or recorded as residue
+- every recorded residue literal is still unrouted in the file that names it
+- the excluded data table holds only row labels and default format strings
 
 ### test_defaults.lua (15)
 
@@ -393,7 +397,7 @@ badge and any count quoted in the docs must agree with it.
 | test_constants.lua | 8 |
 | test_mediasetup.lua | 8 |
 | test_util.lua | 7 |
-| test_locale.lua | 7 |
+| test_locale.lua | 11 |
 | test_defaults.lua | 15 |
 | test_schema.lua | 31 |
 | test_render.lua | 12 |
@@ -405,4 +409,4 @@ badge and any count quoted in the docs must agree with it.
 | test_slash.lua | 42 |
 | test_panel.lua | 46 |
 | test_eol.lua | 1 |
-| **Total** | **311** |
+| **Total** | **315** |

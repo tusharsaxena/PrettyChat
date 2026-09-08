@@ -9,6 +9,7 @@ local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 
 local Color  = NS.Const.Color
 local note   = NS.Util.note
+local L      = NS.L
 
 -- Row labels for the `/pc test` report. Color is a load-time constant, so these
 -- are built once here rather than per Test() call.
@@ -468,9 +469,9 @@ end
 -- parameter, not a redirection.
 function PrettyChat:Test(filter, sink)
     local emit = sink or NS.Print
-    emit(note("sample of every format string (preview ignores enable toggles):"))
+    emit(note(L["sample of every format string (preview ignores enable toggles):"]))
     if not self:IsAddonEnabled() then
-        emit(note("(addon is currently disabled — these formats aren't being applied to live chat)"))
+        emit(note(L["(addon is currently disabled — these formats aren't being applied to live chat)"]))
     end
 
     local printed, errored = 0, 0
@@ -487,7 +488,7 @@ function PrettyChat:Test(filter, sink)
     end
 
     if not emittedAny then
-        emit(note("(no matching strings)"))
+        emit(note(L["(no matching strings)"]))
         return
     end
 
