@@ -4,7 +4,7 @@
 ![CurseForge Version](https://img.shields.io/curseforge/v/919766)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-315%2F315_passing-green)
+![Tests](https://img.shields.io/badge/Tests-322%2F322_passing-green)
 
 ![Logo](https://media.forgecdn.net/attachments/1659/647/prettychat-logo-v2-jpg.jpg)
 
@@ -68,20 +68,7 @@ PrettyChat appears in the game's Settings panel under **Ka0s Pretty Chat**. The 
 | **General** | One tab, **Master controls**: the master **Enable PrettyChat** switch (turn it off and every message goes back to its original wording), a **General visibility** dropdown (*Always*, *Only in combat*, *Only out of combat*, *Never* — a second master switch, so you can have PrettyChat only while you are fighting), a **Debug console** toggle (shows or hides a small on-screen log window for troubleshooting), a **Test** button that previews every message into that console, and **Reset all settings**. |
 | **Categories** | Everything PrettyChat rewrites, one tab per kind of message — and inside each, a list of that kind's messages down the left, so you pick the line you want to change instead of scrolling past twenty of them. |
 
-The **Categories** page carries eight tabs across the top:
-
-| Tab | Covers |
-|-----|--------|
-| **Loot** | Item pickups, your own and group loot, bonus rolls, and currency from loot. |
-| **Currency** | Currency gained and lost. |
-| **Money** | Gold, silver, and copper: pickups, loot splits, guild bank deposits, and quest rewards. |
-| **Reputation** | Faction standing going up and down. |
-| **Experience** | The different ways you gain XP (rested, group, raid, and so on). |
-| **Honor** | Honor you earn. |
-| **Tradeskill** | Crafting items and opening locks. |
-| **Misc** | A couple of leftovers: quest XP rewards and zone exploration. |
-
-On each tab, pick a message from the list down the left and its editor opens beside it: an **Enable** checkbox, its own **Reset** button, the original wording, a box for your own replacement, and a live **Preview** that updates as you edit. Turn a message off and it goes back to its original.
+On each **Categories** tab, pick a message from the list down the left and its editor opens beside it: an **Enable** checkbox, its own **Reset** button, the original wording, a box for your own replacement, and a live **Preview** that updates as you edit. Turn a message off and it goes back to its original.
 
 ## How it works
 

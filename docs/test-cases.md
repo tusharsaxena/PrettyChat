@@ -380,6 +380,16 @@ badge and any count quoted in the docs must agree with it.
 - the landing logo is hidden when its group goes back to AceGUI's pool
 - the parent page shows the TOC tagline
 
+### test_doc_structure.lua (7)
+
+- docs/ARCHITECTURE.md carries the ten sections documentation-§3 names
+- every mandated hub section that has a topic doc has spilled into it
+- every anchor pointing into docs/ARCHITECTURE.md resolves to a heading
+- the player-facing history has the two homes documentation-§1 allows, and no third
+- README.md's top-level sections are the ones documentation-§1 names, in its order
+- root CLAUDE.md carries the adherence line documentation-§2 puts second
+- the README's settings table is page-granular, not per-tab
+
 ### test_eol.lua (1)
 
 - eol: every tracked file carries the terminator .gitattributes declares for it
@@ -408,5 +418,6 @@ badge and any count quoted in the docs must agree with it.
 | test_debuglog.lua | 25 |
 | test_slash.lua | 42 |
 | test_panel.lua | 46 |
+| test_doc_structure.lua | 7 |
 | test_eol.lua | 1 |
-| **Total** | **315** |
+| **Total** | **322** |

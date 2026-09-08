@@ -77,6 +77,7 @@ Kit.run{
         "test_debuglog",
         "test_slash",
         "test_panel",
+        "test_doc_structure",
         -- The kit has shipped one suite of its own since revision 15: the working-tree
         -- line-ending gate, over every path `git ls-files` reports. It lives where the rest
         -- of the kit lives rather than being re-typed into nine repositories, so it is

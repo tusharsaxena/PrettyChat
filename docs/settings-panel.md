@@ -15,7 +15,7 @@ The primary strip is `H.TabStrip`'s. The string list beside the editor is AceGUI
 
 The `General` page drew **no strip at all** until this pass: one group, one row, `H.RenderRows`. A one-group page draws a one-tab strip as of `OptionsWidgets` minor 13, and this page is why the rule matters — it was the page that read as broken beside `Categories` rather than as simpler.
 
-This doc covers: the canvas-layout framework, the unified per-page header, the `General` page's `Master controls` tab, the `Categories` page's two strips, the per-string editor, the Test button, and the color palette.
+This doc covers: the canvas-layout framework, the unified per-page header, the `General` page's `Master controls` tab, the `Categories` page's two strips, what each category tab covers, the per-string editor, the Test button, and the color palette.
 
 ## Canvas-layout framework
 
@@ -90,6 +90,24 @@ The General sub-page does not show a `Defaults` button in the header — the in-
       Three things the fit has to get right, each of which has bitten something in this collection: it is a **`HookScript`**, because AceGUI's `ScrollFrame` drives its own scrollbar from that script and `SetScript` would replace it; it reads the current tree off **`ctx.__pcTree`** rather than closing over one, because the hook is installed once per panel and the ctx outlives every render while the widget does not; and it fits only on a **change** in the wanted height, because `SetHeight` relayouts and the relayout fires the same hook. The space above the tree is **measured** (`scrollTop − treeTop`) rather than assumed — the footnote wraps at some widths and not others. 90% rather than 100%: a box flush to the scroll's bottom edge reads as clipped rather than as sized.
    4. **The tree** — `SetTree`, one row per format string in `catData.strings`, sorted by global name, each `{ value = GLOBALNAME, text = friendly label }`. The `value` is what `OnGroupSelected` reports back and what `ctx.activeSubTab` stores.
    5. **One** per-string editor, added as the `TreeGroup`'s children so it lands in the content pane: the selected string's, and only that one.
+
+### What each category tab covers
+
+One tab per message category, in `CATEGORY_ORDER`. This is the player-facing sentence for each —
+the counts beside them are in the page table at the top of this file, and the strings themselves
+are `settings/Schema.lua`'s. It lived in the README until `M5-03`; `documentation-§1` keeps the
+README's settings table at page granularity and puts the per-tab breakdown here.
+
+| Tab | Covers |
+|-----|--------|
+| **Loot** | Item pickups, your own and group loot, bonus rolls, and currency from loot. |
+| **Currency** | Currency gained and lost. |
+| **Money** | Gold, silver, and copper: pickups, loot splits, guild bank deposits, and quest rewards. |
+| **Reputation** | Faction standing going up and down. |
+| **Experience** | The different ways you gain XP (rested, group, raid, and so on). |
+| **Honor** | Honor you earn. |
+| **Tradeskill** | Crafting items and opening locks. |
+| **Misc** | A couple of leftovers: quest XP rewards and zone exploration. |
 
 ### Why a list, not a second strip
 

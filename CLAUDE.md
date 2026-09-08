@@ -2,6 +2,10 @@
 
 **Ka0s Pretty Chat** — a WoW addon that reformats system chat messages by overriding Blizzard's `GlobalStrings.lua` format strings (not by parsing chat events).
 
+This addon adheres to the **Ka0s WoW Addon Standard**
+(<https://github.com/tusharsaxena/WowAddonStandards>); the section below says what that binds
+and what to do when a change would break it.
+
 ## Standards compliance (read first)
 
 This repo is built to the **Ka0s WoW Addon Standard**
