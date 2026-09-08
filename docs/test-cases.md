@@ -390,6 +390,10 @@ badge and any count quoted in the docs must agree with it.
 - root CLAUDE.md carries the adherence line documentation-§2 puts second
 - the README's settings table is page-granular, not per-tab
 
+### test_register.lua (1)
+
+- every deviation id the register cites is assigned by a bundle in docs/audits/
+
 ### test_eol.lua (1)
 
 - eol: every tracked file carries the terminator .gitattributes declares for it
@@ -419,5 +423,6 @@ badge and any count quoted in the docs must agree with it.
 | test_slash.lua | 42 |
 | test_panel.lua | 46 |
 | test_doc_structure.lua | 7 |
+| test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **322** |
+| **Total** | **323** |
