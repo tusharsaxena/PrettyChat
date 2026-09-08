@@ -2,7 +2,7 @@
 -- the two pure line formatters, the FONT_MONO constant, and the /pc debug
 -- seam (window toggle vs session-state on/off) plus the gated NS.Debug sink.
 
-local function debugCmd(NS, addon, rest)
+local function debugCmd(NS, rest)
     for _, entry in ipairs(NS.COMMANDS) do
         if entry[1] == "debug" then return entry[3](rest) end
     end
@@ -38,18 +38,18 @@ end)
 
 test("/pc debug on|off drives the session flag through the SetEnabled seam", function()
     NS.State.debug = false
-    debugCmd(NS, addon, "on")
+    debugCmd(NS, "on")
     t.eq(NS.State.debug, true, "/pc debug on enables session state")
-    debugCmd(NS, addon, "off")
+    debugCmd(NS, "off")
     t.eq(NS.State.debug, false, "/pc debug off disables session state")
 end)
 
 test("color-coded chat ack: ON green, OFF red, via [PC]", function()
     -- debug-logging-§5.
     local msgs = env.DEFAULT_CHAT_FRAME.messages
-    debugCmd(NS, addon, "on")
+    debugCmd(NS, "on")
     t.truthy(msgs[#msgs]:find("|cff40ff40ON|r", 1, true), "on ack colors ON green (40ff40)")
-    debugCmd(NS, addon, "off")
+    debugCmd(NS, "off")
     t.truthy(msgs[#msgs]:find("|cffff4040OFF|r", 1, true), "off ack colors OFF red (ff4040)")
 end)
 
@@ -76,10 +76,10 @@ end)
 
 test("bare /pc debug toggles the window without changing the flag", function()
     NS.State.debug = true
-    debugCmd(NS, addon, "")
+    debugCmd(NS, "")
     t.eq(NS.State.debug, true, "bare /pc debug leaves state on")
     NS.State.debug = false
-    debugCmd(NS, addon, "")
+    debugCmd(NS, "")
     t.eq(NS.State.debug, false, "bare /pc debug leaves state off")
 end)
 

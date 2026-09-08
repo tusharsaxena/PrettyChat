@@ -14,7 +14,6 @@ local t     = ctx.t
 local test  = ctx.test
 local inst  = ctx.loadAddon()
 local NS    = inst.NS
-local env   = inst.env
 
 local FIXTURE = ctx.mock.metadata
 

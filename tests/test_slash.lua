@@ -5,7 +5,7 @@
 -- azure-group `list` colors. Most cases drive the real `/pc` entry point so
 -- the COMMANDS table and the dispatcher are exercised together.
 
-local function run(NS, addon, name, rest)
+local function run(NS, name, rest)
     for _, e in ipairs(NS.COMMANDS) do
         if e[1] == name then return e[3](rest or "") end
     end
@@ -107,7 +107,7 @@ test("extra whitespace around the verb is tolerated", function()
 end)
 
 test("/pc version prints the tagged version line", function()
-    run(NS, addon, "version")
+    run(NS, "version")
     t.eq(last(env), PREFIX .. "v" .. ctx.mock.metadata.Version,
         "/pc version prints the tagged version line")
 end)
@@ -125,7 +125,7 @@ test("/pc get echoes the gold-key/white-value FormatKV line", function()
     -- FormatKV rather than a private copy. The hex CASE changed with the handover —
     -- lowercase ffffff00 to uppercase FFFFFF00 — which the client does not
     -- distinguish and a byte comparison does, so it is pinned as the library's.
-    run(NS, addon, "get", "General.enabled")
+    run(NS, "get", "General.enabled")
     local slashLib = env.LibStub("LibKa0s-Slash-1.0", true)
     t.eq(last(env), PREFIX .. slashLib.FormatKV("General.enabled", "true"),
         "/pc get echoes the shared gold-key/white-value pair")
@@ -234,7 +234,7 @@ end)
 -- ---- list -----------------------------------------------------------
 
 test("/pc list prints the green header and azure category groups", function()
-    run(NS, addon, "list", "")
+    run(NS, "list", "")
     t.truthy(has(env, C.listHead .. "Available settings" .. C.reset),
         "/pc list prints the green Available settings header")
     t.truthy(has(env, C.azure .. "[General]" .. C.reset),
@@ -347,7 +347,7 @@ test("/pc test routes every line through the [PC] printer", function()
     -- PC-35 / events-frames-taint-§8: Test() prints through NS.Print, never
     -- straight to the chat frame, so every emitted line carries the [PC] tag.
     local before = #env.DEFAULT_CHAT_FRAME.messages
-    run(NS, addon, "test", "category Loot")
+    run(NS, "test", "category Loot")
     local msgs = env.DEFAULT_CHAT_FRAME.messages
     t.truthy(#msgs > before, "/pc test emits output")
     local allTagged = true

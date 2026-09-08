@@ -19,12 +19,6 @@ local function widgetsSince(env, mark)
     return out
 end
 
-local function firstOfType(list, wtype)
-    for _, w in ipairs(list) do
-        if w.type == wtype then return w end
-    end
-end
-
 local function byLabel(list, wtype, label)
     for _, w in ipairs(list) do
         if w.type == wtype and (w.labelText == label or w.text == label) then return w end
