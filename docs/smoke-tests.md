@@ -724,6 +724,37 @@ stale literal. The About tagline is still there. The debug console falls back to
 proportional face and draws no title-bar icons, because the art and the mono face are inside the
 missing payload — that is the media seam's contract, not this one's.
 
+#### T-99 — The tab strip survives being pooled and re-dressed
+
+**Smoke, session 3. NOT YET RUN.** New with `M4-01`'s LibKa0s v1.27.0 re-vendor.
+
+**Why:** `TabStrip` (`libs/LibKa0s/OptionsWidgets.lua`) no longer builds a button and a content
+panel per click — it acquires both from per-`ctx` `LibKa0s-Pool-1.0` pools and re-dresses them,
+re-setting `OnClick` on every dress. Its only headless proof counts `CreateFrame` calls on a second
+selection pass, and the case that would pin band geometry as invariant under selection cannot be
+written yet: the shared mock answers `GetHeight` with 0 for every frame, and that flips at kit 16,
+not here. So a stale label, a mis-anchored button or a band that changed height on a re-dressed tab
+is invisible to every automated check in this repo. `settings/Panel.lua:618` hands `H.TabStrip` a
+tab list and the library places the buttons, so this addon measures nothing and can prove nothing
+about the band on its own.
+
+**Steps:** `/pc config` → **Categories**. Cycle every tab of the strip three times, ending back on
+the first. On each pass watch the **label** (it is that tab's own), the **selection** (it is the tab
+you pressed), and the strip's **band height** (it does not move). Then `Esc`, reopen `/pc config`
+and walk the strip once more — the pools are per-`ctx`, so a second build is where a released frame
+can come back dressed for a different tab.
+
+**Expected:** every tab named and selected correctly on all three passes, no band that grows or
+shrinks, and the body under the strip is always the one the selected tab owns.
+
+**Failure mode:** a label carried over from the previously-dressed tab; a highlight on the wrong
+button; a body drawn under the wrong tab; a strip whose height moves between passes. Each is the
+pool handing back a frame it did not finish dressing, and each is a library finding — nothing in
+this repo places those buttons.
+
+(`LibKa0s-Perf-1.0` minor 8 arrived in the same payload and respells five player-facing strings.
+`Perf` is not wired in this addon, so none of them has a surface here.)
+
 ## Reporting a failure
 
 If a test fails:

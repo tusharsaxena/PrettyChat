@@ -365,6 +365,10 @@ badge and any count quoted in the docs must agree with it.
 - the landing logo is hidden when its group goes back to AceGUI's pool
 - the parent page shows the TOC tagline
 
+### test_eol.lua (1)
+
+- eol: every tracked file carries the terminator .gitattributes declares for it
+
 ## Totals
 
 | Suite | Cases |
@@ -387,4 +391,5 @@ badge and any count quoted in the docs must agree with it.
 | test_debuglog.lua | 25 |
 | test_slash.lua | 42 |
 | test_panel.lua | 46 |
-| **Total** | **305** |
+| test_eol.lua | 1 |
+| **Total** | **306** |
