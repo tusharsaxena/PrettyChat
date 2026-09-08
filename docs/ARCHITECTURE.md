@@ -77,7 +77,7 @@ Every file opens with `local addonName, NS = ...` — the addon-wide namespace t
 |--------|--------|---------|
 | `NS.Meta`, `NS.Version` | `core/EnvSetup.lua` | `core/Namespace.lua`, `settings/Slash.lua`, `settings/Panel.lua` (metadata access, all three at FILE SCOPE) |
 | `NS.Icon`, `NS.MediaFont` | `core/MediaSetup.lua` | `core/Constants.lua` (`FONT_MONO`, at file scope). **`NS.Icon` has no host caller today** — the marks a player sees are drawn by the library's own console windows, told the folder name through `core/DebugLogSetup.lua`'s descriptor; the seam is published so the first window this addon builds asks the catalog rather than typing a path |
-| `NS.MakeCloseButton` | `core/CoreSetup.lua` | **No host caller today**, for the same reason — published so the next window this addon builds does not have to remember the folder name at its call site. Covered by `tests/test_libka0s.lua` |
+| `NS.MakeCloseButton` | `core/CoreSetup.lua` | **No host caller today**, for the same reason — published so the next window this addon builds does not have to remember the folder name at its call site. The live three-argument wrapper is covered by `tests/test_libka0s.lua`; that the DEGRADED arm publishes the key at all (PC-A-05) is `tests/test_surface_parity.lua`'s Core case |
 | `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `core/Util.lua`, `core/CoreSetup.lua`, `core/DebugLogSetup.lua`, `modules/Override.lua`, `settings/Panel.lua`, `settings/Slash.lua` (palette/spacers/font/prefix) |
 | `NS.name` / `NS.version` | `core/Namespace.lua` | identity bootstrap (published for any module) |
 | `NS.State` | `core/State.lua` | `core/DebugLogSetup.lua`, `settings/Slash.lua` (session-only `debug` flag; reset every reload/login) |

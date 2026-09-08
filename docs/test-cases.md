@@ -18,7 +18,7 @@ badge and any count quoted in the docs must agree with it.
 - libs/LibKa0s is the LibKa0s release CLAUDE.md says this addon bundles
 - tests/_kit is the test kit that shipped with that release
 
-### test_libka0s.lua (32)
+### test_libka0s.lua (28)
 
 - the locale-table matcher catches both offending spellings and clears the legal one
 - no seam file hands a LibKa0s descriptor the addon-wide locale table
@@ -48,6 +48,9 @@ badge and any count quoted in the docs must agree with it.
 - with LibKa0s absent the addon still loads and still prints, saying so once
 - the shared cause clause names the addon and where the library should be
 - the degraded secret guard still neutralizes a protected value
+
+### test_surface_parity.lua (4)
+
 - the Core stub carries the whole live surface
 - the DebugLog stub carries the whole live surface
 - the Options stub carries the whole live surface
@@ -375,7 +378,8 @@ badge and any count quoted in the docs must agree with it.
 |-------|------:|
 | test_harness.lua | 4 |
 | test_vendor_sync.lua | 2 |
-| test_libka0s.lua | 32 |
+| test_libka0s.lua | 28 |
+| test_surface_parity.lua | 4 |
 | test_envsetup.lua | 9 |
 | test_constants.lua | 8 |
 | test_mediasetup.lua | 8 |
