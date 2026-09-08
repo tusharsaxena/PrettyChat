@@ -37,6 +37,7 @@ Public surfaces are exposed on `NS`:
 | Member | Set by | Used by |
 |--------|--------|---------|
 | `NS.Meta`, `NS.Version` | `core/EnvSetup.lua` | `core/Namespace.lua`, `settings/Slash.lua`, `settings/Panel.lua` (TOC metadata, all three read at FILE SCOPE) |
+| `NS.Icon(name)` / `NS.MediaFont(name)` | `core/MediaSetup.lua` | `NS.MediaFont` — `core/Constants.lua` (resolves `FONT_MONO` at load, which is why this file's TOC position is load-bearing). **`NS.Icon` has no caller in the addon's own source**; PrettyChat builds no frames of its own, so every mark a player sees is drawn by LibKa0s' own console windows, which learn the folder name from `core/DebugLogSetup.lua`'s descriptor. It is published so the first window this addon does build asks the catalog instead of concatenating a `.tga` path — the one failure mode neither the client nor the suite reports |
 | `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `settings/Panel.lua` (`Color` palette, `STRING_VSPACER`, the landing page's own section spacers); `settings/Slash.lua` (slash-output `Color` codes); `core/Util.lua` (color-wrap helpers); `core/DebugLogSetup.lua` (`FONT_MONO`); `modules/Override.lua` (`Color` palette for the `Test` report); `core/CoreSetup.lua` (`NS.PREFIX` = the shared cyan `[PC]` tag, passed to the printer as a function so a later change is not frozen out) |
 | `NS.name` / `NS.version` | `core/Namespace.lua` | identity bootstrap (records addon name + TOC version so no module re-queries the TOC) |
 | `NS.State` | `core/State.lua` | `core/DebugLogSetup.lua`, `settings/Slash.lua` (session-only `debug` flag; `{ debug = false }`, reset every reload/login) |
@@ -44,6 +45,7 @@ Public surfaces are exposed on `NS`:
 | `NS.Database` | `core/Database.lua` | `core/PrettyChat.lua` (`OnInitialize` merges `global.schemaVersion` defaults + runs `RunMigrations`) |
 | `NS.DebugLog` / `NS.Debug(tag, fmt, …)` | `core/DebugLogSetup.lua` | every file (on-screen debug console; `NS.Debug` gated on session-only `NS.State.debug`, routed to the console, driven by `/pc debug` through the `DebugLog:SetEnabled` seam) |
 | `NS.Print(msg)` / `NS.Format(fmt, …)` | `core/CoreSetup.lua` | `NS.Print` — every file (secret-safe cyan `[PC]` chat-output chokepoint, built by `LibKa0s-Core-1.0` and reclaimed from AceConsole's embed). **`NS.Format` has no caller in the addon's own source**; it is published on both the library and the degraded path so the first caller added later is not nil in exactly the install the fallback exists for |
+| `NS.MakeCloseButton(parent, onClick)` | `core/CoreSetup.lua` | **No caller in the addon's own source**, on either arm — the console's close mark is LibKa0s' own. The wrapper exists to supply the third argument a call site cannot know: the library is vendored, so it cannot work out which addon folder it was copied into, and a two-argument passthrough onto the three-argument target silently draws a multiplication sign instead of the collection's mark (anti-pattern #64). The degraded arm publishes a nil-returning stub so both arms carry the key (`PRETTYCHAT-A-05`) |
 | `NS.ProfileDefaults` | `defaults/Profile.lua` | `core/PrettyChat.lua` (`OnInitialize` merges it with `NS.Database.defaults` for `AceDB:New`) |
 | `NS.Defaults` | `defaults/Defaults.lua` | `settings/Schema.lua`, `modules/Override.lua`, `settings/Slash.lua`, `settings/Panel.lua` (category → format-string defaults) |
 | `NS.L` | `locales/enUS.lua` | `settings/Panel.lua`, `settings/Slash.lua`, `settings/Schema.lua` (English-key localization; `__index` returns the key) |
@@ -57,6 +59,26 @@ Public surfaces are exposed on `NS`:
 | `NS.Config.RegisterPanels()` | `settings/Panel.lua` | `core/PrettyChat.lua` (`OnEnable` calls it after the snapshot/`ApplyStrings` pair, replacing the old `PLAYER_LOGIN` bootstrap frame) |
 
 The addon object **is** the `NS` table itself — `core/PrettyChat.lua` passes `NS` to `:NewAddon` (architecture-§2), so its `AceAddon-3.0` methods hang off `NS`. Other files reach it via `LibStub("AceAddon-3.0"):GetAddon("PrettyChat")`, which returns that same table.
+
+### Seams published without a caller
+
+Three members of the table above have no call site anywhere in `core/`, `defaults/`, `locales/`,
+`modules/` or `settings/`, and that is deliberate in each case rather than left over from something
+deleted. Each is argued at its definition; this is the list, so a dead-code sweep finds all three in
+one place instead of meeting them one at a time.
+
+| Seam | Defined at | Why it stays |
+|------|-----------|--------------|
+| `NS.Icon(name)` | `core/MediaSetup.lua` | The alternative to an unused catalog lookup is a hand-typed texture path. A path to a file that is not there draws nothing and raises nothing — no error, no red case, no client warning. The seam is here so the first frame this addon builds cannot take that route. |
+| `NS.MakeCloseButton(parent, onClick)` | `core/CoreSetup.lua`, both arms | It carries the addon-folder name a vendored library cannot derive and a call site would have to remember. Deleting it moves that argument back to whoever builds the next window, and getting it wrong is invisible except side by side with a sibling addon. |
+| `NS.Format(fmt, …)` | `core/CoreSetup.lua`, both arms | Published on **both** arms, and the symmetry is the value: a first caller added later would work in every install that has LibKa0s and be nil in exactly the install the degraded arm exists for. |
+
+None of the three costs anything to keep — `NS.Icon` and `NS.MakeCloseButton` are frame-build calls
+that never happen, `NS.Format` is a closure. What a deletion would cost is the re-derivation, and in
+two of the three cases a wrong re-derivation is silent.
+
+**A sweep that wants one of these gone has to answer the argument in its row, not the call count** —
+the call count is the thing being explained. Recorded under `PRETTYCHAT-R-11`.
 
 ## Public APIs
 
