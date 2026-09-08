@@ -26,10 +26,11 @@ OnEnable snapshot ──▶ addon.originalStrings ──▶ NS.OriginalFormat(ad
 
 ## Namespace publishing pattern
 
-Every file captures the addon namespace with the same idiom at the top:
+Every file captures the addon namespace with the same idiom at the top, and takes the folder name beside it only where it reads one:
 
 ```lua
-local addonName, NS = ...
+local _, NS = ...          -- the eleven files that never read the folder name
+local addonName, NS = ...  -- the seven that do (see ARCHITECTURE.md)
 ```
 
 Public surfaces are exposed on `NS`:
@@ -37,6 +38,7 @@ Public surfaces are exposed on `NS`:
 | Member | Set by | Used by |
 |--------|--------|---------|
 | `NS.Meta`, `NS.Version` | `core/EnvSetup.lua` | `core/Namespace.lua`, `settings/Slash.lua`, `settings/Panel.lua` (TOC metadata, all three read at FILE SCOPE) |
+| `NS.Icon(name)` / `NS.MediaFont(name)` | `core/MediaSetup.lua` | `NS.MediaFont` — `core/Constants.lua` (resolves `FONT_MONO` at load, which is why this file's TOC position is load-bearing). **`NS.Icon` has no caller in the addon's own source**; PrettyChat builds no frames of its own, so every mark a player sees is drawn by LibKa0s' own console windows, which learn the folder name from `core/DebugLogSetup.lua`'s descriptor. It is published so the first window this addon does build asks the catalog instead of concatenating a `.tga` path — the one failure mode neither the client nor the suite reports |
 | `NS.Const` / `NS.PREFIX` | `core/Constants.lua` | `settings/Panel.lua` (`Color` palette, `STRING_VSPACER`, the landing page's own section spacers); `settings/Slash.lua` (slash-output `Color` codes); `core/Util.lua` (color-wrap helpers); `core/DebugLogSetup.lua` (`FONT_MONO`); `modules/Override.lua` (`Color` palette for the `Test` report); `core/CoreSetup.lua` (`NS.PREFIX` = the shared cyan `[PC]` tag, passed to the printer as a function so a later change is not frozen out) |
 | `NS.name` / `NS.version` | `core/Namespace.lua` | identity bootstrap (records addon name + TOC version so no module re-queries the TOC) |
 | `NS.State` | `core/State.lua` | `core/DebugLogSetup.lua`, `settings/Slash.lua` (session-only `debug` flag; `{ debug = false }`, reset every reload/login) |
@@ -44,18 +46,40 @@ Public surfaces are exposed on `NS`:
 | `NS.Database` | `core/Database.lua` | `core/PrettyChat.lua` (`OnInitialize` merges `global.schemaVersion` defaults + runs `RunMigrations`) |
 | `NS.DebugLog` / `NS.Debug(tag, fmt, …)` | `core/DebugLogSetup.lua` | every file (on-screen debug console; `NS.Debug` gated on session-only `NS.State.debug`, routed to the console, driven by `/pc debug` through the `DebugLog:SetEnabled` seam) |
 | `NS.Print(msg)` / `NS.Format(fmt, …)` | `core/CoreSetup.lua` | `NS.Print` — every file (secret-safe cyan `[PC]` chat-output chokepoint, built by `LibKa0s-Core-1.0` and reclaimed from AceConsole's embed). **`NS.Format` has no caller in the addon's own source**; it is published on both the library and the degraded path so the first caller added later is not nil in exactly the install the fallback exists for |
+| `NS.MakeCloseButton(parent, onClick)` | `core/CoreSetup.lua` | **No caller in the addon's own source**, on either arm — the console's close mark is LibKa0s' own. The wrapper exists to supply the third argument a call site cannot know: the library is vendored, so it cannot work out which addon folder it was copied into, and a two-argument passthrough onto the three-argument target silently draws a multiplication sign instead of the collection's mark (anti-pattern #64). The degraded arm publishes a nil-returning stub so both arms carry the key (`PRETTYCHAT-A-05`) |
 | `NS.ProfileDefaults` | `defaults/Profile.lua` | `core/PrettyChat.lua` (`OnInitialize` merges it with `NS.Database.defaults` for `AceDB:New`) |
 | `NS.Defaults` | `defaults/Defaults.lua` | `settings/Schema.lua`, `modules/Override.lua`, `settings/Slash.lua`, `settings/Panel.lua` (category → format-string defaults) |
 | `NS.L` | `locales/enUS.lua` | `settings/Panel.lua`, `settings/Slash.lua`, `settings/Schema.lua` (English-key localization; `__index` returns the key) |
 | `NS.OriginalFormat(addon, name)` | `modules/Override.lua` | `settings/Panel.lua` ("Original Format String" display) and `/pc test`'s Original line — one reader for both |
 | `NS.Schema` | `settings/Schema.lua` | `settings/Slash.lua` (slash dispatch), `settings/Panel.lua` (every widget get/set; registers a refresh closure per drawn category tab via `Schema.RegisterRefresher`, and drops the previous tab's on every re-render) |
 | `NS.RenderSample(fmt)` | `modules/Override.lua` | `settings/Panel.lua` (per-string Preview EditBox) |
+| `NS.ConversionSequence(fmt)` / `NS.DescribeSequence(seq)` / `NS.SequenceIsPrefix(a, b)` | `modules/Override.lua` | `settings/Schema.lua` (the write gate), `modules/Override.lua` itself (the Preview's sample arguments) and `tests/test_defaults.lua` (every shipped default against Blizzard's real signature). ONE walk: it lived in the test suite alone until PC-R-01, so the only code that understood what a format demands was code the game never loads |
 | `NS.COMMANDS` / `NS.SlashCommands` | `settings/Slash.lua` | `settings/Panel.lua` renders `NS.SlashCommands:LandingRows()` on the landing page — the SAME formatter the chat help uses, so the two surfaces cannot drift (`LIBKA0S-11`). The call is a **colon**: the library declares `function Sl:LandingRows()`, and the dot form only worked because today's body ignores `self` (PC-R-08) |
 | `NS.LIBKA0S_MISSING` | `core/CoreSetup.lua` | `core/DebugLogSetup.lua`, `settings/OptionsSetup.lua`, `settings/Slash.lua` — the shared cause clause each degraded seam appends its own consequence to |
 | `NS.Helpers` | `settings/OptionsSetup.lua` | `settings/Panel.lua` (the `LibKa0s-Options-1.0` instance itself, decorated in place), `settings/Schema.lua` (`RefreshScalars`), `core/PrettyChat.lua` (`OpenOptionsPanel`) |
 | `NS.Config.RegisterPanels()` | `settings/Panel.lua` | `core/PrettyChat.lua` (`OnEnable` calls it after the snapshot/`ApplyStrings` pair, replacing the old `PLAYER_LOGIN` bootstrap frame) |
 
 The addon object **is** the `NS` table itself — `core/PrettyChat.lua` passes `NS` to `:NewAddon` (architecture-§2), so its `AceAddon-3.0` methods hang off `NS`. Other files reach it via `LibStub("AceAddon-3.0"):GetAddon("PrettyChat")`, which returns that same table.
+
+### Seams published without a caller
+
+Three members of the table above have no call site anywhere in `core/`, `defaults/`, `locales/`,
+`modules/` or `settings/`, and that is deliberate in each case rather than left over from something
+deleted. Each is argued at its definition; this is the list, so a dead-code sweep finds all three in
+one place instead of meeting them one at a time.
+
+| Seam | Defined at | Why it stays |
+|------|-----------|--------------|
+| `NS.Icon(name)` | `core/MediaSetup.lua` | The alternative to an unused catalog lookup is a hand-typed texture path. A path to a file that is not there draws nothing and raises nothing — no error, no red case, no client warning. The seam is here so the first frame this addon builds cannot take that route. |
+| `NS.MakeCloseButton(parent, onClick)` | `core/CoreSetup.lua`, both arms | It carries the addon-folder name a vendored library cannot derive and a call site would have to remember. Deleting it moves that argument back to whoever builds the next window, and getting it wrong is invisible except side by side with a sibling addon. |
+| `NS.Format(fmt, …)` | `core/CoreSetup.lua`, both arms | Published on **both** arms, and the symmetry is the value: a first caller added later would work in every install that has LibKa0s and be nil in exactly the install the degraded arm exists for. |
+
+None of the three costs anything to keep — `NS.Icon` and `NS.MakeCloseButton` are frame-build calls
+that never happen, `NS.Format` is a closure. What a deletion would cost is the re-derivation, and in
+two of the three cases a wrong re-derivation is silent.
+
+**A sweep that wants one of these gone has to answer the argument in its row, not the call count** —
+the call count is the thing being explained. Recorded under `PRETTYCHAT-R-11`.
 
 ## Public APIs
 
@@ -99,7 +123,8 @@ See [schema.md](./schema.md) for the row kinds, the single write path, and the a
 NS.Schema.RowsByCategory(category)             -- filtered subset for one category
 NS.Schema.FindByPath(path)                     -- O(1) lookup by dot path
 NS.Schema.Get(path)                            -- read through the row's get() closure
-NS.Schema.Set(path, value)                     -- DB write (row's set closure) → ApplyStrings → NotifyPanelChange
+NS.Schema.Set(path, value)                     -- conversion-signature gate → DB write (row's set closure) → ApplyStrings → NotifyPanelChange
+                                               -- returns false (nothing stored) on an unknown path or a refused format
 NS.Schema.AllRows()                            -- every row in DECLARATION order (the live table, not a copy); the Slash + Options descriptors' `allRows`
 NS.Schema.ApplyDefault(row)                    -- restore ONE row to row.default through Schema.Set; not the bulk reset (that is PrettyChat:ResetCategory / :ResetAll)
 NS.Schema.validation                           -- { checked, failed, misses } from the load-time path validator; asserted by the suite
@@ -146,7 +171,7 @@ The single chokepoint for addon chat output. Use this, not raw `print()` or `sel
 13. `defaults/Profile.lua` — populates `NS.ProfileDefaults` (the AceDB `profile` defaults table).
 14. `defaults/Defaults.lua` — populates `NS.Defaults`.
 15. `GlobalStrings/` — **not in the load order at all** since PC-R-05. The panel resolves "Original" values from the `OnEnable` snapshot through `NS.OriginalFormat`; the chunks are repo-only reference data that `tests/test_defaults.lua` loads directly.
-16. `modules/Override.lua` — attaches the override engine to the addon object (`ApplyStrings`, enable-cascade predicates, `ResetString` / `ResetCategory` / `ResetAll`, `Test`) and defines `NS.RenderSample` and `NS.OriginalFormat`.
+16. `modules/Override.lua` — attaches the override engine to the addon object (`ApplyStrings`, enable-cascade predicates, `ResetString` / `ResetCategory` / `ResetAll`, `Test`) and defines `NS.RenderSample`, `NS.OriginalFormat` and the conversion-signature walk (`NS.ConversionSequence` / `NS.DescribeSequence` / `NS.SequenceIsPrefix`) that `settings/Schema.lua` — the NEXT-but-one file — reads at write time.
 17. `settings/Schema.lua` — builds `rows` / `byPath` from `NS.Defaults` (which is loaded earlier) and runs the load-time path validator. Closures bind to live values. It also declares the `Master controls` spec and its host wiring, but does **not** compose it: the composers live on the Options instance, which the next file creates.
 18. `settings/OptionsSetup.lua` — the `LibKa0s-Options-1.0` seam. Populates `NS.Helpers` (the instance itself), then calls `NS.Schema.InstallMasterControls(NS.Helpers)`, which splices the composed `Master controls` block in at the head of the schema. After `settings/Schema.lua`, whose `Get`/`Set`/`RowsByCategory` the descriptor reads and whose install seam this file drives, and before `settings/Panel.lua`, which takes it as a file-scope upvalue and registers its pages at file load (options-ui-§1). **`MasterControls` is the one member the degraded stub in this file has to do real work for**, because it is the one reached at load.
 19. `settings/Slash.lua` — the `COMMANDS` table and the `LibKa0s-Slash-1.0` descriptor, publishing `NS.COMMANDS` and `NS.SlashCommands`. After Schema so the descriptor's `get`/`set`/`findRow`/`allRows` can reach it.
@@ -191,7 +216,7 @@ Source `.lua` is grouped under `core/`, `defaults/`, `locales/`, `modules/`, and
 
 | File | Responsibility |
 |------|----------------|
-| `modules/Override.lua` | The override engine, attached to the shared addon object. Houses `ApplyStrings` (deterministic `CATEGORY_ORDER` + sorted iteration), `Test(filter, sink)` — whose `sink` defaults to `NS.Print` so `/pc test` writes to chat and the settings button writes to the debug console — the read helpers (`GetStringValue` / `IsAddonEnabled` / `IsCategoryEnabled` / `IsStringEnabled` / `EnsureCategoryDB`), the General-visibility pair (`GetVisibility` / `IsVisible`) with the opt-in `SyncCombatWatch` that arms `PrettyChatCombatWatcher` only for the two combat-scoped modes, `ResetString` / `ResetCategory` / `ResetAll`, and `NS.RenderSample(fmt)` shared with the panel's per-row Preview EditBox. |
+| `modules/Override.lua` | The override engine, attached to the shared addon object. Houses `ApplyStrings` (deterministic `CATEGORY_ORDER` + sorted iteration), `Test(filter, sink)` — whose `sink` defaults to `NS.Print` so `/pc test` writes to chat and the settings button writes to the debug console — the read helpers (`GetStringValue` / `IsAddonEnabled` / `IsCategoryEnabled` / `IsStringEnabled` / `EnsureCategoryDB`), the General-visibility pair (`GetVisibility` / `IsVisible`) with the opt-in `SyncCombatWatch` that arms `PrettyChatCombatWatcher` only for the two combat-scoped modes, `ResetString` / `ResetCategory` / `ResetAll`, `NS.RenderSample(fmt)` shared with the panel's per-row Preview EditBox, and the conversion-signature walk (`NS.ConversionSequence` / `NS.DescribeSequence` / `NS.SequenceIsPrefix`) that both the Preview's sample arguments and `Schema.Set`'s write gate are built on. |
 | `settings/Schema.lua` | Builds a flat `rows` array and `byPath` lookup from `NS.Defaults` at file-load, plus a load-time path validator (`Schema.validation`), `AllRows`, `ApplyDefault` and the type-aware `Schema.FormatValue`. Exposes `NS.Schema` — the **single write path** shared by the slash CLI and the panel. `NotifyPanelChange` drives **both** refresher registries: the library's ctx-scoped one (via `NS.Helpers.RefreshScalars`) and the schema's own, which the bespoke per-string blocks use. Owns `CATEGORY_ORDER`. See [schema.md](./schema.md). |
 | `settings/OptionsSetup.lua` | The `LibKa0s-Options-1.0` seam. Publishes `NS.Helpers` — **the instance itself**, decorated in place, never a copy-across table. Supplies the brand, `mainPanelName`, the `get`/`set`/`applyDefault` write seam, `rowsForPage`/`allRows`, and the landing-page hook. Its library-absent branch is the one documented **load-completing** stub (options-ui-§1): PrettyChat's measured load-time member set is exactly **one**, `MasterControls`, because the General page's Master controls block is composed at the bottom of this file — which `tests/test_libka0s.lua` pins by comparing schema row counts across a library-absent load. |
 | `settings/Slash.lua` | Owns the ordered `COMMANDS` table of **positional triples** (`help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `test`, `debug`) — the host's, passed to the library as plain data — and the `LibKa0s-Slash-1.0` descriptor with its two hooks: `format` (the `\|` → `\|\|` doubling) and `parse` (free text containing spaces). Four verbs stay host-owned: `list`'s two reserved sub-keywords and its category filter, `resetall`, `test`, `debug`. Publishes `NS.COMMANDS` and `NS.SlashCommands`. See [slash-dispatch.md](./slash-dispatch.md). |
@@ -208,9 +233,9 @@ Source `.lua` is grouped under `core/`, `defaults/`, `locales/`, `modules/`, and
 
 ### Shared infrastructure
 
-- `PrettyChat.toc` — Interface line (`120007`), version, SavedVariables (`PrettyChatDB`), section comments, and file load order. Order is dependency order, not alphabetical: `libs/` (Ace3, then `libs\LibKa0s\LibKa0s.xml`) → `locales/enUS` → `core/EnvSetup` → `core/MediaSetup` → `core/Constants` → `core/Namespace` → `core/State` → `core/Util` → `core/Database` → `core/PrettyChat` → `core/CoreSetup` → `core/DebugLogSetup` → `defaults/Profile` → `defaults/Defaults` → `modules/Override` → `settings/Schema` → `settings/OptionsSetup` → `settings/Slash` → `settings/Panel`. The five positions that are load-bearing are explained in [ARCHITECTURE.md](./ARCHITECTURE.md).
+- `PrettyChat.toc` — Interface line (`120007`), version, SavedVariables (`PrettyChatDB`), section comments, and file load order. Order is dependency order, not alphabetical: `libs/` (Ace3, then `libs\LibKa0s\LibKa0s.xml`) → `locales/enUS` → `core/EnvSetup` → `core/MediaSetup` → `core/Constants` → `core/Namespace` → `core/State` → `core/Util` → `core/Database` → `core/PrettyChat` → `core/CoreSetup` → `core/DebugLogSetup` → `defaults/Profile` → `defaults/Defaults` → `modules/Override` → `settings/Schema` → `settings/OptionsSetup` → `settings/Slash` → `settings/Panel`. The six positions that are load-bearing are explained in [ARCHITECTURE.md](./ARCHITECTURE.md).
 - `libs/` — vendored Ace3 + LibStub, plus **`libs/LibKa0s/`** (the Ka0s shared library, copied whole from the sibling `../LibKa0s` checkout and **never edited here**). Tracked in git (standard WoW addon practice).
-- `tests/` — the headless harness (stock Lua 5.1, no client). `_kit/` (the **vendored** LibKa0s test kit — the registry, the assertions, the runner, the `--list` renderer, the sandboxed loader, the base mock and `vendor_sync.lua` (the consumer-side vendored-payload gate `tests/test_vendor_sync.lua` calls); never edited here), `run.lua` (the suite list, the assertion aliases and `Kit.run`), `loader.lua` (the instance factory, reduced to the isolation need: both load lists derived through the kit — TOC and `LibKa0s.xml` — plus per-call environment isolation), `wow_mock.lua` (a thin extender over `_kit/mock_base.lua`), and one `test_<module>.lua` suite per module. Excluded from luacheck. See [testing.md](./testing.md).
+- `tests/` — the headless harness (stock Lua 5.1, no client). `_kit/` (the **vendored** LibKa0s test kit — the registry, the assertions, the runner, the `--list` renderer, the sandboxed loader, the base mock and `vendor_sync.lua` (the consumer-side vendored-payload gate `tests/test_vendor_sync.lua` calls); never edited here), `run.lua` (the suite list, the assertion aliases and `Kit.run`), `loader.lua` (the instance factory, reduced to the isolation need: both load lists derived through the kit — TOC and `LibKa0s.xml` — plus per-call environment isolation), `wow_mock.lua` (a thin extender over `_kit/mock_base.lua`), and one `test_<module>.lua` suite per module plus `test_surface_parity.lua`, which is per-SEAM rather than per-module: the four library-absent stubs, each read against the live surface it stands in for. Excluded from luacheck. See [testing.md](./testing.md).
 - `media/` — the runtime `.tga` logo (`settings/Panel.lua`), the `.png`/`.jpg` logo masters and `media/screenshots/`: project-page art the README references by CDN URL, kept here as source backups. WoW cannot load `.png`/`.jpg` at all, so `.pkgmeta` keeps them and the screenshots out of the package. **`media/fonts/` is gone**: the console's JetBrains Mono now arrives inside the LibKa0s payload (`libs/LibKa0s/media/fonts/`) and is resolved by `core/MediaSetup.lua`, so what is left under `media/` is only art this addon genuinely owns.
 - `.pkgmeta` — BigWigs/CurseForge packager manifest: `package-as: PrettyChat`, no `externals:` (libraries are vendored, not fetched), and the ignore list that keeps dev-only files out of the shipped zip — `docs/`, `tests/`, `_dev/`, lockfiles, the whole `GlobalStrings/` reference tree (PC-R-05), and the non-runtime project-page art.
 - `.gitattributes` — forces CRLF on disk for all text files (overrides per-user `core.autocrlf`).

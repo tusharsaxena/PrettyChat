@@ -96,7 +96,7 @@ The dispatcher, the help printer and the settings landing page all read the same
 
 Two follow-ups the harness enforces:
 
-1. Wrap the description in `L[…]` **and** add that exact string to the enUS manifest in `locales/enUS.lua` — `test_locale` scans the sources for `L["…"]` call sites and fails on any that the manifest doesn't carry (and on any manifest entry nothing references).
+1. Wrap the description in `L[…]` **and** add that exact string to the enUS manifest in `locales/enUS.lua` — `test_locale` scans the sources for `L["…"]` call sites and fails on any that the manifest doesn't carry (and on any manifest entry nothing references). The same applies to any **sentence the verb prints**: since M4-21 `test_locale` also scans the TOC-derived sources for unwrapped string literals, so a bare line of English in a handler is red until it either goes through `L` or is added, with its reason, to the residue register at the foot of `tests/test_locale.lua`. Route it if the whole sentence fits inside one colour span; record it if the prose is split across two, and say which.
 2. Run the gate. `test_slash` drives the real `/pc` entry point and asserts every line carries the `[PC]` tag, so a new verb that prints raw fails immediately. If you add or rename a **test case**, also regenerate `docs/test-cases.md` and update the README `Tests` badge in the same change (testing-§5).
 
 ## Adjust the per-string panel block layout

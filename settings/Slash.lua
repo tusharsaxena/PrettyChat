@@ -1,4 +1,4 @@
-local addonName, NS = ...
+local _, NS = ...
 
 -- settings/Slash.lua — the addon's own verbs, and the descriptor that hands the
 -- rest to LibKa0s-Slash-1.0.
@@ -33,7 +33,7 @@ local formatValue           -- the `||` display codec; nil when the library is a
 
 local function schemaReady()
     if not (NS.Schema and NS.Schema.RowsByCategory) then
-        NS.Print("schema not ready yet")
+        NS.Print(L["schema not ready yet"])
         return false
     end
     return true
@@ -96,7 +96,7 @@ if not lib then
             for _, entry in ipairs(COMMANDS) do
                 if entry[1] == name then return entry[3](rest or "") end
             end
-            NS.Print("unknown command '" .. name .. "'")
+            NS.Print(L["unknown command '%s'"]:format(name))
             Sl:PrintHelp()
         end,
         -- Declared with the leading `_` these three are METHODS, matching the
@@ -105,7 +105,7 @@ if not lib then
         -- shape differs from the live surface is a degraded path that only
         -- happens to work (PC-R-08).
         PrintHelp = function(_)
-            NS.Print("v" .. VERSION .. " slash commands")
+            NS.Print(L["v%s slash commands"]:format(VERSION))
             for _, entry in ipairs(COMMANDS) do
                 NS.Print("  /pc " .. entry[1] .. " — " .. entry[2])
             end
@@ -204,7 +204,7 @@ function listSettings(rest)
         local sorted = {}
         for _, c in ipairs(NS.Schema.CATEGORY_ORDER) do sorted[#sorted + 1] = c end
         table.sort(sorted)
-        NS.Print(Color.listHead .. "Categories (" .. #sorted .. ")" .. Color.reset)
+        NS.Print(Color.listHead .. L["Categories (%d)"]:format(#sorted) .. Color.reset)
         for _, c in ipairs(sorted) do NS.Print("  " .. c) end
         return
     end
@@ -223,7 +223,7 @@ function listSettings(rest)
             if a[1] == b[1] then return a[2] < b[2] end
             return a[1] < b[1]
         end)
-        NS.Print(Color.listHead .. "Format strings (" .. #pairs_ .. ")" .. Color.reset)
+        NS.Print(Color.listHead .. L["Format strings (%d)"]:format(#pairs_) .. Color.reset)
         for _, p in ipairs(pairs_) do
             NS.Print(("  %s.%s"):format(p[1], p[2]))
         end
@@ -238,7 +238,7 @@ function listSettings(rest)
 
     local matched = NS.Schema.ResolveCategory(arg)
     if not matched then
-        NS.Print(note("unknown category '" .. arg .. "'. Valid: ")
+        NS.Print(note(L["unknown category '%s'. Valid: "]:format(arg))
                  .. table.concat(NS.Schema.CATEGORY_ORDER, ", "))
         return
     end
@@ -295,7 +295,7 @@ end
 -- a 1500-line console buffer (debug-logging-§9).
 function runResetAll()
     PrettyChat:ResetAll()
-    NS.Print(note("all settings reset to defaults"))
+    NS.Print(note(L["all settings reset to defaults"]))
 end
 
 -- /pc debug        toggles the on-screen debug console window (logging state unchanged).
@@ -317,7 +317,7 @@ function runDebug(rest)
         if NS.DebugLog and NS.DebugLog.Toggle then
             NS.DebugLog:Toggle()
         else
-            NS.Print(note("debug console unavailable"))
+            NS.Print(note(L["debug console unavailable"]))
         end
         return
     end
@@ -352,7 +352,7 @@ function runTest(rest)
         end
         local matched = NS.Schema.ResolveCategory(value)
         if not matched then
-            NS.Print(note("unknown category '" .. value .. "'. Valid: ")
+            NS.Print(note(L["unknown category '%s'. Valid: "]:format(value))
                      .. table.concat(NS.Schema.CATEGORY_ORDER, ", "))
             return
         end
@@ -368,7 +368,7 @@ function runTest(rest)
         end
         local upper = value:upper()
         if not formatStringExists(upper) then
-            NS.Print(note("unknown format string '" .. value .. "' — try ")
+            NS.Print(note(L["unknown format string '%s' — try "]:format(value))
                      .. cmd("/pc list formatstring"))
             return
         end

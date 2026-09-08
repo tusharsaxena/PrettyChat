@@ -1,4 +1,4 @@
-local addonName, NS = ...
+local _, NS = ...
 
 NS.Const = NS.Const or {}
 local Const = NS.Const
@@ -12,13 +12,13 @@ local Const = NS.Const
 -- settings/Panel.lua needs one for a widget it draws itself, it reads it off the
 -- instance (`NS.Helpers.ROW_VSPACER`, `NS.Helpers.SECTION_HEADING_H`).
 --
--- The two below stay, because neither is the library's.
+-- The one below stays, because it is not the library's.
 
--- The spacers around a section heading. These belong to the landing page's own
--- body, which is the host's half of the panel (options-ui-§5), and the library's
--- flow engine applies its own internally.
-Const.SECTION_TOP_SPACER    = 10
-Const.SECTION_BOTTOM_SPACER = 6
+-- SECTION_TOP_SPACER and SECTION_BOTTOM_SPACER went the same way, and later: the
+-- landing page's body was the host's half of the panel and drew its own heading
+-- spacers, so those two were the last pair with a reason to live here. That body is
+-- LibKa0s-Options-1.0's BuildLandingPage now and draws them from LAYOUT, so the
+-- pair is the library's like the seven above, and MUST NOT come back either.
 
 -- Per-string entry — vertical gap that bottoms each string entry and
 -- keeps adjacent strings from butting against each other. Specific to the

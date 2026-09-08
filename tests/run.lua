@@ -52,7 +52,22 @@ Kit.run{
     suites = {
         "test_harness",
         "test_vendor_sync",
+        -- The 1500-line cap gate (layout-§1). Beside test_vendor_sync because it is the same
+        -- kind of case: it loads no addon and asserts nothing about behaviour, it reads the
+        -- repository itself and compares it against what a document claims about it.
+        "test_layout_cap",
+        -- The "no blanket suppression" gate (lint-§1, `M4-11`). Third of the three
+        -- repository-reading gates for the same reason the other two sit here: it loads no
+        -- addon and asserts nothing about behaviour, it reads `.luacheckrc` and the tracked
+        -- set and compares them against a rule. It is what keeps the top-level `ignore`
+        -- `M4c-06` removed from being one line for anyone to re-add.
+        "test_lintconfig",
         "test_libka0s",
+        -- The four degradation-stub parity cases, split out of test_libka0s by M4-09 so the
+        -- gate sits at the path all nine addons carry it at. Immediately after test_libka0s
+        -- because it is the same seam read from the other side, and because it registers the
+        -- surface source the by-name form resolves through.
+        "test_surface_parity",
         "test_envsetup",
         "test_constants",
         "test_mediasetup",
@@ -68,5 +83,13 @@ Kit.run{
         "test_debuglog",
         "test_slash",
         "test_panel",
+        "test_doc_structure",
+        "test_register",
+        -- The kit has shipped one suite of its own since revision 15: the working-tree
+        -- line-ending gate, over every path `git ls-files` reports. It lives where the rest
+        -- of the kit lives rather than being re-typed into nine repositories, so it is
+        -- declared with its own `dir`. Kit.assertSuiteInventory fails the run until it is
+        -- declared, so it cannot arrive with a re-vendor and then quietly run nothing.
+        { name = "test_eol", dir = "tests/_kit/" },
     },
 }

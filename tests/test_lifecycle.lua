@@ -29,6 +29,22 @@ test("OnInitialize provisions both AceDB namespaces", function()
         "global defaults supplied the schema version, migrated to current")
 end)
 
+test("OnInitialize merges into a fresh table, never into NS.ProfileDefaults", function()
+    -- PC-R-12: the merge used to take `local defaults = NS.ProfileDefaults` and
+    -- then write Database's `global` key straight through the alias, so what
+    -- defaults/Profile.lua declares and what NS.ProfileDefaults holds were two
+    -- different tables' worth of meaning depending on whether you read it before
+    -- or after OnInitialize. Nothing else consumes the published table today,
+    -- which is exactly why the divergence would have stayed invisible until the
+    -- first reader arrived and got a key its file never mentions.
+    t.nilv(NS.ProfileDefaults.global, "the global namespace never landed on the profile defaults")
+    local keys = 0
+    for _ in pairs(NS.ProfileDefaults) do keys = keys + 1 end
+    t.eq(keys, 1, "defaults/Profile.lua declares one key and the table still carries one")
+    t.eq(addon.db.global.schemaVersion, NS.Database.SCHEMA_VERSION,
+        "and AceDB was still handed the global namespace to provision")
+end)
+
 test("OnInitialize registers /pc and its /prettychat alias", function()
     t.eq(addon.slashCommands["pc"], "OnSlashCommand", "/pc reaches the dispatcher")
     t.eq(addon.slashCommands["prettychat"], "OnSlashCommand",

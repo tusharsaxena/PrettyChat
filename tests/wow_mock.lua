@@ -365,8 +365,8 @@ local function build()
     local created = {}
     M._widgets = created
     local baseCreate = aceGUI.Create
-    aceGUI.Create = function(self, wtype)
-        local w = baseCreate(self, wtype)
+    aceGUI.Create = function(gui, wtype)
+        local w = baseCreate(gui, wtype)
         w.Fire = w.__fire
         -- Label / Heading expose a `.label` FontString in real AceGUI; the panel's
         -- font-object branches key off it, so model it for those two types.

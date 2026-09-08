@@ -36,10 +36,13 @@ test("master toggle round-trips through the single write path", function()
 end)
 
 test("Set on a format pushes the override to _G via ApplyStrings", function()
+    -- The sentinel carries no conversion on purpose. `row` is whatever sorts first
+    -- in Loot, and the write gate below refuses a format asking for more than the
+    -- shipped default supplies — a bare word is a valid write for every row.
     t.truthy(row, "found a Loot format row")
-    Schema.Set(row.path, "CUSTOM %s")
-    t.eq(Schema.Get(row.path), "CUSTOM %s", "Get returns stored override")
-    t.eq(env[row.globalName], "CUSTOM %s", "ApplyStrings pushed override to _G")
+    Schema.Set(row.path, "CUSTOM")
+    t.eq(Schema.Get(row.path), "CUSTOM", "Get returns stored override")
+    t.eq(env[row.globalName], "CUSTOM", "ApplyStrings pushed override to _G")
 end)
 
 test("re-setting a format to its default auto-clears the stored override", function()
@@ -48,6 +51,49 @@ test("re-setting a format to its default auto-clears the stored override", funct
     local catDB = inst.addon.db.profile.categories[row.category]
     t.truthy(not (catDB and catDB.strings and catDB.strings[row.globalName]),
         "default value auto-clears the stored override")
+end)
+
+-- ---- the conversion-signature gate (PC-R-01) ----------------------
+--
+-- LOOT_ITEM_SELF by name rather than firstFormatRow's: the gate compares a write
+-- against the SHIPPED DEFAULT's signature, so a case about surplus conversions
+-- needs a row whose default actually carries one. The first Loot row
+-- alphabetically is BATTLE_PET_LOOT_RECEIVED, whose default (like Blizzard's) has
+-- none at all, and every write below would be refused for the wrong reason.
+local sigRow = Schema.FindByPath("Loot.LOOT_ITEM_SELF.format")
+
+local function saidSince(at, needle)
+    for i = at + 1, #env.DEFAULT_CHAT_FRAME.messages do
+        if env.DEFAULT_CHAT_FRAME.messages[i]:find(needle, 1, true) then return true end
+    end
+    return false
+end
+
+test("a format write with a surplus conversion is refused", function()
+    -- The defect this closes: the Preview synthesizes its arguments FROM the format,
+    -- so it renders a surplus %s happily and reports success; the raise happens later,
+    -- inside Blizzard's chat handler, on every matching message.
+    t.truthy(sigRow, "the reference row resolves")
+    local stored = Schema.Get(sigRow.path)
+    local at = #env.DEFAULT_CHAT_FRAME.messages
+
+    t.falsy(Schema.Set(sigRow.path, "Loot | %s %s"), "a surplus conversion is refused")
+    t.eq(Schema.Get(sigRow.path), stored, "and nothing was stored")
+    t.eq(env[sigRow.globalName], stored, "and nothing reached _G")
+    t.truthy(saidSince(at, sigRow.path), "the refusal names the path it refused")
+
+    t.falsy(Schema.Set(sigRow.path, "Loot | %d"), "so is a class mismatch at a position")
+    t.eq(Schema.Get(sigRow.path), stored, "still nothing stored")
+end)
+
+test("a format whose conversions prefix the default's is stored", function()
+    t.truthy(Schema.Set(sigRow.path, "Loot | %s"), "the same signature is accepted")
+    t.eq(Schema.Get(sigRow.path), "Loot | %s", "and stored")
+    -- Dropping trailing conversions is safe — string.format ignores surplus
+    -- ARGUMENTS — so a truncating format is a prefix and passes.
+    t.truthy(Schema.Set(sigRow.path, "Loot happened"), "dropping the conversion is accepted")
+    t.eq(Schema.Get(sigRow.path), "Loot happened", "and stored")
+    Schema.Set(sigRow.path, sigRow.default)
 end)
 
 test("Set on an unknown path is a no-op returning false", function()
@@ -176,7 +222,7 @@ test("the debug console row is session-only and re-applies nothing", function()
     t.truthy(consoleRow.sessionOnly, "the row declares itself session-only")
     t.nilv(consoleRow.default, "and carries no stored default")
 
-    Schema.Set(row.path, "SENTINEL %s")
+    Schema.Set(row.path, "SENTINEL")
     env[row.globalName] = "UNTOUCHED"
     Schema.Set("state.debugConsole", true)
     t.eq(env[row.globalName], "UNTOUCHED", "toggling the console re-applied nothing")

@@ -6,7 +6,7 @@
 -- so docs/test-cases.md's counts do not move — they only move suite.
 --
 -- ONE NORMALIZATION, AND ONLY ONE — the reason it stays, carried in verbatim from
--- AbsorbTracker/tests/test_vendor_sync.lua:28-32:
+-- AbsorbTracker's copy of this file, under its own "ONE NORMALIZATION" heading:
 --
 --   `git show` hands back the stored blob, which is LF, while the working tree is CRLF because
 --   `.gitattributes` pins `* text=auto eol=crlf`. CR is stripped from the working-tree side so the
@@ -22,8 +22,11 @@
 -- sibling means the comparison did not run rather than that it disagreed.
 --
 -- No `opts` are needed: this repo's root is ".", its sibling is ../LibKa0s, and its provenance
--- line — the "Bundles [LibKa0s](...) v1.10.2 (MIT)." sentence in CLAUDE.md's repo-facts list — is
--- matched by the kit's default pattern, whose default `provenanceFile` is already "CLAUDE.md".
+-- line — the "Bundles [LibKa0s](...) vX.Y.Z (MIT)." sentence in CLAUDE.md's repo-facts list — is
+-- matched by the kit's default pattern, whose default `provenanceFile` is already "CLAUDE.md". The
+-- PATTERN is quoted here, never one version that satisfies it: this line used to read v1.10.2 and
+-- went on reading it through every re-vendor since, which is the same mistake as a stale
+-- `CLAUDE.md:NNN` wearing different clothes.
 --
 -- Kit revision 9 moved that input out of README.md, with no fallback. README.md is the player's
 -- page and no longer carries a bundled-library inventory at all; CLAUDE.md is where this repo

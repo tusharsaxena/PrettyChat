@@ -12,7 +12,22 @@ ignore:
   - docs        # holds docs/audits/ and docs/reviews/ too — all dev-only
   - tests
   - _dev
+  - .pkgmeta    # packager configuration: consumed before the zip is built, of no use inside it
   - "*.bak"
+
+  # Agent tooling, and untracked -- the directory holds one file,
+  # settings.local.json, and `git ls-files .claude` returns nothing -- so no
+  # packager clone has ever carried it and this line changes no downloaded byte.
+  # It is listed because packaging.md:28 MUSTs every root dot-entry present in
+  # the repo be named or justified, tracked or not: the check is about an
+  # enumeration going stale, not about a package growing. There is deliberately
+  # no .superpowers line, because no such directory exists at this root.
+  - .claude     # untracked; listed under packaging.md:28
+
+  # Developer documentation. README.md and LICENSE stay in the package, because
+  # players do read those.
+  - CLAUDE.md
+  - DEPENDENCIES.md
 
   # Generated reference data — the WHOLE folder, source dump, 26 chunks,
   # splitter and all. Nothing in the addon loads it: PrettyChat.toc dropped the

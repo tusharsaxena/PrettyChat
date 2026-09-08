@@ -1,4 +1,4 @@
-local addonName, NS = ...
+local _, NS = ...
 
 -- The override pipeline — PrettyChat's one feature module. Owns the enable-cascade
 -- predicates, the ApplyStrings engine that rewrites _G[GLOBALNAME], the reset paths, and
@@ -9,6 +9,7 @@ local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 
 local Color  = NS.Const.Color
 local note   = NS.Util.note
+local L      = NS.L
 
 -- Row labels for the `/pc test` report. Color is a load-time constant, so these
 -- are built once here rather than per Test() call.
@@ -151,7 +152,14 @@ function PrettyChat:ApplyStrings()
                 if catEnabled and self:IsStringEnabled(category, globalName) then
                     _G[globalName] = self:GetStringValue(category, globalName)
                     applied = applied + 1
-                elseif self.originalStrings and self.originalStrings[globalName] then
+                elseif self.snapshotKeys and self.snapshotKeys[globalName] then
+                    -- The KEY SET decides, never the snapshotted value: a global
+                    -- this client does not define snapshots as nil, and restoring
+                    -- it to nil is the correct undo (PC-R-07). A global registered
+                    -- since the last /reload is in neither table and is left
+                    -- alone, which is the case this arm still has to skip. The
+                    -- two tables are filled by the same pass, so a key here
+                    -- guarantees an entry (possibly nil) there.
                     _G[globalName] = self.originalStrings[globalName]
                     restored = restored + 1
                 end
@@ -226,56 +234,111 @@ function PrettyChat:ResetString(category, globalName)
 end
 
 -- ---------------------------------------------------------------------
+-- The conversion signature of a format string
+-- ---------------------------------------------------------------------
+--
+-- ONE WALK, THREE READERS. The Preview synthesizes its arguments from this,
+-- settings/Schema.lua's write gate compares against it, and
+-- tests/test_defaults.lua checks the shipped defaults against Blizzard's with
+-- it. The walk used to live in two places — buildSampleArgs here and a private
+-- copy in the test suite — which meant the only thing that actually understood
+-- what a format demands was a file the game never loads (PC-R-08).
+--
+-- Conversion type -> the class an argument must belong to. Only the class
+-- matters: %d and %x both need a number, and swapping one for the other cannot
+-- raise. `s` versus `int` is what raises.
+local CONVERSION_CLASS = {
+    s = "string",
+    d = "int", i = "int", u = "int", x = "int", X = "int", o = "int", c = "int",
+    f = "float", g = "float", e = "float", G = "float", E = "float",
+}
+
+-- One placeholder per class, for the Preview.
+local CLASS_SAMPLE = {
+    string = "Sample",
+    int    = 42,
+    float  = 1.5,
+}
+
+-- The one conversion whose class does not preview usefully: `%c` is an int like
+-- every other integer conversion, and the class sample 42 renders as `*`. 65
+-- renders as `A`, which is what a player reading a sample line expects to see.
+local TYPE_SAMPLE = { c = 65, C = 65 }
+
+-- The ordered conversion sequence of a format string, honoring WoW's positional
+-- `%n$type` form: strip `%%` escapes first, then read
+-- [flags][width][.precision]type. A positional specifier lands at its index; a
+-- gap left by `%3$s` with no `%1$`/`%2$` is recorded as "gap" so it can never
+-- silently match a real type. Returns the array with its length on `.n` —
+-- `#seq` is unsafe once a gap has been filled by a later positional write — and
+-- the raw conversion letters alongside it on `.types`, for the one caller (the
+-- Preview) that needs more than the class.
+--
+-- Positional `%n$type` is honored so non-enUS locales, which rearrange freely,
+-- are read correctly rather than treated as a longer append-order list.
+function NS.ConversionSequence(fmt)
+    local seq, appendIdx, maxIdx = { types = {} }, 0, 0
+    if type(fmt) ~= "string" then
+        seq.n = 0
+        return seq
+    end
+    local clean = fmt:gsub("%%%%", "")
+    for posCap, ftype in clean:gmatch("%%(%d*%$?)[%-+ #0]*%d*%.?%d*([%a])") do
+        local class = CONVERSION_CLASS[ftype] or ("unknown:" .. ftype)
+        local idx
+        if posCap:sub(-1) == "$" then
+            idx = tonumber(posCap:sub(1, -2))
+            if idx and idx <= 0 then idx = nil end
+        else
+            appendIdx = appendIdx + 1
+            idx = appendIdx
+        end
+        if idx then
+            seq[idx], seq.types[idx] = class, ftype
+            if idx > maxIdx then maxIdx = idx end
+        end
+    end
+    for i = 1, maxIdx do seq[i] = seq[i] or "gap" end
+    seq.n = maxIdx
+    return seq
+end
+
+-- `[string,int]` — the shape a refusal message and a failing assertion both
+-- quote, so the two read the same way.
+function NS.DescribeSequence(seq)
+    local parts = {}
+    for i = 1, (seq and seq.n or 0) do parts[i] = seq[i] end
+    return "[" .. table.concat(parts, ",") .. "]"
+end
+
+-- Is `seq` a positional prefix of `reference` — never longer, never
+-- class-mismatched at a position it shares? Dropping trailing conversions is
+-- safe (string.format ignores surplus ARGUMENTS); asking for one more than the
+-- caller passes is the raise.
+function NS.SequenceIsPrefix(seq, reference)
+    if seq.n > reference.n then return false end
+    for i = 1, seq.n do
+        if seq[i] ~= reference[i] then return false end
+    end
+    return true
+end
+
+-- ---------------------------------------------------------------------
 -- Test — synthesize sample chat messages from each active format string
 -- ---------------------------------------------------------------------
 --
--- Walks the format string for printf-style conversions (%[n$][flags]
--- [width][.precision]type) and returns a list of placeholder values
--- typed to match each conversion. `%%` escapes are stripped first so
--- they don't confuse the gmatch. Positional `%n$type` is honored so
--- non-enUS locales (which use positional rearrangement freely) preview
--- correctly instead of failing string.format.
-local function sampleArg(conversion)
-    conversion = conversion:lower()
-    if conversion == "s" then
-        return "Sample"
-    elseif conversion == "d" or conversion == "i" or conversion == "u"
-        or conversion == "x" or conversion == "o" then
-        return 42
-    elseif conversion == "f" or conversion == "g" or conversion == "e" then
-        return 1.5
-    elseif conversion == "c" then
-        return 65  -- 'A'
-    end
-    return "?"
-end
-
+-- Placeholder values typed to match each conversion, read off the one walk
+-- above. An unrecognized conversion gets a string, which is what it got before:
+-- string.format will raise on it either way, and the Preview reports that raise.
 local function buildSampleArgs(fmt)
-    local clean = fmt:gsub("%%%%", "")
+    local seq = NS.ConversionSequence(fmt)
     local args = {}
-    local appendIdx = 0
-    local maxIdx    = 0
-    for posCap, ftype in clean:gmatch("%%(%d*%$?)[%-+ #0]*%d*%.?%d*([%a])") do
-        local val = sampleArg(ftype)
-        if posCap:sub(-1) == "$" then
-            local idx = tonumber(posCap:sub(1, -2))
-            if idx and idx > 0 then
-                args[idx] = val
-                if idx > maxIdx then maxIdx = idx end
-            end
-        else
-            appendIdx = appendIdx + 1
-            args[appendIdx] = val
-            if appendIdx > maxIdx then maxIdx = appendIdx end
-        end
+    -- Every slot filled, including the gaps a bare `%3$s` leaves: without this
+    -- string.format would receive nils for slots 1 and 2.
+    for i = 1, seq.n do
+        args[i] = TYPE_SAMPLE[seq.types[i]] or CLASS_SAMPLE[seq[i]] or "?"
     end
-    -- Fill positional gaps so unpack delivers a dense range. Without
-    -- this, `%3$s only` would leave args[1] and args[2] nil and
-    -- string.format would receive nils for those slots.
-    for i = 1, maxIdx do
-        if args[i] == nil then args[i] = "?" end
-    end
-    return args, maxIdx
+    return args, seq.n
 end
 
 -- Render a single format string with synthesized sample args, returning
@@ -406,9 +469,9 @@ end
 -- parameter, not a redirection.
 function PrettyChat:Test(filter, sink)
     local emit = sink or NS.Print
-    emit(note("sample of every format string (preview ignores enable toggles):"))
+    emit(note(L["sample of every format string (preview ignores enable toggles):"]))
     if not self:IsAddonEnabled() then
-        emit(note("(addon is currently disabled — these formats aren't being applied to live chat)"))
+        emit(note(L["(addon is currently disabled — these formats aren't being applied to live chat)"]))
     end
 
     local printed, errored = 0, 0
@@ -425,7 +488,7 @@ function PrettyChat:Test(filter, sink)
     end
 
     if not emittedAny then
-        emit(note("(no matching strings)"))
+        emit(note(L["(no matching strings)"]))
         return
     end
 

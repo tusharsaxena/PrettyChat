@@ -26,13 +26,6 @@ badge and any count quoted in the docs must agree with it.
 - layoutcap: every census row carries a disposition that can be followed
 - layoutcap: every row claiming layout-§1's generated-data carve-out still earns all three of its conditions
 
-### test_lintconfig.lua (4)
-
-- lintconfig: .luacheckrc sets no top-level ignore
-- lintconfig: .luacheckrc switches no warning class off wholesale
-- lintconfig: every files[...] ignore is narrowed to a file or a name
-- lintconfig: no source file carries a bare inline luacheck ignore
-
 ### test_libka0s.lua (28)
 
 - the locale-table matcher catches both offending spellings and clears the legal one
@@ -387,7 +380,7 @@ badge and any count quoted in the docs must agree with it.
 - the landing logo is hidden when its group goes back to AceGUI's pool
 - the parent page shows the TOC tagline
 
-### test_doc_structure.lua (8)
+### test_doc_structure.lua (7)
 
 - docs/ARCHITECTURE.md carries the ten sections documentation-§3 names
 - every mandated hub section that has a topic doc has spilled into it
@@ -396,7 +389,6 @@ badge and any count quoted in the docs must agree with it.
 - README.md's top-level sections are the ones documentation-§1 names, in its order
 - root CLAUDE.md carries the adherence line documentation-§2 puts second
 - the README's settings table is page-granular, not per-tab
-- docs/smoke-tests.md carries a non-English-client section
 
 ### test_register.lua (1)
 
@@ -413,7 +405,6 @@ badge and any count quoted in the docs must agree with it.
 | test_harness.lua | 4 |
 | test_vendor_sync.lua | 2 |
 | test_layout_cap.lua | 5 |
-| test_lintconfig.lua | 4 |
 | test_libka0s.lua | 28 |
 | test_surface_parity.lua | 4 |
 | test_envsetup.lua | 9 |
@@ -431,7 +422,7 @@ badge and any count quoted in the docs must agree with it.
 | test_debuglog.lua | 25 |
 | test_slash.lua | 42 |
 | test_panel.lua | 46 |
-| test_doc_structure.lua | 8 |
+| test_doc_structure.lua | 7 |
 | test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **328** |
+| **Total** | **323** |

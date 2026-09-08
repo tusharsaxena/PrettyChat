@@ -216,6 +216,30 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
   6. Click the **clear** mark (the middle of the three title-bar marks). Expect: the log empties, the counter resets to **`0 / 1500 lines`**, and the scrollbar goes **inert** (thumb parked, mouse disabled) but stays **visible** — the right gutter width is unchanged.
 - Failure mode: `attempt to call a nil value` on first open ⇒ the old C getters are being called (#41). Thumb direction inverted (top = newest) ⇒ flip the `sliderValue ↔ offset` sign (`offset = maxOffset − value`). Counter never updates ⇒ `UpdateStatus` isn't wired into `Add`/`Clear`. Bar hidden when the log fits, or gutter width jumps ⇒ the always-shown/inert rule (`options-ui-§10`) regressed.
 
+#### T-29c — The landing logo does not ride AceGUI's shared frame pool
+
+> Why: a Texture is not an AceGUI child, so `ReleaseChildren` does not take the logo away with the
+> `SimpleGroup` that carries it — and AceGUI **pools that group's frame across every addon in the
+> session**. The library's `BuildLandingPage` hides the texture on `OnRelease`
+> (`libs/LibKa0s/OptionsWidgets.lua:323`); the hand-copied body this addon used to carry set no
+> `OnRelease` at all, so the next widget handed that frame inherited a 300px logo. The leak lands in
+> *somebody else's* panel, which is why no headless case and no PrettyChat-only pass can see it —
+> `tests/test_panel.lua` pins that the release hook exists and hides the texture, and step 2 below is
+> the only check on what that hook is actually for.
+
+- Setup: at least one other AceGUI-drawn settings panel loaded. Another Ka0s addon is easiest —
+  BankLedger and PanelMaster both draw wide groups.
+- Steps:
+  1. Open **Settings → AddOns → Ka0s Pretty Chat**. Land on the landing page and let it draw.
+  2. Without closing the window, page to another addon's settings.
+  3. Page back and forth three or four times, visiting every page of both addons.
+  4. Close the window, `/reload`, and repeat once.
+- Expected: the logo appears on PrettyChat's landing page and **nowhere else**. No ghost texture and
+  no unexplained 300px vertical gap on any page of any addon.
+- Failure mode: a 300px image, or a 300px hole where nothing drew one, in any panel ⇒ the landing
+  body is drawing its own logo again instead of going through `H.BuildLandingPage`, or the library's
+  `OnRelease` stopped being set.
+
 ### L — Slash command surface
 
 #### T-30 — `/pc list` no-arg
@@ -266,6 +290,25 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 - Steps: `/pc set Loot.LOOT_ITEM_SELF.format ||cff00ff00CustomLoot||r %s`. Then loot an item.
 - Expected: format saves (echo confirms). The loot line displays `CustomLoot` in green followed by the item link.
+
+#### T-34a — `/pc set` refuses a surplus conversion (PC-R-01)
+
+> Why: the only check on a player-entered format is at the write seam. The Preview cannot catch this
+> one — it synthesizes its sample arguments *from the format*, so a surplus `%s` previews happily —
+> and the raise then happens inside Blizzard's chat handler, on every matching message, in a stack
+> trace naming a Blizzard frame rather than this addon. Headless coverage exists
+> (`tests/test_schema.lua`, the two conversion-signature cases); this step is what proves the refusal
+> reaches a player. Worth two minutes while the panel is open; not worth a login of its own.
+
+- Steps:
+  1. `/pc set Loot.LOOT_ITEM_SELF.format Loot: %s %s` — one more `%s` than the shipped default.
+  2. `/pc get Loot.LOOT_ITEM_SELF.format`.
+  3. `/pc set Loot.LOOT_ITEM_SELF.format Loot: %s`, then loot an item.
+  4. `/pc set Loot.LOOT_ITEM_SELF.format Loot happened` (no conversion at all), then loot an item.
+  5. Open `/pc`, pick any Loot string, and type a format with an extra conversion into **New**.
+  6. `/pc reset Loot.LOOT_ITEM_SELF.format`.
+- Expected: step 1 prints `Not saved — Loot.LOOT_ITEM_SELF.format asks for [string,string]; LOOT_ITEM_SELF supplies [string]. …` and the echo that follows still shows the OLD value, unchanged. Step 2 confirms nothing was stored. Step 3 saves and the loot line renders. Step 4 saves too — dropping trailing conversions is safe and must stay allowed. Step 5 refuses the same way *and* the New box snaps back to the stored format rather than keeping the rejected text.
+- Failure mode: a surplus conversion that saves ⇒ the gate is not on the write path the surface used (`Schema.Set` is the only one; a widget writing `row.set` directly bypasses it). A refusal on step 4 ⇒ the check is testing equality rather than a positional prefix.
 
 #### T-35 — `/pc reset <path>`
 
@@ -681,6 +724,37 @@ stale literal. The About tagline is still there. The debug console falls back to
 proportional face and draws no title-bar icons, because the art and the mono face are inside the
 missing payload — that is the media seam's contract, not this one's.
 
+#### T-99 — The tab strip survives being pooled and re-dressed
+
+**Smoke, session 3. NOT YET RUN.** New with `M4-01`'s LibKa0s v1.27.0 re-vendor.
+
+**Why:** `TabStrip` (`libs/LibKa0s/OptionsWidgets.lua`) no longer builds a button and a content
+panel per click — it acquires both from per-`ctx` `LibKa0s-Pool-1.0` pools and re-dresses them,
+re-setting `OnClick` on every dress. Its only headless proof counts `CreateFrame` calls on a second
+selection pass, and the case that would pin band geometry as invariant under selection cannot be
+written yet: the shared mock answers `GetHeight` with 0 for every frame, and that flips at kit 16,
+not here. So a stale label, a mis-anchored button or a band that changed height on a re-dressed tab
+is invisible to every automated check in this repo. `settings/Panel.lua:618` hands `H.TabStrip` a
+tab list and the library places the buttons, so this addon measures nothing and can prove nothing
+about the band on its own.
+
+**Steps:** `/pc config` → **Categories**. Cycle every tab of the strip three times, ending back on
+the first. On each pass watch the **label** (it is that tab's own), the **selection** (it is the tab
+you pressed), and the strip's **band height** (it does not move). Then `Esc`, reopen `/pc config`
+and walk the strip once more — the pools are per-`ctx`, so a second build is where a released frame
+can come back dressed for a different tab.
+
+**Expected:** every tab named and selected correctly on all three passes, no band that grows or
+shrinks, and the body under the strip is always the one the selected tab owns.
+
+**Failure mode:** a label carried over from the previously-dressed tab; a highlight on the wrong
+button; a body drawn under the wrong tab; a strip whose height moves between passes. Each is the
+pool handing back a frame it did not finish dressing, and each is a library finding — nothing in
+this repo places those buttons.
+
+(`LibKa0s-Perf-1.0` minor 8 arrived in the same payload and respells five player-facing strings.
+`Perf` is not wired in this addon, so none of them has a surface here.)
+
 ## Reporting a failure
 
 If a test fails:
@@ -795,3 +869,109 @@ open the console.
 **Failure mode:** the button prints into chat (the sink was dropped); `/pc test` stops printing to
 chat (the sink was made the default rather than the caller's choice); the console opens empty (the
 report was written before the window existed).
+
+## N — Non-English client
+
+**Session 6 of the 2026-09-07 remediation plan, owned by `M5-08`. NOT YET RUN — no WoW client was
+available when it landed. Nothing in this section has been performed and no test in it is recorded
+as passed.** Run on a client set to **deDE or frFR**, the two the collection's other locale steps
+use (`ConsumableMaster/docs/smoke-tests.md` § 3c, `KickCD/docs/smoke-tests.md` § 9b).
+
+**Why this addon needed this section more than any other in the collection.** Its entire function is
+overwriting **localized** `_G` chat format strings, and for 797 lines this document had no locale
+step at all. The header at the top of this file already names "positional `%n$s` formats" among the
+things stock Lua cannot exercise, and until now nothing followed that sentence.
+
+What the harness cannot see, precisely: `tests/test_defaults.lua` checks every override against
+Blizzard's real signature — but the signatures it loads come from `GlobalStrings/`, which is an
+**enUS** dump. Its rule is that an override may ask for fewer conversions than Blizzard passes and
+must never ask for more, "the missing argument raises". That rule is enforced against the arguments
+an **English** client hands over. A locale whose string for the same global carries fewer
+conversions, or orders them positionally, is checked against nothing — and the header of that same
+file records what this class of defect looks like when it reaches players:
+`FACTION_STANDING_INCREASED_GUARDIAN` put a name into `%d` and "raised in a live client, for every
+user, on a routine reputation gain".
+
+**English output is this addon's design, not a defect.** Every override replaces the client's
+sentence with PrettyChat's own layout, and the labels in that layout — `Loot`, `Bonus`, `You`,
+`Money` — are hardcoded English. On a German client the overridden lines therefore read in English.
+That is what the addon does. Do not file it. What these tests look for is an **error**, an
+**artifact**, or the wrong **original**.
+
+#### T-104 — The snapshot holds the client's own strings, and the restore gives them back
+
+**Why:** `PrettyChat:SnapshotOriginals` (`core/PrettyChat.lua:105-114`) reads `_G[globalName]` at
+`OnEnable`, so on this client it is capturing German. `ApplyStrings`'s restore arm
+(`modules/Override.lua:155-164`) writes those values back. A restore is only ever as good as what
+the snapshot recorded, and nothing outside a live client can say what it recorded.
+
+**Steps:**
+1. `/pc test formatstring LOOT_ITEM_SELF`, and read the `Original:` line.
+2. `/pc set General.enabled false`. Loot something, gain reputation, take repair gold.
+3. `/pc set General.enabled true`. Trigger the same three lines again.
+
+**Expected:** (1) the `Original:` line renders the **client's own German sentence**, not an English
+one. (2) with the master toggle off, all three chat lines are the client's untouched German. (3)
+with it back on, all three are PrettyChat's layout again.
+
+**Failure mode:** an English `Original:` line on a German client — the snapshot is reading something
+other than `_G`, and every restore in the addon is then handing players text their client never
+wrote. A disable that leaves the lines in English is the same defect seen from the other end.
+
+**Record the `Original:` line verbatim for one global from each of the eight categories** —
+`LOOT_ITEM_SELF`, `CURRENCY_GAINED`, `LOOT_MONEY`, `FACTION_STANDING_INCREASED_GUARDIAN`,
+`COMBATLOG_XPGAIN_FIRSTPERSON`, `COMBATLOG_HONORGAIN`, `CREATED_ITEM` and `ERR_QUEST_REWARD_EXP_I`.
+Their real signatures on this locale exist nowhere in this repository — `GlobalStrings/` can only
+ever answer for enUS — and the fourth is the very global whose argument list raised for every user
+once already.
+
+#### T-105 — One real line from every category, watching for the raise
+
+**Why:** this is the failure `tests/test_defaults.lua`'s header documents, in the one condition that
+file cannot check. An override written against the enUS signature asks for exactly what an English
+client passes; if this locale passes fewer, the format call raises on an ordinary chat line.
+
+**Steps:** with every category enabled, trigger one line from each of the eight in turn — loot an
+item, receive a currency, take money, gain reputation, gain XP (grouped, so the guardian and
+exhaustion variants fire), gain honor, craft something, and complete a quest for its XP reward.
+Watch the chat frame and the error frame together (`/console scriptErrors 1`).
+
+**Expected:** eight rendered lines in PrettyChat's layout, and **no Lua error**.
+
+**Failure mode:** a `bad argument #N to 'format'` raise (this locale passes fewer arguments than the
+enUS signature the default was written against); a literal `%s`, `%d` or `%1$s` left in the rendered
+line (a conversion nothing filled, or a positional form the override does not carry); or a line that
+renders the client's own German sentence while the category is enabled (the override was written to
+a global this client does not define — see T-106).
+
+#### T-106 — Globals this client does not define
+
+**Why:** `SnapshotOriginals` records the KEY and a nil VALUE for a global the client never had, and
+`ApplyStrings` then writes the override into a global nothing reads. Locales are the ordinary way a
+global goes missing, alongside Blizzard's own renames.
+
+**Steps:** `/pc test` (the full report; the console form via **General → Test** is easier to read),
+and scan the `Original:` lines for empties.
+
+**Expected:** every one of the addon's registered globals has a non-empty `Original:` on this client.
+
+**Failure mode:** an empty or `nil` original. That is not itself a crash — it is an override that
+does nothing at all on this locale, silently, while the settings panel shows it enabled. Record
+every global that comes back empty; the list is the finding.
+
+#### T-107 — Nothing else moved
+
+**Why:** the rest of this suite ran on English, and a localized string reaching a path that assumed
+an English one shows up as an error rather than as a wrong word.
+
+**Steps:** walk **T-01**, **T-02**, **T-10** and **T-52a** once on this client.
+
+**Expected:** identical behavior to English throughout.
+
+**Failure mode:** any Lua error at all.
+
+**Sign-off without a non-English client.** There is none for T-104 to T-106. `tests/test_defaults.lua`
+compares against an enUS dump by construction, `tests/test_locale.lua` checks this addon's own `NS.L`
+manifest and never the client's string table, and the mock defines whatever globals the cases need in
+English. T-107 alone is covered by the rest of this file. Until the pass runs, the honest state of
+this section is unrun, and it is recorded that way rather than as coverage.

@@ -1,6 +1,6 @@
 # Settings panel
 
-`settings/Panel.lua` builds the settings panel directly on Blizzard's modern `Settings.RegisterCanvasLayoutCategory` / `Settings.RegisterCanvasLayoutSubcategory` API and renders body content with AceGUI. PrettyChat appears under **Ka0s Pretty Chat**; the parent page hosts the logo, tagline, and slash-command list (read-only orientation), and **two** sub-pages hold the actionable controls.
+`settings/Panel.lua` builds the settings panel directly on Blizzard's modern `Settings.RegisterCanvasLayoutCategory` / `Settings.RegisterCanvasLayoutSubcategory` API and renders body content with AceGUI. PrettyChat appears under **Ka0s Pretty Chat**; the parent page hosts the logo, tagline, and slash-command list (read-only orientation) — drawn by the library's `H.BuildLandingPage` from a spec this addon declares, not by a body of its own, and **two** sub-pages hold the actionable controls.
 
 **Every page draws a strip** (options-ui-§13). The `Categories` page draws one — a primary strip of message categories — and inside each of those, an AceGUI **`TreeGroup`**: that category's format strings listed in the tree pane on the left, the editor for the selected one in the content pane on the right.
 
@@ -15,7 +15,7 @@ The primary strip is `H.TabStrip`'s. The string list beside the editor is AceGUI
 
 The `General` page drew **no strip at all** until this pass: one group, one row, `H.RenderRows`. A one-group page draws a one-tab strip as of `OptionsWidgets` minor 13, and this page is why the rule matters — it was the page that read as broken beside `Categories` rather than as simpler.
 
-This doc covers: the canvas-layout framework, the unified per-page header, the `General` page's `Master controls` tab, the `Categories` page's two strips, the per-string editor, the Test button, and the color palette.
+This doc covers: the canvas-layout framework, the unified per-page header, the `General` page's `Master controls` tab, the `Categories` page's two strips, what each category tab covers, the per-string editor, the Test button, and the color palette.
 
 ## Canvas-layout framework
 
@@ -39,7 +39,7 @@ The library's `CreatePanel` stamps every page with the same layout, and hosts **
 
 The parent page renders its title plain (`"Ka0s Pretty Chat"`) via `opts.isMain = true`. Sub-pages prefix the title to read as a breadcrumb: `"Ka0s Pretty Chat ▸ Loot"`. The chevron is an inline-atlas escape (` |A:common-icon-forwardarrow:16:16|a `) so it renders as a real texture, not a font glyph — font-agnostic and locale-safe. If a future client retires the atlas, swap to `NPE_RightClick` or `chevron-collapse` (same escape syntax, just the atlas name changes). The Blizzard left-tree label always stays unprefixed (driven by `panel.name`) so the indented tree doesn't repeat the parent name.
 
-All panel layout dimensions live in **`LibKa0s-Options-1.0`'s `LAYOUT` table**, not in this addon — options-ui-§8 forbids a host copy, because every Ka0s panel renders identically only if every panel reads one set of values, and a host copy is the copy that goes stale. Where `settings/Panel.lua` needs one for a widget it draws itself it reads it off the instance (`NS.Helpers.ROW_VSPACER` and `NS.Helpers.SECTION_HEADING_H` today; `BUTTON_PAIR_REL` is published too, and is applied for it by `InlineButtonPair`). The tab strip's own geometry (`CHROME_GAP`, `TAB_H`, `BANNER_H`) is published on the instance for a host that lays out a strip by hand; this addon lays out none — it hands `TabStrip` a tab list and the library places the buttons — so it reads none of the three. `core/Constants.lua` keeps only `SECTION_TOP_SPACER` / `SECTION_BOTTOM_SPACER` (the landing page's own body, which is the host's half) and `STRING_VSPACER` (the gap above the editor's Reset button, which the library has no equivalent for).
+All panel layout dimensions live in **`LibKa0s-Options-1.0`'s `LAYOUT` table**, not in this addon — options-ui-§8 forbids a host copy, because every Ka0s panel renders identically only if every panel reads one set of values, and a host copy is the copy that goes stale. Where `settings/Panel.lua` needs one for a widget it draws itself it reads it off the instance (`NS.Helpers.ROW_VSPACER` and `NS.Helpers.SECTION_HEADING_H` today; `BUTTON_PAIR_REL` is published too, and is applied for it by `InlineButtonPair`). The tab strip's own geometry (`CHROME_GAP`, `TAB_H`, `BANNER_H`) is published on the instance for a host that lays out a strip by hand; this addon lays out none — it hands `TabStrip` a tab list and the library places the buttons — so it reads none of the three. `core/Constants.lua` keeps only `STRING_VSPACER` (the gap above the editor's Reset button, which the library has no equivalent for). `SECTION_TOP_SPACER` / `SECTION_BOTTOM_SPACER` were the last pair to leave: they existed for the landing page's own body, and that body is `H.BuildLandingPage` now.
 
 ## Always-visible scrollbar
 
@@ -91,6 +91,24 @@ The General sub-page does not show a `Defaults` button in the header — the in-
    4. **The tree** — `SetTree`, one row per format string in `catData.strings`, sorted by global name, each `{ value = GLOBALNAME, text = friendly label }`. The `value` is what `OnGroupSelected` reports back and what `ctx.activeSubTab` stores.
    5. **One** per-string editor, added as the `TreeGroup`'s children so it lands in the content pane: the selected string's, and only that one.
 
+### What each category tab covers
+
+One tab per message category, in `CATEGORY_ORDER`. This is the player-facing sentence for each —
+the counts beside them are in the page table at the top of this file, and the strings themselves
+are `settings/Schema.lua`'s. It lived in the README until `M5-03`; `documentation-§1` keeps the
+README's settings table at page granularity and puts the per-tab breakdown here.
+
+| Tab | Covers |
+|-----|--------|
+| **Loot** | Item pickups, your own and group loot, bonus rolls, and currency from loot. |
+| **Currency** | Currency gained and lost. |
+| **Money** | Gold, silver, and copper: pickups, loot splits, guild bank deposits, and quest rewards. |
+| **Reputation** | Faction standing going up and down. |
+| **Experience** | The different ways you gain XP (rested, group, raid, and so on). |
+| **Honor** | Honor you earn. |
+| **Tradeskill** | Crafting items and opening locks. |
+| **Misc** | A couple of leftovers: quest XP rewards and zone exploration. |
+
 ### Why a list, not a second strip
 
 A category tab used to be a vertical stack of up to twenty three-row editors — Experience is twenty, Loot is nineteen — so finding one string meant scrolling past every string sorted before it, and the page was a wall of identical boxes. Choosing the string instead of scrolling to it is the fix, and it was a **secondary strip** (`H.SubTabStrip`, `options-ui-§13`) first.
@@ -141,6 +159,8 @@ State derived per block in the block's `refresh()` closure (run on first build a
 - `[Reset]` button: always visible. Clicking when the value already equals the default is a harmless no-op (the schema's auto-clear-on-default short-circuits to nil).
 
 The new-format `EditBox` commits on `OnEnterPressed` through `NS.Schema.Set(formatPath, …)` after un-escaping `||` → `|`. The schema runs `PrettyChat:ApplyStrings()` and calls `Schema.NotifyPanelChange(category)`, which dispatches to the category's refresher (see below).
+
+A commit whose conversion signature is not a positional prefix of the shipped default's is **refused** (see [schema.md](./schema.md)): nothing is stored, `NS.Print` names both signatures, and the refresher still runs — which is what snaps the box back from the rejected text to the value that is actually stored. The Preview cannot stand in for this check, because it synthesizes its sample arguments from the format it is handed.
 
 ## Edit-box pipe escaping
 

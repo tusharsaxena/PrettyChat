@@ -28,7 +28,7 @@ tests/
 ```
 
 - `run.lua` builds the shared table with `Kit.expose` and hands the ordered suite list to `Kit.run`. `t.eq` / `t.truthy` / `t.falsy` / `t.nilv` are **aliases** onto `Kit.assertEqual` / `assertTrue` / `assertFalse` / `assertNil`, so the failure messages and the caller-line reporting are the kit's everywhere; `neq` is the one the kit does not carry and is a thin `Kit.fail` wrapper.
-- `loader.lua` derives **both** load lists rather than restating either (testing-§9) — the addon's own from `PrettyChat.toc` with `Loader.tocFiles`, and the vendored-library list from `libs/LibKa0s/LibKa0s.xml` with `Loader.xmlFiles`, in XML order — seeds every schema-registered Blizzard global with a recognizable `ORIG:<NAME>` value, and runs the AceAddon lifecycle. `ctx.loadAddon()` returns a **fresh, fully-booted, isolated instance** (`{ env, NS, addon }`); `ctx.loadAddon({ skip = { … } })` loads with files genuinely absent, which is how the degraded-install cases are driven rather than by hand-stubbing (testing-§8), and `{ mock = fn }` reshapes the environment before anything loads.
+- `loader.lua` derives **both** load lists rather than restating either (testing-§9) — the addon's own from `PrettyChat.toc` with `Loader.tocFiles`, and the vendored-library list from `libs/LibKa0s/LibKa0s.xml` with `Loader.xmlFiles`, in XML order — seeds every schema-registered Blizzard global with a recognizable `ORIG:<NAME>` value, and runs the AceAddon lifecycle. `ctx.loadAddon()` returns a **fresh, fully-booted, isolated instance** (`{ env, NS, addon }`); `ctx.loadAddon({ skip = { … } })` loads with files genuinely absent, which is how the degraded-install cases are driven rather than by hand-stubbing (testing-§8) — `tests/test_surface_parity.lua` is where the four whole-surface ones live, one per adopted seam, and `{ mock = fn }` reshapes the environment before anything loads.
 
   **Why this file survives the kit adoption, and how little of it is left.** It is reduced to the isolated-environment need and nothing else; every capability the kit has is taken from the kit, and when `LIBKA0S-01` lands upstream the file is deleted outright rather than trimmed again. `tests/_kit/loader.lua` builds ONE environment whose `__newindex` writes through to the real `_G`. This addon's entire feature is rewriting `_G[GLOBALNAME]`, and half the suite asserts on what landed there — so each instance needs its own. `tests/wow_mock.lua` points `_G` back at the mock table and this file builds a fresh mock per call, which is what supplies the isolation the kit has no mode for. Chunks compile once and re-run per instance, and the cache doing that is **this file's own** `loadfile` cache rather than the kit's: `tests/loader.lua` takes only `Loader.makeEnv`, `Loader.tocFiles` and `Loader.xmlFiles` from the kit and calls none of `Loader.load` / `Loader.loadAll` / `Loader.loadSource`, which are the three entry points the kit's own chunk cache (revision 12 and later) sits behind — so that cache is never reached from here. The local one used to be load-bearing, because `loadfile` on the ~1.9 MB of generated `GlobalStrings/` chunks dominated the run; `PrettyChat.toc` no longer loads them (PC-R-05), so it is now merely cheap.
 - `wow_mock.lua` is a **thin extender** (testing-§1): `local base = dofile("tests/_kit/mock_base.lua")`, then a builder that overwrites the fifteen keys this addon genuinely needs differently. Its own header documents each with the reason it cannot come from the base. The load-bearing ones:
@@ -43,9 +43,9 @@ What the mocks deliberately do *not* model is layout: they answer "which widget,
 
 ## The gate
 
-Both `lua tests/run.lua` and `luacheck .` must be green before any commit. Lint config is `.luacheckrc` (`std=lua51`; excludes `libs/`, `GlobalStrings/`, `tests/`, `docs/audits`, `docs/reviews`). The suites register named `test(name, fn)` cases; the `Tests` badge in the README badge row shows the pass/total.
+Both `lua tests/run.lua` and `luacheck .` must be green before any commit. Lint config is `.luacheckrc` (`std=lua51`; excludes `libs/`, `GlobalStrings/`, `tests/_kit/`, `docs/audits`, `docs/reviews`). The suites register named `test(name, fn)` cases; the `Tests` badge in the README badge row shows the pass/total.
 
-**The `luacheck` figure is scoped, not repo-wide.** `libs/` is excluded — correctly; vendored code is not this addon's to lint — and so is `tests/`. Before quoting 0/0, confirm the six seam files are inside the set that was actually checked:
+**The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 41 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the six seam files are inside the set that was actually checked:
 
 ```sh
 luacheck . --formatter plain | tail -1     # and read the file count it reports
@@ -58,11 +58,43 @@ A warning inside `core/EnvSetup.lua`, `core/MediaSetup.lua`, `core/CoreSetup.lua
 **Nothing else in this repo can see a stale vendored library.** `lua tests/run.lua` passes against a stale copy that still works, and the library's own suite passes against the library. So the sync is checked directly, from the repo root, with the sibling `../LibKa0s` checkout present:
 
 ```sh
-diff -r --strip-trailing-cr ../LibKa0s/LibKa0s libs/LibKa0s    # content — MUST be empty
+diff -r --strip-trailing-cr ../LibKa0s/LibKa0s libs/LibKa0s    # content — empty vs the CLAIMED tag
 diff -r ../LibKa0s/LibKa0s libs/LibKa0s                        # bytes  — SHOULD be empty
-diff -r --strip-trailing-cr ../LibKa0s/testkit tests/_kit      # content — MUST be empty
+diff -r --strip-trailing-cr ../LibKa0s/testkit tests/_kit      # content — empty vs the CLAIMED tag
 diff -r ../LibKa0s/testkit tests/_kit                          # bytes  — SHOULD be empty
 ```
+
+### When these diffs are supposed to be non-empty
+
+They compare against the sibling checkout's **working tree** — whatever `../LibKa0s` happens to have
+checked out — which is a different question from *"is the vendored payload the release this addon
+claims?"*. The two questions give the same answer only while the library has tagged nothing newer
+than the tag this addon has taken.
+
+Between a library release and the re-vendor that carries it they disagree, and that disagreement is
+the normal state rather than a defect. It is the state as this is written: `../LibKa0s` sits on
+**v1.27.0**, [`CLAUDE.md`](../CLAUDE.md) names **v1.26.0**, and the commands above report **306**
+differing lines for the library and **947** for the test kit. Re-vendoring to quiet them would be
+the actual mistake — it would pull an untested library release for the sake of a clean diff.
+
+**The authoritative comparison is against the tag `CLAUDE.md` names**, and that one must be empty at
+every commit:
+
+```sh
+tag=$(grep -oE 'Bundles \[LibKa0s\]\([^)]*\) v[0-9]+\.[0-9]+\.[0-9]+' CLAUDE.md \
+        | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+rm -rf "/tmp/libka0s-$tag" && mkdir -p "/tmp/libka0s-$tag"
+git -C ../LibKa0s archive "$tag" | tar -x -C "/tmp/libka0s-$tag"
+diff -r --strip-trailing-cr "/tmp/libka0s-$tag/LibKa0s" libs/LibKa0s   # MUST be empty
+diff -r --strip-trailing-cr "/tmp/libka0s-$tag/testkit" tests/_kit     # MUST be empty
+```
+
+`tests/test_vendor_sync.lua` asks exactly this question inside the suite — it greps the tag out of
+`CLAUDE.md` and reads that blob out of git — so **a green suite has already answered it**, and the
+block above is only the by-eye version for when you want to see the hunks. Which leaves the
+working-tree diffs above answering a real but different question: *how far behind the library is
+this addon?* That is release planning, not a gate.
+
 
 Run **both** of each pair and read the difference between them:
 
@@ -72,6 +104,75 @@ Run **both** of each pair and read the difference between them:
 `tests/test_vendor_sync.lua` runs the same comparison mechanically whenever the sibling checkout is present. It is a ten-line call into the shared gate `tests/_kit/vendor_sync.lua`, vendored from LibKa0s like the rest of the kit rather than hand-copied here. It reads raw bytes and applies **exactly one** normalization — CR stripped from the working-tree side, because the other side is a `git show` blob (LF) while this working tree is CRLF — so a line-ending-only difference passes and a single content byte fails. A missing sibling is the one case where it can go quiet, and it reports **SKIP with that reason** rather than passing silently, which is why the commands above stay written down here.
 
 **Which tag it compares against comes from the root [`CLAUDE.md`](../CLAUDE.md).** The gate greps the `Bundles [LibKa0s](…) vX.Y.Z (MIT).` provenance line out of that file — kit revision 9 moved it there from `README.md`, with **no fallback**, because the README is the player's page and no longer carries a bundled-library inventory at all. So the line moves in the same commit as the vendored bytes: bump `libs/LibKa0s/` or `tests/_kit/` without moving it and this gate fails, naming `CLAUDE.md`.
+
+## The 1500-line cap gate
+
+`tests/test_layout_cap.lua` compares two things: every authored `.lua` git tracks, and the census
+under *Files over the 1500-line cap* in [ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both
+directions, so a file that crosses the cap unremarked and a row left behind for a file that has
+stopped breaching are each a red.
+
+`layout-§1` binds **every authored file the repository tracks**, `tests/` included, and carves out
+vendored code (`libs/`, `tests/_kit/`) and generated non-shipping data. A red is cleared by giving
+the file one of the three terminal states the rule allows — peel it, open an issue naming the seam
+a peel would follow, or ratify a register row with a re-check trigger — and then adding its row to
+the census. It is not cleared by raising `CAP`, and it must not be cleared by dropping the suite
+from the runner's list: `Kit.assertSuiteInventory` reddens on that too, which is the point of
+having one.
+
+**The part specific to this repo is the carve-out, and it is checked rather than trusted.**
+PrettyChat has no cap breach; what it has is `GlobalStrings/GlobalStrings.lua`, 23,842 lines of
+generated dump, exempt only while all three of the carve-out's conditions hold — a comment at the
+top saying it is generated, no load list carrying it, a `.pkgmeta` entry keeping it out of the zip.
+Each of those is one line in one file, and each is the kind of line that gets edited for an
+unrelated reason. So the suite re-derives the exemption from the TOC, `.pkgmeta` and the file's own
+banner on every run instead of carrying the path in a skip list. Break any one condition and the
+failure names which one, because the alternative is a `layout-§1` MUST switching itself back on in
+silence. Sibling repos with no generated data have no equivalent case.
+
+The one thing that would blind it is a second load list — a non-vendored `.xml` beside
+`PrettyChat.toc` — so the arrival of one is itself a failing case, telling you to teach the gate
+about it rather than letting condition two go unread.
+
+The line figures in the census are dated measurements and nothing asserts them, so an ordinary edit
+to a large file does not redden this gate. Membership is the invariant, not the numbers.
+
+## The no-blanket-suppression gate
+
+`tests/test_lintconfig.lua` guards the thing that makes `luacheck .` worth running: that 0/0 is a
+statement about the code and not about `.luacheckrc`.
+
+Until `M4c-06` this repo carried `ignore = { "212/self", "212/event", "211/addonName" }` at the top
+level. The entries were already spelt in luacheck's `<code>/<variable>` form, which is what made it
+look narrow and easy to leave alone — but the **scope** was every file in the repository, and scope
+is what `M4-11` is about: an ignore that silences the wall reads as coverage and provides none.
+
+Removing the line reported **sixteen** findings, and eleven of them were not conventions at all —
+eleven files opened `local addonName, NS = ...` over a folder name they never read. Those were
+fixed at source, not re-parked in a smaller suppression. A twelfth thing the blanket hid was one of
+its own entries: `212/event` matched nothing in this addon and never had. Five findings remained,
+each a method receiver a calling convention forces, and each now sits in a `files[...]` stanza
+naming one file, with a comment saying which obligation forces it.
+
+The gate checks four things, all the same rule from different sides:
+
+| Case | What it refuses |
+|------|-----------------|
+| no top-level `ignore` | the blanket itself, in any spelling |
+| no wholesale class switch | `unused_args = false` and eight relatives — the blanket as a switch |
+| every `files[...]` ignore is narrow | a stanza keyed on a directory whose entry names no variable |
+| no bare inline `-- luacheck: ignore` | the blanket wearing a different hat, one line at a time |
+
+It reads `.luacheckrc` **as Lua**, under a sandbox whose environment auto-creates tables the way
+luacheck's own config loader does, so what the gate inspects is the table luacheck obeys rather
+than text that a different spelling would slip past. Like the cap gate and the EOL gate it **fails
+rather than skips** when it cannot look: no config, an unreadable one, a chunk that will not
+compile, no `io.popen`, no git — every one of those is a red, because a gate that goes quiet when
+it is blind reports success.
+
+Adding a suppression is not forbidden; adding a *wide* one is. Name the file in the stanza key, or
+narrow the entry to `<code>/<variable>`, or put `-- luacheck: ignore <code>` beside the single line
+that earns it — and say in a comment why the code is correct as written.
 
 ## Test-case inventory & badge sync (`testing-§5`)
 

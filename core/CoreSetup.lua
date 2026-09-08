@@ -81,6 +81,17 @@ if not lib then
         for i = 1, select("#", ...) do parts[i] = Util.SafeToString((select(i, ...))) end
         NS.Print(Util.SafeToString(fmt):format(unpack(parts)))
     end
+
+    -- Published here too, and it answers nil (testing-§8). The live arm's
+    -- MakeCloseButton sits at the bottom of this file, PAST the `return` below,
+    -- so until now the degraded namespace simply did not carry the key -- the one
+    -- asymmetry in a stub whose whole job is to have the same shape as the arm it
+    -- stands in for. There is no honest fallback to write: the close mark is a
+    -- library texture and a hand-rolled button here would be a second, drifting
+    -- implementation of a control the library owns. So the contract is "the key
+    -- exists and the caller gets nothing", which a caller can test, rather than
+    -- "indexing the namespace raises", which it cannot.
+    function NS.MakeCloseButton() return nil end
     return
 end
 

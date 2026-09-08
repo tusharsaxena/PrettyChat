@@ -19,12 +19,6 @@ local function widgetsSince(env, mark)
     return out
 end
 
-local function firstOfType(list, wtype)
-    for _, w in ipairs(list) do
-        if w.type == wtype then return w end
-    end
-end
-
 local function byLabel(list, wtype, label)
     for _, w in ipairs(list) do
         if w.type == wtype and (w.labelText == label or w.text == label) then return w end
@@ -794,27 +788,59 @@ test("the New edit box unescapes || to | before storing", function()
     local globalName = sorted[1]
     local newInput = lootBlock.new
 
-    newInput:Fire("OnEnterPressed", "||cffff0000Custom|| %s")
-    t.eq(Schema.Get("Loot." .. globalName .. ".format"), "|cffff0000Custom| %s",
+    newInput:Fire("OnEnterPressed", "||cffff0000Custom||")
+    t.eq(Schema.Get("Loot." .. globalName .. ".format"), "|cffff0000Custom|",
         "doubled pipes collapse to literal pipes on the way in")
-    t.eq(newInput.text, "||cffff0000Custom|| %s",
+    t.eq(newInput.text, "||cffff0000Custom||",
         "and the refresh re-doubles them for display")
 end)
 
 test("the Preview box renders the live format with sample arguments", function()
-    local newInput = lootBlock.new
-    local preview  = lootBlock.preview
-    newInput:Fire("OnEnterPressed", "You got %s x%d")
+    -- Driven on a string whose SHIPPED DEFAULT carries the two conversions this
+    -- case types in, rather than on whatever sorts first: the write gate
+    -- (PC-R-01) refuses a format asking for more than the default supplies, and
+    -- the Loot list opens on BATTLE_PET_LOOT_RECEIVED, which — like Blizzard's own
+    -- string — takes no arguments at all.
+    local pageCtx = NS.Helpers.__panelFor("Categories")
+    local sorted  = sortedNames("Loot")
+    local index
+    for i, globalName in ipairs(sorted) do
+        local seq = NS.ConversionSequence(NS.Defaults.Loot.strings[globalName].default)
+        if seq.n == 2 and seq[1] == "string" and seq[2] == "int" then index = i break end
+    end
+    t.truthy(index, "the Loot page offers a `%s x%d` string to preview")
+
+    selectEntry("Categories", index)
+    local block   = paneParts(stringSplit(pageCtx.scroll).pane)
+    local preview = block.preview
+    block.new:Fire("OnEnterPressed", "You got %s x%d")
     t.eq(preview.text, NS.RenderSample("You got %s x%d"), "preview matches the shared renderer")
     t.eq(preview.text, "You got Sample x42", "with the documented placeholder values")
+
+    -- Back to the first row, which is the block every case below reads.
+    addon:ResetAll()
+    selectEntry("Categories", 1)
+    lootScroll = pageCtx.scroll
+    lootBlock  = paneParts(stringSplit(lootScroll).pane)
 end)
 
 test("the Preview box surfaces an unrenderable format instead of blanking", function()
-    local newInput = lootBlock.new
-    local preview  = lootBlock.preview
-    newInput:Fire("OnEnterPressed", "%y")
-    t.truthy((preview.text or ""):find("invalid", 1, true)
-          or (preview.text or "") ~= "", "the format error is shown in the preview box")
+    -- Seeded into the DB rather than typed into the box: the write gate (PC-R-01)
+    -- refuses `%y` now, and a refused write leaves the default in place — so
+    -- driving this through the box would assert on a perfectly renderable string
+    -- and pass without ever exercising the error path. What is still reachable is
+    -- a value stored BEFORE the gate, and the refusal itself calls
+    -- NotifyPanelChange, which is the same refresh this fires.
+    local globalName = sortedNames("Loot")[1]
+    local catDB = addon:EnsureCategoryDB("Loot")
+    catDB.strings = catDB.strings or {}
+    catDB.strings[globalName] = "%y"
+    NS.Schema.NotifyPanelChange("Loot")
+
+    local preview = lootBlock.preview
+    t.truthy((preview.text or ""):find("invalid", 1, true),
+        "the format error is shown in the preview box")
+    addon:ResetAll()
 end)
 
 test("the per-string Reset button restores both dimensions", function()
@@ -825,7 +851,7 @@ test("the per-string Reset button restores both dimensions", function()
     local block = lootBlock
 
     block.enable:Fire("OnValueChanged", false)
-    block.new:Fire("OnEnterPressed", "CUSTOM %s")
+    block.new:Fire("OnEnterPressed", "CUSTOM")
     block.reset:Fire("OnClick")
 
     t.truthy(addon:IsStringEnabled("Loot", globalName), "reset re-enables the string")
@@ -868,8 +894,8 @@ test("a slash-command write re-syncs the open panel", function()
     table.sort(sorted)
     local globalName = sorted[1]
 
-    NS.Schema.Set("Loot." .. globalName .. ".format", "FROM SLASH %s")
-    t.eq(lootBlock.new.text, "FROM SLASH %s",
+    NS.Schema.Set("Loot." .. globalName .. ".format", "FROM SLASH")
+    t.eq(lootBlock.new.text, "FROM SLASH",
         "the New box shows the value the slash command stored")
     addon:ResetAll()
 end)
@@ -981,6 +1007,31 @@ test("the parent page lists every slash command through the one row formatter", 
         "the old double-spaced, white-wrapped dash is gone")
 end)
 
+-- The whole reason the landing body is the library's renderer and not a copy of
+-- it. A Texture is not an AceGUI child, so ReleaseChildren does not take it with
+-- the group -- and AceGUI POOLS the group's frame. Without an OnRelease that
+-- hides the texture, the next widget to acquire that frame inherits a 300px logo,
+-- and the pool is shared with every other addon in the session, so the widget that
+-- inherits it is very often not ours. The cross-addon half is docs/smoke-tests.md
+-- § S3; what a case can pin is that the release hook exists and does hide it.
+test("the landing logo is hidden when its group goes back to AceGUI's pool", function()
+    parentPanel:Show()
+
+    local logoGroup
+    for _, w in ipairs(env._widgets) do
+        if w.type == "SimpleGroup" and w.height == 300 then logoGroup = w end
+    end
+    t.truthy(logoGroup, "the landing page draws a full-size group to carry the logo")
+
+    local onRelease = logoGroup.callbacks and logoGroup.callbacks["OnRelease"]
+    t.eq(type(onRelease), "function", "and registers an OnRelease on it")
+
+    -- The mock's CreateTexture answers the frame itself, so the frame's shown-ness
+    -- IS the texture's.
+    t.truthy(logoGroup.frame:IsShown(), "the logo is shown while the page is up")
+    logoGroup:Fire("OnRelease")
+    t.falsy(logoGroup.frame:IsShown(), "and hidden the moment AceGUI takes the group back")
+end)
 test("the parent page shows the TOC tagline", function()
     local labels = {}
     for _, w in ipairs(env._widgets) do

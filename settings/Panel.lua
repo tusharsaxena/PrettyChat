@@ -28,9 +28,11 @@ local CATEGORY_ORDER = Schema.CATEGORY_ORDER
 
 local TOC_NOTES = NS.Meta("Notes") or ""
 
+-- The path only. The SIZE is LibKa0s-Options-1.0's LANDING_LOGO, which
+-- BuildLandingPage defaults to and which this file therefore does not name
+-- (options-ui-§8).
 local LOGO_PATH = "Interface\\AddOns\\" .. addonName
                   .. "\\media\\logos\\prettychat.logo.tga"
-local LOGO_SIZE = 300
 
 -- ---------------------------------------------------------------------
 -- Reset-all popup. The OnAccept body lives in PrettyChat:ResetAll so the
@@ -637,88 +639,64 @@ function buildCategoriesBody(ctx)
 end
 
 -- ---------------------------------------------------------------------
--- Landing page — logo + tagline + slash-command list. Read-only, and the
--- host's half of the panel by design (options-ui-§5): the logo and the
--- command list are the two things about a Ka0s landing page that are
--- genuinely per-addon.
+-- Landing page — logo, tagline, slash-command list.
+--
+-- The BODY is LibKa0s-Options-1.0's (H.BuildLandingPage). What stays the host's
+-- half by design (options-ui-§5) is the SPEC: the logo, the tagline and the
+-- command list are the three things about a Ka0s landing page that are genuinely
+-- per-addon, and they are data here rather than a second renderer.
+--
+-- This file used to carry a hand-copy of that renderer, and the copy reproduced
+-- everything except the one line that mattered. A Texture is not an AceGUI child,
+-- so ReleaseChildren does not take it away with the SimpleGroup that holds it —
+-- and AceGUI POOLS that group's frame. Without an OnRelease that hides the
+-- texture, the next widget handed that frame inherits a 300px logo. The pool is
+-- shared with every addon in the session, so the panel that grew one was usually
+-- somebody else's, which is why nothing in tests/ and nothing a PrettyChat-only
+-- smoke pass does could ever see it. The library sets that hook itself, in the
+-- logo block of libs/LibKa0s/OptionsWidgets.lua -- a `SetCallback("OnRelease", ...)`
+-- that hides the texture; that hook is the whole reason this is a call and not a
+-- copy.
+--
+-- No logoSize is passed: the library defaults it to its own LANDING_LOGO, and a
+-- host copy of a library layout constant is the copy that goes stale
+-- (options-ui-§8). The two section spacers this body used to draw by hand are
+-- gone with it — O.Section and BuildLandingPage emit them.
 -- ---------------------------------------------------------------------
 
-local function buildParentBody(ctx)
-    H.ClearScroll(ctx)
-    local scroll = H.EnsureScroll(ctx)
-    if not scroll then return end
-
-    -- Logo at native size, anchored TOPLEFT in a full-width SimpleGroup
-    -- so AceGUI's List layout left-aligns it regardless of panel width.
-    local logoGroup = AceGUI:Create("SimpleGroup")
-    logoGroup:SetLayout(nil)
-    logoGroup:SetFullWidth(true)
-    logoGroup:SetHeight(LOGO_SIZE)
-
-    -- Created ONCE PER FRAME, and stashed on it. This body used to run exactly once
-    -- per session behind a `rendered` flag; under the library's renderer it runs
-    -- again whenever the page is re-shown after being flagged dirty. A Texture is
-    -- not an AceGUI child, so ReleaseChildren does not take it with it — and AceGUI
-    -- POOLS the SimpleGroup's frame, so an un-owned Texture rides that frame into
-    -- whichever widget acquires it next, in this addon or another. Re-texturing the
-    -- one we already put there is both correct and free.
-    local logoTex = logoGroup.frame.pcLogo
-    if not logoTex then
-        logoTex = logoGroup.frame:CreateTexture(nil, "ARTWORK")
-        logoGroup.frame.pcLogo = logoTex
-    end
-    logoTex:SetTexture(LOGO_PATH)
-    logoTex:SetSize(LOGO_SIZE, LOGO_SIZE)
-    logoTex:ClearAllPoints()
-    logoTex:SetPoint("TOPLEFT", logoGroup.frame, "TOPLEFT", 0, 0)
-    logoTex:Show()
-    scroll:AddChild(logoGroup)
-    H.AddSpacer(scroll, H.ROW_VSPACER)
-
-    if TOC_NOTES ~= "" then
-        local tagline = AceGUI:Create("Label")
-        tagline:SetFullWidth(true)
-        tagline:SetText(TOC_NOTES)
-        if tagline.label and tagline.label.SetFontObject and _G.GameFontHighlight then
-            tagline.label:SetFontObject(_G.GameFontHighlight)
-        end
-        scroll:AddChild(tagline)
-        H.AddSpacer(scroll, Const.SECTION_TOP_SPACER)
-    end
-
-    local heading = AceGUI:Create("Heading")
-    heading:SetFullWidth(true)
-    heading:SetHeight(H.SECTION_HEADING_H)
-    heading:SetText(L["Slash Commands"])
-    if heading.label and heading.label.SetFontObject and _G.GameFontNormalLarge then
-        heading.label:SetFontObject(_G.GameFontNormalLarge)
-    end
-    scroll:AddChild(heading)
-    H.AddSpacer(scroll, Const.SECTION_BOTTOM_SPACER)
-
-    local alias = AceGUI:Create("Label")
-    alias:SetFullWidth(true)
-    alias:SetText(Color.gray .. L["/prettychat is an alias for /pc"] .. Color.reset)
-    scroll:AddChild(alias)
-    H.AddSpacer(scroll, H.ROW_VSPACER)
-
-    -- Convergence #2: the landing page and the chat help index render the same
-    -- COMMANDS table through the SAME formatter, differing only in indentation
-    -- (slash-commands-§4). This page used to carry its own — double spaces either
-    -- side of the em dash, the dash explicitly white-wrapped, the description bare —
-    -- which is the silent drift between settings/Panel.lua and settings/Slash.lua
-    -- that every addon in the collection had. Collapsing it changes what a user
-    -- sees: single spaces, no color span on the dash, and a white description.
-    -- Colon: LibKa0s-Slash-1.0 declares `function Sl:LandingRows()`, so a dot
-    -- call passes no `self` and works only because today's body ignores it
-    -- (PC-R-08). The degradation stub in settings/Slash.lua is a method too.
+--- The Slash Commands section's rows, resolved at RENDER time because the
+--- library asks for a function: commands are registered as files load, and a
+--- table captured when this file ran would be missing whatever came after it.
+---
+--- Convergence #2: the landing page and the chat help index render the same
+--- COMMANDS table through the SAME formatter, differing only in indentation
+--- (slash-commands-§4). This page used to carry its own — double spaces either
+--- side of the em dash, the dash explicitly white-wrapped, the description bare —
+--- which is the silent drift between settings/Panel.lua and settings/Slash.lua
+--- that every addon in the collection had.
+---
+--- The alias is the section's first row rather than a Label of its own, because
+--- the renderer draws host text one TextRow per row and a spec that wanted a
+--- widget between them would be asking for the copy back.
+---
+--- Colon: LibKa0s-Slash-1.0 declares `function Sl:LandingRows()`, so a dot call
+--- passes no `self` and works only because today's body ignores it (PC-R-08).
+--- The degradation stub in settings/Slash.lua is a method too.
+local function landingCommandRows()
+    local rows = { Color.gray .. L["/prettychat is an alias for /pc"] .. Color.reset }
     for _, line in ipairs(NS.SlashCommands:LandingRows()) do
-        local row = AceGUI:Create("Label")
-        row:SetFullWidth(true)
-        row:SetText(line)
-        scroll:AddChild(row)
+        rows[#rows + 1] = line
     end
+    return rows
 end
+
+local LANDING_SPEC = {
+    logo     = LOGO_PATH,
+    notes    = TOC_NOTES,
+    sections = {
+        { heading = L["Slash Commands"], rows = landingCommandRows },
+    },
+}
 
 -- ---------------------------------------------------------------------
 -- Page registration
@@ -775,5 +753,5 @@ H.RegisterOptionsPage(CATEGORY_PAGE, CATEGORY_PAGE, function(mainCategory)
 end)
 
 NS.Config = NS.Config or {}
-NS.Config.BuildMain      = buildParentBody
+NS.Config.BuildMain      = function(ctx) H.BuildLandingPage(ctx, LANDING_SPEC) end
 NS.Config.RegisterPanels = function() H.CreateOptionsPanel() end

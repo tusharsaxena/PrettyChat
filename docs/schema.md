@@ -27,6 +27,10 @@ Each row carries its own `get()` and `set(value)` closures. PrettyChat's storage
 function Schema.Set(path, value)
     local row = byPath[path]
     if not row then return false end
+    if refusedBySignature(row, value) then      -- the conversion-signature gate
+        Schema.NotifyPanelChange(row.category)  -- snap the New box back to what IS stored
+        return false
+    end
     row.set(value)                              -- pure DB write
     if not row.sessionOnly then                 -- the console toggle stores nothing
         PrettyChat:ApplyStrings()               -- reconcile live _G overrides
@@ -36,6 +40,27 @@ function Schema.Set(path, value)
     return true
 end
 ```
+
+### The conversion-signature gate
+
+A `string_format` write is refused unless its conversion sequence is a **positional prefix** of the
+shipped default's — never longer, never a different class at a position they share.
+`NS.ConversionSequence(fmt)` (`modules/Override.lua`) is the walk both sides read; the refusal names
+the path, both signatures and the Blizzard global, through `NS.Print`, and writes a `[Set] … refused`
+trace.
+
+Dropping trailing conversions is allowed and deliberately so: `string.format` ignores surplus
+*arguments*, so a shorter format is safe. Asking for one more conversion than the caller passes is the
+raise this gate exists to stop, and nothing downstream can catch it — the Preview synthesizes its
+sample arguments **from the format**, so it renders a surplus `%s` happily and reports success, and the
+error then lands inside Blizzard's chat handler on every matching message.
+
+The comparison is against **this addon's shipped default**, not Blizzard's live string.
+`tests/test_defaults.lua` already pins every shipped default as a positional prefix of Blizzard's, so
+prefix-of-default composes into prefix-of-Blizzard; and unlike `_G[GLOBALNAME]`, a default cannot have
+been overwritten by this addon's own `ApplyStrings` by the time it is read. The cost is that a player
+cannot restore a conversion one of the four sanctioned truncations dropped — lengthening the shipped
+default is how to give that back.
 
 The `NS.Debug("Set", …)` line is the single settings-change trace (debug-logging-§10): a no-op unless `/pc debug on`, and when on it logs exactly one `[Set] <path> = <value>` line per write (value via the shared `Schema.FormatValue`, so it reads like `/pc get`). The `ApplyStrings` re-apply it triggers is an implied consequence and is deliberately **not** re-echoed.
 
@@ -68,7 +93,7 @@ So writing a format back to its default value via `/pc set` or the panel acts as
 |----------|---------|
 | `Schema.RowsByCategory(category)` | Filtered subset for one category. Used by `/pc list <Category>` and the no-arg `/pc list` (iterating `CATEGORY_ORDER`); also used by `schemaReady()` as the presence-check sentinel for "is the schema fully built?". |
 | `Schema.FindByPath(path)` | O(1) lookup; returns the row or `nil`. |
-| `Schema.Get(path)` / `Schema.Set(path, value)` | Read/write through the row's closures. `Set` returns `false` if the path is unknown. |
+| `Schema.Get(path)` / `Schema.Set(path, value)` | Read/write through the row's closures. `Set` returns `false` if the path is unknown, **or if a `string_format` write fails the conversion-signature gate** (see [Single write path](#single-write-path)); `true` when the write landed. |
 | `Schema.AllRows()` | Every row in **declaration** order — the order `/pc list` prints and the order the settings tree shows. Returned as the live table, not a copy. The `allRows` both the Slash and the Options descriptors are handed. |
 | `Schema.ApplyDefault(row)` | Restore **one** row to `row.default` through `Schema.Set`, so the `[Set]` trace, the re-apply and the panel refresh are identical to a checkbox click. Deliberately **not** the implementation behind the per-category Defaults button or `/pc resetall` — both of those are bulk (see [Reset semantics](#reset-semantics)). |
 | `Schema.FormatValue(row, value)` | **The** value formatter, and there is exactly one of it (slash-commands-§5). The rendering is `LibKa0s-Slash-1.0`'s `FormatValue`; what is this addon's is the one thing the library cannot know — a Blizzard format string is full of `\|c…\|r` escapes, so `\|` is doubled to `\|\|` on the way out, matching what the panel's New box shows and accepts. Two consumers, and that is why it lives here rather than in `settings/Slash.lua`: every `list` / `get` / `set` / `reset` echo (as the Slash descriptor's `format` hook) **and** the `[Set]` debug trace at the write seam (debug-logging-§10), so a value cannot read one way in chat and another in the console log. With the library absent it falls back to the pre-library rendering — no color codes, no `key = value` shape. |

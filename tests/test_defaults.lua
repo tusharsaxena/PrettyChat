@@ -157,47 +157,15 @@ local SANCTIONED_TRUNCATIONS = {
     OPEN_LOCK_SELF         = "shows the object only; Blizzard's second %s is the key used",
 }
 
--- Conversion type -> the class an argument must belong to. Only the class
--- matters: %d and %x both need a number, and swapping one for the other cannot
--- raise. `s` versus `int` is what raises.
-local CONVERSION_CLASS = {
-    s = "string",
-    d = "int", i = "int", u = "int", x = "int", X = "int", o = "int", c = "int",
-    f = "float", g = "float", e = "float", G = "float", E = "float",
-}
-
--- The ordered conversion sequence of a format string, honoring WoW's positional
--- `%n$type` form. Same walk as buildSampleArgs in modules/Override.lua: strip
--- `%%` escapes first, then read [flags][width][.precision]type. A positional
--- specifier lands at its index; a gap left by `%3$s` with no `%1$`/`%2$` is
--- recorded as "gap" so it can never silently match Blizzard's real type.
-local function conversionSequence(fmt)
-    local clean = fmt:gsub("%%%%", "")
-    local seq, appendIdx, maxIdx = {}, 0, 0
-    for posCap, ftype in clean:gmatch("%%(%d*%$?)[%-+ #0]*%d*%.?%d*([%a])") do
-        local class = CONVERSION_CLASS[ftype] or ("unknown:" .. ftype)
-        if posCap:sub(-1) == "$" then
-            local idx = tonumber(posCap:sub(1, -2))
-            if idx and idx > 0 then
-                seq[idx] = class
-                if idx > maxIdx then maxIdx = idx end
-            end
-        else
-            appendIdx = appendIdx + 1
-            seq[appendIdx] = class
-            if appendIdx > maxIdx then maxIdx = appendIdx end
-        end
-    end
-    for i = 1, maxIdx do seq[i] = seq[i] or "gap" end
-    seq.n = maxIdx
-    return seq
-end
-
-local function showSequence(seq)
-    local parts = {}
-    for i = 1, seq.n do parts[i] = seq[i] end
-    return "[" .. table.concat(parts, ",") .. "]"
-end
+-- THE ADDON'S OWN WALK, not a copy of it. Both lived here until PC-R-01: this
+-- file understood exactly what a format demands of its caller and the shipped
+-- code did not, so the one place that could have refused a dangerous write —
+-- Schema.Set — had nothing to ask. modules/Override.lua owns the walk now, the
+-- Preview and the write gate read it, and this case reads the same function, so
+-- a change to it that broke the defaults comparison cannot hide behind a second
+-- implementation.
+local conversionSequence = NS.ConversionSequence
+local showSequence       = NS.DescribeSequence
 
 -- The shipped Blizzard signatures, loaded HERE and directly rather than read off
 -- the namespace. PrettyChat.toc no longer carries the GlobalStrings/ chunks

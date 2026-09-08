@@ -1,4 +1,4 @@
-local addonName, NS = ...
+local _, NS = ...
 
 local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 
@@ -456,6 +456,37 @@ function Schema.NotifyPanelChange(category)
     if fn then pcall(fn) end
 end
 
+-- THE CONVERSION-SIGNATURE GATE (PC-R-01).
+--
+-- A format string is a contract with Blizzard's caller: it may drop trailing
+-- conversions — string.format ignores surplus ARGUMENTS — but a conversion with
+-- no argument behind it raises. Nothing downstream catches that. The Preview
+-- cannot: `buildSampleArgs` synthesizes its arguments FROM the format, so it
+-- renders a surplus `%s` happily and reports success, and the raise lands later
+-- inside Blizzard's chat handler, on every matching message, in a stack trace
+-- naming a Blizzard frame. So the check belongs at the write, and the write seam
+-- is here.
+--
+-- Compared against THIS ADDON'S SHIPPED DEFAULT rather than Blizzard's live
+-- string, which sounds like the weaker check and is the sound one:
+-- tests/test_defaults.lua already pins every shipped default as a positional
+-- prefix of Blizzard's, so prefix-of-default composes into prefix-of-Blizzard,
+-- and unlike `_G[globalName]` a default cannot have been overwritten by this
+-- addon's own ApplyStrings by the time it is read. The cost is that a player
+-- cannot restore a conversion one of the four SANCTIONED_TRUNCATIONS dropped;
+-- lengthening the default is the way to give it back, and that is a change to
+-- the shipped data where it belongs.
+local function refusedBySignature(row, value)
+    if row.kind ~= "string_format" or type(value) ~= "string" then return false end
+    local asked    = NS.ConversionSequence(value)
+    local supplied = NS.ConversionSequence(row.default)
+    if NS.SequenceIsPrefix(asked, supplied) then return false end
+    NS.Print(NS.L["Not saved — %s asks for %s; %s supplies %s. A format may drop trailing conversions but must not add or retype one."]
+        :format(row.path, NS.DescribeSequence(asked),
+                row.globalName, NS.DescribeSequence(supplied)))
+    return true
+end
+
 -- Set is the single write path for all schema-backed values. Both the
 -- panel widgets and the /pc set slash command go through here, so
 -- a value change in either surface notifies the other. Owns the two
@@ -464,6 +495,18 @@ end
 function Schema.Set(path, value)
     local row = byPath[path]
     if not row then return false end
+    if refusedBySignature(row, value) then
+        -- Refreshed even though nothing was written: the panel's New box is still
+        -- holding the text that was just refused, and the refresher re-reads the
+        -- DB, so this is what snaps it back to what is actually stored. The
+        -- library's `/pc set` echo re-reads too and reports the same unchanged
+        -- value.
+        Schema.NotifyPanelChange(row.category)
+        NS.Debug("Set", "%s refused: %s is not a prefix of %s", row.path,
+            NS.DescribeSequence(NS.ConversionSequence(value)),
+            NS.DescribeSequence(NS.ConversionSequence(row.default)))
+        return false
+    end
     row.set(value)
     -- A session-only row stores nothing and moves no override: showing the debug
     -- console must not drag a full pass over 79 Blizzard globals behind it. The
