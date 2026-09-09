@@ -2,6 +2,13 @@
 
 `settings/Panel.lua` builds the settings panel directly on Blizzard's modern `Settings.RegisterCanvasLayoutCategory` / `Settings.RegisterCanvasLayoutSubcategory` API and renders body content with AceGUI. PrettyChat appears under **Ka0s Pretty Chat**; the parent page hosts the logo, tagline, and slash-command list (read-only orientation) — drawn by the library's `H.BuildLandingPage` from a spec this addon declares, not by a body of its own, and **two** sub-pages hold the actionable controls.
 
+**What each page covers.** This summary lived in the README until documentation-§1 dropped the settings table from it; it is the page-granularity view, above the finer per-tab and per-string detail below.
+
+| Page | Covers |
+|------|--------|
+| **General** | One tab, **Master controls**: the master **Enable PrettyChat** switch (turn it off and every message goes back to its original wording), a **General visibility** dropdown (*Always*, *Only in combat*, *Only out of combat*, *Never* — a second master switch, so you can have PrettyChat only while you are fighting), a **Debug console** toggle (shows or hides a small on-screen log window for troubleshooting), a **Test** button that previews every message into that console, and **Reset all settings**. |
+| **Categories** | Everything PrettyChat rewrites, one tab per kind of message — and inside each, a list of that kind's messages down the left, so you pick the line you want to change instead of scrolling past twenty of them. |
+
 **Every page draws a strip** (options-ui-§13). The `Categories` page draws one — a primary strip of message categories — and inside each of those, an AceGUI **`TreeGroup`**: that category's format strings listed in the tree pane on the left, the editor for the selected one in the content pane on the right.
 
 | Page | Primary tabs (strip order) | Secondary tabs | Rows |
@@ -95,8 +102,9 @@ The General sub-page does not show a `Defaults` button in the header — the in-
 
 One tab per message category, in `CATEGORY_ORDER`. This is the player-facing sentence for each —
 the counts beside them are in the page table at the top of this file, and the strings themselves
-are `settings/Schema.lua`'s. It lived in the README until `M5-03`; `documentation-§1` keeps the
-README's settings table at page granularity and puts the per-tab breakdown here.
+are `settings/Schema.lua`'s. It lived in the README until `M5-03`; `documentation-§1` now keeps no
+settings table in the README at all, so both granularities live here — the page summary at the top
+of this file, the per-tab breakdown below.
 
 | Tab | Covers |
 |-----|--------|

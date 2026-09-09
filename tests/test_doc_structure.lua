@@ -298,8 +298,8 @@ test("the README's settings table is page-granular, not per-tab", function()
         if first and first:lower():gsub("%s+", "") == "tab" then rows[#rows + 1] = line end
     end
     assertTrue(#rows == 0, README .. " carries a `| Tab |` table: " .. table.concat(rows, " / ")
-        .. ". documentation-§1 keeps the README's `### Settings panel` table at PAGE granularity — "
-        .. "one row per settings subcategory — and puts the per-tab breakdown in "
+        .. ". documentation-§1 keeps NO settings table in the README — `## Usage` is prose — and "
+        .. "puts both the page summary and the per-tab breakdown in "
         .. "docs/settings-panel.md, which is where options-ui-§13's strip makes it derivable")
 end)
 
