@@ -95,8 +95,8 @@ A few things worth knowing:
 
 ## Troubleshooting
 
-| Symptom | What to try |
-|---------|-------------|
+| Symptom | Fix |
+|---------|-----|
 | Nothing changed after installing | Make sure it's switched on: check the master switch, the category, and the message (`/pc get General.enabled` should be `true`). Run `/pc test` — if the preview looks formatted but real chat doesn't, another addon is changing the same messages after PrettyChat. |
 | A message I edited looks broken | Your wording dropped or misused a `%s` / `%d` placeholder. Restore the category with its **Defaults** button, or copy the original from the panel and edit around the placeholders. |
 | The settings panel won't open | Wait until you're fully loaded in, and note it won't open during combat. If the main page opens but a sub-page doesn't, click the sub-page's row in the settings list (**General** or **Categories**). |
