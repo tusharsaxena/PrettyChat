@@ -12,13 +12,6 @@ World of Warcraft tells you about loot, currency, gold, reputation, experience, 
 
 Any message type can be switched off, reworded or recolored, either from the in-game settings panel or from chat with `/pc`.
 
-## What's new in 1.4.0
-
-- `/pc debug` (or the new **Debug console** toggle on the General page) opens a small on-screen log window. It is off by default, it lasts only until your next reload, and it exists for filing bugs.
-- The per-category **Defaults** button works again. Clicking it restores that category, and only that category.
-- A message's **Reset** now puts its Enable switch back to default too, not just the wording and colors.
-- Updated for the current game patch (Midnight 12.0.7).
-
 ## Screenshots
 
 **_Without Pretty Chat_**
