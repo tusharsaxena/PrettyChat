@@ -117,7 +117,7 @@ If you can only reason about a change from code and cannot test it in WoW, say s
 
 ## Cut a release
 
-Before the tag, in the **same change** that bumps `## Version:` in `PrettyChat.toc` and rolls the README's `## What's new` and `## Version History` forward:
+Before the tag, in the **same change** that bumps `## Version:` in `PrettyChat.toc` and rolls the README's `## Version History` forward:
 
 1. Produce a full automated-test bundle — `tests/_kit/run-automated-tests.sh`, from the repo root — and **read its diff**: give every newly-crossed threshold a one-line disposition in [`automated-tests/RESULTS.md`](./automated-tests/RESULTS.md)'s watch list. This is a release checkpoint, **not** a commit gate. Full rules and the stale-tooling case: [testing.md](./testing.md#automated-test-records--the-consolidated-run) and `performance-§10`.
 2. Re-check [`../DEPENDENCIES.md`](../DEPENDENCIES.md) against what the repo now actually needs (documentation-§5/§7) — a new script, a new import or a dropped tool belongs there already, but the release is the backstop.
