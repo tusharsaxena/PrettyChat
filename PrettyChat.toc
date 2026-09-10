@@ -1,4 +1,4 @@
-## Interface: 120007
+## Interface: 120100
 ## Title: Ka0s |cffff0000P|cffff9900r|cffffff00e|cff00ff00t|cff00fffft|cff4a86e8y |cff0000ffC|cff9900ffh|cffff00ffa|cffefefeft|r
 ## Notes: Prettier chat messages
 ## Author: aDd1kTeD2Ka0s
