@@ -18,7 +18,7 @@ import, or a documented command. Nothing here is listed because it seemed likely
 
 | Requirement | Version | Evidence |
 |---|---|---|
-| World of Warcraft, Retail | Interface `120007` (Midnight 12.0.7) | `PrettyChat.toc:1` — `## Interface: 120007`, the single latest-Retail line |
+| World of Warcraft, Retail | Interface `120100` (Midnight 12.1.0) | `PrettyChat.toc:1` — `## Interface: 120100`, the single latest-Retail line |
 
 Every library the addon uses is **vendored and committed** under `libs/` and listed in the TOC's
 `# Libraries` section (`PrettyChat.toc:16-22`), so a player installs no library packs:
@@ -64,7 +64,7 @@ ahead of it. Do not "upgrade" to make the version banner look modern.
 | | |
 |---|---|
 | **Version** | **Any recent.** Verified here with 1.2.0; the config uses nothing version-specific, so pinning would be false precision. |
-| **Why** | `luacheck .` is one of the two green-gate commands (`CLAUDE.md`, "Test gate"; `docs/testing.md`, "The gate"). Its configuration is `.luacheckrc` (`std = "lua51"`, with `libs/`, `GlobalStrings/`, `tests/` and the frozen `docs/audits/`, `docs/reviews/` bundles excluded). |
+| **Why** | `luacheck .` is one of the two green-gate commands (`CLAUDE.md`, "Test gate"; `docs/testing.md`, "The gate"). Its configuration is `.luacheckrc` (`std = "lua51"`, with `libs/`, `GlobalStrings/`, the vendored `tests/_kit/` and the frozen `docs/audits/`, `docs/reviews/` bundles excluded; the rest of `tests/` is in lint scope). |
 | **Install** | `sudo apt install -y lua5.1 luarocks && sudo luarocks install luacheck` |
 | **Verify** | `luacheck --version` |
 

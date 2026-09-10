@@ -155,7 +155,7 @@ The watcher frame is **created lazily on the first combat-scoped write** and its
 
 ## Known Limitations
 
-- **Retail only.** `## Interface: 120007` (Midnight / Retail). Classic / Classic Era untested.
+- **Retail only.** `## Interface: 120100` (Midnight / Retail). Classic / Classic Era untested.
 - **Snapshot is load-time.** `OnEnable` snapshots Blizzard originals only for strings mentioned in `NS.Defaults` (~81). Adding a new `globalName` needs a `/reload` for the snapshot to capture its pristine value.
 - **Cross-registered globals: last-writer-wins.** A global registered under two categories (e.g. `LOOT_ITEM_CREATED_SELF` under Loot + Tradeskill) resolves to the **last** category in `CATEGORY_ORDER` — now deterministic (PC-16), surfaced in the per-string tooltip.
 - **Positional format rendering is WoW-only.** `%n$s` specifiers rely on WoW's extended `string.format`; the headless test harness (stock Lua 5.1) can't render them and asserts graceful degradation instead.
@@ -321,7 +321,7 @@ it was looked at rather than missed; nothing in it needs a disposition until it 
 
 ## External dependencies
 
-Vendored under `libs/` (the BigWigs packager pulls nothing — no `externals`): LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, and **[LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.26.0** (`libs/LibKa0s/`, listed in the TOC as `libs\LibKa0s\LibKa0s.xml` after Ace3). (`AceConfig-3.0` was removed — no live consumer.)
+Vendored under `libs/` (the BigWigs packager pulls nothing — no `externals`): LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, and **[LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.29.0** (`libs/LibKa0s/`, listed in the TOC as `libs\LibKa0s\LibKa0s.xml` after Ace3). (`AceConfig-3.0` was removed — no live consumer.)
 
 Six of LibKa0s's ten majors are adopted: **Core**, **Env**, **Media**, **DebugLog**, **Slash** and **Options**. **Perf is declined** under a recorded `performance-§12` no-combat-path exemption — the register row above, with its sweep in [performance.md](./performance.md) and its reasoning at [LIBKA0S-12](https://github.com/tusharsaxena/PrettyChat/issues/10). **Item**, **Pool** and **Widgets** are not consumed here at all — nothing in this addon, and no other vendored LibKa0s file, `LibStub`s any of the three. `Item.lua`, `Pool.lua`, `Widgets.lua`, `Perf.lua` and `PerfPanel.lua` are still vendored, because the folder is copied whole and never file by file.
 
@@ -338,22 +338,3 @@ Headless harness under `tests/` (stock Lua 5.1, no client): `lua tests/run.lua` 
 - **`.gitignore`** covers OS/editor cruft and `.claude/`. `libs/` is tracked (vendored Ace3), as are `GlobalStrings/`, `media/`, all `.lua` source, `tests/`, `.luacheckrc` and `.pkgmeta`.
 - **Case-insensitive `/mnt/d`.** `libs/` was renamed from `Libs/` on disk; with `core.ignorecase=true`, recording a case flip in git needs `git mv -f Libs libs` even though the working tree already reads lowercase.
 
-## Doc index
-
-Topic-specific detail lives in `docs/`. Read on demand.
-
-| Topic | File |
-|-------|------|
-| How to verify: harness, lint, the commit gate | [testing.md](./testing.md) |
-| What to install: the toolchain contract | [../DEPENDENCIES.md](../DEPENDENCIES.md) |
-| Automated test records + the complexity watch list | [automated-tests/RESULTS.md](./automated-tests/RESULTS.md) |
-| What this addon costs + the no-combat-path sweep | [performance.md](./performance.md) |
-| In/out scope + resolved decisions | [scope.md](./scope.md) |
-| Per-file responsibility map, module roles + public APIs | [module-map.md](./module-map.md) |
-| Snapshot → ApplyStrings → restore + 3-layer enable order | [data-flow.md](./data-flow.md) |
-| Schema row kinds + single write path + auto-clear + AceDB shape | [schema.md](./schema.md) |
-| Canvas-layout panel framework | [settings-panel.md](./settings-panel.md) |
-| `COMMANDS` table + full command reference | [slash-dispatch.md](./slash-dispatch.md) |
-| Dual-load story + splitter script | [global-strings.md](./global-strings.md) |
-| Recipes (add string/category, fix a format) | [common-tasks.md](./common-tasks.md) |
-| Quick recipe + full smoke-test suite | [smoke-tests.md](./smoke-tests.md) |

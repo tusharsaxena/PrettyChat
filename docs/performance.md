@@ -47,7 +47,7 @@ still in scope.
 Result, verbatim, at the commit that carries this page — **nine lines across five files**:
 
 ```
-.luacheckrc:48:    "C_Timer",
+.luacheckrc:62:    "C_Timer",
 modules/Override.lua:82:        combatWatcher:SetScript("OnEvent", function()
 modules/Override.lua:93:            combatWatcher:RegisterEvent(event)
 settings/Panel.lua:530:    -- A frame later, both are true. C_Timer.After(0, ...) is the client's own way
@@ -59,7 +59,7 @@ tests/wow_mock.lua:141:function frameMethods:RegisterEvent(event)
 ```
 
 Reconciled, so a future drift is visible rather than arguable. One is a lint declaration
-(`.luacheckrc:48`). Three are the pattern names appearing **inside comments** — `settings/Panel.lua:530`,
+(`.luacheckrc:62`). Three are the pattern names appearing **inside comments** — `settings/Panel.lua:530`,
 `tests/test_panel.lua:612`, `tests/wow_mock.lua:64` — which describe the discipline rather than doing
 anything. One is the headless harness's own mock (`tests/wow_mock.lua:141` defines
 `frameMethods:RegisterEvent`, which no client ever runs). The remaining **four are call sites in
@@ -74,7 +74,7 @@ its own command cannot return is worse than no result block at all.
 
 **Zero `SetScript("OnUpdate"`, zero ticker, zero repeating timer** anywhere in `core/`, `defaults/`,
 `locales/`, `modules/`, `settings/` or the TOC. That is the part of the old claim that survives.
-What does not survive is *"zero `C_Timer` call"*: `.luacheckrc:48` declares `C_Timer` in
+What does not survive is *"zero `C_Timer` call"*: `.luacheckrc:62` declares `C_Timer` in
 `read_globals`, and since 2026-09-03 that declaration has a real consumer.
 
 ### The combat watcher — `modules/Override.lua:82`, `:93`
