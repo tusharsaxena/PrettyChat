@@ -77,7 +77,7 @@ test("EnvSetup: every file-scope read resolved through the seam", function()
     -- answer rather than its own fallback, which no raise can tell you.
     --
     -- The fixture is overridden to values NO fallback in this repo spells, because the
-    -- shipped fixture Version is "1.4.0" and so is core/Namespace.lua's own literal —
+    -- shipped fixture Version is "1.5.0" and so is core/Namespace.lua's own literal —
     -- asserting the fixture value would pass just as happily on the fallback.
     local meta = { Version = "9.9.9", Notes = "SEAM-TAGLINE", Title = FIXTURE.Title }
     local other = ctx.loadAddon({ mock = function(m)

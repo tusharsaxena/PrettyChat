@@ -86,7 +86,7 @@ local base = dofile("tests/_kit/mock_base.lua")
 -- Metadata returned by C_AddOns.GetAddOnMetadata. Module-level so `ctx.mock.metadata`
 -- and every built environment name the same table.
 local METADATA = {
-    Version     = "1.4.0",
+    Version     = "1.5.0",
     Notes       = "Prettier chat messages",
     Title       = "Ka0s Pretty Chat",
     IconTexture = "2056011",

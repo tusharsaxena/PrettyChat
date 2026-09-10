@@ -5,4 +5,4 @@ local addonName, NS = ...
 -- create _G[addonName]. Loads after core/EnvSetup.lua, which publishes the seam this
 -- file reads AT FILE SCOPE — see the TOC, where that position is load-bearing.
 NS.name    = addonName
-NS.version = NS.Meta("Version") or "1.4.0"
+NS.version = NS.Meta("Version") or "1.5.0"

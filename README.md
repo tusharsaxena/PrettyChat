@@ -1,6 +1,6 @@
 # Ka0s Pretty Chat
 
-![WoW](https://img.shields.io/badge/WoW-Midnight_12.0.7-purple)
+![WoW](https://img.shields.io/badge/WoW-Midnight_12.1.0-purple)
 ![CurseForge Version](https://img.shields.io/curseforge/v/919766)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
@@ -71,6 +71,7 @@ Found a bug or want a new feature? Everything is tracked on GitHub: [https://git
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 1.5.0 | 2026-09-10 | The rewritten strings are now a searchable list beside the editor, with **Test** next to the reset<br>The eight category pages became eight tabs on one **Categories** page<br>The write seam now refuses a format string the game cannot serve, instead of failing at print time<br>Fixed three places that read a `nil` result as silence rather than as an answer<br>Updated for game patch 12.1.0<br>_Verified against lint, tests and complexity. This addon ships no `tests/perf.lua`, so the perf suite was skipped rather than measured — the release gate covered three suites, not four._ |
 | 1.4.0 | 2026-07-12 | Added an on-screen debug console — `/pc debug`, or the new General-page **Debug console** toggle — a session-only log window for troubleshooting. Fixed the per-category **Defaults** button, and made a message's **Reset** restore its on/off state too. Updated for the current game patch. |
 | 1.3.0 | 2026-05-03 | Rebuilt the settings panel: a page per category plus a General page (master Enable, Test, Reset All), a logo-and-commands landing page, and a cleaner layout for each message. Added the `/pc` commands (`help`, `list`, `get`, `set`, `reset`, `resetall`, `test`) so you can change any setting from chat, plus a `[PC]` tag on the addon's chat output. |
 | 1.2.0 | 2026-04-24 | Added a searchable reference of the game's message strings to the settings panel. |
