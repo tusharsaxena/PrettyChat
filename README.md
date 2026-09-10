@@ -6,8 +6,6 @@
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
 ![Tests](https://img.shields.io/badge/Tests-328%2F328_passing-green)
 
-![Logo](https://media.forgecdn.net/attachments/1659/647/prettychat-logo-v2-jpg.jpg)
-
 World of Warcraft tells you about loot, currency, gold, reputation, experience, honor and crafting in a stream of sentences that all look alike. PrettyChat rewrites them. Same information, laid out and color-coded, so the line you actually cared about is findable in a chat window that is scrolling past you.
 
 Any message type can be switched off, reworded or recolored, either from the in-game settings panel or from chat with `/pc`.
@@ -16,26 +14,15 @@ Any message type can be switched off, reworded or recolored, either from the in-
 
 **_Without Pretty Chat_**
 
-![Without Pretty Chat](https://media.forgecdn.net/attachments/1806/585/prettychat-screenshot-01-png.png)
+![Without Pretty Chat](https://media.forgecdn.net/attachments/1936/719/prettychat-screenshot-01-png.png)
 
 **_With Pretty Chat_**
 
-![With Pretty Chat](https://media.forgecdn.net/attachments/1806/586/prettychat-screenshot-02-png.png)
-
-**_Test Mode_**
-
-![Test Mode](https://media.forgecdn.net/attachments/1806/591/prettychat-screenshot-03-png.png)
-
-**_Settings Panel_**
-
-![Settings Panel](https://media.forgecdn.net/attachments/1806/588/prettychat-screenshot-04-png.png)
-
-![Settings Panel](https://media.forgecdn.net/attachments/1806/589/prettychat-screenshot-05-png.png)
-
+![With Pretty Chat](https://media.forgecdn.net/attachments/1936/720/prettychat-screenshot-02-png.png)
 
 ## Usage
 
-Install it and there is nothing to arrange. There is no PrettyChat frame to place or size or lock, because your chat window is the display: the next thing you loot turns up already rewritten. Whichever frame you read chat in — the stock one, ElvUI's, Glass's — gets the tidy version.
+The addon just works out of the box. On the first run after installing, there is no PrettyChat frame to place or size or lock, because your chat window is the display: the next thing you loot turns up already rewritten. Whichever frame you read chat in — the stock one, ElvUI's, Glass's — gets the tidy version.
 
 Waiting on real loot is a poor way to judge a wording change, so you can ask for a sample instead. `/pc test` prints every message twice, the game's version above yours, and it does that even while the addon is switched off. Narrow it with `/pc test category Loot` or `/pc test formatstring LOOT_ITEM_SELF` when the full run is more than you wanted, or press **Test** on the **General** page to send that full run to the debug console instead of chat, which is a kinder place to read several hundred lines. Mid-edit you want neither: the settings panel carries the same before-and-after as a **Preview** box that updates while you type.
 
