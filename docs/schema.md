@@ -2,7 +2,7 @@
 
 `settings/Schema.lua` is the single source of truth for what's settable. At file-load (after `defaults/Defaults.lua` and `core/PrettyChat.lua`) it iterates `NS.Defaults` and builds a flat array of rows, one per settable value, exposed at `NS.Schema`.
 
-This doc covers: the six row kinds, the single write path that every settings mutation goes through, and the AceDB shape behind it.
+This doc covers: the six row kinds, the single write path that every panel and slash row write goes through (and the two resets that bypass it), and the AceDB shape behind it.
 
 ## Row kinds
 
@@ -21,7 +21,7 @@ Each row carries its own `get()` and `set(value)` closures. PrettyChat's storage
 
 ## Single write path
 
-`Schema.Set(path, value)` is the **only** function that mutates settings:
+Every panel and slash row write goes through `Schema.Set(path, value)`. `/pc reset <path>` does too, through `Schema.ApplyDefault`. It is **not** the only code that mutates settings: `PrettyChat:ResetCategory` and `PrettyChat:ResetString` (`modules/Override.lua`) clear row-backed storage directly. That is an open architecture-§5 gap, not a documented deviation (see [ARCHITECTURE.md → Settings Schema](./ARCHITECTURE.md#settings-schema)). The seam itself:
 
 ```lua
 function Schema.Set(path, value)

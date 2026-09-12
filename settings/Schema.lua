@@ -487,11 +487,11 @@ local function refusedBySignature(row, value)
     return true
 end
 
--- Set is the single write path for all schema-backed values. Both the
--- panel widgets and the /pc set slash command go through here, so
--- a value change in either surface notifies the other. Owns the two
--- post-write side effects (ApplyStrings + NotifyPanelChange) so row
--- closures can stay pure DB writes.
+-- Set is the write path the panel widgets, /pc set and /pc reset <path>
+-- (via ApplyDefault) all take, so a change in one surface notifies the
+-- other. Owns the two post-write side effects (ApplyStrings +
+-- NotifyPanelChange) so row closures stay pure DB writes. Not the only
+-- writer: PrettyChat:ResetCategory / :ResetString clear rows directly.
 function Schema.Set(path, value)
     local row = byPath[path]
     if not row then return false end

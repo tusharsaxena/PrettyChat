@@ -92,8 +92,6 @@ local METADATA = {
     IconTexture = "2056011",
 }
 
-local function noop() end
-
 -- ---- the richer frame stub -------------------------------------------------
 
 local frameMethods = {}
@@ -346,7 +344,6 @@ local function build()
             object.RegisterChatCommand = function(s, cmd, handler)
                 s.slashCommands[cmd] = handler
             end
-            object.Printf = noop
             -- AceConsole's embed, faithful to the base's shape but landing in THIS
             -- environment's chat frame rather than a real global that is never set.
             object.Print = function(selfOrMsg, ...)

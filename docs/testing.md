@@ -72,8 +72,8 @@ claims?"*. The two questions give the same answer only while the library has tag
 than the tag this addon has taken.
 
 Between a library release and the re-vendor that carries it they disagree, and that disagreement is
-the normal state rather than a defect. It is the state as this is written: `../LibKa0s` sits on
-**v1.27.0**, [`CLAUDE.md`](../CLAUDE.md) names **v1.26.0**, and the commands above report **306**
+the normal state rather than a defect. It was the state on one earlier date: `../LibKa0s` sat on
+**v1.27.0**, [`CLAUDE.md`](../CLAUDE.md) named **v1.26.0**, and the commands above reported **306**
 differing lines for the library and **947** for the test kit. Re-vendoring to quiet them would be
 the actual mistake — it would pull an untested library release for the sake of a clean diff.
 
