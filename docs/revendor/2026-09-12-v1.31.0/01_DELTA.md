@@ -114,3 +114,43 @@ are in the checked set.
 
 The delta is not empty: the tag moves v1.30.0 to v1.31.0, two library files move (Options'
 composer and flow engine), and the kit moves from revision 16 to 17. The copy goes ahead.
+
+## Addendum, 2026-09-12: the v1.31.0 tag was re-cut before release
+
+This bundle was written against the first cut of the `v1.31.0` tag (commit `30db4ed`). Before anything
+was pushed, a review of that release found defects in the kit-17 fakes, and LibKa0s re-cut the tag on the
+fixed tree: **`v1.31.0` now points at `e7e1962`**. `44b2b38` ("Re-vendor the reviewed LibKa0s v1.31.0
+(tag moved to e7e1962)") copied both payloads whole from the re-cut tag, and the vendor-sync cases pass
+against it.
+
+What the re-cut changed, relative to the tables above:
+
+| File | First cut | Re-cut |
+|---|---|---|
+| `Perf.lua` | minor 10 (unchanged) | **minor 11**: `P.Save` traces the ring trim once past its cap (debug-logging-§8) |
+| `OptionsWidgets.lua` | minor 15 | minor 15 (review fixes land inside the unreleased minor: `pairWith` keyed by `row.path or row.field`; a bound row's `disabledIf` reads through `row.get`) |
+| `OptionsCompose.lua` | minor 4 | minor 4 (unchanged surface) |
+| kit (`tests/_kit/`) | revision 17 | revision 17 (review fixes: repeating-timer delay no longer drifts; the nameless `NewAddon` path is exactly one table argument; the timer handle field is AceTimer's own `cancelled`, and `NewTimer` handles answer `IsCancelled()`; dispatch survives a handler error; `ADDON_LOADED` after login enables a load-on-demand addon; the AceEvent library object carries the message API) |
+
+So three files in `LibKa0s/` move in this release, not two, and any "the ring trim is not traced" finding
+recorded above is resolved upstream by Perf minor 11.
+
+**PrettyChat declines Perf, so Perf minor 11 reaches nothing here.** The decline is the
+`performance-§12` row in `docs/ARCHITECTURE.md` → `## Documented deviations`, and no file outside
+`libs/` looks up `LibKa0s-Perf-1.0`. `Perf.lua` moves only because the folder is copied whole. The two
+OptionsWidgets fixes touch bound (`path`-less) rows only, and every PrettyChat row has a path. Of the kit
+fixes, the timer and event ones have nothing to replace (PrettyChat embeds only AceConsole), and the
+nameless-`NewAddon` narrowing does not reach the harness, which passes a name since `de344d3`.
+
+The gate was re-run on the re-cut payload:
+
+| Gate | Command | At `44b2b38` |
+|---|---|---|
+| Lint | `luacheck .` | 0 / 0 in 44 files |
+| Tests | `lua tests/run.lua` | 333 cases, 0 failed |
+| Vendor sync | `tests/test_vendor_sync.lua` | green against `e7e1962`, none skipped |
+
+`libs/` and `tests/_kit/` are byte-identical from `44b2b38` to the head of this branch, so the vendor-sync
+row was read in the main checkout, where `../LibKa0s` sits beside the repo. A detached worktree of
+`44b2b38` has no `../LibKa0s` beside it and reports those two cases as skipped rather than compared
+(331 passed, 2 skipped).
