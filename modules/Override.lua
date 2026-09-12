@@ -178,8 +178,9 @@ local GENERAL_RESET_PATHS = { "General.enabled", "General.visibility" }
 
 -- Restore one category to its defaults, every row of it through the write
 -- helper's batched entry (architecture-§5): one ApplyStrings pass, one panel
--- refresh and one [Reset] summary, never a pass or a [Set] line per row. For
--- General the visibility row's own set() re-syncs the combat watcher.
+-- refresh and one `[Set] reset <cat>: N rows` line, never a pass or a [Set] line
+-- per row (debug-logging-§10). For General the visibility row's own set()
+-- re-syncs the combat watcher.
 --
 -- Dot-defined with a `_` receiver: callers still use the colon form, and the body
 -- reads the schema through NS rather than through the addon table.
@@ -211,12 +212,21 @@ end
 --- defaults back, and fires OnProfileReset -- which core/PrettyChat.lua answers by
 --- re-running the migrations, re-applying every string and telling the panel.
 ---
---- The [Reset] summary therefore moves to that handler's path: ApplyStrings is what
---- knows how many overrides were applied and how many originals were restored, and
---- it is now reached through the callback rather than from here.
+--- ONE LINE, AND THE HANDLER WRITES IT (debug-logging-§10). A profile reset is
+--- wholesale replacement, not a batch through the helper, so it is logged once by
+--- the OnProfileReset handler as `[Set] reset profile '<name>' to defaults (N rows)`
+--- and nothing here adds a second line. N is the rows the wipe actually changes,
+--- and only this side can know it: once AceDB has wiped the profile every row reads
+--- as its default. So the count is taken first and parked on `pendingResetRows` for
+--- the handler, then cleared even if the reset raises, so it can never label a
+--- later reset AceDB starts on its own (that one logs without a count).
 function PrettyChat:ResetAll()
     local db = self.db
-    if db and db.ResetProfile then db:ResetProfile() end
+    if not (db and db.ResetProfile) then return end
+    self.pendingResetRows = NS.Schema.CountChangedRows()
+    local ok, err = pcall(db.ResetProfile, db)
+    self.pendingResetRows = nil
+    if not ok then error(err, 0) end
 end
 
 -- Restore ONE string to its untouched default. A per-string reset must
@@ -225,7 +235,7 @@ end
 -- ResetAll (which wipe every dimension at once). Resetting only the
 -- format would leave a previously-disabled string half-reset. Both rows go
 -- through the write helper's batched entry, so the pair costs one pass and
--- one [Reset] line rather than two of each.
+-- one `[Set] reset <Cat>.<NAME>: N rows` line rather than two of each.
 function PrettyChat.ResetString(_, category, globalName)
     local Schema = NS.Schema
     local base = category .. "." .. globalName

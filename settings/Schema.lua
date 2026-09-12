@@ -590,29 +590,55 @@ end
 -- Deliberately NOT the implementation behind the per-category Defaults button or
 -- `/pc resetall`. Both of those are bulk: driving them row by row through here
 -- would run ApplyStrings once per row (173 passes over 79 globals) and emit one
--- [Set] line per row into a 1500-line console buffer, which is exactly the per-item
--- spam debug-logging-§9 forbids. The per-category and per-string resets take
+-- [Set] line per row into a 1500-line console buffer, where debug-logging-§10 asks
+-- a bulk reset for ONE [Set] line. The per-category and per-string resets take
 -- Schema.ResetRows below; `/pc resetall` is the profile reset (options-ui-§12).
 function Schema.ApplyDefault(row)
     if not row then return false end
     return Schema.Set(row.path, row.default)
 end
 
+-- Would writing this row's default change what is stored? Every getter reads its
+-- own stored key and falls back to the default (none cascades through a parent
+-- enable), and every setter clears the key on a default, so "reads differently
+-- from its default" is exactly "has a stored value the reset would remove".
+local function differsFromDefault(row)
+    return row.get() ~= row.default
+end
+
+-- The rows a whole-profile reset would actually rewrite: every stored row that
+-- currently differs from its default. Session-only rows are skipped, because
+-- AceDB's profile reset never touches them. PrettyChat:ResetAll counts with this
+-- before it wipes the profile, since nothing can count afterwards.
+function Schema.CountChangedRows()
+    local n = 0
+    for _, row in ipairs(rows) do
+        if not row.sessionOnly and differsFromDefault(row) then n = n + 1 end
+    end
+    return n
+end
+
 -- THE BATCHED ENTRY (architecture-§5, #15). Restore a list of rows to their
 -- defaults through the same write step Schema.Set takes, then pay the two side
--- effects ONCE: one ApplyStrings pass, one panel refresh, and one [Reset] summary
--- line in place of a [Set] line per row (debug-logging-§9). PrettyChat:ResetCategory
--- and PrettyChat:ResetString are its callers.
+-- effects ONCE: one ApplyStrings pass, one panel refresh, and ONE
+-- `[Set] reset <label>: N rows` line in place of a [Set] line per row
+-- (debug-logging-§10). PrettyChat:ResetCategory and PrettyChat:ResetString are
+-- its callers.
+--
+-- N is the rows the reset actually changed: a row already at its default is still
+-- written (a no-op) but not counted. A reset with nothing to change still runs its
+-- one pass and logs its one line, as `: 0 rows`.
 --
 -- The gates are Set's: a row this schema does not own is skipped, the
 -- conversion-signature gate is asked (a shipped default always passes it), and a
 -- batch made only of session-only rows skips the re-apply. The refresh targets
--- the rows' category when they share one, and every page when they do not.
--- `label` names the batch in the summary. Returns how many rows were written.
+-- the rows' category when they share one, and every page when they do not. A list
+-- with no row past the gates is not an act and logs nothing. Returns N.
 function Schema.ResetRows(list, label)
-    local wrote, reapply, category = 0, false, nil
+    local wrote, changed, reapply, category = 0, 0, false, nil
     for _, row in ipairs(list or {}) do
         if byPath[row.path] == row and not refusedBySignature(row, row.default) then
+            if differsFromDefault(row) then changed = changed + 1 end
             row.set(row.default)
             wrote = wrote + 1
             reapply = reapply or not row.sessionOnly
@@ -624,11 +650,10 @@ function Schema.ResetRows(list, label)
         end
     end
     if wrote == 0 then return 0 end
-    local applied, restored = 0, 0
-    if reapply then applied, restored = PrettyChat:ApplyStrings() end
+    if reapply then PrettyChat:ApplyStrings() end
     Schema.NotifyPanelChange(category or nil)
-    NS.Debug("Reset", "%s → applied %d restored %d", tostring(label), applied, restored)
-    return wrote
+    NS.Debug("Set", "reset %s: %d rows", tostring(label), changed)
+    return changed
 end
 
 function Schema.RowsByCategory(category)

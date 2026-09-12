@@ -435,7 +435,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 ### R — Reset standardization
 
-The four reset entry points — per-string **Reset** button, per-category **Defaults** button, `/pc reset <cat>`, `/pc resetall` — share one semantic: each wipes every dimension it owns (custom format *and* enable/disable flag), re-applies via `ApplyStrings`, re-syncs the panel via `NotifyPanelChange`, and emits a `NS.Debug("Reset", …)` summary.
+The four reset entry points — per-string **Reset** button, per-category **Defaults** button, `/pc reset <cat>`, `/pc resetall` — share one semantic: each wipes every dimension it owns (custom format *and* enable/disable flag), re-applies via `ApplyStrings`, re-syncs the panel via `NotifyPanelChange`, and emits one `[Set]` line counting the rows it changed (debug-logging-§10).
 
 #### T-56 — Per-string Reset restores format AND enable state
 
@@ -456,11 +456,11 @@ The four reset entry points — per-string **Reset** button, per-category **Defa
 
 #### T-58 — Every reset emits a consistent debug summary
 
-> Why: a reset is a bulk write, so it logs one `NS.Debug("Reset", …)` summary with the material effect (`applied` / `restored` counts) instead of a `[Set]` line per row (debug-logging-§8/§9). The per-string and per-category resets emit it from `Schema.ResetRows`, the write helper's batched entry; `/pc resetall` emits it from the profile-reset handler in `core/PrettyChat.lua`.
+> Why: a reset is a bulk act, so it logs ONE `[Set]` line counting the rows it changed, instead of a `[Set]` line per row (debug-logging-§10). The per-string and per-category resets emit it from `Schema.ResetRows`, the write helper's batched entry. `/pc resetall` is a profile reset, logged once by the `OnProfileReset` handler in `core/PrettyChat.lua`.
 
 - Setup: `/pc debug` to open the console and enable logging (toggle green).
 - Steps: trigger each reset once — a row Reset, a category **Defaults**, `/pc resetall`.
-- Expected: three `[Reset]` lines appear in the console, formatted respectively `Loot.LOOT_ITEM_SELF → applied N restored M`, `Loot → applied N restored M`, `all → applied N restored M`. Counts are non-zero when overrides existed.
+- Expected: exactly one `[Set]` line per reset and no other line, formatted respectively `[Set] reset Loot.LOOT_ITEM_SELF: N rows`, `[Set] reset Loot: N rows`, `[Set] reset profile 'Default' to defaults (N rows)`. N counts only rows that differed from their default, so a reset of an untouched category reads `: 0 rows`. No `[Reset]` line appears.
 
 #### T-59 — Reset reflects live in an open panel
 

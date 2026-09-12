@@ -742,9 +742,8 @@ H.RegisterOptionsPage(CATEGORY_PAGE, CATEGORY_PAGE, function(mainCategory)
     -- PrettyChat:ResetCategory rather than the library's row-by-row
     -- RestoreDefaults: it writes every row of the category through the helper's
     -- batched entry (Schema.ResetRows) and re-applies in ONE pass with ONE
-    -- [Reset] summary line, where the row-by-row form would run ApplyStrings once
-    -- per row and emit one [Set] line per row into a 1500-line console buffer
-    -- (debug-logging-§9).
+    -- `[Set] reset <cat>: N rows` line (debug-logging-§10), where the row-by-row
+    -- form would run ApplyStrings once per row.
     ctx.panel.defaultsOnClick = function()
         PrettyChat:ResetCategory(activeCategory(ctx))
     end

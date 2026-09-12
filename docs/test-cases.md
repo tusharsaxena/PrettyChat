@@ -211,7 +211,7 @@ badge and any count quoted in the docs must agree with it.
 - ResetString clears both the custom format and the per-string disable
 - cross-registered global resolves to the last CATEGORY_ORDER registrant, stably
 
-### test_override.lua (28)
+### test_override.lua (29)
 
 - GetStringValue falls back to the defaults table until overridden
 - IsAddonEnabled treats an absent flag as default-true
@@ -228,9 +228,10 @@ badge and any count quoted in the docs must agree with it.
 - ResetCategory drops the whole category table
 - ResetCategory('General') clears only the addon-wide keys
 - ResetAll clears the master flag and every category at once
-- ResetCategory: one pass, one [Reset] line, the category's rows back at default
-- ResetCategory('General'): one pass, one [Reset] line, the watcher disarmed
-- ResetString: one pass, one [Reset] line, both of the string's rows cleared
+- ResetCategory: one pass, one [Set] reset line counting the rows written
+- ResetCategory('General'): one pass, one [Set] reset line, the watcher disarmed
+- ResetString: one pass, one [Set] reset line, both of the string's rows cleared
+- a reset counts only the rows it changed, and still logs once when none
 - both resets write through the helper's batched entry, Schema.ResetRows
 - a visibility equal to the default stores nothing at all
 - Test prints a header, a per-category block, and a counted footer
@@ -276,7 +277,7 @@ badge and any count quoted in the docs must agree with it.
 - OpenConfig is silent on the paths the library does not report
 - OpenConfig is a silent no-op when the Settings API is unavailable
 
-### test_debuglog.lua (25)
+### test_debuglog.lua (30)
 
 - FONT_MONO points at the vendored JetBrainsMono TTF
 - pure line formatters render plain and colored lines
@@ -302,7 +303,12 @@ badge and any count quoted in the docs must agree with it.
 - the header label tracks the session flag in the debug-logging-§5 state colors
 - SessionSummary self-identifies the build, schema and profile
 - disabling logging still writes its closing bracket line
-- ResetAll emits one [Reset] summary carrying apply counts
+- ResetAll logs one [Set] reset profile line counting the rows it rewrote
+- /pc resetall is one debug line in total
+- a profile reset AceDB starts on its own is one line, without a count
+- a profile copy logs one [Set] copied line and nothing else
+- the copy line names AceDB's source profile and the active one
+- a profile switch keeps its one [Profile] line
 
 ### test_slash.lua (42)
 
@@ -436,13 +442,13 @@ badge and any count quoted in the docs must agree with it.
 | test_schema.lua | 31 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
-| test_override.lua | 28 |
+| test_override.lua | 29 |
 | test_database.lua | 16 |
 | test_lifecycle.lua | 12 |
-| test_debuglog.lua | 25 |
+| test_debuglog.lua | 30 |
 | test_slash.lua | 42 |
 | test_panel.lua | 46 |
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **339** |
+| **Total** | **345** |

@@ -97,9 +97,15 @@ PrettyChat:OpenConfig()                -- a one-line delegate to NS.Helpers.Open
 PrettyChat:ApplyStrings()              -- writes enabled overrides to _G; restores originals for disabled ones
 PrettyChat:ResetString(category, globalName)  -- resets BOTH per-string rows (format + enable) through Schema.ResetRows: one ApplyStrings, one NotifyPanelChange
 PrettyChat:ResetCategory(category)     -- resets every row of one category (General: its two stored rows) through Schema.ResetRows
-PrettyChat:ResetAll()                  -- db:ResetProfile() -- a PROFILE reset (options-ui-§12). OnProfileReset re-runs the migrations, re-applies every string and notifies the panel
+PrettyChat:ResetAll()                  -- counts the rows it will change (Schema.CountChangedRows), then db:ResetProfile() -- a PROFILE reset (options-ui-§12). OnProfileReset re-runs the migrations, re-applies every string, notifies the panel and logs the one [Set] reset profile line
 PrettyChat:Test(filter, sink)          -- prints a per-category Original-vs-Formatted block per string (ignores enable toggles); filter is nil | {kind="category", value=…} | {kind="formatstring", value=…}; sink defaults to NS.Print, and the General page's Test button passes the debug console's writer instead
 PrettyChat:ConfirmResetAll()           -- the ONE way into ResetAll: raises the PRETTYCHAT_RESET_ALL StaticPopup (settings/Panel.lua)
+
+-- AceDB profile callbacks (core/PrettyChat.lua). One shared reload -- migrations, SyncCombatWatch,
+-- ApplyStrings, NotifyPanelChange() -- then ONE line worded by the event (debug-logging-§10)
+PrettyChat:OnProfileChanged()          -- [Profile] switched → applied N restored M
+PrettyChat:OnProfileCopied(_, _, src)  -- [Set] copied profile '<src>' → '<active>'  (AceDB passes the source key third)
+PrettyChat:OnProfileReset()            -- [Set] reset profile '<active>' to defaults (N rows); no count unless ResetAll parked one
 
 -- Read helpers (used by Schema closures, ApplyStrings, panel widgets)
 PrettyChat:GetStringValue(category, globalName)   -- user override falling back to NS.Defaults
@@ -127,7 +133,9 @@ NS.Schema.Set(path, value)                     -- conversion-signature gate → 
                                                -- returns false (nothing stored) on an unknown path or a refused format
 NS.Schema.AllRows()                            -- every row in DECLARATION order (the live table, not a copy); the Slash + Options descriptors' `allRows`
 NS.Schema.ApplyDefault(row)                    -- restore ONE row to row.default through Schema.Set; not the bulk reset (that is PrettyChat:ResetCategory / :ResetAll)
-NS.Schema.ResetRows(rows, label)               -- the batched entry: each row.set(row.default) behind Set's gates, then ONE ApplyStrings, ONE NotifyPanelChange, ONE [Reset] line
+NS.Schema.ResetRows(rows, label)               -- the batched entry: each row.set(row.default) behind Set's gates, then ONE ApplyStrings, ONE NotifyPanelChange,
+                                               -- ONE [Set] reset <label>: N rows line (N = rows it changed); returns N
+NS.Schema.CountChangedRows()                   -- stored rows that differ from their default; ResetAll's pre-wipe count for the profile-reset line
 NS.Schema.validation                           -- { checked, failed, misses } from the load-time path validator; asserted by the suite
 NS.Schema.FormatValue(row, value)              -- type-aware display string (bool → true/false; string → format with `|` doubled to `||`); shared by /pc list rows and the get/set echo
 NS.Schema.ResolveCategory(name)                -- case-insensitive "loot" → "Loot"; falls back to unambiguous prefix

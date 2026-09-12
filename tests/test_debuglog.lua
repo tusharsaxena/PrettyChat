@@ -269,14 +269,85 @@ test("disabling logging still writes its closing bracket line", function()
     t.falsy(NS.State.debug, "with the flag already off")
 end)
 
-test("ResetAll emits one [Reset] summary carrying apply counts", function()
-    -- A bulk reset bypasses the write seam, so it logs one [Reset] summary.
+-- debug-logging-§10: a profile-wide reset, copy or switch is logged ONCE, by the
+-- profile-event handler, worded by the event. Each case below captures the whole
+-- console buffer, so "exactly one line" means one line in total.
+
+local function firstLootFormatPath()
+    for _, r in ipairs(NS.Schema.RowsByCategory("Loot")) do
+        if r.kind == "string_format" then return r.path end
+    end
+end
+
+-- Run fn with the debug console capturing from empty, and hand back the buffer.
+local function capture(fn)
     NS.State.debug = true
     D:Clear()
+    local ok, err = pcall(fn)
+    NS.State.debug = false
+    if not ok then error(err, 0) end
+    return D.buffer
+end
+
+test("ResetAll logs one [Set] reset profile line counting the rows it rewrote", function()
     addon:ResetAll()
-    local resetJoined = table.concat(D.buffer, "\n")
-    t.truthy(resetJoined:find("%[Reset%] all"),
-        "ResetAll emits a [Reset] summary line")
-    t.truthy(resetJoined:find("applied %d+ restored %d+"),
-        "[Reset] carries the material apply counts")
+    NS.Schema.Set("Loot.enabled", false)
+    NS.Schema.Set(firstLootFormatPath(), "CUSTOM")
+    NS.Schema.Set("General.visibility", "never")
+    local buf = capture(function() addon:ResetAll() end)
+    t.eq(#buf, 1, "exactly one line for the whole reset")
+    t.truthy(buf[1]:find("[Set] reset profile 'Default' to defaults (3 rows)", 1, true),
+        "worded by the event, naming the profile and the three changed rows")
+end)
+
+test("/pc resetall is one debug line in total", function()
+    addon:ResetAll()
+    NS.Schema.Set("Loot.enabled", false)
+    local buf = capture(function() addon:OnSlashCommand("resetall") end)
+    t.eq(#buf, 1, "the slash verb adds no second line")
+    t.truthy(buf[1]:find("[Set] reset profile 'Default' to defaults (1 rows)", 1, true),
+        "the same profile-reset line")
+end)
+
+test("a profile reset AceDB starts on its own is one line, without a count", function()
+    -- Nothing counted the rows before AceDB wiped them, so the count is omitted
+    -- rather than guessed (debug-logging-§10: included where cheap).
+    addon:ResetAll()
+    local buf = capture(function() addon.db:ResetProfile() end)
+    t.eq(#buf, 1, "one line")
+    t.truthy(buf[1]:find("%[Set%] reset profile 'Default' to defaults$"),
+        "the reset line with no count")
+end)
+
+test("a profile copy logs one [Set] copied line and nothing else", function()
+    addon:ResetAll()
+    addon.db:SetProfile("Alt")
+    NS.Schema.Set("Loot.enabled", false)
+    addon.db:SetProfile("Default")
+    local buf = capture(function() addon.db:CopyProfile("Alt") end)
+    t.eq(#buf, 1, "exactly one line for the copy")
+    t.truthy(buf[1]:find("[Set] copied profile '", 1, true), "a [Set] copied line")
+    t.truthy(buf[1]:find("' \226\134\146 'Default'", 1, true), "into the active profile")
+    t.eq(addon.db.profile.categories.Loot.enabled, false, "and the copy really landed")
+    addon:ResetAll()
+end)
+
+test("the copy line names AceDB's source profile and the active one", function()
+    -- AceDB fires OnProfileCopied(event, db, sourceProfileKey). Driven directly
+    -- with that signature, because the kit's AceDB fake passes the active profile
+    -- in the source's place.
+    local buf = capture(function()
+        addon:OnProfileCopied("OnProfileCopied", addon.db, "Alt")
+    end)
+    t.eq(#buf, 1, "one line")
+    t.truthy(buf[1]:find("[Set] copied profile 'Alt' \226\134\146 'Default'", 1, true),
+        "source first, destination second")
+end)
+
+test("a profile switch keeps its one [Profile] line", function()
+    local buf = capture(function() addon.db:SetProfile("Alt") end)
+    addon.db:SetProfile("Default")
+    t.eq(#buf, 1, "one line for the switch")
+    t.truthy(buf[1]:find("[Profile] switched \226\134\146 applied", 1, true),
+        "the addon's existing switch line, unchanged")
 end)

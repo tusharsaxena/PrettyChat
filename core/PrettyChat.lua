@@ -55,36 +55,68 @@ function PrettyChat:OnInitialize()
     -- an older schema version, and ApplyStrings must not read a shape that has not
     -- been brought forward yet.
     --
-    -- ONE BODY, THREE TAGS. The work is identical for all three events; only the
-    -- debug line differs, because "[Reset] all" and "[Profile] switched" are two
-    -- different things to read in a 1500-line buffer (debug-logging-§9). The
-    -- counts are ApplyStrings', and this is the only place that has them -- which
-    -- is why PrettyChat:ResetAll no longer logs a summary of its own: it would be
-    -- guessing at numbers this handler produced.
+    -- ONE BODY, THREE LINES. The work is identical for all three events (the
+    -- shared reloadProfile below); only the one debug line differs, worded by the
+    -- event (debug-logging-§10). Each handler is a method so a suite can drive it
+    -- with AceDB's real callback arguments.
     if self.db.RegisterCallback then
-        local function reload(tag, what)
-            return function()
-                if NS.Database and NS.Database.RunMigrations then
-                    NS.Database.RunMigrations(self.db)
-                end
-                -- Before the re-apply, not after: the incoming profile may store
-                -- a combat-scoped General visibility the outgoing one did not, and
-                -- ApplyStrings has to read the mode the watcher is now armed for.
-                self:SyncCombatWatch()
-                local applied, restored = self:ApplyStrings()
-                if NS.Schema and NS.Schema.NotifyPanelChange then
-                    NS.Schema.NotifyPanelChange()   -- nil -> every category
-                end
-                NS.Debug(tag, "%s \226\134\146 applied %d restored %d", what, applied, restored)
-            end
-        end
-        self.db.RegisterCallback(self, "OnProfileChanged", reload("Profile", "switched"))
-        self.db.RegisterCallback(self, "OnProfileCopied",  reload("Profile", "copied"))
-        self.db.RegisterCallback(self, "OnProfileReset",   reload("Reset",   "all"))
+        self.db.RegisterCallback(self, "OnProfileChanged", function(...) self:OnProfileChanged(...) end)
+        self.db.RegisterCallback(self, "OnProfileCopied",  function(...) self:OnProfileCopied(...) end)
+        self.db.RegisterCallback(self, "OnProfileReset",   function(...) self:OnProfileReset(...) end)
     end
 
     self:RegisterChatCommand("pc", "OnSlashCommand")
     self:RegisterChatCommand("prettychat", "OnSlashCommand")
+end
+
+-- The reaction every profile event shares: bring the incoming profile forward,
+-- re-arm the combat watcher, re-apply every string and redraw the panel. Returns
+-- ApplyStrings' (applied, restored) counts.
+local function reloadProfile(self)
+    if NS.Database and NS.Database.RunMigrations then
+        NS.Database.RunMigrations(self.db)
+    end
+    -- Before the re-apply, not after: the incoming profile may store a
+    -- combat-scoped General visibility the outgoing one did not, and ApplyStrings
+    -- has to read the mode the watcher is now armed for.
+    self:SyncCombatWatch()
+    local applied, restored = self:ApplyStrings()
+    if NS.Schema and NS.Schema.NotifyPanelChange then
+        NS.Schema.NotifyPanelChange()   -- nil -> every category
+    end
+    return applied, restored
+end
+
+local function activeProfile(self)
+    local db = self.db
+    return db and db.GetCurrentProfile and db:GetCurrentProfile() or "?"
+end
+
+-- A switch rewrites no rows, so it keeps its [Profile] trace and the apply counts
+-- (debug-logging-§10).
+function PrettyChat:OnProfileChanged()
+    local applied, restored = reloadProfile(self)
+    NS.Debug("Profile", "switched \226\134\146 applied %d restored %d", applied, restored)
+end
+
+-- AceDB fires OnProfileCopied(event, db, sourceProfileKey); the copy lands in the
+-- active profile. One [Set] line, and nothing else logs the copy.
+function PrettyChat:OnProfileCopied(_, _, source)
+    reloadProfile(self)
+    NS.Debug("Set", "copied profile '%s' \226\134\146 '%s'", tostring(source), activeProfile(self))
+end
+
+-- A profile reset's one line. PrettyChat:ResetAll parks the count of rows the
+-- wipe changes before it starts; a reset AceDB starts on its own has no count,
+-- and the line omits it rather than guess (debug-logging-§10: where cheap).
+function PrettyChat:OnProfileReset()
+    reloadProfile(self)
+    local n = self.pendingResetRows
+    if n then
+        NS.Debug("Set", "reset profile '%s' to defaults (%d rows)", activeProfile(self), n)
+    else
+        NS.Debug("Set", "reset profile '%s' to defaults", activeProfile(self))
+    end
 end
 
 --- Take this client's pristine value for every registered global.
