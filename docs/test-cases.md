@@ -13,10 +13,11 @@ badge and any count quoted in the docs must agree with it.
 - the vendored load list is every file of LibKa0s.xml, in XML order
 - every LibKa0s major actually registered in the loaded environment
 
-### test_vendor_sync.lua (2)
+### test_vendor_sync.lua (3)
 
 - libs/LibKa0s is the LibKa0s release CLAUDE.md says this addon bundles
 - tests/_kit is the test kit that shipped with that release
+- the automated-test runner is recorded executable (100755)
 
 ### test_layout_cap.lua (5)
 
@@ -411,7 +412,7 @@ badge and any count quoted in the docs must agree with it.
 | Suite | Cases |
 |-------|------:|
 | test_harness.lua | 4 |
-| test_vendor_sync.lua | 2 |
+| test_vendor_sync.lua | 3 |
 | test_layout_cap.lua | 5 |
 | test_lintconfig.lua | 4 |
 | test_libka0s.lua | 28 |
@@ -434,4 +435,4 @@ badge and any count quoted in the docs must agree with it.
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **328** |
+| **Total** | **329** |
