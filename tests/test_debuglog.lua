@@ -380,8 +380,8 @@ end)
 
 test("the copy line names AceDB's source profile and the active one", function()
     -- AceDB fires OnProfileCopied(event, db, sourceProfileKey). Driven directly
-    -- with that signature, because the kit's AceDB fake passes the active profile
-    -- in the source's place.
+    -- with that signature, so the handler's contract is pinned apart from the
+    -- fake (which, since kit revision 18, also passes the source).
     local buf = capture(function()
         addon:OnProfileCopied("OnProfileCopied", addon.db, "Alt")
     end)
