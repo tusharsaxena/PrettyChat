@@ -59,12 +59,9 @@ function Database.PruneOrphans(db)
     return dropped
 end
 
--- Run every pending migration in order, then stamp the current version, then
--- run the orphan repair above. Idempotent: a DB already at SCHEMA_VERSION runs
--- no steps, and a clean profile has nothing to prune.
-function Database.RunMigrations(db)
-    if not (db and db.global) then return end
-    local from = db.global.schemaVersion or 0
+-- Run every registered step above `from`, in order, each under its own pcall so
+-- one failing step is reported and the rest still run. Returns how many ran.
+local function runSteps(db, from)
     local ran = 0
     for v = from + 1, Database.SCHEMA_VERSION do
         local step = migrations[v]
@@ -76,6 +73,16 @@ function Database.RunMigrations(db)
             ran = ran + 1
         end
     end
+    return ran
+end
+
+-- Run every pending migration in order, then stamp the current version, then
+-- run the orphan repair above. Idempotent: a DB already at SCHEMA_VERSION runs
+-- no steps, and a clean profile has nothing to prune.
+function Database.RunMigrations(db)
+    if not (db and db.global) then return end
+    local from = db.global.schemaVersion or 0
+    local ran = runSteps(db, from)
     db.global.schemaVersion = Database.SCHEMA_VERSION
     -- Lifecycle trace (debug-logging-§8): only when a migration step actually ran.
     if ran > 0 and NS.Debug then
