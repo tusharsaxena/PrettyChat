@@ -163,7 +163,7 @@ files["settings/Slash.lua"] = {
 }
 
 -- The mock frame's `GetTextColor`, which answers a constant 1,1,1,1 rather than reading `self`.
--- It is a method because the code under test calls it as one: libs/LibKa0s/Options.lua:446 tints
+-- It is a method because the code under test calls it as one: libs/LibKa0s/Options.lua:606 tints
 -- the header divider from `titleFS:GetTextColor()`. Returning real values instead of nil is the
 -- mock's fidelity rule 2, written up at tests/wow_mock.lua:36 -- the whole point is that this
 -- object answers like a FontString for every frame the suites make, not for one stored colour.

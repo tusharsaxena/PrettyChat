@@ -140,23 +140,22 @@ else
 -- (slash-commands-§5, debug-logging-§10). See the comment on it in settings/Schema.lua.
 formatValue = function(row, stored) return NS.Schema.FormatValue(row, stored) end
 
--- The counterpart, and the reason it exists is a genuine gap in the lib-level
--- parser rather than an exotic row type: lib.ParseValue splits the remainder on
--- whitespace and a string row takes args[1], so `/pc set <path> You receive loot: %s`
--- would store "You". Every format string in this addon contains spaces, so the whole
--- remainder is the value. `parse` is the sanctioned seam for exactly this
--- (slash-commands-§6), and using it keeps the override at one place instead of
--- forking the dispatcher.
+-- The counterpart, through the `parse` seam (slash-commands-§6). The library does
+-- the parsing: since Slash minor 10 lib.ParseValue gives a string row the WHOLE
+-- value, trimmed at both edges with its interior spacing verbatim, and refuses a
+-- blank one with its own "expected a value". Every format string in this addon
+-- contains spaces, which is why this hook once took the remainder itself; minor 9
+-- kept only the first word. What stays here is the one thing the library does not
+-- do: `||` unescapes to `|` on the way in, mirroring `formatValue` on the way out
+-- and the panel's New box on both, so a value copied out of `/pc get` and pasted
+-- back into `/pc set` round-trips to the same stored string.
 --
--- `||` unescapes to `|` on the way in, mirroring `formatValue` on the way out and
--- the panel's New box on both — so a value copied out of `/pc get` and pasted back
--- into `/pc set` round-trips to the same stored string.
+-- The edge trim costs nothing: the dispatcher trims the whole input before any verb
+-- runs, so an edge space typed in chat never reached this hook at minor 9 either.
 local function parseValue(row, text)
-    if row and row.type == "string" then
-        if text == nil or text == "" then return nil, lib.STRINGS.ERR_STRING end
-        return (text:gsub("||", "|"))
-    end
-    return lib.ParseValue(row, text)
+    local v, err = lib.ParseValue(row, text)
+    if v ~= nil and row and row.type == "string" then v = v:gsub("||", "|") end
+    return v, err
 end
 
 Sl = lib:New({

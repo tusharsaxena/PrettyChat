@@ -54,14 +54,14 @@ settings/Panel.lua:530:    -- A frame later, both are true. C_Timer.After(0, ...
 settings/Panel.lua:533:    if C_Timer and C_Timer.After then
 settings/Panel.lua:534:        C_Timer.After(0, function() fitTree(ctx) end)
 tests/test_panel.lua:612:-- red under: dropping the C_Timer.After, or scheduling it per render without the
-tests/wow_mock.lua:64:--  15.  frame RegisterEvent / UnregisterEvent
-tests/wow_mock.lua:141:function frameMethods:RegisterEvent(event)
+tests/wow_mock.lua:72:--  15.  frame RegisterEvent / UnregisterEvent
+tests/wow_mock.lua:147:function frameMethods:RegisterEvent(event)
 ```
 
 Reconciled, so a future drift is visible rather than arguable. One is a lint declaration
 (`.luacheckrc:62`). Three are the pattern names appearing **inside comments** — `settings/Panel.lua:530`,
-`tests/test_panel.lua:612`, `tests/wow_mock.lua:64` — which describe the discipline rather than doing
-anything. One is the headless harness's own mock (`tests/wow_mock.lua:141` defines
+`tests/test_panel.lua:612`, `tests/wow_mock.lua:72` — which describe the discipline rather than doing
+anything. One is the headless harness's own mock (`tests/wow_mock.lua:147` defines
 `frameMethods:RegisterEvent`, which no client ever runs). The remaining **four are call sites in
 shipped code**, and they are the two sections below: the combat watcher, and one next-frame layout
 fit in the settings panel.

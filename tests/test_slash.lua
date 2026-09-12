@@ -214,9 +214,10 @@ test("/pc set on an unknown path reports it as not found", function()
 end)
 
 test("/pc set keeps the whole remainder, spaces and all", function()
-    -- The lib-level parser splits on whitespace and a string row takes args[1], so
-    -- every format string in this addon would store its first WORD. The descriptor's
-    -- `parse` hook is the sanctioned seam for that (slash-commands-§6).
+    -- Every format string in this addon contains spaces. Since Slash minor 10 the
+    -- lib-level parser gives a string row the whole value; through minor 9 it took
+    -- the first WORD, and the descriptor's `parse` hook worked around that. This pins
+    -- that the whole remainder still arrives through the real verb.
     slash("set " .. formatPath .. " You receive loot: %s")
     t.eq(Schema.Get(formatPath), "You receive loot: %s", "the spaces survived")
 end)
@@ -229,6 +230,21 @@ test("/pc set and /pc get round-trip a pipe through the || escape", function()
     t.truthy(joined("get " .. formatPath):find("||cffff0000Custom|| %s", 1, true),
         "and are re-doubled on the way out")
     slash("set " .. formatPath .. " " .. formatRow.default)
+end)
+
+test("/pc set keeps a multi-word value's interior spacing and unescapes ||, trimming only the edges", function()
+    -- The library gives a string row the whole value, trimmed at both edges with the
+    -- interior verbatim (Slash minor 10); the descriptor's `parse` adds the one thing
+    -- the library does not, the `||` unescape. Through the real verb first: several
+    -- words, doubled interior spaces and two escaped pipes.
+    slash("set " .. formatPath .. " ||cff00ff00Big  Loot||r  for  you: %s")
+    t.eq(Schema.Get(formatPath), "|cff00ff00Big  Loot|r  for  you: %s",
+        "every word and every interior space survived, and the pipes collapsed")
+    -- Then CliSet directly, the one caller the dispatcher's own input trim does not
+    -- reach. The path split takes the leading run; the library trims the trailing one.
+    NS.SlashCommands:CliSet(formatPath .. "   ||cffffffffpadded||r %s   ")
+    t.eq(Schema.Get(formatPath), "|cffffffffpadded|r %s", "the edges were trimmed, the interior kept")
+    Schema.Set(formatPath, formatRow.default)
 end)
 
 -- ---- list -----------------------------------------------------------

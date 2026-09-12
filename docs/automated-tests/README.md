@@ -49,10 +49,10 @@ run that measured nothing cannot be mistaken for a green run that measured every
 - **`<YYYYMMDD-HHMMSS>/`** — one frozen bundle per run: `manifest.json` plus one file per suite.
   Bundles are **never edited** once written and **never pruned**.
   An **`ANALYSIS.md`** (the write-up) is **MUST for a release run and SHOULD otherwise**
-  (`automated-tests-§5`), so a bundle without one is not automatically a gap. Of the three recorded
-  runs, `20260804-182235` and `20260804-233338` carry one; `20260804-214445` does not, and its
-  `manifest.json` records `"release": null`, so it is a skipped SHOULD rather than a missed MUST.
-  Nothing in this repo has been recorded as a release run yet.
+  (`automated-tests-§5`), so a bundle without one is not automatically a gap. Of the nine recorded
+  runs, seven carry one. `20260804-214445` and `20260825-103457` do not, and both `manifest.json`
+  files record `"release": null`, so each is a skipped SHOULD rather than a missed MUST. One run is a
+  release run: `20260910-234511` (`"release": "1.5.0"`), and it carries its `ANALYSIS.md`.
 
 Offline perf records live in the bundle with the run that produced them — except that this addon
 ships no `tests/perf.lua`, so every recorded run's `perf` suite is a **skip** and no bundle holds

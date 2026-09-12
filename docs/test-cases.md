@@ -315,7 +315,7 @@ badge and any count quoted in the docs must agree with it.
 - a profile reset that raises logs its one line marked, exactly once
 - a profile copy that raises logs its one line marked
 
-### test_slash.lua (42)
+### test_slash.lua (43)
 
 - Schema.FormatValue formats bools and doubles pipes in strings
 - NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
@@ -339,6 +339,7 @@ badge and any count quoted in the docs must agree with it.
 - /pc set on an unknown path reports it as not found
 - /pc set keeps the whole remainder, spaces and all
 - /pc set and /pc get round-trip a pipe through the || escape
+- /pc set keeps a multi-word value's interior spacing and unescapes ||, trimming only the edges
 - /pc list prints the green header and azure category groups
 - /pc list emits every schema row exactly once
 - /pc list category lists the category names alphabetically
@@ -451,9 +452,9 @@ badge and any count quoted in the docs must agree with it.
 | test_database.lua | 16 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
-| test_slash.lua | 42 |
+| test_slash.lua | 43 |
 | test_panel.lua | 46 |
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **350** |
+| **Total** | **351** |
