@@ -1,0 +1,116 @@
+# 01 — Delta: PrettyChat vs LibKa0s v1.31.0
+
+Run date: 2026-09-12, wave B2 of the 2026-09-12 triage, on branch `fix/2026-09-12-triage` (which
+already carries #15 as `61ff810`). A second bundle on the same date as `docs/revendor/2026-09-12/`
+(the v1.30.0 re-vendor), so this folder carries the tag in its name. That bundle is frozen and was
+not touched.
+
+Library checkout: `../LibKa0s`, tag `v1.31.0` on `30db4ed` ("The v1.31.0 release record"). The
+payload was extracted from the tag, never from the working tree:
+
+```sh
+git -C ../LibKa0s tag --points-at 30db4ed        # v1.31.0
+git -C ../LibKa0s archive v1.31.0 LibKa0s testkit | tar -x -C <scratch>/
+```
+
+## 3a. Claimed version
+
+```sh
+grep -n '[Bb]undles' PrettyChat/CLAUDE.md
+```
+
+`CLAUDE.md:34`: "Bundles [LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.30.0 (MIT)."
+`README.md` carries no provenance line (the same grep over it finds none).
+
+## 3b. Actual version: the vendored minors
+
+```sh
+grep -hoE 'local (MAJOR, )?(MINOR|WIDGETS_MINOR|SCROLL_MINOR|PANEL_MINOR) *= *("[^"]+", *)?[0-9]+' PrettyChat/libs/LibKa0s/*.lua
+grep -nE '^local [A-Z_]*MINOR' PrettyChat/libs/LibKa0s/OptionsCompose.lua   # COMPOSE_MINOR
+```
+
+The claim and the bytes agree: every vendored minor is the one v1.30.0 shipped.
+
+## 3c. Per-file minor delta
+
+File list read from the tag's `LibKa0s/LibKa0s.xml` (14 files).
+
+| File | Constant | Vendored (v1.30.0) | v1.31.0 | Delta |
+|---|---|---|---|---|
+| `Core.lua` | `MINOR` | 7 | 7 | none |
+| `Env.lua` | `MINOR` | 1 | 1 | none |
+| `Pool.lua` | `MINOR` | 3 | 3 | none |
+| `Item.lua` | `MINOR` | 1 | 1 | none |
+| `Media.lua` | `MINOR` | 3 | 3 | none |
+| `Widgets.lua` | `MINOR` | 9 | 9 | none |
+| `DebugLog.lua` | `MINOR` | 12 | 12 | none |
+| `Slash.lua` | `MINOR` | 7 | 7 | none |
+| `Options.lua` | `MINOR` | 15 | 15 | none |
+| `OptionsWidgets.lua` | `WIDGETS_MINOR` | 14 | **15** | +1 |
+| `OptionsCompose.lua` | `COMPOSE_MINOR` | 3 | **4** | +1 |
+| `OptionsScroll.lua` | `SCROLL_MINOR` | 3 | 3 | none |
+| `Perf.lua` | `MINOR` | 10 | 10 | none |
+| `PerfPanel.lua` | `PANEL_MINOR` | 5 | 5 | none |
+
+**No cross-major skew.** The vendored copy is behind the tag only on the two files v1.31.0 moves,
+and the whole folder is copied in one step.
+
+## 3d. Both diffs, both directions (before the copy)
+
+```sh
+diff -rq --strip-trailing-cr <scratch>/LibKa0s PrettyChat/libs/LibKa0s   # 2 files differ
+diff -rq                     <scratch>/LibKa0s PrettyChat/libs/LibKa0s   # the same 2
+diff -rq --strip-trailing-cr <scratch>/testkit PrettyChat/tests/_kit     # 3 files differ
+diff -rq                     <scratch>/testkit PrettyChat/tests/_kit     # the same 3
+```
+
+- Library payload: **content dirty** on `OptionsCompose.lua` and `OptionsWidgets.lua`, the two
+  files v1.31.0 moves. Nothing else differs, in content or in bytes.
+- Test kit: **content dirty** on `README.md`, `framework.lua` (`Kit.VERSION` 16 to 17) and
+  `mock_base.lua` (the revision-17 Ace surfaces).
+- No `Only in` line on either side, so no file removed upstream survives here.
+
+## 3e. Consumption map
+
+```sh
+grep -rnoE 'LibStub\("LibKa0s-[A-Za-z]+-1\.0", true\)' PrettyChat --include='*.lua' | grep -v '/libs/' | grep -v '/tests/'
+```
+
+- `core/CoreSetup.lua:41`: Core
+- `core/DebugLogSetup.lua:39`: DebugLog
+- `core/EnvSetup.lua:59`: Env
+- `core/MediaSetup.lua:42`: Media
+- `settings/OptionsSetup.lua:17`: Options
+- `settings/Schema.lua:457`: Slash (it was `:405` at v1.30.0; #15 moved the line, not the lookup)
+- `settings/Slash.lua:74`: Slash
+
+Majors in the payload with no lookup here: `Item`, `Pool`, `Widgets`, `Perf`. `Perf` is declined
+by the `performance-§12` row in `docs/ARCHITECTURE.md` → `## Documented deviations`. None of the
+four moved in v1.31.0, so none is raised as a whole-module candidate.
+
+## 3f. Kit revision and the pairing rule
+
+```sh
+grep -n 'Kit.VERSION' <scratch>/testkit/framework.lua PrettyChat/tests/_kit/framework.lua
+```
+
+The tag reads `Kit.VERSION = 17`; the vendored copy reads `16`. A consumer on LibKa0s v1.9.0 or
+newer must take kit revision 11 or later in the same commit as the library, because
+`vendor_sync.lua` before revision 11 listed one directory level and normalized line endings on
+everything, so it read `media` as a file. Both payloads are copied whole in one commit, so the rule
+holds by construction. That rule is why the two payloads move together.
+
+## Baseline before the copy
+
+```sh
+lua tests/run.lua    # 333 passed, 0 failed, 0 skipped, 333 total
+luacheck .           # 0 warnings / 0 errors in 44 files
+```
+
+`.luacheckrc` excludes `libs/` and `tests/_kit/` only, so every seam file and `tests/wow_mock.lua`
+are in the checked set.
+
+## Verdict
+
+The delta is not empty: the tag moves v1.30.0 to v1.31.0, two library files move (Options'
+composer and flow engine), and the kit moves from revision 16 to 17. The copy goes ahead.
