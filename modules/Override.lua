@@ -217,16 +217,30 @@ end
 --- the OnProfileReset handler as `[Set] reset profile '<name>' to defaults (N rows)`
 --- and nothing here adds a second line. N is the rows the wipe actually changes,
 --- and only this side can know it: once AceDB has wiped the profile every row reads
---- as its default. So the count is taken first and parked on `pendingResetRows` for
+--- as its default. So the count is taken first and parked on `pendingReset` for
 --- the handler, then cleared even if the reset raises, so it can never label a
 --- later reset AceDB starts on its own (that one logs without a count).
+---
+--- A RAISE STILL WRITES THE ONE LINE. The handler writes it, marked, when its
+--- reload raises. When the raise comes first (inside AceDB, before the callback
+--- fires) the handler never ran, so the line is written here, ending in
+--- Util.STOPPED and counting what the wipe had changed by then: the parked count
+--- less the rows that still differ. Then the error is raised again (NS.Util.RunAct).
 function PrettyChat:ResetAll()
     local db = self.db
     if not (db and db.ResetProfile) then return end
-    self.pendingResetRows = NS.Schema.CountChangedRows()
-    local ok, err = pcall(db.ResetProfile, db)
-    self.pendingResetRows = nil
-    if not ok then error(err, 0) end
+    local Schema = NS.Schema
+    local pending = { rows = Schema.CountChangedRows(), logged = false }
+    self.pendingReset = pending
+    NS.Util.RunAct(function() db:ResetProfile() end, function()
+        self.pendingReset = nil
+        if pending.logged then return end
+        local ok, left = pcall(Schema.CountChangedRows)
+        local n = ok and math.max(0, pending.rows - left) or 0
+        NS.Debug("Set", "reset profile '%s' to defaults (%d rows)%s",
+                 tostring(db.GetCurrentProfile and db:GetCurrentProfile() or "?"), n, NS.Util.STOPPED)
+    end)
+    self.pendingReset = nil
 end
 
 -- Restore ONE string to its untouched default. A per-string reset must

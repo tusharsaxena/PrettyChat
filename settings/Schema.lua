@@ -634,13 +634,19 @@ end
 -- batch made only of session-only rows skips the re-apply. The refresh targets
 -- the rows' category when they share one, and every page when they do not. A list
 -- with no row past the gates is not an act and logs nothing. Returns N.
-function Schema.ResetRows(list, label)
-    local wrote, changed, reapply, category = 0, 0, false, nil
+--
+-- A raise partway (a row's set(), the pass or the refresh) still logs the one
+-- line, counting the rows changed before it and ending in Util.STOPPED, and then
+-- raises again (NS.Util.RunAct). So the body tallies into `tally` as each write
+-- lands rather than into locals the raise would lose.
+local function resetRowsBody(list, tally)
+    local reapply, category = false, nil
     for _, row in ipairs(list or {}) do
         if byPath[row.path] == row and not refusedBySignature(row, row.default) then
-            if differsFromDefault(row) then changed = changed + 1 end
+            local differs = differsFromDefault(row)
             row.set(row.default)
-            wrote = wrote + 1
+            tally.wrote = tally.wrote + 1
+            if differs then tally.changed = tally.changed + 1 end
             reapply = reapply or not row.sessionOnly
             if category == nil then
                 category = row.category
@@ -649,11 +655,21 @@ function Schema.ResetRows(list, label)
             end
         end
     end
-    if wrote == 0 then return 0 end
+    if tally.wrote == 0 then return end
     if reapply then PrettyChat:ApplyStrings() end
     Schema.NotifyPanelChange(category or nil)
-    NS.Debug("Set", "reset %s: %d rows", tostring(label), changed)
-    return changed
+end
+
+function Schema.ResetRows(list, label)
+    local tally = { wrote = 0, changed = 0 }
+    local function line(suffix)
+        NS.Debug("Set", "reset %s: %d rows%s", tostring(label), tally.changed, suffix)
+    end
+    NS.Util.RunAct(function() resetRowsBody(list, tally) end,
+                   function() line(NS.Util.STOPPED) end)
+    if tally.wrote == 0 then return 0 end
+    line("")
+    return tally.changed
 end
 
 function Schema.RowsByCategory(category)

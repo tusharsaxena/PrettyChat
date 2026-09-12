@@ -235,6 +235,9 @@ local RESIDUE = {
     {"core/DebugLogSetup.lua", "%s v%s, schema v%s, profile '%s'",
      "the debug console's session header, which is copied INTO bug reports and is "
      .. "read by whoever receives them"},
+    {"core/Util.lua", " (stopped by an error)",
+     "debug-console text like every NS.Debug argument, held in one constant so the "
+     .. "four bulk-act lines that append it agree; the console translates nothing"},
 
     -- SHARED STEM — the degraded-install sentence.
     {"core/CoreSetup.lua", "The LibKa0s library is missing from this installation of Ka0s Pretty Chat ",

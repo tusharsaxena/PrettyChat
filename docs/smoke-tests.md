@@ -460,7 +460,7 @@ The four reset entry points — per-string **Reset** button, per-category **Defa
 
 - Setup: `/pc debug` to open the console and enable logging (toggle green).
 - Steps: trigger each reset once — a row Reset, a category **Defaults**, `/pc resetall`.
-- Expected: exactly one `[Set]` line per reset and no other line, formatted respectively `[Set] reset Loot.LOOT_ITEM_SELF: N rows`, `[Set] reset Loot: N rows`, `[Set] reset profile 'Default' to defaults (N rows)`. N counts only rows that differed from their default, so a reset of an untouched category reads `: 0 rows`. No `[Reset]` line appears.
+- Expected: exactly one `[Set]` line per reset and no other line, formatted respectively `[Set] reset Loot.LOOT_ITEM_SELF: N rows`, `[Set] reset Loot: N rows`, `[Set] reset profile 'Default' to defaults (N rows)`. N counts only rows that differed from their default, so a reset of an untouched category reads `: 0 rows`. No `[Reset]` line appears, and no line ends in ` (stopped by an error)`: that marker means the reset raised partway, and the error it names is a bug.
 
 #### T-59 — Reset reflects live in an open panel
 

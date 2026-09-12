@@ -106,7 +106,7 @@ badge and any count quoted in the docs must agree with it.
 - MediaSetup: the vendored face is on disk where the seam says it is
 - MediaSetup: with no library there is no art and no face, and that is not an error
 
-### test_util.lua (7)
+### test_util.lua (8)
 
 - SafeToString renders scalars and nil verbatim
 - SafeToString substitutes <secret> for a value table.concat rejects
@@ -115,6 +115,7 @@ badge and any count quoted in the docs must agree with it.
 - trim strips surrounding whitespace and is nil-safe
 - trim keeps interior whitespace intact
 - note and cmd wrap text in the documented slash colors
+- RunAct calls onRaise once, then re-raises with the original stack
 
 ### test_locale.lua (11)
 
@@ -211,7 +212,7 @@ badge and any count quoted in the docs must agree with it.
 - ResetString clears both the custom format and the per-string disable
 - cross-registered global resolves to the last CATEGORY_ORDER registrant, stably
 
-### test_override.lua (29)
+### test_override.lua (31)
 
 - GetStringValue falls back to the defaults table until overridden
 - IsAddonEnabled treats an absent flag as default-true
@@ -232,6 +233,8 @@ badge and any count quoted in the docs must agree with it.
 - ResetCategory('General'): one pass, one [Set] reset line, the watcher disarmed
 - ResetString: one pass, one [Set] reset line, both of the string's rows cleared
 - a reset counts only the rows it changed, and still logs once when none
+- a reset that raises between its writes logs one marked line, then raises
+- a reset whose re-apply raises logs one marked line counting every row written
 - both resets write through the helper's batched entry, Schema.ResetRows
 - a visibility equal to the default stores nothing at all
 - Test prints a header, a per-category block, and a counted footer
@@ -277,7 +280,7 @@ badge and any count quoted in the docs must agree with it.
 - OpenConfig is silent on the paths the library does not report
 - OpenConfig is a silent no-op when the Settings API is unavailable
 
-### test_debuglog.lua (30)
+### test_debuglog.lua (32)
 
 - FONT_MONO points at the vendored JetBrainsMono TTF
 - pure line formatters render plain and colored lines
@@ -309,6 +312,8 @@ badge and any count quoted in the docs must agree with it.
 - a profile copy logs one [Set] copied line and nothing else
 - the copy line names AceDB's source profile and the active one
 - a profile switch keeps its one [Profile] line
+- a profile reset that raises logs its one line marked, exactly once
+- a profile copy that raises logs its one line marked
 
 ### test_slash.lua (42)
 
@@ -436,19 +441,19 @@ badge and any count quoted in the docs must agree with it.
 | test_envsetup.lua | 9 |
 | test_constants.lua | 8 |
 | test_mediasetup.lua | 8 |
-| test_util.lua | 7 |
+| test_util.lua | 8 |
 | test_locale.lua | 11 |
 | test_defaults.lua | 15 |
 | test_schema.lua | 31 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
-| test_override.lua | 29 |
+| test_override.lua | 31 |
 | test_database.lua | 16 |
 | test_lifecycle.lua | 12 |
-| test_debuglog.lua | 30 |
+| test_debuglog.lua | 32 |
 | test_slash.lua | 42 |
 | test_panel.lua | 46 |
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **345** |
+| **Total** | **350** |

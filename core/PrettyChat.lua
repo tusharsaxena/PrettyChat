@@ -100,23 +100,36 @@ function PrettyChat:OnProfileChanged()
 end
 
 -- AceDB fires OnProfileCopied(event, db, sourceProfileKey); the copy lands in the
--- active profile. One [Set] line, and nothing else logs the copy.
+-- active profile. One [Set] line, and nothing else logs the copy. A reload that
+-- raises still writes it, ending in Util.STOPPED, and the error goes on up.
 function PrettyChat:OnProfileCopied(_, _, source)
-    reloadProfile(self)
-    NS.Debug("Set", "copied profile '%s' \226\134\146 '%s'", tostring(source), activeProfile(self))
+    local function line(suffix)
+        NS.Debug("Set", "copied profile '%s' \226\134\146 '%s'%s",
+                 tostring(source), activeProfile(self), suffix)
+    end
+    NS.Util.RunAct(function() reloadProfile(self) end, function() line(NS.Util.STOPPED) end)
+    line("")
 end
 
--- A profile reset's one line. PrettyChat:ResetAll parks the count of rows the
--- wipe changes before it starts; a reset AceDB starts on its own has no count,
--- and the line omits it rather than guess (debug-logging-§10: where cheap).
+-- A profile reset's one line, written here whether the reload finishes or raises
+-- (then ending in Util.STOPPED). PrettyChat:ResetAll parks `pendingReset` before it
+-- starts: the count of rows the wipe changes, which by now has happened, and a
+-- `logged` flag this sets so ResetAll never writes a second line. A reset AceDB
+-- starts on its own has no count, and the line omits it rather than guess
+-- (debug-logging-§10: where cheap).
 function PrettyChat:OnProfileReset()
-    reloadProfile(self)
-    local n = self.pendingResetRows
-    if n then
-        NS.Debug("Set", "reset profile '%s' to defaults (%d rows)", activeProfile(self), n)
-    else
-        NS.Debug("Set", "reset profile '%s' to defaults", activeProfile(self))
+    local pending = self.pendingReset
+    local function line(suffix)
+        if pending then
+            pending.logged = true
+            NS.Debug("Set", "reset profile '%s' to defaults (%d rows)%s",
+                     activeProfile(self), pending.rows, suffix)
+        else
+            NS.Debug("Set", "reset profile '%s' to defaults%s", activeProfile(self), suffix)
+        end
     end
+    NS.Util.RunAct(function() reloadProfile(self) end, function() line(NS.Util.STOPPED) end)
+    line("")
 end
 
 --- Take this client's pristine value for every registered global.
