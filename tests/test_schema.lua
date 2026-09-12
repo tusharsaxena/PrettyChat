@@ -291,8 +291,8 @@ end)
 
 test("row.set closures are pure DB writes with no side effects", function()
     -- Documented contract: ApplyStrings + NotifyPanelChange live in
-    -- Schema.Set so a future SetMany can batch them. Calling a row's set
-    -- directly must therefore NOT reach _G.
+    -- Schema.Set, so its batched sibling Schema.ResetRows can pay them once
+    -- per batch. Calling a row's set directly must therefore NOT reach _G.
     local before = env[row.globalName]
     row.set("BYPASSED %s")
     t.eq(env[row.globalName], before, "the raw setter did not touch the Blizzard global")
