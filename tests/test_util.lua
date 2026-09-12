@@ -70,3 +70,23 @@ test("note and cmd wrap text in the documented slash colors", function()
         "cmd() renders command text in the schema-path yellow (slash-commands-§4)")
     t.eq(U.note(""), Color.white .. Color.reset, "an empty string still terminates its color")
 end)
+
+test("RunAct calls onRaise once, then re-raises with the original stack", function()
+    -- The seam every bulk act's failure marker rides (debug-logging-§10).
+    local calls = 0
+    local function onRaise() calls = calls + 1 end
+    U.RunAct(function() end, onRaise)
+    t.eq(calls, 0, "a clean run never calls onRaise")
+
+    local ok, err = pcall(U.RunAct, function() error("boom", 0) end, onRaise)
+    t.falsy(ok, "the error reaches the caller")
+    t.eq(calls, 1, "onRaise ran exactly once")
+    t.truthy(err:find("^boom\n"), "the original message leads")
+    t.truthy(err:find("stack traceback", 1, true), "followed by the stack of the original raise")
+
+    local thrown = {}
+    ok, err = pcall(U.RunAct, function() error(thrown) end, onRaise)
+    t.falsy(ok, "a non-string error is re-raised as well")
+    t.eq(err, thrown, "and passes through untouched")
+    t.eq(U.STOPPED, " (stopped by an error)", "the marker an act's line ends in")
+end)

@@ -72,6 +72,8 @@ read_globals = {
     -- The General visibility modes: read at every ApplyStrings pass, and the
     -- transition the combat watcher's two events answer.
     "UnitAffectingCombat",
+    -- core/Util.lua's RunAct appends the original stack to a re-raised error.
+    "debugstack",
     "GetAddOnMetadata",
     "UIParent",
     "YES",

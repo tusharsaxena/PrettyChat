@@ -269,14 +269,185 @@ test("disabling logging still writes its closing bracket line", function()
     t.falsy(NS.State.debug, "with the flag already off")
 end)
 
-test("ResetAll emits one [Reset] summary carrying apply counts", function()
-    -- A bulk reset bypasses the write seam, so it logs one [Reset] summary.
+-- debug-logging-§10: a profile-wide reset, copy or switch is logged ONCE, by the
+-- profile-event handler, worded by the event. Each case below captures the whole
+-- console buffer, so "exactly one line" means one line in total.
+
+local function firstLootFormatPath()
+    for _, r in ipairs(NS.Schema.RowsByCategory("Loot")) do
+        if r.kind == "string_format" then return r.path end
+    end
+end
+
+-- Run fn with the debug console capturing from empty, ApplyStrings and
+-- Schema.NotifyPanelChange counted, and hand back pcall's (ok, err), the buffer,
+-- the pass count and the notify count. The console's own visibility hook notifies
+-- too: the first line ever logged builds the frame and fires it, so one line is
+-- logged before the counters go in, and a test that wants the console open opens
+-- it BEFORE this, never inside.
+local function captureRaw(fn)
+    local Schema = NS.Schema
+    NS.State.debug = true
+    NS.Debug("Test", "warm-up")
+    local origApply, origNotify = addon.ApplyStrings, Schema.NotifyPanelChange
+    local passes, notifies = 0, 0
+    addon.ApplyStrings = function(self, ...)
+        passes = passes + 1
+        return origApply(self, ...)
+    end
+    Schema.NotifyPanelChange = function(...)
+        notifies = notifies + 1
+        return origNotify(...)
+    end
     NS.State.debug = true
     D:Clear()
+    local ok, err = pcall(fn)
+    NS.State.debug = false
+    addon.ApplyStrings, Schema.NotifyPanelChange = origApply, origNotify
+    return ok, err, D.buffer, passes, notifies
+end
+
+-- The same, re-raising: hands back the buffer, the pass count and the notify count.
+local function capture(fn)
+    local ok, err, buf, passes, notifies = captureRaw(fn)
+    if not ok then error(err, 0) end
+    return buf, passes, notifies
+end
+
+test("ResetAll logs one [Set] reset profile line counting the rows it rewrote", function()
     addon:ResetAll()
-    local resetJoined = table.concat(D.buffer, "\n")
-    t.truthy(resetJoined:find("%[Reset%] all"),
-        "ResetAll emits a [Reset] summary line")
-    t.truthy(resetJoined:find("applied %d+ restored %d+"),
-        "[Reset] carries the material apply counts")
+    NS.Schema.Set("Loot.enabled", false)
+    NS.Schema.Set(firstLootFormatPath(), "CUSTOM")
+    NS.Schema.Set("General.visibility", "never")
+    -- The session-only console row reads differently from its default (open vs
+    -- closed), and a profile reset must neither count it nor close the console.
+    local consoleRow = NS.Schema.FindByPath("state.debugConsole")
+    NS.Schema.Set("state.debugConsole", true)
+    t.truthy(D:IsShown(), "the console is open before the reset")
+    local origSet, consoleWrites = consoleRow.set, 0
+    consoleRow.set = function(...) consoleWrites = consoleWrites + 1; return origSet(...) end
+
+    local ok, err, buf, passes, notifies = captureRaw(function() addon:ResetAll() end)
+    consoleRow.set = origSet
+    local stillShown = D:IsShown()
+    NS.Schema.Set("state.debugConsole", false)
+    if not ok then error(err, 0) end
+
+    t.eq(#buf, 1, "exactly one line for the whole reset")
+    t.truthy(buf[1]:find("[Set] reset profile 'Default' to defaults (3 rows)", 1, true),
+        "worded by the event, counting the three changed rows and not the console row")
+    t.eq(consoleWrites, 0, "the console row is never written")
+    t.truthy(stillShown, "and the console stays open")
+    t.eq(passes, 1, "exactly one ApplyStrings pass")
+    t.eq(notifies, 1, "exactly one NotifyPanelChange")
+end)
+
+test("/pc resetall is one debug line in total", function()
+    addon:ResetAll()
+    NS.Schema.Set("Loot.enabled", false)
+    local buf, passes, notifies = capture(function() addon:OnSlashCommand("resetall") end)
+    t.eq(#buf, 1, "the slash verb adds no second line")
+    t.truthy(buf[1]:find("[Set] reset profile 'Default' to defaults (1 rows)", 1, true),
+        "the same profile-reset line")
+    t.eq(passes, 1, "one ApplyStrings pass")
+    t.eq(notifies, 1, "one NotifyPanelChange")
+end)
+
+test("a profile reset AceDB starts on its own is one line, without a count", function()
+    -- Nothing counted the rows before AceDB wiped them, so the count is omitted
+    -- rather than guessed (debug-logging-§10: included where cheap).
+    addon:ResetAll()
+    local buf = capture(function() addon.db:ResetProfile() end)
+    t.eq(#buf, 1, "one line")
+    t.truthy(buf[1]:find("%[Set%] reset profile 'Default' to defaults$"),
+        "the reset line with no count")
+end)
+
+test("a profile copy logs one [Set] copied line and nothing else", function()
+    addon:ResetAll()
+    addon.db:SetProfile("Alt")
+    NS.Schema.Set("Loot.enabled", false)
+    addon.db:SetProfile("Default")
+    local buf, passes, notifies = capture(function() addon.db:CopyProfile("Alt") end)
+    t.eq(#buf, 1, "exactly one line for the copy")
+    t.truthy(buf[1]:find("[Set] copied profile '", 1, true), "a [Set] copied line")
+    t.truthy(buf[1]:find("' \226\134\146 'Default'", 1, true), "into the active profile")
+    t.eq(addon.db.profile.categories.Loot.enabled, false, "and the copy really landed")
+    t.eq(passes, 1, "one ApplyStrings pass")
+    t.eq(notifies, 1, "one NotifyPanelChange")
+    addon:ResetAll()
+end)
+
+test("the copy line names AceDB's source profile and the active one", function()
+    -- AceDB fires OnProfileCopied(event, db, sourceProfileKey). Driven directly
+    -- with that signature, because the kit's AceDB fake passes the active profile
+    -- in the source's place.
+    local buf = capture(function()
+        addon:OnProfileCopied("OnProfileCopied", addon.db, "Alt")
+    end)
+    t.eq(#buf, 1, "one line")
+    t.truthy(buf[1]:find("[Set] copied profile 'Alt' \226\134\146 'Default'", 1, true),
+        "source first, destination second")
+end)
+
+test("a profile switch keeps its one [Profile] line", function()
+    local buf = capture(function() addon.db:SetProfile("Alt") end)
+    addon.db:SetProfile("Default")
+    t.eq(#buf, 1, "one line for the switch")
+    t.truthy(buf[1]:find("[Profile] switched \226\134\146 applied", 1, true),
+        "the addon's existing switch line, unchanged")
+end)
+
+-- debug-logging-§10, failure marker: a profile reset or copy that raises partway
+-- still writes its one line, ending in ` (stopped by an error)`, exactly once, and
+-- the error still reaches the caller. The kit's AceDB fake calls the handlers
+-- directly, so a handler's raise comes back out of ResetProfile here.
+
+test("a profile reset that raises logs its one line marked, exactly once", function()
+    addon:ResetAll()
+    NS.Schema.Set("Loot.enabled", false)
+    -- Raised in the handler's reload, after AceDB's wipe: the handler writes the
+    -- line, and ResetAll must not add a second one on the way out.
+    local origApply = addon.ApplyStrings
+    addon.ApplyStrings = function() error("boom in the reload") end
+    local ok, err, buf = captureRaw(function() addon:ResetAll() end)
+    addon.ApplyStrings = origApply
+    t.falsy(ok, "the error reaches the caller")
+    t.truthy(tostring(err):find("boom in the reload", 1, true), "with its own message")
+    t.eq(#buf, 1, "exactly one line")
+    t.truthy(buf[1]:find("[Set] reset profile 'Default' to defaults (1 rows) (stopped by an error)", 1, true),
+        "the wipe landed, so its row counts, and the line says it stopped")
+    t.nilv(addon.pendingReset, "the parked count is cleared")
+
+    -- Raised inside AceDB before the callback fires: the handler never ran, so
+    -- ResetAll writes the line, counting what the wipe had changed (nothing).
+    addon:ResetAll()
+    NS.Schema.Set("Loot.enabled", false)
+    local db = addon.db
+    local origReset = db.ResetProfile
+    db.ResetProfile = function() error("boom in AceDB") end
+    ok, err, buf = captureRaw(function() addon:ResetAll() end)
+    db.ResetProfile = origReset
+    t.falsy(ok, "that error reaches the caller too")
+    t.truthy(tostring(err):find("boom in AceDB", 1, true), "with its own message")
+    t.eq(#buf, 1, "exactly one line")
+    t.truthy(buf[1]:find("[Set] reset profile 'Default' to defaults (0 rows) (stopped by an error)", 1, true),
+        "nothing was wiped, so nothing counts")
+    t.nilv(addon.pendingReset, "the parked count is cleared")
+    addon:ResetAll()
+end)
+
+test("a profile copy that raises logs its one line marked", function()
+    local origApply = addon.ApplyStrings
+    addon.ApplyStrings = function() error("boom in the copy") end
+    local ok, err, buf = captureRaw(function()
+        addon:OnProfileCopied("OnProfileCopied", addon.db, "Alt")
+    end)
+    addon.ApplyStrings = origApply
+    t.falsy(ok, "the error reaches the caller")
+    t.truthy(tostring(err):find("boom in the copy", 1, true), "with its own message")
+    t.eq(#buf, 1, "exactly one line")
+    t.truthy(buf[1]:find("[Set] copied profile 'Alt' \226\134\146 'Default' (stopped by an error)", 1, true),
+        "the copy line, saying it stopped")
+    addon:ResetAll()
 end)

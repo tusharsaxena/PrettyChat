@@ -49,9 +49,16 @@ end
 
 -- Row `set` closures are pure DB writes — they do NOT call
 -- PrettyChat:ApplyStrings() or Schema.NotifyPanelChange(). Both side
--- effects live in Schema.Set so a future Schema.SetMany / preset-load
--- can apply once per batch instead of once per row. Callers must go
--- through Schema.Set; never invoke row.set(value) directly.
+-- effects live in Schema.Set, and in its batched sibling Schema.ResetRows,
+-- which applies once per batch instead of once per row. Callers must go
+-- through one of the two; never invoke row.set(value) directly.
+--
+-- Every stored closure writes the DEFAULT as an absence: a value equal to the
+-- row's default clears its key, and an emptied `strings` / `disabledStrings` /
+-- category table is dropped (pruneCategoryDB). SavedVariables therefore holds
+-- only what a player has actually changed, and a reset that writes every row's
+-- default through these closures leaves exactly the shape it always did: no
+-- category table at all.
 
 -- ---------------------------------------------------------------------
 -- The Master controls block (options-ui-§15) — the General page's one tab.
@@ -128,8 +135,14 @@ local MASTER_WIRING = {
     ["General.enabled"] = {
         kind = "addon_enabled",
         get  = function() return PrettyChat:IsAddonEnabled() end,
+        -- Stored only when OFF: the default (true) is an absent key, which
+        -- IsAddonEnabled already reads as enabled.
         set  = function(v)
-            PrettyChat.db.profile.enabled = v and true or false
+            if v then
+                PrettyChat.db.profile.enabled = nil
+            else
+                PrettyChat.db.profile.enabled = false
+            end
         end,
     },
     ["General.visibility"] = {
@@ -163,6 +176,27 @@ local MASTER_WIRING = {
 -- through the same load-time channel an unresolved path takes.
 local unwiredMasterPaths = {}
 
+-- Drop what a row write has emptied: a `strings` or `disabledStrings` table with
+-- no entries, then the category table itself once nothing is left in it. Part of
+-- the row closures' own write step, so it never runs outside the helper.
+local function pruneCategoryDB(category)
+    local cats  = PrettyChat.db.profile.categories
+    local catDB = cats and cats[category]
+    if not catDB then return end
+    if catDB.strings and next(catDB.strings) == nil then catDB.strings = nil end
+    if catDB.disabledStrings and next(catDB.disabledStrings) == nil then
+        catDB.disabledStrings = nil
+    end
+    if next(catDB) == nil then cats[category] = nil end
+end
+
+-- The category table, or nil when there is none. The clearing arm of a closure
+-- reads through this rather than EnsureCategoryDB: clearing must not create.
+local function existingCategoryDB(category)
+    local cats = PrettyChat.db.profile.categories
+    return cats and cats[category]
+end
+
 -- EVERY ROW ON EVERY PAGE CARRIES A `group` (options-ui-§13). These rows are not
 -- rendered through the flow engine — the Categories page hands H.TabStrip its tab
 -- list directly, because a category tab is one schema row followed by a bespoke
@@ -170,6 +204,7 @@ local unwiredMasterPaths = {}
 -- reads and what would partition the page correctly the day that stops being
 -- true. The group IS the category, which is the tab it is drawn under.
 local function buildCategoryRow(category)
+    local default = (NS.Defaults[category] and NS.Defaults[category].enabled) and true or false
     addRow({
         path     = category .. ".enabled",
         category = category,
@@ -184,10 +219,17 @@ local function buildCategoryRow(category)
         -- docs/ARCHITECTURE.md's deviations register.
         label    = NS.L["Enable %s"]:format(category),
         tooltip  = NS.L["Enable or disable all %s string overrides."]:format(category),
-        default  = (NS.Defaults[category] and NS.Defaults[category].enabled) and true or false,
+        default  = default,
         get      = function() return PrettyChat:IsCategoryEnabled(category) end,
         set      = function(v)
-            PrettyChat:EnsureCategoryDB(category).enabled = v and true or false
+            local on = v and true or false
+            if on ~= default then
+                PrettyChat:EnsureCategoryDB(category).enabled = on
+            else
+                local catDB = existingCategoryDB(category)
+                if catDB then catDB.enabled = nil end
+            end
+            pruneCategoryDB(category)
         end,
     })
 end
@@ -205,9 +247,17 @@ local function buildStringRows(category, globalName, strData)
         default    = true,
         get        = function() return PrettyChat:IsStringEnabled(category, globalName) end,
         set        = function(v)
-            local catDB = PrettyChat:EnsureCategoryDB(category)
-            if not catDB.disabledStrings then catDB.disabledStrings = {} end
-            catDB.disabledStrings[globalName] = (not v) or nil
+            if v then
+                local catDB = existingCategoryDB(category)
+                if catDB and catDB.disabledStrings then
+                    catDB.disabledStrings[globalName] = nil
+                end
+            else
+                local catDB = PrettyChat:EnsureCategoryDB(category)
+                if not catDB.disabledStrings then catDB.disabledStrings = {} end
+                catDB.disabledStrings[globalName] = true
+            end
+            pruneCategoryDB(category)
         end,
     })
 
@@ -223,13 +273,15 @@ local function buildStringRows(category, globalName, strData)
         default    = strData.default,
         get        = function() return PrettyChat:GetStringValue(category, globalName) end,
         set        = function(v)
-            local catDB = PrettyChat:EnsureCategoryDB(category)
-            if not catDB.strings then catDB.strings = {} end
             if v == NS.Defaults[category].strings[globalName].default then
-                catDB.strings[globalName] = nil
+                local catDB = existingCategoryDB(category)
+                if catDB and catDB.strings then catDB.strings[globalName] = nil end
             else
+                local catDB = PrettyChat:EnsureCategoryDB(category)
+                if not catDB.strings then catDB.strings = {} end
                 catDB.strings[globalName] = v
             end
+            pruneCategoryDB(category)
         end,
     })
 end
@@ -490,8 +542,8 @@ end
 -- Set is the write path the panel widgets, /pc set and /pc reset <path>
 -- (via ApplyDefault) all take, so a change in one surface notifies the
 -- other. Owns the two post-write side effects (ApplyStrings +
--- NotifyPanelChange) so row closures stay pure DB writes. Not the only
--- writer: PrettyChat:ResetCategory / :ResetString clear rows directly.
+-- NotifyPanelChange) so row closures stay pure DB writes. Its one sibling is
+-- Schema.ResetRows below, the batched entry the two reset verbs take.
 function Schema.Set(path, value)
     local row = byPath[path]
     if not row then return false end
@@ -538,12 +590,86 @@ end
 -- Deliberately NOT the implementation behind the per-category Defaults button or
 -- `/pc resetall`. Both of those are bulk: driving them row by row through here
 -- would run ApplyStrings once per row (173 passes over 79 globals) and emit one
--- [Set] line per row into a 1500-line console buffer, which is exactly the per-item
--- spam debug-logging-§9 forbids. PrettyChat:ResetCategory and PrettyChat:ResetAll
--- stay the bulk implementations, each one pass and one summary line.
+-- [Set] line per row into a 1500-line console buffer, where debug-logging-§10 asks
+-- a bulk reset for ONE [Set] line. The per-category and per-string resets take
+-- Schema.ResetRows below; `/pc resetall` is the profile reset (options-ui-§12).
 function Schema.ApplyDefault(row)
     if not row then return false end
     return Schema.Set(row.path, row.default)
+end
+
+-- Would writing this row's default change what is stored? Every getter reads its
+-- own stored key and falls back to the default (none cascades through a parent
+-- enable), and every setter clears the key on a default, so "reads differently
+-- from its default" is exactly "has a stored value the reset would remove".
+local function differsFromDefault(row)
+    return row.get() ~= row.default
+end
+
+-- The rows a whole-profile reset would actually rewrite: every stored row that
+-- currently differs from its default. Session-only rows are skipped, because
+-- AceDB's profile reset never touches them. PrettyChat:ResetAll counts with this
+-- before it wipes the profile, since nothing can count afterwards.
+function Schema.CountChangedRows()
+    local n = 0
+    for _, row in ipairs(rows) do
+        if not row.sessionOnly and differsFromDefault(row) then n = n + 1 end
+    end
+    return n
+end
+
+-- THE BATCHED ENTRY (architecture-§5, #15). Restore a list of rows to their
+-- defaults through the same write step Schema.Set takes, then pay the two side
+-- effects ONCE: one ApplyStrings pass, one panel refresh, and ONE
+-- `[Set] reset <label>: N rows` line in place of a [Set] line per row
+-- (debug-logging-§10). PrettyChat:ResetCategory and PrettyChat:ResetString are
+-- its callers.
+--
+-- N is the rows the reset actually changed: a row already at its default is still
+-- written (a no-op) but not counted. A reset with nothing to change still runs its
+-- one pass and logs its one line, as `: 0 rows`.
+--
+-- The gates are Set's: a row this schema does not own is skipped, the
+-- conversion-signature gate is asked (a shipped default always passes it), and a
+-- batch made only of session-only rows skips the re-apply. The refresh targets
+-- the rows' category when they share one, and every page when they do not. A list
+-- with no row past the gates is not an act and logs nothing. Returns N.
+--
+-- A raise partway (a row's set(), the pass or the refresh) still logs the one
+-- line, counting the rows changed before it and ending in Util.STOPPED, and then
+-- raises again (NS.Util.RunAct). So the body tallies into `tally` as each write
+-- lands rather than into locals the raise would lose.
+local function resetRowsBody(list, tally)
+    local reapply, category = false, nil
+    for _, row in ipairs(list or {}) do
+        if byPath[row.path] == row and not refusedBySignature(row, row.default) then
+            local differs = differsFromDefault(row)
+            row.set(row.default)
+            tally.wrote = tally.wrote + 1
+            if differs then tally.changed = tally.changed + 1 end
+            reapply = reapply or not row.sessionOnly
+            if category == nil then
+                category = row.category
+            elseif category ~= row.category then
+                category = false
+            end
+        end
+    end
+    if tally.wrote == 0 then return end
+    if reapply then PrettyChat:ApplyStrings() end
+    Schema.NotifyPanelChange(category or nil)
+end
+
+function Schema.ResetRows(list, label)
+    local tally = { wrote = 0, changed = 0 }
+    local function line(suffix)
+        NS.Debug("Set", "reset %s: %d rows%s", tostring(label), tally.changed, suffix)
+    end
+    NS.Util.RunAct(function() resetRowsBody(list, tally) end,
+                   function() line(NS.Util.STOPPED) end)
+    if tally.wrote == 0 then return 0 end
+    line("")
+    return tally.changed
 end
 
 function Schema.RowsByCategory(category)

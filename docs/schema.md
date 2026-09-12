@@ -2,7 +2,7 @@
 
 `settings/Schema.lua` is the single source of truth for what's settable. At file-load (after `defaults/Defaults.lua` and `core/PrettyChat.lua`) it iterates `NS.Defaults` and builds a flat array of rows, one per settable value, exposed at `NS.Schema`.
 
-This doc covers: the six row kinds, the single write path that every panel and slash row write goes through (and the two resets that bypass it), and the AceDB shape behind it.
+This doc covers: the six row kinds, the single write path that every panel and slash row write goes through (and its batched entry, which the two resets take), and the AceDB shape behind it.
 
 ## Row kinds
 
@@ -21,7 +21,7 @@ Each row carries its own `get()` and `set(value)` closures. PrettyChat's storage
 
 ## Single write path
 
-Every panel and slash row write goes through `Schema.Set(path, value)`. `/pc reset <path>` does too, through `Schema.ApplyDefault`. It is **not** the only code that mutates settings: `PrettyChat:ResetCategory` and `PrettyChat:ResetString` (`modules/Override.lua`) clear row-backed storage directly. That is an open architecture-§5 gap, not a documented deviation (see [ARCHITECTURE.md → Settings Schema](./ARCHITECTURE.md#settings-schema)). The seam itself:
+Every settings mutation goes through `Schema.Set(path, value)`. `/pc reset <path>` does too, through `Schema.ApplyDefault`. The per-category and per-string resets (`PrettyChat:ResetCategory` / `:ResetString` in `modules/Override.lua`) take its batched entry, `Schema.ResetRows` (see [Reset semantics](#reset-semantics)). The only other writer is `/pc resetall`'s profile reset, which architecture-§5 exempts as a wholesale replacement. The seam itself:
 
 ```lua
 function Schema.Set(path, value)
@@ -69,23 +69,47 @@ Both surfaces go through the same row's `set()`:
 - **Panel widget callbacks** in `settings/Panel.lua` call `NS.Schema.Set(path, val)`.
 - **`/pc set`** goes through `LibKa0s-Slash-1.0`'s `CliSet`, which parses the value through the descriptor's `parse` hook and then calls `NS.Schema.Set(path, newVal)`.
 
-Row `set()` closures are pure DB writes — they do **not** run `ApplyStrings` or `NotifyPanelChange` themselves. Both side effects live in `Schema.Set` so a future `Schema.SetMany` / preset-load can apply once per batch instead of N times. Callers must therefore never invoke `row.set(value)` directly; always go through `Schema.Set`.
+Row `set()` closures are pure DB writes — they do **not** run `ApplyStrings` or `NotifyPanelChange` themselves. Both side effects live in `Schema.Set`, and in `Schema.ResetRows`, which applies them once per batch instead of N times. Callers must therefore never invoke `row.set(value)` directly; always go through one of the two.
+
+### The batched entry: `Schema.ResetRows(rows, label)`
+
+```lua
+function Schema.ResetRows(list, label)
+    -- for each row: skip it unless byPath owns it and the signature gate passes,
+    -- then row.set(row.default)
+    -- once:  ApplyStrings (unless every row was session-only),
+    --        NotifyPanelChange(the rows' shared category, or nil for every page),
+    --        NS.Debug("Set", "reset <label>: N rows")   -- N = rows it changed
+    -- a raise anywhere above: the same one line, N the rows changed before it,
+    --        ending " (stopped by an error)"; then the error is raised again
+end
+```
+
+It restores a list of rows to their defaults through the same `set()` step and the same gates `Schema.Set` uses, then pays the side effects once: one `ApplyStrings` pass, one panel refresh and one `[Set] reset <label>: N rows` line in place of a `[Set]` line per row (debug-logging-§10: a bulk reset is one `[Set]` line). N is the rows the reset actually changed. A row already at its default is still written, a no-op, but is not counted, and a reset with nothing to change still logs its one line as `: 0 rows`. Driving 173 rows through `Set` one at a time would cost 173 passes over 79 globals and 173 console lines. Returns N.
+
+A reset that raises partway (a row's `set()`, the pass or the refresh) still writes its one line, counting the rows changed before the raise and ending in ` (stopped by an error)`, for example `[Set] reset Loot: 2 rows (stopped by an error)`. The error is then raised again. `NS.Util.RunAct` (`core/Util.lua`) does both, through `xpcall`, so the re-raised error carries the stack of the original raise rather than only its message.
 
 `Schema.NotifyPanelChange(category)` dispatches to a refresher closure that `settings/Panel.lua` registers for the category tab it has just drawn, via `Schema.RegisterRefresher(category, fn)`. The closure re-syncs every visible widget on that tab from the DB. Master-toggle changes (category `"General"` or `nil`) cascade to every registered refresher since per-string disabled state depends on the master. This keeps the panel and the slash UI from ever drifting — a `/pc set` while the panel is open updates both surfaces in the same frame. At most one category has an entry at a time: the visible tab. A tab that is not on screen has none, and that is correct — it is rebuilt from the live DB the moment it is selected, so it cannot show stale state.
 
 ### Auto-clear on default
 
-For `string_format` rows specifically, the row's `set` closure stores `nil` (clears the override entry) when `value` matches the row's PrettyChat default:
+Every stored row's `set` closure writes its default as an **absence**: a value equal to the row's default clears the key instead of storing it. For `string_format` rows that means the override entry:
 
 ```lua
 if v == NS.Defaults[category].strings[globalName].default then
-    catDB.strings[globalName] = nil
+    local catDB = existingCategoryDB(category)            -- clearing never creates
+    if catDB and catDB.strings then catDB.strings[globalName] = nil end
 else
+    local catDB = PrettyChat:EnsureCategoryDB(category)
+    if not catDB.strings then catDB.strings = {} end
     catDB.strings[globalName] = v
 end
+pruneCategoryDB(category)
 ```
 
-So writing a format back to its default value via `/pc set` or the panel acts as a per-string reset — the override entry is removed from `db.profile.categories[Cat].strings`, and `GetStringValue` falls back to the default on next read. The `strings` table never collects "override that happens to equal the default".
+The same rule covers `General.enabled` (stored only as `false`), `General.visibility` (stored only when not `always`), `<Category>.enabled` (stored only when it differs from the shipped default) and `<Category>.<NAME>.enabled` (stored only as `disabledStrings[NAME] = true`). `pruneCategoryDB` then drops a `strings` or `disabledStrings` table the write emptied, and the category table once nothing is left in it.
+
+So writing a format back to its default value via `/pc set` or the panel acts as a per-string reset: the override entry is removed from `db.profile.categories[Cat].strings`, and `GetStringValue` falls back to the default on next read. It is also why a reset through `Schema.ResetRows` leaves no category table at all, provided every stored key has a row. The load pass guarantees that: `Database.PruneOrphans` (see [Reset semantics](#reset-semantics)) drops any key no row owns. The `strings` table never collects "override that happens to equal the default".
 
 ## Public API
 
@@ -96,6 +120,8 @@ So writing a format back to its default value via `/pc set` or the panel acts as
 | `Schema.Get(path)` / `Schema.Set(path, value)` | Read/write through the row's closures. `Set` returns `false` if the path is unknown, **or if a `string_format` write fails the conversion-signature gate** (see [Single write path](#single-write-path)); `true` when the write landed. |
 | `Schema.AllRows()` | Every row in **declaration** order — the order `/pc list` prints and the order the settings tree shows. Returned as the live table, not a copy. The `allRows` both the Slash and the Options descriptors are handed. |
 | `Schema.ApplyDefault(row)` | Restore **one** row to `row.default` through `Schema.Set`, so the `[Set]` trace, the re-apply and the panel refresh are identical to a checkbox click. Deliberately **not** the implementation behind the per-category Defaults button or `/pc resetall` — both of those are bulk (see [Reset semantics](#reset-semantics)). |
+| `Schema.ResetRows(rows, label)` | The write helper's **batched** entry: restores each row to `row.default` through its `set()` behind `Set`'s gates, then runs one `ApplyStrings` pass, one `NotifyPanelChange` and one `[Set] reset <label>: N rows` line, N the rows it changed (debug-logging-§10). A raise partway still writes that line, ending ` (stopped by an error)`, then raises again. Returns N. Called by `PrettyChat:ResetCategory` and `PrettyChat:ResetString`. |
+| `Schema.CountChangedRows()` | The rows a whole-profile reset would rewrite: every stored (non-`sessionOnly`) row whose value differs from its default. `PrettyChat:ResetAll` counts with it **before** `db:ResetProfile()`, because afterwards every row reads as its default. |
 | `Schema.FormatValue(row, value)` | **The** value formatter, and there is exactly one of it (slash-commands-§5). The rendering is `LibKa0s-Slash-1.0`'s `FormatValue`; what is this addon's is the one thing the library cannot know — a Blizzard format string is full of `\|c…\|r` escapes, so `\|` is doubled to `\|\|` on the way out, matching what the panel's New box shows and accepts. Two consumers, and that is why it lives here rather than in `settings/Slash.lua`: every `list` / `get` / `set` / `reset` echo (as the Slash descriptor's `format` hook) **and** the `[Set]` debug trace at the write seam (debug-logging-§10), so a value cannot read one way in chat and another in the console log. With the library absent it falls back to the pre-library rendering — no color codes, no `key = value` shape. |
 | `Schema.ResolveCategory(name)` | Case-insensitive PascalCase resolver — `/pc reset loot` finds `Loot`. Returns `nil` for unknowns. |
 | `Schema.NotifyPanelChange(category?)` | Invokes the closure registered for `category` via `RegisterRefresher`. Pass `nil` (or `"General"`) to fire every registered refresher. Safe to call before any tab has been drawn — unregistered categories are no-ops. |
@@ -104,11 +130,11 @@ So writing a format back to its default value via `/pc set` or the panel acts as
 
 ## Reset semantics
 
-Three reset paths, all routed through `PrettyChat:Reset*` not directly through Schema:
+Three reset verbs on `PrettyChat`. The first two write through the helper's batched entry, `Schema.ResetRows`:
 
-- **`PrettyChat:ResetString(category, globalName)`** clears **both** per-string dimensions for one string — the custom format (`strings[NAME]`) and the disable flag (`disabledStrings[NAME]`) — so it matches the full-reset semantics of the two below. Resetting only the format would leave a previously-disabled string half-reset. After clearing, calls `ApplyStrings` and `Schema.NotifyPanelChange(category)`.
-- **`PrettyChat:ResetCategory(category)`** clears one category's overrides. Special case: `category == "General"` is the virtual category, which owns the two addon-wide keys and no entry under `db.profile.categories` — it clears **both** `db.profile.enabled` and `db.profile.visibility` back to `nil` (default true / `always`) and re-runs `SyncCombatWatch`, which drops the combat watcher's events if the outgoing mode was a combat-scoped one. After clearing, calls `ApplyStrings` and `Schema.NotifyPanelChange(category)`.
-- **`PrettyChat:ResetAll()`** is a **profile reset** (`options-ui-§12`): one `db:ResetProfile()` on the active profile, never a second walk of the schema and never a touch on another profile. It clears nothing by hand — AceDB empties the profile in place, merges the defaults back and fires `OnProfileReset`, and it is `core/PrettyChat.lua`'s handler for that callback that re-runs the migrations, calls `SyncCombatWatch`, re-applies every string, calls `Schema.NotifyPanelChange()` (nil → every category) and emits the one `[Reset] all → applied N restored M` summary. A stored key a later version adds beside `enabled` / `categories` is therefore reset too, which the old two-key hand-clear did not do.
+- **`PrettyChat:ResetString(category, globalName)`** resets **both** per-string rows for one string, `<Cat>.<NAME>.enabled` and `<Cat>.<NAME>.format`, so the custom format (`strings[NAME]`) and the disable flag (`disabledStrings[NAME]`) both clear. That matches the full-reset semantics of the two below. Resetting only the format would leave a previously-disabled string half-reset. One `ApplyStrings` pass, one `Schema.NotifyPanelChange(category)`, one `[Set] reset <Cat>.<NAME>: N rows` line.
+- **`PrettyChat:ResetCategory(category)`** resets every row of one category (`Schema.RowsByCategory`). A reset writes rows, so on its own it would leave behind any stored key no row owns, for example an override for a global string a later version removed. The load pass removes those keys first. `Database.RunMigrations` (`core/Database.lua`) runs `Database.PruneOrphans` at `OnInitialize` and on every profile change, copy and reset. It drops every `strings[NAME]` with no `<Cat>.<NAME>.format` row and every `disabledStrings[NAME]` with no `<Cat>.<NAME>.enabled` row, then prunes the tables that empties (savedvariables-§1). So a category reset leaves no `db.profile.categories[Cat]` table behind. Special case: `category == "General"` is the virtual category, which owns the two addon-wide keys and no entry under `db.profile.categories`. It resets the two stored rows `General.enabled` and `General.visibility` (never the session-only `state.debugConsole`), which clears `db.profile.enabled` and `db.profile.visibility` back to `nil` (default true / `always`). The visibility row's own `set()` re-runs `SyncCombatWatch`, which drops the combat watcher's events if the outgoing mode was a combat-scoped one. One `ApplyStrings` pass, one `Schema.NotifyPanelChange(category)`, one `[Set] reset <Cat>: N rows` line.
+- **`PrettyChat:ResetAll()`** is a **profile reset** (`options-ui-§12`): one `db:ResetProfile()` on the active profile, never a second walk of the schema and never a touch on another profile. It clears nothing by hand — AceDB empties the profile in place, merges the defaults back and fires `OnProfileReset`, and it is `core/PrettyChat.lua`'s handler for that callback that re-runs the migrations, calls `SyncCombatWatch`, re-applies every string, calls `Schema.NotifyPanelChange()` (nil → every category) and emits the one `[Set] reset profile '<name>' to defaults (N rows)` line (debug-logging-§10). `ResetAll` counts N with `Schema.CountChangedRows()` before the wipe and parks it on `pendingReset` for the handler. A reset AceDB starts on its own logs the same line without the count. A profile copy is one `[Set] copied profile 'A' → 'B'` line from the `OnProfileCopied` handler. A reset or copy that raises still writes its one line, ending in ` (stopped by an error)`, and the error goes on up. The handler writes it when its reload raises, and marks `pendingReset` so `ResetAll` adds no second line. `ResetAll` writes it only when the raise comes from inside AceDB before the callback fires, counting what the wipe had changed by then. A stored key a later version adds beside `enabled` / `categories` is therefore reset too, which the old two-key hand-clear did not do.
 
 All three are reachable from:
 
@@ -124,11 +150,11 @@ PrettyChatDB.profile.categories[catName].strings[globalName]         -- string o
 PrettyChatDB.profile.categories[catName].disabledStrings[globalName] -- true = disabled (absent / nil = enabled)
 ```
 
-**`enabled` defaults follow the `nil → true` contract.** Neither the addon-wide master toggle nor per-category `enabled` flags appear in the `defaults` table — they're created on first user write and read via `IsAddonEnabled` / `IsCategoryEnabled` which return `true` when the value is `nil`. This keeps SavedVariables empty until the user disables something, and it makes `ResetCategory` coherent: clearing a flag (`= nil`) genuinely returns it to default-true rather than relying on AceDB to re-merge a populated default.
+**`enabled` defaults follow the `nil → true` contract.** Neither the addon-wide master toggle nor per-category `enabled` flags appear in the `defaults` table — they're created on first user write and read via `IsAddonEnabled` / `IsCategoryEnabled` which return `true` when the value is `nil`. This keeps SavedVariables empty until the user disables something, and it makes `ResetCategory` coherent: writing the default clears the flag (`= nil`), which genuinely returns it to default-true rather than relying on AceDB to re-merge a populated default.
 
 Only user-modified values are stored. The schema's auto-clear keeps `strings[...]` lean — it never collects "override that happens to equal the default".
 
-`db.profile.categories[catName]` is created lazily by `EnsureCategoryDB` on first write. `disabledStrings` and `strings` sub-tables are created lazily inside the row's `set()` closures.
+`db.profile.categories[catName]` is created lazily by `EnsureCategoryDB` on first write. `disabledStrings` and `strings` sub-tables are created lazily inside the row's `set()` closures, and dropped again by the same closures once a write empties them. So is the category table.
 
 ### Profiles
 

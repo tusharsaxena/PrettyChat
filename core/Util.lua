@@ -31,3 +31,28 @@ end
 function Util.cmd(s)
     return Color.yellow .. s .. Color.reset
 end
+
+-- The marker a bulk act's one debug line carries when the act raised partway
+-- (debug-logging-§10): the line still counts the rows changed before it stopped.
+Util.STOPPED = " (stopped by an error)"
+
+-- xpcall's message handler. It runs at the raise, before the stack unwinds, so
+-- the stack it appends is the ORIGINAL one; a pcall + error(err, 0) keeps only the
+-- message, and the report then points at the re-raise. The client reads its stack
+-- with debugstack and has no `debug` library; the harness is plain Lua 5.1.
+local function withStack(err)
+    if type(err) ~= "string" then return err end
+    local stack = (debugstack and debugstack(2))
+        or (debug and debug.traceback and debug.traceback("", 2))
+    return stack and (err .. "\n" .. stack) or err
+end
+
+-- Run one bulk act. If fn raises, onRaise() runs first (it writes the act's one
+-- line, ending in Util.STOPPED) and the error is raised again, carrying the stack
+-- of the original raise. fn takes no arguments: Lua 5.1's xpcall passes none.
+function Util.RunAct(fn, onRaise)
+    local ok, err = xpcall(fn, withStack)
+    if ok then return end
+    onRaise()
+    error(err, 0)
+end

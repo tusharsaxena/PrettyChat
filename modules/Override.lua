@@ -171,24 +171,31 @@ function PrettyChat:ApplyStrings()
     return applied, restored
 end
 
-function PrettyChat:ResetCategory(category)
+-- The General virtual category's two STORED rows. Not RowsByCategory("General"):
+-- that also returns the session-only console toggle, and a Defaults press must
+-- not close the debug console.
+local GENERAL_RESET_PATHS = { "General.enabled", "General.visibility" }
+
+-- Restore one category to its defaults, every row of it through the write
+-- helper's batched entry (architecture-§5): one ApplyStrings pass, one panel
+-- refresh and one `[Set] reset <cat>: N rows` line, never a pass or a [Set] line
+-- per row (debug-logging-§10). For General the visibility row's own set()
+-- re-syncs the combat watcher.
+--
+-- Dot-defined with a `_` receiver: callers still use the colon form, and the body
+-- reads the schema through NS rather than through the addon table.
+function PrettyChat.ResetCategory(_, category)
+    local Schema = NS.Schema
+    local list
     if category == "General" then
-        -- The General virtual category owns the two addon-wide keys and nothing
-        -- else (no entry in db.profile.categories). Resetting it clears both back
-        -- to their defaults — enabled true, visibility "always".
-        self.db.profile.enabled = nil
-        self.db.profile.visibility = nil
-        self:SyncCombatWatch()
-    elseif self.db.profile.categories[category] then
-        self.db.profile.categories[category] = nil
+        list = {}
+        for _, path in ipairs(GENERAL_RESET_PATHS) do
+            list[#list + 1] = Schema.FindByPath(path)
+        end
+    else
+        list = Schema.RowsByCategory(category)
     end
-    local applied, restored = self:ApplyStrings()
-    if NS.Schema and NS.Schema.NotifyPanelChange then
-        NS.Schema.NotifyPanelChange(category)
-    end
-    -- Bulk mutation (debug-logging-§8): a reset bypasses the Schema.Set `[Set]` seam, so it
-    -- carries its own summary with the material effect (how many strings reverted).
-    NS.Debug("Reset", "%s → applied %d restored %d", category, applied, restored)
+    Schema.ResetRows(list, category)
 end
 
 --- The global reset, and it is a PROFILE reset (options-ui-§12).
@@ -205,32 +212,51 @@ end
 --- defaults back, and fires OnProfileReset -- which core/PrettyChat.lua answers by
 --- re-running the migrations, re-applying every string and telling the panel.
 ---
---- The [Reset] summary therefore moves to that handler's path: ApplyStrings is what
---- knows how many overrides were applied and how many originals were restored, and
---- it is now reached through the callback rather than from here.
+--- ONE LINE, AND THE HANDLER WRITES IT (debug-logging-§10). A profile reset is
+--- wholesale replacement, not a batch through the helper, so it is logged once by
+--- the OnProfileReset handler as `[Set] reset profile '<name>' to defaults (N rows)`
+--- and nothing here adds a second line. N is the rows the wipe actually changes,
+--- and only this side can know it: once AceDB has wiped the profile every row reads
+--- as its default. So the count is taken first and parked on `pendingReset` for
+--- the handler, then cleared even if the reset raises, so it can never label a
+--- later reset AceDB starts on its own (that one logs without a count).
+---
+--- A RAISE STILL WRITES THE ONE LINE. The handler writes it, marked, when its
+--- reload raises. When the raise comes first (inside AceDB, before the callback
+--- fires) the handler never ran, so the line is written here, ending in
+--- Util.STOPPED and counting what the wipe had changed by then: the parked count
+--- less the rows that still differ. Then the error is raised again (NS.Util.RunAct).
 function PrettyChat:ResetAll()
     local db = self.db
-    if db and db.ResetProfile then db:ResetProfile() end
+    if not (db and db.ResetProfile) then return end
+    local Schema = NS.Schema
+    local pending = { rows = Schema.CountChangedRows(), logged = false }
+    self.pendingReset = pending
+    NS.Util.RunAct(function() db:ResetProfile() end, function()
+        self.pendingReset = nil
+        if pending.logged then return end
+        local ok, left = pcall(Schema.CountChangedRows)
+        local n = ok and math.max(0, pending.rows - left) or 0
+        NS.Debug("Set", "reset profile '%s' to defaults (%d rows)%s",
+                 tostring(db.GetCurrentProfile and db:GetCurrentProfile() or "?"), n, NS.Util.STOPPED)
+    end)
+    self.pendingReset = nil
 end
 
 -- Restore ONE string to its untouched default. A per-string reset must
 -- clear BOTH per-string dimensions — the custom format AND the disable
 -- flag — so it matches the full-reset semantics of ResetCategory /
 -- ResetAll (which wipe every dimension at once). Resetting only the
--- format would leave a previously-disabled string half-reset.
-function PrettyChat:ResetString(category, globalName)
-    local catDB = self.db.profile.categories[category]
-    if catDB then
-        if catDB.strings then catDB.strings[globalName] = nil end
-        if catDB.disabledStrings then catDB.disabledStrings[globalName] = nil end
-    end
-    local applied, restored = self:ApplyStrings()
-    if NS.Schema and NS.Schema.NotifyPanelChange then
-        NS.Schema.NotifyPanelChange(category)
-    end
-    -- Bulk mutation (debug-logging-§8): bypasses the Schema.Set `[Set]` seam,
-    -- so it carries its own summary with the material effect.
-    NS.Debug("Reset", "%s.%s → applied %d restored %d", category, globalName, applied, restored)
+-- format would leave a previously-disabled string half-reset. Both rows go
+-- through the write helper's batched entry, so the pair costs one pass and
+-- one `[Set] reset <Cat>.<NAME>: N rows` line rather than two of each.
+function PrettyChat.ResetString(_, category, globalName)
+    local Schema = NS.Schema
+    local base = category .. "." .. globalName
+    local list = {}
+    list[#list + 1] = Schema.FindByPath(base .. ".enabled")
+    list[#list + 1] = Schema.FindByPath(base .. ".format")
+    Schema.ResetRows(list, base)
 end
 
 -- ---------------------------------------------------------------------

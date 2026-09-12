@@ -46,9 +46,22 @@ test("OnInitialize merges into a fresh table, never into NS.ProfileDefaults", fu
 end)
 
 test("OnInitialize registers /pc and its /prettychat alias", function()
-    t.eq(addon.slashCommands["pc"], "OnSlashCommand", "/pc reaches the dispatcher")
-    t.eq(addon.slashCommands["prettychat"], "OnSlashCommand",
-        "/prettychat is an alias for the same handler")
+    -- Through the kit's AceConsole (kit revision 17), which records the command the
+    -- way the real library does and runs it the way typing it would. This used to read
+    -- a `slashCommands` table tests/wow_mock.lua stamped on the addon object, which
+    -- proved only that a method NAME was handed over, never that typing the command
+    -- reached the dispatcher.
+    local AceConsole = env.LibStub("AceConsole-3.0")
+    t.eq(AceConsole.commands["pc"], "ACECONSOLE_PC", "/pc is registered")
+    t.eq(AceConsole.commands["prettychat"], "ACECONSOLE_PRETTYCHAT",
+        "/prettychat is registered beside it")
+    for _, command in ipairs({ "pc", "prettychat" }) do
+        local from = #env.DEFAULT_CHAT_FRAME.messages
+        AceConsole:__slash(command, "version")
+        local printed = env.DEFAULT_CHAT_FRAME.messages[from + 1] or ""
+        t.truthy(printed:find(NS.version, 1, true) ~= nil,
+            "/" .. command .. " version reached the dispatcher (printed '" .. printed .. "')")
+    end
 end)
 
 test("OnEnable snapshots a Blizzard original for every registered global", function()

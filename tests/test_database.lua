@@ -65,6 +65,95 @@ test("the runner stamps the current version even with no steps to run", function
         "the stamp is written unconditionally")
 end)
 
+-- ---- the load-pass repair: stored keys with no schema row -------------
+--
+-- A reset writes rows, so a stored key no row owns (an override for a global
+-- string a later version dropped) would outlive it. The load pass drops those
+-- keys and prunes what that empties (savedvariables-§1).
+
+local Schema = inst.NS.Schema
+local function firstFormatRow(category)
+    for _, row in ipairs(Schema.RowsByCategory(category)) do
+        if row.kind == "string_format" then return row end
+    end
+end
+local liveRow = firstFormatRow("Loot")
+local liveCat, liveGlobal = liveRow.category, liveRow.globalName
+
+test("the load pass drops strings/disabledStrings keys that have no schema row", function()
+    db.profile.categories[liveCat] = {
+        strings         = { NOT_A_GLOBAL_ANYMORE = "x", [liveGlobal] = "KEPT %s" },
+        disabledStrings = { ALSO_GONE = true, [liveGlobal] = true },
+    }
+    Database.RunMigrations(db)
+    local catDB = db.profile.categories[liveCat]
+    t.nilv(catDB.strings.NOT_A_GLOBAL_ANYMORE, "an orphaned override is dropped")
+    t.nilv(catDB.disabledStrings.ALSO_GONE, "an orphaned disabled flag is dropped")
+    t.eq(catDB.strings[liveGlobal], "KEPT %s", "an override a row owns survives")
+    t.eq(catDB.disabledStrings[liveGlobal], true, "a disabled flag a row owns survives")
+    db.profile.categories[liveCat] = nil
+end)
+
+test("the load pass prunes the tables its repair empties", function()
+    db.profile.categories[liveCat] = {
+        enabled         = false,
+        strings         = { NOT_A_GLOBAL_ANYMORE = "x" },
+        disabledStrings = { ALSO_GONE = true },
+    }
+    Database.RunMigrations(db)
+    local catDB = db.profile.categories[liveCat]
+    t.nilv(catDB.strings, "an emptied strings table is pruned")
+    t.nilv(catDB.disabledStrings, "an emptied disabledStrings table is pruned")
+    t.eq(catDB.enabled, false, "a row-owned key in the same category is untouched")
+
+    db.profile.categories[liveCat] = {
+        strings         = { NOT_A_GLOBAL_ANYMORE = "x" },
+        disabledStrings = { ALSO_GONE = true },
+    }
+    Database.RunMigrations(db)
+    t.nilv(db.profile.categories[liveCat], "a category left with nothing is pruned whole")
+end)
+
+test("a category reset after the load pass leaves no category table", function()
+    db.profile.categories[liveCat] = {
+        strings         = { NOT_A_GLOBAL_ANYMORE = "x", [liveGlobal] = "CUSTOM %s" },
+        disabledStrings = { ALSO_GONE = true },
+    }
+    Database.RunMigrations(db)
+    inst.addon:ResetCategory(liveCat)
+    t.nilv(db.profile.categories[liveCat], "nothing a row does not own is left for the reset to strand")
+end)
+
+test("a profile switch runs the repair on the incoming profile", function()
+    db:SetProfile("RepairTarget")
+    db.profile.categories = db.profile.categories or {}
+    db.profile.categories[liveCat] = { strings = { NOT_A_GLOBAL_ANYMORE = "x" } }
+    db:SetProfile("Default")
+    db:SetProfile("RepairTarget")
+    t.nilv(db.profile.categories[liveCat], "OnProfileChanged ran the load pass")
+    db:SetProfile("Default")
+end)
+
+test("the repair traces once when it drops keys, and stays silent otherwise", function()
+    inst.NS.State.debug = true
+    inst.NS.DebugLog:Clear()
+    Database.RunMigrations(db)
+    t.eq(#inst.NS.DebugLog.buffer, 0, "a clean profile logs nothing")
+    db.profile.categories[liveCat] = { strings = { NOT_A_GLOBAL_ANYMORE = "x" } }
+    Database.RunMigrations(db)
+    t.eq(#inst.NS.DebugLog.buffer, 1, "one [Migrate] line for the repair, never one per key")
+    t.truthy((inst.NS.DebugLog.buffer[1] or ""):find("Migrate", 1, true), "tagged Migrate")
+    inst.NS.State.debug = false
+    inst.NS.DebugLog:Clear()
+end)
+
+test("the repair tolerates a db with no profile or no categories", function()
+    t.truthy(pcall(Database.RunMigrations, { global = {} }), "no profile namespace")
+    t.truthy(pcall(Database.RunMigrations, { global = {}, profile = {} }), "no categories table")
+    t.truthy(pcall(Database.RunMigrations, { global = {}, profile = { categories = { Loot = false } } }),
+        "a non-table category entry")
+end)
+
 test("migrating emits no debug noise when nothing ran", function()
     -- debug-logging-§8: the lifecycle trace fires only when a step actually
     -- executed, so a normal login stays quiet.

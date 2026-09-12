@@ -50,8 +50,16 @@
 --                               the library's private category-tree walk would appear to
 --                               SUCCEED against a stub rather than take the guarded
 --                               fallback a live client can actually hit.
---   9.  AceAddon              — adds GetAddon (three PrettyChat files call it) and
---                               records RegisterChatCommand, which the base no-ops.
+--   9.  AceAddon NewAddon     — the kit's own (revision 17), handed the name and the
+--                               mixin list so it takes its faithful path: it names
+--                               the object, registers it for GetAddon and embeds
+--                               AceConsole, whose RegisterChatCommand records into
+--                               AceConsole.commands. Only `Print` is layered on
+--                               top: the kit's mixin writes to the harness
+--                               process's DEFAULT_CHAT_FRAME global, which is never
+--                               set, so a missing reclaim would print NOTHING and
+--                               test_libka0s's reclaim case would read the last
+--                               [PC] line in the transcript and pass.
 --  10.  AceGUI Create         — adds `:Fire(name, ...)` beside the base's `__fire`
 --                               and mirrors creation order into `_widgets`.
 --  11.  C_AddOns / GetAddOnMetadata
@@ -324,38 +332,24 @@ local function build()
         "GameFontHighlight", "GameFontDisable",
     }) do M[fname] = newFrame(fname) end
 
-    -- 9 — AceAddon with GetAddon and a recorded chat-command registry, keeping the
-    -- base's AceConsole :Print clobber (which core/CoreSetup.lua has to reclaim).
-    local addons = {}
-    local baseNewAddon = M.__libs["AceAddon-3.0"].NewAddon
-    M.__libs["AceAddon-3.0"] = {
-        -- Real signature: NewAddon([object,] name, ...mixins). When the first arg is
-        -- a table it IS the addon object (the NS table, architecture-§2).
-        NewAddon = function(self, first, ...)
-            local object, name
-            if type(first) == "table" then
-                object, name = first, (...)
-            else
-                object, name = {}, first
-            end
-            baseNewAddon(self, object)
-            object.name = name
-            object.slashCommands = {}
-            object.RegisterChatCommand = function(s, cmd, handler)
-                s.slashCommands[cmd] = handler
-            end
-            -- AceConsole's embed, faithful to the base's shape but landing in THIS
-            -- environment's chat frame rather than a real global that is never set.
-            object.Print = function(selfOrMsg, ...)
-                local parts = { "|cff33ff99" .. tostring(selfOrMsg) .. "|r:" }
-                for i = 1, select("#", ...) do parts[#parts + 1] = tostring((select(i, ...))) end
-                chatFrame:AddMessage(table.concat(parts, " "))
-            end
-            addons[name] = object
-            return object
-        end,
-        GetAddon = function(_, name) return addons[name] end,
-    }
+    -- 9 — AceAddon: the kit's NewAddon, called through with every argument, so
+    -- `NewAddon(NS, "PrettyChat", "AceConsole-3.0")` takes the faithful path (name,
+    -- GetAddon, the fourteen mixins, AceConsole embedded through LibStub). The kit
+    -- never reads its receiver, so wrapping it is safe. What stays is the Print
+    -- override the header's item 9 explains: AceConsole's shape, green name and
+    -- trailing colon, landing in THIS environment's chat frame. core/CoreSetup.lua
+    -- has to reclaim it, and a case can only see a failed reclaim if it lands here.
+    local AceAddon    = M.__libs["AceAddon-3.0"]
+    local kitNewAddon = AceAddon.NewAddon
+    AceAddon.NewAddon = function(self, ...)
+        local object = kitNewAddon(self, ...)
+        object.Print = function(selfOrMsg, ...)
+            local parts = { "|cff33ff99" .. tostring(selfOrMsg) .. "|r:" }
+            for i = 1, select("#", ...) do parts[#parts + 1] = tostring((select(i, ...))) end
+            chatFrame:AddMessage(table.concat(parts, " "))
+        end
+        return object
+    end
 
     -- 10 — AceGUI: creation order plus the `:Fire` alias this repo's suites drive.
     local aceGUI  = M.__libs["AceGUI-3.0"]
