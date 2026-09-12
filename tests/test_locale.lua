@@ -167,7 +167,7 @@ local function scanLiterals(src)
                 -- how every routed string in this addon is written.
                 wrapped = src:sub(math.max(1, i - 8), i - 1):match("L%s*%[%s*$") ~= nil,
                 -- `NS.Debug(tag, fmt, …)` is the debug console's sink, not chat:
-                -- its format strings are developer diagnostics that docs/debug.md
+                -- its format strings are developer diagnostics that the standard's debug-logging section
                 -- governs and no translator should ever see. Every such call in
                 -- this addon opens on the line its format string sits on, which
                 -- is what makes the same-line test sufficient.

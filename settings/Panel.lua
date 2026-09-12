@@ -126,29 +126,31 @@ local function buildGeneralBody(ctx)
 end
 
 -- ---------------------------------------------------------------------
--- Per-string block.
---   [Enable]              | Original  [disabled EditBox]
---   GLOBALNAME (gray)     | New       [editable EditBox]
---   [Reset]               | Preview   [disabled EditBox, color rendered]
+-- Per-string editor, in the content pane of the category's TreeGroup.
+--   [Enable]  GLOBALNAME (gray)                    one line
+--   Original  [disabled EditBox]                   full width
+--   New       [editable EditBox]                   full width
+--   Preview   [disabled EditBox, color rendered]   full width
+--   [Reset]
 --
--- The Heading this block used to open with is GONE, replaced by the secondary
--- tab that selects it (options-ui-§13): one tab per string, drawn by
--- buildCategoryBody below. A heading repeating the name of the tab you are
--- standing on is the label options-ui-§7 calls a second name for one thing.
+-- The string is chosen in the tree pane beside it, one row per string, drawn by
+-- buildCategoryBody below (the options-ui-§13 row in docs/ARCHITECTURE.md). The
+-- Heading this editor used to open with is GONE: a heading repeating the name of
+-- the row you have selected is the label options-ui-§7 calls a second name for
+-- one thing.
 --
--- Two-column 40/60 split, drawn by hand rather than by the library's flow
--- engine. This is the documented deviation from options-ui-§6's 50/50 grid
--- (PC-23), and adopting LibKa0s-Options-1.0 did not change the reasoning: the
--- block is a domain-specific three-row CONTROL, not a row of independent
--- settings. The right column holds full format strings with their color
--- escapes and needs the extra width to stay legible; the left column only ever
--- holds a checkbox, a short GLOBALNAME caption and a Reset button.
+-- A tree pane beside a content pane, not the library's flow engine. This is the
+-- documented deviation from options-ui-§6's 50/50 grid (PC-23, re-shaped
+-- 2026-09-03 from a 40/60 three-row block), and adopting LibKa0s-Options-1.0 did
+-- not change the reasoning: the pane holds full format strings with their color
+-- escapes — the Blizzard original, the replacement and the live preview — at
+-- FULL width, which is the width the deviation exists to buy.
 --
 -- RenderGrid is the library's caller-driven sibling of RenderRows and was
 -- re-checked here before this was written: it lays items out two per row at
--- HALF (0.5) or full width and offers no third ratio, so it cannot express
--- 40/60 either. The makers are still used for what they fit — the category's
--- own Enable row above these blocks goes through RenderField — and
+-- HALF (0.5) or full width and offers no third ratio, so it cannot express a
+-- tree-plus-content pane either. The makers are still used for what they fit —
+-- the category's own Enable row above the tree goes through RenderField — and
 -- AttachTooltip, AddSpacer and EnsureScroll are the library's throughout.
 --
 -- Reset restores BOTH per-string dimensions (custom format + enable state) via
@@ -554,7 +556,7 @@ end
 -- NOT H.RenderTabbedSchema, and that is the one thing to understand before
 -- editing this. RenderTabbedSchema partitions a page's SCHEMA ROWS by `group`
 -- and hands each partition to the flow engine; a category tab is one schema row
--- (the Enable) followed by a bespoke 40/60 editor the flow engine cannot express
+-- (the Enable) followed by a bespoke tree-plus-editor pane the flow engine cannot express
 -- (the options-ui-§6 deviation in docs/ARCHITECTURE.md). So the strip is taken
 -- from the library directly through H.TabStrip and the body under it is still
 -- buildCategoryBody, generated per category exactly as before. Every row on this
