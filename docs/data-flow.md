@@ -1,6 +1,6 @@
 # Override pipeline
 
-How Blizzard's chat lines become PrettyChat's reformatted output. The engine lives in `modules/Override.lua` (`ApplyStrings`, the enable predicates, `ResetString` / `ResetCategory` / `ResetAll`); the pristine-values snapshot is taken in `core/PrettyChat.lua`'s `OnEnable`. It runs at `OnEnable`, on every settings change, on a profile switch / copy / reset, and — only while `General.visibility` is a combat-scoped mode — at each combat boundary.
+How Blizzard's chat lines become PrettyChat's reformatted output. The engine lives in `modules/Override.lua` (`ApplyStrings`, the enable predicates, `ResetString` / `ResetCategory` / `ResetAll`); the pristine-values snapshot is taken by `core/PrettyChat.lua`'s `SnapshotOriginals`, the first thing `OnEnable` does. It runs at `OnEnable`, on every settings change, on a profile switch / copy / reset, and — only while `General.visibility` is a combat-scoped mode — at each combat boundary.
 
 ## Three steps
 
@@ -10,10 +10,11 @@ OnEnable                                            ApplyStrings (every settings
    ▼                                                       ▼
 snapshot Blizzard originals                          for each (category, globalName):
    self.originalStrings[NAME] = _G[NAME]               if addon-enabled
+   self.snapshotKeys[NAME]    = true
    for every (category, globalName) in                    AND category-enabled
    NS.Defaults                                     AND string-enabled:
                                                               _G[NAME] = user override OR PrettyChat default
-                                                          else:
+                                                          else, if snapshotKeys[NAME]:
                                                               _G[NAME] = self.originalStrings[NAME]
                                                        │
                                                        ▼
@@ -33,17 +34,26 @@ This also means the addon adds zero per-message overhead: the cost is one global
 Runs once at addon load, after Blizzard's `GlobalStrings.lua` has populated `_G`:
 
 ```lua
-function PrettyChat:OnEnable()
+function PrettyChat:SnapshotOriginals()
     self.originalStrings = {}
+    self.snapshotKeys    = {}
     for _, catData in pairs(NS.Defaults) do
         for globalName in pairs(catData.strings) do
             self.originalStrings[globalName] = _G[globalName]
+            self.snapshotKeys[globalName]    = true
         end
     end
+end
+
+function PrettyChat:OnEnable()
+    self:SnapshotOriginals()
     self:SyncCombatWatch()          -- arms the combat watcher only for a combat-scoped visibility
     self:ApplyStrings()
+    -- then NS.Config.RegisterPanels()
 end
 ```
+
+There are **two** tables because the pristine value of a global this client does not define is `nil`, which is also what an unrecorded entry looks like. `snapshotKeys` records that the pass looked, so the restore arm below can put an absent global back to `nil` rather than leave the override in place (PC-R-07).
 
 This is the *only* chance to capture Blizzard's pristine values for the runtime "restore" path. Any later code that overrides `_G[GLOBALNAME]` (other addons, runtime patches) will be invisible to the snapshot.
 
@@ -70,7 +80,8 @@ function PrettyChat:ApplyStrings()
                    and self:IsCategoryEnabled(category)
                    and self:IsStringEnabled(category, globalName) then
                     _G[globalName] = self:GetStringValue(category, globalName)
-                elseif self.originalStrings and self.originalStrings[globalName] then
+                elseif self.snapshotKeys and self.snapshotKeys[globalName] then
+                    -- the KEY SET decides, never the value: a nil original is restored to nil
                     _G[globalName] = self.originalStrings[globalName]
                 end
             end

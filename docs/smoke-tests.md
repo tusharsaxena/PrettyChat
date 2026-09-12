@@ -115,17 +115,18 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 #### T-23 — Per-string block layout
 
-> Why: `buildStringRow` renders `Heading + 3 × Flow row (40/60)`.
+> Why: `buildStringRow` renders one editor into the `TreeGroup`'s content pane: `[Enable]` beside the `GLOBALNAME` caption, then three full-width EditBoxes, then `[Reset]` at the foot. There is no heading; the tree entry that selects the string is its name.
 
-- Steps: open Categories > Loot. Pick any string.
-- Expected layout:
+- Steps: open Categories > Loot. Pick any string from the list on the left.
+- Expected layout, in the pane to the right of the 200px string list:
   ```
-  ─── <strData.label> ───
-  [Enable]            | Original [disabled EditBox]
-  GLOBALNAME (gray)   | New      [editable EditBox]
-  [Reset]             | Preview  [disabled EditBox]
+  [Enable]  GLOBALNAME (gray)
+  Original  [disabled EditBox]
+  New       [editable EditBox]
+  Preview   [disabled EditBox]
+  [Reset]
   ```
-  Left column = 40% width. Right column = 60%, EditBoxes have their `Original` / `New` / `Preview` labels above the input.
+  `[Enable]` takes 30% of the pane and the caption 70%. The three EditBoxes are full pane width, each with its `Original` / `New` / `Preview` label above the input. `[Reset]` is 40% of the pane, on a row of its own.
 
 #### T-24 — Preview EditBox renders color escapes
 
@@ -221,7 +222,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 > Why: a Texture is not an AceGUI child, so `ReleaseChildren` does not take the logo away with the
 > `SimpleGroup` that carries it — and AceGUI **pools that group's frame across every addon in the
 > session**. The library's `BuildLandingPage` hides the texture on `OnRelease`
-> (`libs/LibKa0s/OptionsWidgets.lua:323`); the hand-copied body this addon used to carry set no
+> (`libs/LibKa0s/OptionsWidgets.lua:337`); the hand-copied body this addon used to carry set no
 > `OnRelease` at all, so the next widget handed that frame inherited a 300px logo. The leak lands in
 > *somebody else's* panel, which is why no headless case and no PrettyChat-only pass can see it —
 > `tests/test_panel.lua` pins that the release hook exists and hides the texture, and step 2 below is
@@ -663,7 +664,7 @@ nothing while the header button beside it worked.
 **Expected — unchanged:** the breadcrumb `Ka0s Pretty Chat ▸ <Page>` with its inline arrow atlas;
 the title in `GameFontNormalHuge` with the gold divider tinted to it; the **Defaults** button top
 right at the same inset; the scrollbar gutter reserved on every page, short or long, with the bar
-grayed and inert where the content fits; the per-string 40/60 blocks.
+grayed and inert where the content fits; the per-string editor block (the layout T-23 describes).
 
 **Expected — deliberately different:** the General page's controls sit at a true 50/50 rather
 than 0.492 (label-inset controls, so the honest half is correct); the landing page's command rows
@@ -900,7 +901,7 @@ That is what the addon does. Do not file it. What these tests look for is an **e
 
 #### T-104 — The snapshot holds the client's own strings, and the restore gives them back
 
-**Why:** `PrettyChat:SnapshotOriginals` (`core/PrettyChat.lua:105-114`) reads `_G[globalName]` at
+**Why:** `PrettyChat:SnapshotOriginals` (`core/PrettyChat.lua:150-159`) reads `_G[globalName]` at
 `OnEnable`, so on this client it is capturing German. `ApplyStrings`'s restore arm
 (`modules/Override.lua:155-164`) writes those values back. A restore is only ever as good as what
 the snapshot recorded, and nothing outside a live client can say what it recorded.

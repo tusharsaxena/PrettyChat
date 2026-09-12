@@ -120,12 +120,10 @@ dates for you. It does not make the addon non-compliant, and it is never a commi
   It is needed only to *re-vendor* or to run the vendor-sync diffs above; without it those checks
   skip.
 - **`AceEvent-3.0` / `AceTimer-3.0`** are not vendored and not needed — this addon `LibStub`s
-  neither. `library-stack-§1`'s mandatory-libs table lists both as vendored while
-  `library-stack.md:39` MUSTs vendoring only what the addon actually `LibStub`s, so the two halves
-  cannot both be satisfied here. The decision, its reason and its re-check trigger are the
-  `library-stack-§1` row of `## Documented deviations` in
-  [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) — that register is the ratified record; this line
-  only points at it.
+  neither. `library-stack-§1`'s table now marks both mandatory only **when used**, so not vendoring
+  them is compliant. The deviation row that used to record this was retired on 2026-09-08; the
+  note on why is under `## Documented deviations` in
+  [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
 
 ---
 
