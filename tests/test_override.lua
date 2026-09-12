@@ -91,7 +91,7 @@ test("IsStringEnabled is true unless the string is explicitly disabled", functio
     Schema.Set(cat .. "." .. g .. ".enabled", true)
     t.truthy(addon:IsStringEnabled(cat, g), "re-enabling clears the flag")
     local catDB = addon.db.profile.categories[cat]
-    t.falsy(catDB.disabledStrings[g],
+    t.falsy(catDB and catDB.disabledStrings and catDB.disabledStrings[g],
         "re-enabling stores nil rather than false (SavedVariables stay lean)")
 end)
 
@@ -261,6 +261,142 @@ test("ResetAll clears the master flag and every category at once", function()
     t.nilv(addon.db.profile.enabled, "master flag cleared")
     t.truthy(next(addon.db.profile.categories) == nil, "every category table cleared")
     t.eq(env[g], def, "live chat is back on the shipped defaults")
+end)
+
+-- ---- reset characterization (#15) -----------------------------------
+--
+-- What a per-category and a per-string reset must leave behind, whatever writes it:
+-- the stored shape, the live `_G` globals, exactly ONE ApplyStrings pass and exactly
+-- ONE [Reset] summary (debug-logging-§9: never a [Set] line per row).
+
+-- A second Loot format row, so a reset of `g` can be shown to leave its neighbour alone.
+local row2
+for _, r in ipairs(Schema.RowsByCategory(cat)) do
+    if r.kind == "string_format" and r.globalName ~= g then row2 = r; break end
+end
+local g2 = row2.globalName
+
+-- Run fn with ApplyStrings counted and the debug console capturing, and hand back
+-- the pass count, the [Reset] line count and the [Set] line count.
+local function probeReset(fn)
+    local D = NS.DebugLog
+    local origApply = addon.ApplyStrings
+    local passes = 0
+    addon.ApplyStrings = function(self, ...)
+        passes = passes + 1
+        return origApply(self, ...)
+    end
+    local wasDebug = NS.State.debug
+    NS.State.debug = true
+    D:Clear()
+    local ok, err = pcall(fn)
+    addon.ApplyStrings = origApply
+    NS.State.debug = wasDebug
+    if not ok then error(err, 0) end
+    local resets, sets = 0, 0
+    for _, line in ipairs(D.buffer) do
+        if line:find("[Reset]", 1, true) then resets = resets + 1 end
+        if line:find("[Set]", 1, true) then sets = sets + 1 end
+    end
+    return passes, resets, sets, table.concat(D.buffer, "\n")
+end
+
+test("ResetCategory: one pass, one [Reset] line, the category's rows back at default", function()
+    addon:ResetAll()
+    Schema.Set(cat .. ".enabled", false)
+    Schema.Set(cat .. "." .. g .. ".format", "CUSTOM")
+    Schema.Set(cat .. "." .. g2 .. ".enabled", false)
+    Schema.Set("Money.enabled", false)
+    t.eq(env[g], "ORIG:" .. g, "a disabled category shows the original before the reset")
+
+    local passes, resets, sets, log = probeReset(function() addon:ResetCategory(cat) end)
+
+    t.nilv(addon.db.profile.categories[cat], "the category stores nothing afterwards")
+    t.eq(addon.db.profile.categories.Money.enabled, false, "another category is untouched")
+    t.eq(env[g], def, "the default override is live in _G again")
+    t.eq(env[g2], row2.default, "and so is the re-enabled neighbour")
+    t.eq(passes, 1, "exactly one ApplyStrings pass")
+    t.eq(resets, 1, "exactly one [Reset] line")
+    t.eq(sets, 0, "and no per-row [Set] lines")
+    t.truthy(log:find("%[Reset%] " .. cat .. " → applied %d+ restored %d+"),
+        "the summary names the category and carries the apply counts")
+    addon:ResetAll()
+end)
+
+test("ResetCategory('General'): one pass, one [Reset] line, the watcher disarmed", function()
+    addon:ResetAll()
+    Schema.Set(cat .. "." .. g .. ".format", "CUSTOM")
+    Schema.Set("General.enabled", false)
+    Schema.Set("General.visibility", "inCombat")
+    t.truthy(watcher()._events.PLAYER_REGEN_DISABLED, "a combat mode armed the watcher")
+
+    local passes, resets, sets, log = probeReset(function() addon:ResetCategory("General") end)
+
+    t.nilv(addon.db.profile.enabled, "the master flag stores nothing")
+    t.nilv(addon.db.profile.visibility, "nor does visibility")
+    t.eq(addon.db.profile.categories[cat].strings[g], "CUSTOM",
+        "a category override survives a General reset")
+    t.eq(env[g], "CUSTOM", "and is live in _G again, with the master back on")
+    t.nilv(watcher()._events.PLAYER_REGEN_DISABLED, "the watcher drops combat entry")
+    t.nilv(watcher()._events.PLAYER_REGEN_ENABLED, "and combat exit")
+    t.eq(passes, 1, "exactly one ApplyStrings pass")
+    t.eq(resets, 1, "exactly one [Reset] line")
+    t.eq(sets, 0, "and no per-row [Set] lines")
+    t.truthy(log:find("%[Reset%] General → applied %d+ restored %d+"),
+        "the summary names General")
+    addon:ResetAll()
+end)
+
+test("ResetString: one pass, one [Reset] line, both of the string's rows cleared", function()
+    addon:ResetAll()
+    Schema.Set(cat .. "." .. g .. ".enabled", false)
+    Schema.Set(cat .. "." .. g .. ".format", "CUSTOM")
+    Schema.Set(cat .. "." .. g2 .. ".format", "CUSTOM2")
+    t.eq(env[g], "ORIG:" .. g, "a disabled string shows the original before the reset")
+
+    local passes, resets, sets, log = probeReset(function() addon:ResetString(cat, g) end)
+
+    local catDB = addon.db.profile.categories[cat]
+    t.falsy(catDB.strings[g], "the format override is gone")
+    t.falsy(catDB.disabledStrings and catDB.disabledStrings[g], "and so is the disable flag")
+    t.eq(catDB.strings[g2], "CUSTOM2", "the neighbouring string keeps its override")
+    t.eq(env[g], def, "the default override is live in _G again")
+    t.eq(env[g2], "CUSTOM2", "and the neighbour's is unchanged")
+    t.eq(passes, 1, "exactly one ApplyStrings pass")
+    t.eq(resets, 1, "exactly one [Reset] line")
+    t.eq(sets, 0, "and no per-row [Set] lines")
+    t.truthy(log:find("%[Reset%] " .. cat .. "%." .. g .. " → applied %d+ restored %d+"),
+        "the summary names the string")
+    addon:ResetAll()
+end)
+
+test("both resets write through the helper's batched entry, Schema.ResetRows", function()
+    -- architecture-§5: a reset that touches schema rows goes through the one write
+    -- helper. Dies if a reset clears row-backed storage itself.
+    t.eq(type(Schema.ResetRows), "function", "the helper has a batched entry")
+    local seen = {}
+    local orig = Schema.ResetRows
+    Schema.ResetRows = function(list, ...)
+        local paths = {}
+        for i, r in ipairs(list) do paths[i] = r.path end
+        seen[#seen + 1] = table.concat(paths, ",")
+        return orig(list, ...)
+    end
+    local ok, err = pcall(function()
+        addon:ResetCategory(cat)
+        addon:ResetCategory("General")
+        addon:ResetString(cat, g)
+    end)
+    Schema.ResetRows = orig
+    if not ok then error(err, 0) end
+    t.eq(#seen, 3, "each reset makes exactly one batched call")
+    local catPaths = {}
+    for i, r in ipairs(Schema.RowsByCategory(cat)) do catPaths[i] = r.path end
+    t.eq(seen[1], table.concat(catPaths, ","), "a category reset covers every row of the category")
+    t.eq(seen[2], "General.enabled,General.visibility",
+        "General covers its two stored rows, never the session-only console")
+    t.eq(seen[3], cat .. "." .. g .. ".enabled," .. cat .. "." .. g .. ".format",
+        "a string reset covers exactly that string's two rows")
 end)
 
 test("a visibility equal to the default stores nothing at all", function()

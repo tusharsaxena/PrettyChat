@@ -171,24 +171,30 @@ function PrettyChat:ApplyStrings()
     return applied, restored
 end
 
-function PrettyChat:ResetCategory(category)
+-- The General virtual category's two STORED rows. Not RowsByCategory("General"):
+-- that also returns the session-only console toggle, and a Defaults press must
+-- not close the debug console.
+local GENERAL_RESET_PATHS = { "General.enabled", "General.visibility" }
+
+-- Restore one category to its defaults, every row of it through the write
+-- helper's batched entry (architecture-§5): one ApplyStrings pass, one panel
+-- refresh and one [Reset] summary, never a pass or a [Set] line per row. For
+-- General the visibility row's own set() re-syncs the combat watcher.
+--
+-- Dot-defined with a `_` receiver: callers still use the colon form, and the body
+-- reads the schema through NS rather than through the addon table.
+function PrettyChat.ResetCategory(_, category)
+    local Schema = NS.Schema
+    local list
     if category == "General" then
-        -- The General virtual category owns the two addon-wide keys and nothing
-        -- else (no entry in db.profile.categories). Resetting it clears both back
-        -- to their defaults — enabled true, visibility "always".
-        self.db.profile.enabled = nil
-        self.db.profile.visibility = nil
-        self:SyncCombatWatch()
-    elseif self.db.profile.categories[category] then
-        self.db.profile.categories[category] = nil
+        list = {}
+        for _, path in ipairs(GENERAL_RESET_PATHS) do
+            list[#list + 1] = Schema.FindByPath(path)
+        end
+    else
+        list = Schema.RowsByCategory(category)
     end
-    local applied, restored = self:ApplyStrings()
-    if NS.Schema and NS.Schema.NotifyPanelChange then
-        NS.Schema.NotifyPanelChange(category)
-    end
-    -- Bulk mutation (debug-logging-§8): a reset bypasses the Schema.Set `[Set]` seam, so it
-    -- carries its own summary with the material effect (how many strings reverted).
-    NS.Debug("Reset", "%s → applied %d restored %d", category, applied, restored)
+    Schema.ResetRows(list, category)
 end
 
 --- The global reset, and it is a PROFILE reset (options-ui-§12).
@@ -217,20 +223,16 @@ end
 -- clear BOTH per-string dimensions — the custom format AND the disable
 -- flag — so it matches the full-reset semantics of ResetCategory /
 -- ResetAll (which wipe every dimension at once). Resetting only the
--- format would leave a previously-disabled string half-reset.
-function PrettyChat:ResetString(category, globalName)
-    local catDB = self.db.profile.categories[category]
-    if catDB then
-        if catDB.strings then catDB.strings[globalName] = nil end
-        if catDB.disabledStrings then catDB.disabledStrings[globalName] = nil end
-    end
-    local applied, restored = self:ApplyStrings()
-    if NS.Schema and NS.Schema.NotifyPanelChange then
-        NS.Schema.NotifyPanelChange(category)
-    end
-    -- Bulk mutation (debug-logging-§8): bypasses the Schema.Set `[Set]` seam,
-    -- so it carries its own summary with the material effect.
-    NS.Debug("Reset", "%s.%s → applied %d restored %d", category, globalName, applied, restored)
+-- format would leave a previously-disabled string half-reset. Both rows go
+-- through the write helper's batched entry, so the pair costs one pass and
+-- one [Reset] line rather than two of each.
+function PrettyChat.ResetString(_, category, globalName)
+    local Schema = NS.Schema
+    local base = category .. "." .. globalName
+    local list = {}
+    list[#list + 1] = Schema.FindByPath(base .. ".enabled")
+    list[#list + 1] = Schema.FindByPath(base .. ".format")
+    Schema.ResetRows(list, base)
 end
 
 -- ---------------------------------------------------------------------

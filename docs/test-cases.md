@@ -211,7 +211,7 @@ badge and any count quoted in the docs must agree with it.
 - ResetString clears both the custom format and the per-string disable
 - cross-registered global resolves to the last CATEGORY_ORDER registrant, stably
 
-### test_override.lua (24)
+### test_override.lua (28)
 
 - GetStringValue falls back to the defaults table until overridden
 - IsAddonEnabled treats an absent flag as default-true
@@ -228,6 +228,10 @@ badge and any count quoted in the docs must agree with it.
 - ResetCategory drops the whole category table
 - ResetCategory('General') clears only the addon-wide keys
 - ResetAll clears the master flag and every category at once
+- ResetCategory: one pass, one [Reset] line, the category's rows back at default
+- ResetCategory('General'): one pass, one [Reset] line, the watcher disarmed
+- ResetString: one pass, one [Reset] line, both of the string's rows cleared
+- both resets write through the helper's batched entry, Schema.ResetRows
 - a visibility equal to the default stores nothing at all
 - Test prints a header, a per-category block, and a counted footer
 - Test writes every line to the sink it is given, and nothing to chat
@@ -426,7 +430,7 @@ badge and any count quoted in the docs must agree with it.
 | test_schema.lua | 31 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
-| test_override.lua | 24 |
+| test_override.lua | 28 |
 | test_database.lua | 10 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 25 |
@@ -435,4 +439,4 @@ badge and any count quoted in the docs must agree with it.
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **329** |
+| **Total** | **333** |

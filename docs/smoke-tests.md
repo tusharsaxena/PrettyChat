@@ -456,7 +456,7 @@ The four reset entry points — per-string **Reset** button, per-category **Defa
 
 #### T-58 — Every reset emits a consistent debug summary
 
-> Why: all three reset methods bypass the `Schema.Set` `[Set]` seam (debug-logging-§8), so each carries its own `NS.Debug("Reset", …)` line with the material effect (`applied` / `restored` counts).
+> Why: a reset is a bulk write, so it logs one `NS.Debug("Reset", …)` summary with the material effect (`applied` / `restored` counts) instead of a `[Set]` line per row (debug-logging-§8/§9). The per-string and per-category resets emit it from `Schema.ResetRows`, the write helper's batched entry; `/pc resetall` emits it from the profile-reset handler in `core/PrettyChat.lua`.
 
 - Setup: `/pc debug` to open the console and enable logging (toggle green).
 - Steps: trigger each reset once — a row Reset, a category **Defaults**, `/pc resetall`.

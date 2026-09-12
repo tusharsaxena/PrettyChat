@@ -82,8 +82,8 @@ end
 Runs from:
 
 - `OnEnable` — initial pass after the snapshot.
-- `Schema.Set` (every row write from the panel and the slash CLI) — `Schema.Set` calls `ApplyStrings` directly after the row's `set()` writes the DB. Row `set()` closures themselves are pure DB writes; they do not trigger `ApplyStrings` so a future `Schema.SetMany` / preset-load can apply once per batch.
-- `PrettyChat:ResetString(cat, name)` and `PrettyChat:ResetCategory(cat)` — both bypass `Schema.Set` (they clear stored entries wholesale rather than writing through a single row), so they call `ApplyStrings` and `Schema.NotifyPanelChange` themselves.
+- `Schema.Set` (every row write from the panel and the slash CLI) — `Schema.Set` calls `ApplyStrings` directly after the row's `set()` writes the DB. Row `set()` closures themselves are pure DB writes; they do not trigger `ApplyStrings`, so the batched entry below can apply once per batch.
+- `Schema.ResetRows(rows, label)`, the write helper's batched entry, reached from `PrettyChat:ResetString(cat, name)` (that string's two rows) and `PrettyChat:ResetCategory(cat)` (every row of the category, or `General`'s two stored rows). It writes each row's default through its `set()`, then calls `ApplyStrings` once and `Schema.NotifyPanelChange` once for the whole batch.
 - `PrettyChat:ResetAll()` — **not** directly. It is a profile reset (`db:ResetProfile()`, options-ui-§12); the re-apply lands on the `OnProfileReset` callback below.
 - The three AceDB profile callbacks in `core/PrettyChat.lua`'s `OnInitialize` — `OnProfileChanged`, `OnProfileCopied` and `OnProfileReset`. One body, three tags: re-run the migrations, `SyncCombatWatch`, `ApplyStrings`, `Schema.NotifyPanelChange()` (nil → every category), then one summary line. Switching, copying or resetting a profile replaces every stored value at once, and nothing else would have reacted.
 - `PrettyChatCombatWatcher` — one `ApplyStrings` pass per combat **boundary**, and only while `General.visibility` is `inCombat` or `outOfCombat` (see [The three enable layers](#the-three-enable-layers)).

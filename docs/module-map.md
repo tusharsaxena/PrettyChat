@@ -95,8 +95,8 @@ PrettyChat:OpenConfig()                -- a one-line delegate to NS.Helpers.Open
 
 -- Override pipeline (modules/Override.lua — also see data-flow.md)
 PrettyChat:ApplyStrings()              -- writes enabled overrides to _G; restores originals for disabled ones
-PrettyChat:ResetString(category, globalName)  -- clears BOTH per-string dimensions (custom format + disable flag) + ApplyStrings + NotifyPanelChange
-PrettyChat:ResetCategory(category)     -- clears one category's overrides + ApplyStrings + NotifyPanelChange
+PrettyChat:ResetString(category, globalName)  -- resets BOTH per-string rows (format + enable) through Schema.ResetRows: one ApplyStrings, one NotifyPanelChange
+PrettyChat:ResetCategory(category)     -- resets every row of one category (General: its two stored rows) through Schema.ResetRows
 PrettyChat:ResetAll()                  -- db:ResetProfile() -- a PROFILE reset (options-ui-§12). OnProfileReset re-runs the migrations, re-applies every string and notifies the panel
 PrettyChat:Test(filter, sink)          -- prints a per-category Original-vs-Formatted block per string (ignores enable toggles); filter is nil | {kind="category", value=…} | {kind="formatstring", value=…}; sink defaults to NS.Print, and the General page's Test button passes the debug console's writer instead
 PrettyChat:ConfirmResetAll()           -- the ONE way into ResetAll: raises the PRETTYCHAT_RESET_ALL StaticPopup (settings/Panel.lua)
@@ -127,6 +127,7 @@ NS.Schema.Set(path, value)                     -- conversion-signature gate → 
                                                -- returns false (nothing stored) on an unknown path or a refused format
 NS.Schema.AllRows()                            -- every row in DECLARATION order (the live table, not a copy); the Slash + Options descriptors' `allRows`
 NS.Schema.ApplyDefault(row)                    -- restore ONE row to row.default through Schema.Set; not the bulk reset (that is PrettyChat:ResetCategory / :ResetAll)
+NS.Schema.ResetRows(rows, label)               -- the batched entry: each row.set(row.default) behind Set's gates, then ONE ApplyStrings, ONE NotifyPanelChange, ONE [Reset] line
 NS.Schema.validation                           -- { checked, failed, misses } from the load-time path validator; asserted by the suite
 NS.Schema.FormatValue(row, value)              -- type-aware display string (bool → true/false; string → format with `|` doubled to `||`); shared by /pc list rows and the get/set echo
 NS.Schema.ResolveCategory(name)                -- case-insensitive "loot" → "Loot"; falls back to unambiguous prefix
