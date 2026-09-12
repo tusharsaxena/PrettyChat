@@ -242,7 +242,7 @@ badge and any count quoted in the docs must agree with it.
 - an unrenderable override is reported as an error line, not a crash
 - every Test line routes through the [PC] printer
 
-### test_database.lua (10)
+### test_database.lua (16)
 
 - NS.Database and the db.global namespace exist
 - a fresh DB is stamped at the current schema version
@@ -253,6 +253,12 @@ badge and any count quoted in the docs must agree with it.
 - a DB with no recorded version is treated as version 0
 - RunMigrations tolerates nil and a db without .global
 - the runner stamps the current version even with no steps to run
+- the load pass drops strings/disabledStrings keys that have no schema row
+- the load pass prunes the tables its repair empties
+- a category reset after the load pass leaves no category table
+- a profile switch runs the repair on the incoming profile
+- the repair traces once when it drops keys, and stays silent otherwise
+- the repair tolerates a db with no profile or no categories
 - migrating emits no debug noise when nothing ran
 
 ### test_lifecycle.lua (12)
@@ -431,7 +437,7 @@ badge and any count quoted in the docs must agree with it.
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
 | test_override.lua | 28 |
-| test_database.lua | 10 |
+| test_database.lua | 16 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 25 |
 | test_slash.lua | 42 |
@@ -439,4 +445,4 @@ badge and any count quoted in the docs must agree with it.
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **333** |
+| **Total** | **339** |
