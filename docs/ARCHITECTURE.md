@@ -140,7 +140,7 @@ What stands in its place is a **direct, synchronous fan-out inside the single wr
 
 ## Slash Commands
 
-`/pc` and `/prettychat` dispatch through one ordered `COMMANDS` table in `settings/Slash.lua` (help text is generated from the same table). Verbs: `help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `test`, `debug`. `NS.COMMANDS` is published as positional triples so the landing page renders the same list through `Sl:LandingRows()` — one formatter, two surfaces. Dispatch, help, the schema verbs, the `key = value` pair and the parser are `LibKa0s-Slash-1.0`'s; this addon adds a `format` hook (the `||` doubling) and a `parse` hook (free text containing spaces). `reset` takes a **path**, not a category. Chat input requires `||` for a literal `|`. Detail: [slash-dispatch.md](./slash-dispatch.md).
+`/pc` and `/prettychat` dispatch through one ordered `COMMANDS` table in `settings/Slash.lua` (help text is generated from the same table). Verbs: `help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `test`, `debug`. `NS.COMMANDS` is published as positional triples so the landing page renders the same list through `Sl:LandingRows()` — one formatter, two surfaces. Dispatch, help, the schema verbs, the `key = value` pair and the parser are `LibKa0s-Slash-1.0`'s; this addon adds a `format` hook (the `||` doubling) and a `parse` hook (the `||` unescape on the way in; the library keeps a free-text value whole). `reset` takes a **path**, not a category. Chat input requires `||` for a literal `|`. Detail: [slash-dispatch.md](./slash-dispatch.md).
 
 ## Event Subscriptions
 

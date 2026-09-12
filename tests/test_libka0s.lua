@@ -547,8 +547,9 @@ test("the format hook doubles pipes without re-implementing the value formatter"
 end)
 
 test("the parse hook keeps a whole free-text value, spaces and all", function()
-    -- The gap it exists for: lib.ParseValue splits the remainder on whitespace and a
-    -- string row takes args[1]. Driven through the REAL verb, not the hook directly.
+    -- The hook first existed to fill a library gap: through Slash minor 9 lib.ParseValue
+    -- gave a string row its first word only. Minor 10 keeps the whole value, and the hook
+    -- now adds only the `||` unescape. Driven through the REAL verb, not the hook directly.
     local row = NS.Schema.FindByPath("Loot.LOOT_ITEM_SELF.format")
     NS.SlashCommands:OnSlash("set " .. row.path .. " You receive loot: %s")
     t.eq(NS.Schema.Get(row.path), "You receive loot: %s", "the whole remainder was stored")
