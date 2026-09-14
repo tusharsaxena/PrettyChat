@@ -116,6 +116,20 @@ if not lib then
         -- AceGUI there is no tab art to measure.
         __tabArtHeight       = function() return 0 end,
         __resetTabArtHeight  = function() end,
+        -- OptionsWidgets 16 — the choice grid and the id-entry widgets, with the
+        -- resolver and candidate helpers behind them. Nothing in this addon calls
+        -- any of them (`grep -rn "ChoiceGrid\|IdInput\|IdList\|ResolveId" core
+        -- settings modules` finds only this stub), so they are all render time
+        -- and inert here: no widget drawn, no id resolved. A stub resolver would be
+        -- a second copy of the library's lookup order (anti-pattern #47), and an
+        -- empty hint table is the honest degraded answer, because the live one is
+        -- the library's own English.
+        ChoiceGrid           = function() return nil end,
+        IdInput              = function() return nil end,
+        IdList               = function() return nil end,
+        ResolveId            = function() return nil end,
+        UnnamedCandidates    = function() return nil end,
+        ID_NAME_HINT         = {},
         -- ── the ONE stub member that is reached at LOAD ──────────────────
         --
         -- options-ui-§1's degradation rule is LOAD-COMPLETING, and the measured
