@@ -130,6 +130,10 @@ if not lib then
         ResolveId            = function() return nil end,
         UnnamedCandidates    = function() return nil end,
         ID_NAME_HINT         = {},
+        -- SelectTab, new at LibKa0s v1.36.0: reached only from a tab click on an
+        -- already-rendered page. This addon does not adopt tab-scoped refresh, so
+        -- the same inert no-op applies.
+        SelectTab            = function() end,
         -- ── the ONE stub member that is reached at LOAD ──────────────────
         --
         -- options-ui-§1's degradation rule is LOAD-COMPLETING, and the measured
