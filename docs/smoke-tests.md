@@ -336,10 +336,10 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 #### T-38 — Unknown command + empty input
 
-> Why: dispatcher falls back to `printHelp` for both.
+> Why: the dispatcher falls back to help for an unknown verb, but a bare `/pc` runs `config` (slash-commands-§4).
 
-- Steps: `/pc bogus`, then `/pc` (no args).
-- Expected: `/pc bogus` prints `unknown command 'bogus'` followed by the help index. `/pc` (no args) prints just the help index.
+- Steps: `/pc bogus`, then `/pc` (no args), then `/pc` followed by a few spaces, then `/pc help`.
+- Expected: `/pc bogus` prints `unknown command 'bogus'` followed by the help index. `/pc` (no args) and the space-padded `/pc` each open the settings panel on the parent **Ka0s Pretty Chat** page, the same as `/pc config`, and print no help. `/pc help` prints the help index.
 
 ### X — Cross-surface sync (panel ↔ slash)
 
@@ -701,7 +701,7 @@ seam the client resolved late would show a stale version rather than an error.
 **Steps:**
 1. `/reload`.
 2. `/pc version`
-3. `/pc` (the help index header line).
+3. `/pc help` (the help index header line).
 4. `/pc config` and read the top of the parent **Ka0s Pretty Chat** page.
 
 **Expected:** no Lua error on load. (2) and (3) both print the version from the TOC's

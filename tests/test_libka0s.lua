@@ -592,6 +592,15 @@ test("with Slash absent the host verbs survive and the schema CLI says why", fun
         ", so the settings CLI is unavailable.", 1, true),
         "through the shared cause clause")
 
+    -- A bare /pc runs the stub's `config` verb, as the library's dispatcher does, so
+    -- it answers with the panel's own notice and not with the help index.
+    before = #msgs
+    bare.addon:OnSlashCommand("  ")
+    t.eq(#msgs, before + 1, "bare /pc answers with one line")
+    t.truthy(msgs[#msgs]:find(bare.NS.LIBKA0S_MISSING ..
+        ", so the settings panel is unavailable.", 1, true),
+        "and that line is config's, not the help header")
+
     -- And the stub re-implements none of the library's rendering.
     local src = readFile("settings/Slash.lua")
     t.falsy(src:find("cFFFFFF00", 1, true), "no copied row/key color codes in the seam")

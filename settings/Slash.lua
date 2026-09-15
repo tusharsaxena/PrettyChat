@@ -86,16 +86,27 @@ if not lib then
     -- Nothing here re-implements a row formatter, a `key = value` shape or the
     -- parser. A degraded help row renders plainly and says so.
     local function unavailable() NS.Print(CLI_MISSING) end
+    local function findCommand(name)
+        for _, entry in ipairs(COMMANDS) do
+            if entry[1] == name then return entry end
+        end
+    end
 
     Sl = {
         OnSlash = function(_, msg)
             local raw = trim(msg)
-            if raw == "" then return Sl:PrintHelp() end
+            -- A bare `/pc` opens the settings panel through the `config` verb when one
+            -- is registered, and prints help only when none is, the same as the
+            -- library's dispatcher since Slash minor 11 (slash-commands-§4).
+            if raw == "" then
+                local config = findCommand("config")
+                if config then return config[3]("") end
+                return Sl:PrintHelp()
+            end
             local name, rest = raw:match("^(%S+)%s*(.*)$")
             name = (name or ""):lower()
-            for _, entry in ipairs(COMMANDS) do
-                if entry[1] == name then return entry[3](rest or "") end
-            end
+            local entry = findCommand(name)
+            if entry then return entry[3](rest or "") end
             NS.Print(L["unknown command '%s'"]:format(name))
             Sl:PrintHelp()
         end,

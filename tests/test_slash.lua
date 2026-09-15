@@ -71,8 +71,31 @@ end)
 
 -- ---- dispatch -------------------------------------------------------
 
-test("a bare /pc prints the help index", function()
+test("a bare /pc opens the settings panel through config", function()
+    -- slash-commands-§4: bare /pc runs the registered `config` verb (Slash minor 11),
+    -- which opens the top-level category, the landing page. Help is `/pc help`.
+    local opens = #env._settings.opened
     local out = slash("")
+    t.eq(#env._settings.opened, opens + 1, "Settings.OpenToCategory was called once")
+    t.eq(env._settings.opened[#env._settings.opened],
+        env._settings.categories[1]:GetID(),
+        "it opened the parent category, not a sub-page")
+    for _, line in ipairs(out) do
+        t.falsy(line:find("slash commands", 1, true), "the help index was not printed")
+    end
+end)
+
+test("a whitespace-only /pc is bare too", function()
+    local opens = #env._settings.opened
+    local out = slash("   ")
+    t.eq(#env._settings.opened, opens + 1, "the padded input still ran config")
+    for _, line in ipairs(out) do
+        t.falsy(line:find("slash commands", 1, true), "and printed no help index")
+    end
+end)
+
+test("/pc help prints the help index", function()
+    local out = slash("help")
     t.truthy(#out > #NS.COMMANDS, "help emits a header plus one line per command")
     t.truthy(out[1]:find("slash commands", 1, true), "the header names the surface")
 end)

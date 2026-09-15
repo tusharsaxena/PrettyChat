@@ -315,11 +315,13 @@ badge and any count quoted in the docs must agree with it.
 - a profile reset that raises logs its one line marked, exactly once
 - a profile copy that raises logs its one line marked
 
-### test_slash.lua (43)
+### test_slash.lua (45)
 
 - Schema.FormatValue formats bools and doubles pipes in strings
 - NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
-- a bare /pc prints the help index
+- a bare /pc opens the settings panel through config
+- a whitespace-only /pc is bare too
+- /pc help prints the help index
 - /pc help lists every command with its description
 - an unknown verb says so and then prints the help index
 - the verb is lower-cased but the argument keeps its case
@@ -452,9 +454,9 @@ badge and any count quoted in the docs must agree with it.
 | test_database.lua | 16 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
-| test_slash.lua | 43 |
+| test_slash.lua | 45 |
 | test_panel.lua | 46 |
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **351** |
+| **Total** | **353** |

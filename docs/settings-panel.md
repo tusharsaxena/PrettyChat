@@ -1,6 +1,6 @@
 # Settings panel
 
-`settings/Panel.lua` builds the settings panel directly on Blizzard's modern `Settings.RegisterCanvasLayoutCategory` / `Settings.RegisterCanvasLayoutSubcategory` API and renders body content with AceGUI. PrettyChat appears under **Ka0s Pretty Chat**; the parent page hosts the logo, tagline, and slash-command list (read-only orientation) — drawn by the library's `H.BuildLandingPage` from a spec this addon declares, not by a body of its own, and **two** sub-pages hold the actionable controls.
+`settings/Panel.lua` builds the settings panel directly on Blizzard's modern `Settings.RegisterCanvasLayoutCategory` / `Settings.RegisterCanvasLayoutSubcategory` API and renders body content with AceGUI. PrettyChat appears under **Ka0s Pretty Chat**; the parent page hosts the logo, tagline, and slash-command list (read-only orientation) — drawn by the library's `H.BuildLandingPage` from a spec this addon declares, not by a body of its own, and **two** sub-pages hold the actionable controls. A bare `/pc` and `/pc config` both open this parent page.
 
 **What each page covers.** This summary lived in the README until documentation-§1 dropped the settings table from it; it is the page-granularity view, above the finer per-tab and per-string detail below.
 

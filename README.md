@@ -4,7 +4,7 @@
 ![CurseForge Version](https://img.shields.io/curseforge/v/919766)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-351%2F351_passing-green)
+![Tests](https://img.shields.io/badge/Tests-353%2F353_passing-green)
 
 World of Warcraft tells you about loot, currency, gold, reputation, experience, honor and crafting in a stream of sentences that all look alike. PrettyChat rewrites them. Same information, laid out and color-coded, so the line you actually cared about is findable in a chat window that is scrolling past you.
 
@@ -30,7 +30,7 @@ Editing happens on the **Categories** page. Pick a kind of message from the tabs
 
 Three switches decide whether your version is used, checked in that order: the master **Enable PrettyChat**, then the category, then the message. Switch any one off and Blizzard's original comes back while your wording sits there waiting. The master lives on the **General** page with the **General visibility** dropdown beside it (*Always*, *Only in combat*, *Only out of combat*, *Never*), which is how you get PrettyChat during a fight and stock chat the rest of the time. Undo works at whatever scale you need: **Reset** on one message, **Defaults** on the tab you are looking at, **Reset all settings** for the lot. And if something is wrong rather than merely unwanted, `/pc debug` opens a session-only log window. Logging starts off, so `/pc debug on`, reproduce it, then **Copy** to lift the text into an issue.
 
-Everything else is configuration, and it lives in two places: the addon's own page under Settings → AddOns in game, and `/pc` (or `/prettychat`), which prints the full command list.
+Everything else is configuration, and it lives in two places: the addon's own page under Settings → AddOns in game, and `/pc` (or `/prettychat`), which opens that page. `/pc help` prints the full command list.
 
 ## How it works
 
