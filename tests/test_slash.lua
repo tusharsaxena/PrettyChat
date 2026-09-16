@@ -44,6 +44,20 @@ end
 
 local function joined(input) return table.concat(slash(input), "\n") end
 
+-- `/pc test` writes to the DEBUG CONSOLE, not the chat frame -- the same act the panel's Test
+-- button performs (settings/Panel.lua's PrettyChat:TestToConsole). The two used to disagree,
+-- which made one name mean two things; these two helpers are the chat pair above, pointed at
+-- the console buffer instead.
+local function console(input)
+    local from = #NS.DebugLog.buffer
+    addon:OnSlashCommand(input)
+    local out = {}
+    for i = from + 1, #NS.DebugLog.buffer do out[#out + 1] = NS.DebugLog.buffer[i] end
+    return out
+end
+
+local function consoleJoined(input) return table.concat(console(input), "\n") end
+
 local formatPath = "Loot.LOOT_ITEM_SELF.format"
 local formatRow  = Schema.FindByPath(formatPath)
 
@@ -382,35 +396,38 @@ end)
 
 -- ---- test -----------------------------------------------------------
 
-test("/pc test routes every line through the [PC] printer", function()
-    -- PC-35 / events-frames-taint-§8: Test() prints through NS.Print, never
-    -- straight to the chat frame, so every emitted line carries the [PC] tag.
-    local before = #env.DEFAULT_CHAT_FRAME.messages
-    run(NS, "test", "category Loot")
-    local msgs = env.DEFAULT_CHAT_FRAME.messages
-    t.truthy(#msgs > before, "/pc test emits output")
+test("/pc test writes to the debug console and leaves the chat frame alone", function()
+    -- The report is eighty-odd lines. It belongs in a window with a scrollbar and a copy
+    -- button, not in the chat frame this addon exists to keep readable -- which is why the
+    -- panel's Test button always sent it there. The verb does the same thing now.
+    -- red under: routing the verb back through NS.Print.
+    local beforeChat = #env.DEFAULT_CHAT_FRAME.messages
+    local lines = console("test category Loot")
+    t.truthy(#lines > 0, "/pc test emits output to the console")
+    t.eq(#env.DEFAULT_CHAT_FRAME.messages, beforeChat,
+        "and not one line of it reaches the chat frame")
     local allTagged = true
-    for i = before + 1, #msgs do
-        if msgs[i]:sub(1, #PREFIX) ~= PREFIX then allTagged = false end
+    for _, line in ipairs(lines) do
+        if not line:find("[Test]", 1, true) then allTagged = false end
     end
-    t.truthy(allTagged, "every /pc test line begins with the [PC] prefix")
+    t.truthy(allTagged, "every line carries the console's [Test] tag")
 end)
 
 test("/pc test and /pc test all preview the whole surface", function()
-    local bare = #slash("test")
-    local all  = #slash("test all")
+    local bare = #console("test")
+    local all  = #console("test all")
     t.eq(bare, all, "the bare verb and `all` are the same report")
     t.truthy(bare > 10, "the full report covers the string surface")
 end)
 
 test("/pc test category resolves the name and narrows the report", function()
-    local text = joined("test category loot")
+    local text = consoleJoined("test category loot")
     t.truthy(text:find("Category: Loot", 1, true), "the canonical category is previewed")
     t.falsy(text:find("Category: Money", 1, true), "other categories are excluded")
 end)
 
 test("/pc test formatstring upper-cases the name before matching", function()
-    local text = joined("test formatstring loot_item_self")
+    local text = consoleJoined("test formatstring loot_item_self")
     t.truthy(text:find("LOOT_ITEM_SELF", 1, true), "the lower-case name resolved")
     t.truthy(text:find("1 string shown", 1, true), "and exactly one string was previewed")
 end)

@@ -91,9 +91,16 @@ end
 -- beside the reset's, late-bound through PrettyChat exactly as
 -- `PrettyChat:ConfirmResetAll` already is. The verb stays here, where the panel's
 -- other acts are; only its declaration moved.
-function PrettyChat:TestToConsole()
+--
+-- TAKES A FILTER, because `/pc test` routes through here too now. The button and
+-- the chat verb used to disagree about where the report goes -- the button opened
+-- the console, the verb printed eighty-odd lines into the chat frame this addon
+-- exists to keep readable -- which made them two acts wearing one name. The filter
+-- is what the verb's `category` / `formatstring` forms need; the button passes
+-- none, which is the `all` case.
+function PrettyChat:TestToConsole(filter)
     NS.DebugLog:Show()
-    PrettyChat:Test(nil, function(line) NS.DebugLog:Add("Test", line) end)
+    PrettyChat:Test(filter, function(line) NS.DebugLog:Add("Test", line) end)
 end
 
 -- The Master controls group's closing acts, wired as its `afterGroup`.
@@ -114,10 +121,6 @@ local function buildGeneralBody(ctx)
     H.ClearScroll(ctx)
     local scroll = H.EnsureScroll(ctx)
     if not scroll then return end
-
-    H.TextRow(ctx, L["Addon-wide controls. Enable is the master switch and General visibility is its second dimension — with either off, every Blizzard original is restored regardless of per-category settings."],
-        { fontObject = "GameFontHighlight" })
-    H.AddSpacer(scroll, H.ROW_VSPACER)
 
     -- The group NAME is the hook key (options-ui-§15). Renaming the group would
     -- detach the closing button and nothing would error, which is why the name

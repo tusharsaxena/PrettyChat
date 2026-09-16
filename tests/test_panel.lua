@@ -342,8 +342,8 @@ end)
 test("the Test button writes the report to the console, never into chat", function()
     -- The report is 500+ lines with every category enabled, and the chat frame is
     -- the thing this addon exists to keep readable. The button opens the console
-    -- and writes there; `/pc test` is unchanged (the case below). Dies if the sink
-    -- argument is dropped and Test falls back to NS.Print for both callers.
+    -- and writes there -- and so does `/pc test` now (the case below). Dies if the
+    -- sink argument is dropped and Test falls back to NS.Print for both callers.
     NS.DebugLog:Hide()
     NS.DebugLog:Clear()
     local before = #env.DEFAULT_CHAT_FRAME.messages
@@ -357,16 +357,27 @@ test("the Test button writes the report to the console, never into chat", functi
     NS.DebugLog:Hide()
 end)
 
-test("/pc test still prints the same report to chat", function()
-    -- The sink is a PARAMETER on Test, not a redirection of NS.Print, so the slash
-    -- verb is untouched. Dies if the console writer is wired into NS.Print or into
-    -- Test's default.
+test("/pc test writes the same report to the same place the button does", function()
+    -- This case read "still prints the same report to chat" and pinned the two callers
+    -- DISAGREEING: the button opened the console, the verb put eighty-odd lines into the
+    -- chat frame. One name, two acts. The sink is still a PARAMETER on Test rather than a
+    -- redirection of NS.Print -- both callers simply pass the console writer now
+    -- (settings/Panel.lua's PrettyChat:TestToConsole, which the verb routes through).
+    -- Dies if the verb is pointed back at NS.Print, or if the filter stops reaching Test.
+    NS.DebugLog:Hide()
+    NS.DebugLog:Clear()
     local before = #env.DEFAULT_CHAT_FRAME.messages
-    NS.SlashCommands:OnSlash("test formatstring " .. Schema.FindByPath(
-        "Loot." .. sortedNames("Loot")[1] .. ".format").globalName)
-    t.truthy(#env.DEFAULT_CHAT_FRAME.messages > before, "the slash verb emits to chat")
-    t.truthy(env.DEFAULT_CHAT_FRAME.messages[before + 1]
-        :find("sample of every format string", 1, true), "and it is the same header")
+    local name = Schema.FindByPath(
+        "Loot." .. sortedNames("Loot")[1] .. ".format").globalName
+    NS.SlashCommands:OnSlash("test formatstring " .. name)
+
+    t.eq(#env.DEFAULT_CHAT_FRAME.messages, before, "not one line went to chat")
+    t.truthy(NS.DebugLog:IsShown(), "the console is opened, as the button opens it")
+    t.truthy(NS.DebugLog:FindLine("sample of every format string"),
+        "and it is the same header the button produces")
+    t.truthy(NS.DebugLog:FindLine(name),
+        "the filter still narrows the report to the named format string")
+    NS.DebugLog:Hide()
 end)
 
 test("Reset all asks for confirmation instead of resetting immediately", function()

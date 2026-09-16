@@ -33,9 +33,9 @@ NS.L = L
 -- enUS manifest (identity mappings — documents the translatable surface).
 local enUS = {
     -- General sub-page. Every control on its one tab is the library's now; what
-    -- is left here is the page's own explainer, the Test verb this addon alone
-    -- has, and the reset confirmation's wording.
-    "Addon-wide controls. Enable is the master switch and General visibility is its second dimension — with either off, every Blizzard original is restored regardless of per-category settings.",
+    -- is left here is the Test verb this addon alone has, and the reset
+    -- confirmation's wording. The page's own explainer was removed at the owner's
+    -- request -- the tab opened on a paragraph rather than on its controls.
     "Test",
     "Print a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` prints the same report to chat.",
     "Reset this profile to the addon's defaults? Everything you have configured or added in it is discarded — your other profiles are not affected.",
@@ -86,7 +86,7 @@ local enUS = {
     "Set a setting — `/pc set <path> <value>` (try /pc list)",
     "Reset one setting to its default — `/pc reset <path>`",
     "Reset every category to addon defaults",
-    "Print sample chat lines — `/pc test [all | category <name> | formatstring <NAME>]`",
+    "Print sample chat lines to the debug console — `/pc test [all | category <name> | formatstring <NAME>]`",
     "Debug console — `/pc debug` shows it; `on`/`off` toggle logging",
     "Print the addon version",
     -- Slash-command and `/pc test` OUTPUT, as opposed to the verb descriptions

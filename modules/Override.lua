@@ -486,13 +486,17 @@ end
 -- The slash dispatch (runTest) is responsible for canonicalizing the
 -- value before calling — Test only does an equality check.
 --
--- `sink` is where the report goes, and it DEFAULTS to NS.Print — so `/pc test`
--- still lands in chat, one [PC]-prefixed line at a time, visually distinct from
--- real traffic interleaved with it. The settings panel's Test button passes the
--- debug console's writer instead: a 500-line preview belongs in a window with a
--- scrollbar and a copy button, not in the chat frame the addon exists to keep
--- readable. NS.Print's own destination is untouched either way — the sink is a
--- parameter, not a redirection.
+-- `sink` is where the report goes. BOTH CALLERS PASS THE DEBUG CONSOLE'S WRITER:
+-- the settings panel's Test button, and `/pc test`, which routes through the same
+-- `PrettyChat:TestToConsole` (settings/Panel.lua). A 500-line preview belongs in a
+-- window with a scrollbar and a copy button, not in the chat frame the addon exists
+-- to keep readable -- and that was true of the verb as much as of the button, which
+-- is why they no longer disagree. One name, one act.
+--
+-- It still DEFAULTS to NS.Print, and the default is still the right one: a caller
+-- with no console -- a degraded load where LibKa0s-DebugLog-1.0 never registered --
+-- gets chat rather than nothing. NS.Print's own destination is untouched either way;
+-- the sink is a parameter, not a redirection.
 function PrettyChat:Test(filter, sink)
     local emit = sink or NS.Print
     emit(note(L["sample of every format string (preview ignores enable toggles):"]))

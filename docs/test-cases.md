@@ -354,7 +354,7 @@ badge and any count quoted in the docs must agree with it.
 - /pc reset with no argument prints the library's usage line
 - /pc reset on a name that is neither path nor category reports not found
 - /pc resetall clears every override and confirms
-- /pc test routes every line through the [PC] printer
+- /pc test writes to the debug console and leaves the chat frame alone
 - /pc test and /pc test all preview the whole surface
 - /pc test category resolves the name and narrows the report
 - /pc test formatstring upper-cases the name before matching
@@ -381,7 +381,7 @@ badge and any count quoted in the docs must agree with it.
 - the Debug console checkbox drives the window, never the logging flag
 - the checkbox re-syncs when the console is opened another way
 - the Test button writes the report to the console, never into chat
-- /pc test still prints the same report to chat
+- /pc test writes the same report to the same place the button does
 - Reset all asks for confirmation instead of resetting immediately
 - the Defaults button is deferred to first show, not built at registration
 - the General page has no Defaults button

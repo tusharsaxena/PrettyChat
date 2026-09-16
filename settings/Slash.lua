@@ -59,7 +59,7 @@ local COMMANDS = {
         function(rest) runReset(rest) end},
     {"resetall", L["Reset every category to addon defaults"],
         function() runResetAll() end},
-    {"test",     L["Print sample chat lines — `/pc test [all | category <name> | formatstring <NAME>]`"],
+    {"test",     L["Print sample chat lines to the debug console — `/pc test [all | category <name> | formatstring <NAME>]`"],
         function(rest) runTest(rest) end},
     {"debug",    L["Debug console — `/pc debug` shows it; `on`/`off` toggle logging"],
         function(rest) runDebug(rest) end},
@@ -346,7 +346,7 @@ end
 function runTest(rest)
     local arg = trim(rest)
     if arg == "" or arg:lower() == "all" then
-        PrettyChat:Test()
+        PrettyChat:TestToConsole()
         return
     end
 
@@ -366,7 +366,7 @@ function runTest(rest)
                      .. table.concat(NS.Schema.CATEGORY_ORDER, ", "))
             return
         end
-        PrettyChat:Test({ kind = "category", value = matched })
+        PrettyChat:TestToConsole({ kind = "category", value = matched })
         return
     end
 
@@ -382,7 +382,7 @@ function runTest(rest)
                      .. cmd("/pc list formatstring"))
             return
         end
-        PrettyChat:Test({ kind = "formatstring", value = upper })
+        PrettyChat:TestToConsole({ kind = "formatstring", value = upper })
         return
     end
 

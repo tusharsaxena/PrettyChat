@@ -11,7 +11,7 @@ If you can only reason about a change from code and cannot test it in WoW, say s
 For a routine change (one new format string, a doc edit, a CSS-level panel tweak):
 
 1. `/reload` — file-load-time builders re-run.
-2. `/pc test` — dump a synthesized sample of every format string. Output ignores enable toggles, so this works even when the addon is disabled.
+2. `/pc test` — dump a synthesized sample of every format string. It opens the **debug console** and writes there, exactly as the General page's **Test** button does; **nothing should reach the chat frame**. Output ignores enable toggles, so this works even when the addon is disabled.
 3. Trigger one real chat event (loot an item, gain XP, repair an item, etc.) and read the actual chat line.
 4. Open `/pc config`, walk to Categories and the affected category's tab, exercise the toggle and edit boxes for the changed row.
 
