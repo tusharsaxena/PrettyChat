@@ -315,10 +315,11 @@ badge and any count quoted in the docs must agree with it.
 - a profile reset that raises logs its one line marked, exactly once
 - a profile copy that raises logs its one line marked
 
-### test_launcher.lua (22)
+### test_launcher.lua (23)
 
 - Launcher: the broker object's icon IS the file the TOC's IconTexture names
 - Launcher: that file is on disk, 128x128 uncompressed 32-bit TGA
+- Launcher: the broker label is the BRAND NAME in plain text, not the Title
 - Launcher: OnEnable registers the one object, under the FOLDER name
 - Launcher: LibDBIcon is handed db.global.minimap ITSELF, not a copy
 - Launcher: Register is idempotent — a second call builds no second button
@@ -479,10 +480,10 @@ badge and any count quoted in the docs must agree with it.
 | test_database.lua | 16 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
-| test_launcher.lua | 22 |
+| test_launcher.lua | 23 |
 | test_slash.lua | 45 |
 | test_panel.lua | 46 |
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **375** |
+| **Total** | **376** |

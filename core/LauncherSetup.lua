@@ -98,10 +98,28 @@ if Launcher then
         -- cannot change without changing what the client loads.
         name = addonName,
 
-        -- What a broker display prints beside the icon. The `## Title` is a wall
-        -- of color escapes, so the plain human name is what belongs in a row a
-        -- display lays out; without this the library would fall back to
-        -- "PrettyChat", which is the folder, not the product.
+        -- THE BRAND NAME, IN PLAIN TEXT — `Ka0s <Name>` (launcher-§1). This is
+        -- the string a broker display prints in its own row, and it prints it
+        -- BESIDE THE OTHER TEN, so it is the single field that decides whether
+        -- the collection reads as one collection in Titan Panel or as eleven
+        -- unrelated addons that happen to be installed together. A display
+        -- sorting alphabetically files `Absorb Tracker` under A while the rest
+        -- sit under K; the rule exists because across eleven adoptions this came
+        -- out three ways with nothing saying what it was.
+        --
+        -- DELIBERATELY NOT THE TOC'S `## Title`, and this addon is the case that
+        -- wording was written for: PrettyChat.toc's Title is
+        -- `Ka0s |cffff0000P|cffff9900r|cffffff00e|…`, a ratified `toc-file-§1`
+        -- deviation kept as the addon's brand mark. Handed to a display that
+        -- draws the string raw it would splatter across a list in which every
+        -- other row is plain text; handed to one that strips escapes it would
+        -- arrive mangled. So the two fields are NEVER wired to each other, and
+        -- this one carries no escape sequence of any kind.
+        --
+        -- Not the folder name either. `name` above is the folder — an identifier
+        -- LibDBIcon keys the saved position by, which a player reads nowhere as
+        -- prose. Two fields, two jobs; without this one the library would fall
+        -- back to "PrettyChat", which is the folder, not the product.
         label = "Ka0s Pretty Chat",
 
         icon = ICON_PATH,

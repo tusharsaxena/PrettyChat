@@ -101,6 +101,31 @@ test("Launcher: that file is on disk, 128x128 uncompressed 32-bit TGA", function
     t.eq(size, 18 + 128 * 128 * 4 + 26, "header + raw pixels + footer, with nothing compressed")
 end)
 
+-- ── the label ───────────────────────────────────────────────────────────────
+
+test("Launcher: the broker label is the BRAND NAME in plain text, not the Title", function()
+    -- launcher-§1. `label` is what a broker display prints in its own row, beside
+    -- the other ten, so it is the one field that decides whether the collection
+    -- reads as one collection or as eleven unrelated addons. The rule is
+    -- `Ka0s <Name>` — and this addon is the case the "not the TOC Title" half of
+    -- it was written for, because PrettyChat's Title is a wall of colour escapes.
+    local inst = wired()
+    local object = inst.NS.Launcher:Object()
+    t.eq(object.label, "Ka0s Pretty Chat", "the brand name, spelled as the collection spells it")
+    t.falsy(object.label:find("|", 1, true),
+        "and carrying no escape sequence of any kind — a display draws this string raw")
+
+    local fh = io.open(ctx.root .. "/PrettyChat.toc", "r")
+    local toc = fh:read("*a")
+    fh:close()
+    local title = toc:match("##%s*Title:%s*([^\r\n]+)")
+    t.truthy(title:find("|cff", 1, true), "the TOC Title really is colour-escaped (toc-file-§1)")
+    t.neq(object.label, title, "so the two fields are not wired to each other")
+    t.neq(object.label, "PrettyChat", "nor is it the folder name — that is `name`, the position key")
+    t.eq(inst.mocks.__ldb.objects.PrettyChat.label, object.label,
+        "and the broker object a display reads carries that same one string")
+end)
+
 -- ── registration ────────────────────────────────────────────────────────────
 
 test("Launcher: OnEnable registers the one object, under the FOLDER name", function()
