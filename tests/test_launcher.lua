@@ -279,6 +279,115 @@ test("Launcher: the row is the FOURTH of the composed block, after the console",
     t.eq(rows[#rows].group, "Master controls", "on the Master controls tab")
 end)
 
+-- ── surviving a reset (launcher-§3) ─────────────────────────────────────────
+--
+-- The rule is a PROPERTY, not a consequence of where the table is stored: a
+-- player's minimap-button choice is a per-installation display preference, in the
+-- same class as the angle they dragged the button to, and NEITHER
+-- options-ui-§12's `Reset all settings` NOR a page-scoped Defaults button may
+-- un-hide a hidden button or re-hide a shown one.
+--
+-- Two shapes of addon are genuinely reached by that and this one is neither, so
+-- what these cases exist to do is keep it that way. PrettyChat has a real
+-- `profile` section, so its global reset -- db:ResetProfile() -- cannot see a
+-- table in db.global; and its General page draws no Defaults button at all, while
+-- the one Defaults button it does draw resets a MESSAGE category. But the minimap
+-- row carries `category = "General"` and a `default`, which is exactly the shape a
+-- page walk rewrites, so both of those are one edit away from being false and
+-- neither edit would look wrong. These drive the real resets and read the store.
+
+local function hidden(inst)
+    inst.NS.Schema.Set(MINIMAP_PATH, false)
+    t.eq(inst.addon.db.global.minimap.hide, true, "the button starts hidden")
+end
+
+test("Launcher: `Reset all settings` does not un-hide the button", function()
+    -- The options-ui-§12 reset, by the path the popup and `/pc resetall` both
+    -- take: PrettyChat:ResetAll -> db:ResetProfile().
+    local inst = wired()
+    local Schema, db = inst.NS.Schema, inst.addon.db
+    hidden(inst)
+    db.global.minimap.minimapPos = 217.5
+    Schema.Set("General.visibility", "never")
+
+    inst.addon:ResetAll()
+
+    t.eq(Schema.Get("General.visibility"), "always",
+        "the reset really ran -- a profile row went back to its default")
+    t.eq(db.global.minimap.hide, true, "and the button is STILL hidden")
+    t.eq(Schema.Get(MINIMAP_PATH), false, "so the checkbox still reads unticked")
+    t.eq(db.global.minimap.minimapPos, 217.5, "and the dragged angle survived beside it")
+end)
+
+test("Launcher: `/pc resetall` counts the rows it rewrote, and not the minimap row",
+function()
+    -- The ledger half of the same property. The count is parked before the wipe
+    -- and every stored row that differs is in it, the minimap row included -- so a
+    -- line reporting the parked figure said the reset rewrote a row it cannot
+    -- reach. It reads the difference instead.
+    local inst = wired()
+    local Schema, D = inst.NS.Schema, inst.NS.DebugLog
+    hidden(inst)
+    Schema.Set("General.visibility", "never")
+    D:SetEnabled(true)
+
+    local from = #D.buffer
+    inst.addon:OnSlashCommand("resetall")
+    local lines = {}
+    for i = from + 1, #D.buffer do lines[#lines + 1] = D.buffer[i] end
+
+    t.eq(#lines, 1, "one line for the whole reset")
+    t.truthy(lines[1]:find("reset profile 'Default' to defaults (1 rows)", 1, true),
+        "counting the one profile row the wipe rewrote, not the two that differed: " .. lines[1])
+    t.eq(inst.addon.db.global.minimap.hide, true, "and the button is still hidden")
+end)
+
+test("Launcher: no page-scoped Defaults button reaches the row either", function()
+    -- The General page is registered with `defaultsButton = false` and never sets
+    -- `ctx.panel.defaultsOnClick`, so the library's OnDefault forwarder has nothing
+    -- to call; the one Defaults button this addon draws is on the Categories page
+    -- and resets the SELECTED MESSAGE CATEGORY. Every category that button can be
+    -- pointed at is driven here, plus the General body itself, which is the one a
+    -- widening would reach.
+    local inst = wired()
+    local Schema, db = inst.NS.Schema, inst.addon.db
+
+    for _, category in ipairs(Schema.CATEGORY_ORDER) do
+        hidden(inst)
+        inst.addon:ResetCategory(category)
+        t.eq(db.global.minimap.hide, true,
+            "the Defaults button on " .. category .. " left the button hidden")
+    end
+
+    -- And the General body really did reset what it owns, so the sweep above is
+    -- not passing over a reset that did nothing.
+    hidden(inst)
+    Schema.Set("General.visibility", "never")
+    inst.addon:ResetCategory("General")
+    t.eq(Schema.Get("General.visibility"), "always", "General's own rows went back to default")
+    t.eq(db.global.minimap.hide, true, "and the minimap row was not among them")
+    t.eq(Schema.Get(MINIMAP_PATH), false)
+end)
+
+test("Launcher: a reset does not RE-HIDE a shown button either", function()
+    -- The rule is symmetrical, and the asymmetry would be easy to ship: the row's
+    -- default is SHOWN, so a reset that reached it would look harmless on a
+    -- default install and only bite the player who hid the button.
+    local inst = wired()
+    local Schema, db = inst.NS.Schema, inst.addon.db
+    local acts = inst.mocks.__icons.acts
+
+    t.eq(db.global.minimap.hide, false, "shown to begin with")
+    Schema.Set("Loot.enabled", false)
+    local before = #acts
+
+    inst.addon:ResetAll()
+    inst.addon:ResetCategory("General")
+
+    t.eq(db.global.minimap.hide, false, "still shown")
+    t.eq(#acts, before, "and LibDBIcon was never asked to Show or Hide anything")
+end)
+
 -- ── the two reserved verbs ──────────────────────────────────────────────────
 
 test("Launcher: /pc enable and /pc disable write the Enable row's own stored path", function()

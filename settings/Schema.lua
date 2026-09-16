@@ -675,10 +675,18 @@ local function differsFromDefault(row)
     return row.get() ~= row.default
 end
 
--- The rows a whole-profile reset would actually rewrite: every stored row that
--- currently differs from its default. Session-only rows are skipped, because
--- AceDB's profile reset never touches them. PrettyChat:ResetAll counts with this
--- before it wipes the profile, since nothing can count afterwards.
+-- Every stored row that currently differs from its default. Session-only rows are
+-- skipped, because AceDB's profile reset never touches them.
+--
+-- NOT, on its own, "the rows a profile reset would rewrite" — it used to be
+-- described that way and the description was one row wrong. `global.minimap.hide`
+-- is stored, differs whenever the player has hidden the button, and lives in the
+-- GLOBAL store, which a profile reset does not reach (launcher-§3). So this is one
+-- half of a subtraction: PrettyChat:ResetAll takes it before the wipe, because
+-- nothing can count a change after it has happened, and core/PrettyChat.lua's
+-- OnProfileReset takes it again afterwards and reports the difference. A row the
+-- reset cannot reach appears in both readings and cancels out, which is why
+-- neither side needs a list of them.
 function Schema.CountChangedRows()
     local n = 0
     for _, row in ipairs(rows) do

@@ -111,6 +111,30 @@ function PrettyChat:OnProfileCopied(_, _, source)
     line("")
 end
 
+--- N for the profile-reset line: the rows the wipe ACTUALLY rewrote.
+---
+--- MEASURED, NOT PREDICTED, and the difference is the point. The parked count is
+--- taken before the wipe, because nothing can count a change after it has
+--- happened — but it counts every stored row that differed from its default, and
+--- a PROFILE reset does not reach every stored row. `global.minimap.hide` is
+--- stored outside the profile deliberately (launcher-§3): a player's
+--- minimap-button choice is a per-installation display preference, in the same
+--- class as the angle they dragged the button to, and it survives this reset. A
+--- line claiming the reset rewrote that row is the ledger saying the opposite of
+--- what the store says, and it read `(2 rows)` for a one-row reset whenever the
+--- button was hidden.
+---
+--- So the answer is the parked count less what still differs once the wipe has
+--- landed. That needs no list of which rows are out of reach and stays right when
+--- the next one is added — and it is the formula modules/Override.lua's ResetAll
+--- already uses on the path where this handler never ran, so the two spellings of
+--- one number become one.
+local function rowsRewritten(pending)
+    local ok, left = pcall(NS.Schema.CountChangedRows)
+    if not ok then return pending.rows end
+    return math.max(0, pending.rows - left)
+end
+
 -- A profile reset's one line, written here whether the reload finishes or raises
 -- (then ending in Util.STOPPED). PrettyChat:ResetAll parks `pendingReset` before it
 -- starts: the count of rows the wipe changes, which by now has happened, and a
@@ -123,7 +147,7 @@ function PrettyChat:OnProfileReset()
         if pending then
             pending.logged = true
             NS.Debug("Set", "reset profile '%s' to defaults (%d rows)%s",
-                     activeProfile(self), pending.rows, suffix)
+                     activeProfile(self), rowsRewritten(pending), suffix)
         else
             NS.Debug("Set", "reset profile '%s' to defaults%s", activeProfile(self), suffix)
         end

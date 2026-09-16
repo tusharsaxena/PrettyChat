@@ -171,9 +171,25 @@ function PrettyChat:ApplyStrings()
     return applied, restored
 end
 
--- The General virtual category's two STORED rows. Not RowsByCategory("General"):
--- that also returns the session-only console toggle, and a Defaults press must
--- not close the debug console.
+-- The General virtual category's two PROFILE rows, named one by one. This is an
+-- ALLOW-LIST and never RowsByCategory("General"), and it is load-bearing for two
+-- separate rules now rather than the one it was written for.
+--
+--   * the session-only `state.debugConsole` row is in that category too, and a
+--     Defaults press must not close the player's debug console;
+--   * `global.minimap.hide` is in it as well — settings/Schema.lua wires the
+--     composed Master-controls rows onto the virtual General category, so the
+--     minimap row carries `category = "General"` AND a `default`, which is
+--     exactly the shape a page walk rewrites. launcher-§3 (Standard v2.54.0)
+--     states as a PROPERTY that a player's minimap-button choice survives both
+--     options-ui-§12's `Reset all settings` and a page-scoped Defaults button:
+--     it is a per-installation display preference, in the same class as the
+--     angle the player dragged the button to, which LibDBIcon keeps in the same
+--     table and which no reset touches.
+--
+-- Widening this back to the category walk would un-hide a hidden button, and
+-- nothing else in the file would look wrong. tests/test_launcher.lua drives the
+-- reset and asserts the stored value survived it.
 local GENERAL_RESET_PATHS = { "General.enabled", "General.visibility" }
 
 -- Restore one category to its defaults, every row of it through the write
@@ -212,14 +228,26 @@ end
 --- defaults back, and fires OnProfileReset -- which core/PrettyChat.lua answers by
 --- re-running the migrations, re-applying every string and telling the panel.
 ---
+--- IT DOES NOT REACH THE MINIMAP BUTTON, AND THAT IS THE POINT OF THE SCOPE.
+--- `db.global.minimap` is LibDBIcon's own table and lives in the GLOBAL store
+--- (core/Database.lua), so a profile reset cannot touch it: the player's
+--- minimap-button choice, and the angle they dragged the button to, both survive
+--- this. launcher-§3 makes that a PROPERTY of the setting rather than a
+--- consequence of the storage, and this addon satisfies it here because it has a
+--- real `profile` section for the reset to empty — an addon that stores
+--- everything in `db.global` would need an exemption instead.
+---
 --- ONE LINE, AND THE HANDLER WRITES IT (debug-logging-§10). A profile reset is
 --- wholesale replacement, not a batch through the helper, so it is logged once by
 --- the OnProfileReset handler as `[Set] reset profile '<name>' to defaults (N rows)`
 --- and nothing here adds a second line. N is the rows the wipe actually changes,
---- and only this side can know it: once AceDB has wiped the profile every row reads
---- as its default. So the count is taken first and parked on `pendingReset` for
---- the handler, then cleared even if the reset raises, so it can never label a
---- later reset AceDB starts on its own (that one logs without a count).
+--- and only this side can start the sum: nothing can count a change after it has
+--- happened. So the count is taken first and parked on `pendingReset` for the
+--- handler, which subtracts what still differs once the wipe has landed — the
+--- rows a profile reset cannot reach, the minimap row among them, then cancel out
+--- instead of being claimed. The parking is cleared even if the reset raises, so
+--- it can never label a later reset AceDB starts on its own (that one logs
+--- without a count).
 ---
 --- A RAISE STILL WRITES THE ONE LINE. The handler writes it, marked, when its
 --- reload raises. When the raise comes first (inside AceDB, before the callback

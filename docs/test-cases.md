@@ -315,7 +315,7 @@ badge and any count quoted in the docs must agree with it.
 - a profile reset that raises logs its one line marked, exactly once
 - a profile copy that raises logs its one line marked
 
-### test_launcher.lua (23)
+### test_launcher.lua (27)
 
 - Launcher: the broker object's icon IS the file the TOC's IconTexture names
 - Launcher: that file is on disk, 128x128 uncompressed 32-bit TGA
@@ -331,6 +331,10 @@ badge and any count quoted in the docs must agree with it.
 - Launcher: the write moves the BUTTON, not just the store
 - Launcher: the write is a LEAF write — minimapPos survives a toggle
 - Launcher: the row is the FOURTH of the composed block, after the console
+- Launcher: `Reset all settings` does not un-hide the button
+- Launcher: `/pc resetall` counts the rows it rewrote, and not the minimap row
+- Launcher: no page-scoped Defaults button reaches the row either
+- Launcher: a reset does not RE-HIDE a shown button either
 - Launcher: /pc enable and /pc disable write the Enable row's own stored path
 - Launcher: the verbs hold NO state of their own — the long form is the same write
 - Launcher: the verbs drive the OVERRIDES, because they take the one write seam
@@ -480,10 +484,10 @@ badge and any count quoted in the docs must agree with it.
 | test_database.lua | 16 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
-| test_launcher.lua | 23 |
+| test_launcher.lua | 27 |
 | test_slash.lua | 45 |
 | test_panel.lua | 46 |
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **376** |
+| **Total** | **380** |
