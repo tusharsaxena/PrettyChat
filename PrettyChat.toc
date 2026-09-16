@@ -3,7 +3,7 @@
 ## Notes: Prettier chat messages
 ## Author: aDd1kTeD2Ka0s
 ## Version: 1.5.0
-## IconTexture: 2056011
+## IconTexture: Interface\AddOns\PrettyChat\media\logos\prettychat.logo.128.tga
 ## SavedVariables: PrettyChatDB
 ## OptionalDeps: Ace3, LibStub, CallbackHandler-1.0
 ## DefaultState: enabled
@@ -19,6 +19,13 @@ libs\AceAddon-3.0\AceAddon-3.0.xml
 libs\AceDB-3.0\AceDB-3.0.xml
 libs\AceConsole-3.0\AceConsole-3.0.xml
 libs\AceGUI-3.0\AceGUI-3.0.xml
+# The broker pair, and they are the LAUNCHER's (launcher-§1), not LibKa0s's. The one
+# LibDataBroker object core\LauncherSetup.lua builds is handed to LibDBIcon, which draws the
+# minimap button from it; a broker display draws its own row from the same object. LibKa0s
+# resolves both with LibStub(..., true) at Register time and degrades by name, so the order
+# within this block is not load-bearing -- they are listed before LibKa0s.xml for readability.
+libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 libs\LibKa0s\LibKa0s.xml
 
 # Locales (locale table — no earlier-load dependency; toc-file-§5 section order)
@@ -45,6 +52,12 @@ core\Database.lua
 core\PrettyChat.lua
 core\CoreSetup.lua
 core\DebugLogSetup.lua
+# core\LauncherSetup.lua loads AFTER core\PrettyChat.lua (the AceAddon object its
+# openSettings hook calls OpenConfig on) and after core\DebugLogSetup.lua (the NS.Debug seam it
+# hands over as `debug`). Nothing resolves at load beyond the LibStub lookup, so unlike
+# core\MediaSetup.lua above the position is conventional rather than load-bearing: the object is
+# built here and REGISTERED from OnEnable, because `minimap` cannot answer until AceDB has run.
+core\LauncherSetup.lua
 
 # Defaults (data tables — must precede settings\Schema.lua)
 defaults\Profile.lua
