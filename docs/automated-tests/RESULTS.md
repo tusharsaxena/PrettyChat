@@ -23,6 +23,7 @@ The **Tests** cell reads `passed/skipped/total`.
 
 | Run | Version | Lint w/e | Files | Tests | Perf | NLOC | Funcs | Avg NLOC | Avg CCN | Max CCN | CCN warn | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [`20260916-184747`](20260916-184747/) | 1.5.0 | 0/0 | 46 | 385/0/385 | skip | 54311 | 854 | 6.7 | 2.0 | 14 | 0 | **green** |
 | [`20260916-094245`](20260916-094245/) | 1.5.0 | 0/0 | 44 | 353/0/353 | skip | 53773 | 787 | 6.7 | 2.0 | 14 | 0 | **green** |
 | [`20260910-234511`](20260910-234511/) | 1.4.0 → 1.5.0 | 0/0 | 44 | 328/0/328 | skip | 53167 | 694 | 6.7 | 2.0 | 13 | 0 | **green** |
 | [`20260908-181425`](20260908-181425/) | 1.4.0 | 0/0 | 43 | 323/0/323 | skip | 52962 | 688 | 6.6 | 2.0 | 13 | 0 | **green** |
@@ -36,18 +37,18 @@ The **Tests** cell reads `passed/skipped/total`.
 
 ## Test suite
 
-**353 cases** — 353 passed, 0 failed, 0 skipped. The generated inventory
-[`20260916-094245/test-cases.md`](20260916-094245/test-cases.md) is the authority on which cases existed at this run;
+**385 cases** — 385 passed, 0 failed, 0 skipped. The generated inventory
+[`20260916-184747/test-cases.md`](20260916-184747/test-cases.md) is the authority on which cases existed at this run;
 `docs/test-cases.md` is that same list at HEAD.
 
-Moved **328 → 353** since the previous run.
+Moved **353 → 385** since the previous run.
 
 No case reported a `skip`, so passed and total agree and nothing in this row claims coverage
 that was not exercised.
 
 ## Lint
 
-**0 warnings / 0 errors over 44 files** (`luacheck .`).
+**0 warnings / 0 errors over 46 files** (`luacheck .`).
 
 `.luacheckrc` sets a multi-line `exclude_files`; read it there for the scope of the figure above.
 A `0/0` says nothing about what was never looked at.
@@ -62,7 +63,7 @@ never asked.
 
 ## Complexity watch list
 
-Current as of [`20260916-094245`](20260916-094245/) — **this run's measurement, not its diff.** Max CCN **14** across 787
+Current as of [`20260916-184747`](20260916-184747/) — **this run's measurement, not its diff.** Max CCN **14** across 854
 functions, **0** of them warned on; 1 file(s) in the 1000–1500 band and 1 over the 1500 cap
 (`layout-§1`).
 
@@ -79,7 +80,7 @@ None.
 
 | Band | File | LOC | Disposition |
 |---|---|---|---|
-| 1000–1500 (on notice) | `tests/test_panel.lua` | 1042 | **Accepted.** The first file this repository has ever had on notice, and now in its second consecutive run in the band at an unchanged 1042 lines. It was 526 lines two runs ago; it crossed at 991 with the AceGUI TreeGroup string list and peaked at 1048 before `M4-11` trimmed it by six. The settings panel is the only part of this addon with real branching, so its suite is where the case count lives. On notice is the compliant state under `layout-§1`, not a breach. Re-check at 1200. |
+| 1000–1500 (on notice) | `tests/test_panel.lua` | 1053 | **Accepted**, carried forward, with the figure re-read: 1042 → 1053 this run. Third consecutive run in the band, and still the only file this repository has ever had on notice. It was 526 lines three runs ago; it crossed at 991 with the AceGUI TreeGroup string list, and the 11 lines added this run are the launcher's panel cases. Case count, not tangle — the settings panel is the only part of this addon with real branching, so its suite is where the cases live, and `lizard` puts the file's average CCN at 1.9. On notice is the compliant state under `layout-§1`, not a breach, and `docs/ARCHITECTURE.md` → *Files over the 1500-line cap* says the same. Re-check at 1200. |
 | > 1500 (over cap) | `GlobalStrings/GlobalStrings.lua` | 23842 | **Accepted — not shipped and not loaded.** No TOC line references it and `.pkgmeta:24` excludes the whole `GlobalStrings` directory; it is the build-time input `split_globalstrings.py` reads. `layout-§1` caps files a reader has to change. **The file has not grown**: the 23840 this cell used to sit beside was `lizard`'s NLOC for it, and the 23842 beside it now is the raw line count, which is what the runner's generated table measures. Two lines of difference, one file, no change. |
 
 `lizard` counts every `and`/`or` short-circuit as a decision, so in Lua a run of
