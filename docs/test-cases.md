@@ -345,7 +345,7 @@ badge and any count quoted in the docs must agree with it.
 - Launcher: DEGRADED — LibDataBroker present, LibDBIcon absent: the plugin, no button
 - Launcher: DEGRADED — no LibKa0s at all: no launcher, and the row survives
 
-### test_slash.lua (45)
+### test_slash.lua (50)
 
 - Schema.FormatValue formats bools and doubles pipes in strings
 - NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
@@ -392,6 +392,11 @@ badge and any count quoted in the docs must agree with it.
 - /pc test rejects unknown filter values by name
 - /pc debug rejects an argument that is neither on, off, nor a toggle
 - every slash line carries the cyan [PC] tag
+- disabled: a feature verb refuses on ONE line naming /pc enable, and does not act
+- disabled: only the feature verbs refuse -- every verb is driven to find out
+- disabled: the schema CLI still reads and REPAIRS, and the panel still opens
+- disabled: the gate LIFTS the moment the addon is enabled again
+- disabled: the panel's Test button is NOT gated -- the refusal is the dispatcher's
 
 ### test_panel.lua (46)
 
@@ -485,9 +490,9 @@ badge and any count quoted in the docs must agree with it.
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
 | test_launcher.lua | 27 |
-| test_slash.lua | 45 |
+| test_slash.lua | 50 |
 | test_panel.lua | 46 |
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **380** |
+| **Total** | **385** |

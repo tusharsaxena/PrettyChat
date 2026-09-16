@@ -105,6 +105,11 @@ local enUS = {
     -- separately is the fragment-keying PC-R-06 removed.
     "schema not ready yet",
     "unknown command '%s'",
+    -- The disabled gate's one line (slash-commands-§2). The verb and the gold
+    -- `/pc enable` both arrive as format ARGUMENTS, so the whole sentence is one
+    -- key a translator can reorder, rather than the coloured fragments the
+    -- residue register in tests/test_locale.lua has to record a reason for.
+    "`/pc %s` does nothing while the addon is disabled — %s turns it back on",
     "v%s slash commands",
     "Categories (%d)",
     "Format strings (%d)",

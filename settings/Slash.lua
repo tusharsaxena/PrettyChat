@@ -79,6 +79,76 @@ local COMMANDS = {
 -- resolves the other.
 NS.COMMANDS = COMMANDS
 
+-- ---------------------------------------------------------------------
+-- THE DISABLED GATE (slash-commands-§2) — ONE PLACE, AND IT IS THIS TABLE
+--
+-- A disabled addon refuses a verb that DRIVES ITS FEATURES rather than acting on
+-- it. Acting is the wrong answer twice over: the player asked for something the
+-- addon is currently standing down from doing, and a silent no-op leaves them
+-- with no clue why nothing happened. ONE tagged line, naming `/pc enable`, and
+-- NOTHING ELSE — no partial work, no side effect, no second line. One line is the
+-- whole courtesy; a paragraph explaining the state is a lecture stapled to a
+-- command the player is about to re-run anyway.
+--
+-- IT IS WRAPPED ONTO THE HANDLER SLOT, not pasted into each verb and not written
+-- into a dispatcher — because there are TWO dispatchers here, the library's and
+-- the degraded stub above, and they agree on exactly one thing: both call
+-- `entry[3]`. So the handler slot is the one seam every verb crosses on both
+-- paths, and wrapping it once covers the pair. A guard per verb would be a dozen
+-- places to forget; here the DEFAULT IS GATED and a verb opts out by being named
+-- in the live set, so the thirteenth verb is gated the day it is added rather
+-- than the day somebody notices.
+--
+-- THE LIVE SET IS THE RULE, WRITTEN ONCE AS DATA. §2 names these, and the
+-- reasoning is the player's rather than the addon's: they must be able to READ
+-- AND REPAIR SETTINGS (`get` / `set` / `list` / `reset` / `resetall`) and REACH
+-- THE PANEL (`config`, and with it a bare `/pc`, which runs that verb) while the
+-- addon is off — which is precisely when they are most likely to need to.
+-- `debug` and `perf` are diagnostics, not features: the usual reason to reach for
+-- either is that the addon is misbehaving. And `enable` above all, or the pair is
+-- one-way again and the only route back is the settings panel they were trying
+-- not to open.
+--
+-- `perf` is in the set although this addon does not register it. PrettyChat holds
+-- a recorded performance-§12 no-combat-path exemption, so there is no `perf`
+-- entry in COMMANDS for the loop below to find — but the set is the STANDARD'S
+-- list, not an inventory of this addon, and writing it whole is what makes the
+-- verb already live on the day the harness is armed.
+--
+-- WHAT IS LEFT IS EXACTLY ONE GATED VERB: `test`, the preview no other Ka0s addon
+-- has. §2 keeps the whole rule a SHOULD partly because an addon with a single
+-- feature verb may reasonably read the refusal as noise — here it is not noise,
+-- because `/pc test` renders every format string to show what LIVE CHAT will look
+-- like, and while the addon is disabled live chat is Blizzard's wording. The
+-- panel's Test button is NOT gated and must not be: it is not a verb, it sits on
+-- the page beside the switch that turned the addon off, and its report already
+-- says so on its second line (modules/Override.lua's PrettyChat:Test).
+-- ---------------------------------------------------------------------
+
+local LIVE_WHILE_DISABLED = {
+    help = true, config = true, version = true,
+    enable = true, disable = true,
+    debug = true, perf = true,
+    get = true, set = true, list = true, reset = true, resetall = true,
+}
+
+for _, entry in ipairs(COMMANDS) do
+    if not LIVE_WHILE_DISABLED[entry[1]] then
+        local verb, handler = entry[1], entry[3]
+        entry[3] = function(rest)
+            if not PrettyChat:IsAddonEnabled() then
+                -- ONE key, not a concatenation of coloured fragments: the command
+                -- arrives as a format ARGUMENT, so the whole sentence stays
+                -- translatable and its word order is the locale's (localization-§1).
+                NS.Print(L["`/pc %s` does nothing while the addon is disabled — %s turns it back on"]
+                         :format(verb, cmd("/pc enable")))
+                return
+            end
+            return handler(rest)
+        end
+    end
+end
+
 local lib = LibStub and LibStub("LibKa0s-Slash-1.0", true)
 
 -- The one sentence every lost verb says. Hoisted out of the branch below because
@@ -326,12 +396,14 @@ end
 -- THE VERBS MUST SURVIVE THE DISABLED STATE, or the pair is one-way: a player
 -- turns the addon off and the verb that turns it back on is gone. Nothing here
 -- can take them away — core/PrettyChat.lua's OnInitialize registers `/pc` and
--- `/prettychat` unconditionally and nothing unregisters them, the COMMANDS table
--- above is built at file load and never rebuilt, and `IsAddonEnabled` is read in
--- exactly one place (modules/Override.lua's ApplyStrings, which decides whether a
--- Blizzard global is overridden or restored). Disabled means this addon stands
--- its OVERRIDES down; the dispatcher, the settings panel and the launcher are
--- SETUP and come up in either state. tests/test_slash.lua pins that.
+-- `/prettychat` unconditionally and nothing unregisters them, and the COMMANDS
+-- table above is built at file load and never rebuilt. Disabled means this addon
+-- stands its OVERRIDES down, and that a verb DRIVING those overrides refuses (the
+-- disabled gate above, which is the second reader of `IsAddonEnabled` beside
+-- modules/Override.lua's ApplyStrings); the dispatcher, the settings panel and
+-- the launcher are SETUP and come up in either state, and these two verbs are
+-- named in the live set so the gate can never reach them.
+-- tests/test_slash.lua and tests/test_launcher.lua pin that.
 local ENABLED_PATH = "General.enabled"
 
 function setEnabled(on)

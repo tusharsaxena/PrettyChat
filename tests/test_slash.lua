@@ -466,3 +466,150 @@ test("every slash line carries the cyan [PC] tag", function()
         end
     end
 end)
+
+-- ── the disabled gate (slash-commands-§2) ───────────────────────────────────
+--
+-- A disabled addon refuses a verb that DRIVES ITS FEATURES rather than acting on
+-- it, on one tagged line naming `/pc enable`, and does nothing else. The verbs
+-- that must keep answering are named by the rule and not by this addon: a player
+-- has to be able to READ AND REPAIR SETTINGS and REACH THE PANEL while the addon
+-- is off -- which is exactly when they are most likely to need to -- and `enable`
+-- above all, or the pair is one-way.
+--
+-- EVERY CASE BELOW DRIVES THE REAL `/pc` ENTRY POINT, and each one checks BOTH
+-- halves: that the verb said so, and that it did not act. A case that only reads
+-- the chat line passes over a verb that printed the refusal and then ran anyway.
+-- For `/pc test` the act is visible in the debug console's buffer, which is where
+-- its report goes; for the live verbs it is visible in the store.
+
+local REFUSAL = "does nothing while the addon is disabled"
+
+-- A throwaway instance, so the shared one at the head of this file is never left
+-- disabled for the cases that follow it in the inventory.
+local function offline()
+    local i = ctx.loadAddon()
+    i.NS.Helpers.OpenOptionsPanel = function() end
+    i.addon:OnSlashCommand("disable")
+    t.eq(i.addon:IsAddonEnabled(), false, "the instance starts disabled")
+    return i
+end
+
+local function say(i, input)
+    local from = #i.env.DEFAULT_CHAT_FRAME.messages
+    i.addon:OnSlashCommand(input)
+    local out = {}
+    for n = from + 1, #i.env.DEFAULT_CHAT_FRAME.messages do
+        out[#out + 1] = i.env.DEFAULT_CHAT_FRAME.messages[n]
+    end
+    return out
+end
+
+local function refused(lines)
+    for _, line in ipairs(lines) do
+        if line:find(REFUSAL, 1, true) then return true end
+    end
+    return false
+end
+
+test("disabled: a feature verb refuses on ONE line naming /pc enable, and does not act", function()
+    local i = offline()
+    local D = i.NS.DebugLog
+    local consoleFrom = #D.buffer
+
+    local lines = say(i, "test")
+
+    t.eq(#lines, 1, "one line, and only one -- no partial work, no second line")
+    t.truthy(lines[1]:find(REFUSAL, 1, true), "which says why: " .. tostring(lines[1]))
+    t.truthy(lines[1]:find("/pc enable", 1, true), "and names the verb that turns it back on")
+    t.truthy(lines[1]:sub(1, #PREFIX) == PREFIX, "tagged like every other line this addon prints")
+    -- THE HALF A MESSAGE-ONLY CASE WOULD PASS OVER. `/pc test`'s act is writing
+    -- its report to the debug console, so the console buffer is where "and did
+    -- nothing" is actually visible: a verb that printed the refusal and then ran
+    -- anyway is red here rather than green.
+    t.eq(#D.buffer, consoleFrom, "and NOT one line of the report was written")
+end)
+
+test("disabled: only the feature verbs refuse -- every verb is driven to find out", function()
+    -- The live set of slash-commands-§2, checked by RUNNING each verb while the
+    -- addon is off and watching for the refusal, rather than by reading back the
+    -- table it is declared in. `perf` is in the rule's set and not in this addon's
+    -- COMMANDS (the recorded performance-§12 exemption), so the loop never reaches
+    -- it; it is listed anyway, because the set is the standard's.
+    local LIVE = {
+        help = true, config = true, version = true,
+        enable = true, disable = true, debug = true, perf = true,
+        get = true, set = true, list = true, reset = true, resetall = true,
+    }
+    local i = offline()
+    local seen = 0
+    for _, entry in ipairs(i.NS.COMMANDS) do
+        local verb = entry[1]
+        i.addon:OnSlashCommand("disable")
+        t.eq(i.addon:IsAddonEnabled(), false, "off before /pc " .. verb)
+        local answered = refused(say(i, verb))
+        if LIVE[verb] then
+            t.falsy(answered, "/pc " .. verb .. " must answer while the addon is disabled")
+        else
+            t.truthy(answered, "/pc " .. verb .. " drives the addon's features and must refuse")
+        end
+        seen = seen + 1
+    end
+    t.eq(seen, #i.NS.COMMANDS, "every verb in the table was driven")
+end)
+
+test("disabled: the schema CLI still reads and REPAIRS, and the panel still opens", function()
+    -- Not refusing is not the same as working. These are the verbs the rule keeps
+    -- live BECAUSE the player needs them most while the addon is off, so each one
+    -- is checked for its effect and not for its silence.
+    local i = offline()
+    local opened = 0
+    i.NS.Helpers.OpenOptionsPanel = function() opened = opened + 1 end
+
+    t.truthy(table.concat(say(i, "get General.visibility"), "\n"):find("General.visibility", 1, true),
+        "/pc get still reads a setting back")
+
+    i.addon:OnSlashCommand("set General.visibility never")
+    t.eq(i.NS.Schema.Get("General.visibility"), "never", "/pc set still WRITES while disabled")
+    i.addon:OnSlashCommand("reset General.visibility")
+    t.eq(i.NS.Schema.Get("General.visibility"), "always", "and /pc reset still repairs it")
+
+    i.addon:OnSlashCommand("config")
+    i.addon:OnSlashCommand("")
+    t.eq(opened, 2, "/pc config and a bare /pc both still reach the panel")
+
+    t.eq(i.addon:IsAddonEnabled(), false, "none of that turned the addon back on")
+    i.addon:OnSlashCommand("enable")
+    t.eq(i.addon:IsAddonEnabled(), true, "and /pc enable is never refused, or the pair is one-way")
+end)
+
+test("disabled: the gate LIFTS the moment the addon is enabled again", function()
+    -- The gate reads the live switch at CALL time rather than closing over what it
+    -- was when the table was built, which is the failure a wrapped handler invites.
+    local i = offline()
+    local D = i.NS.DebugLog
+    local from = #D.buffer
+
+    i.addon:OnSlashCommand("test")
+    t.eq(#D.buffer, from, "refused, and wrote nothing, while off")
+
+    i.addon:OnSlashCommand("enable")
+    i.addon:OnSlashCommand("test")
+    t.truthy(#D.buffer > from, "and the same verb writes its report once the addon is back on")
+end)
+
+test("disabled: the panel's Test button is NOT gated -- the refusal is the dispatcher's", function()
+    -- The courtesy belongs to the slash surface. The Master-controls tab's Test
+    -- button is not a verb: it sits on the page beside the switch that turned the
+    -- addon off, so there is nothing to explain to whoever pressed it, and the
+    -- report already says on its own second line that these formats are not
+    -- reaching live chat.
+    local i = offline()
+    local D = i.NS.DebugLog
+    local from = #D.buffer
+
+    i.addon:TestToConsole()
+
+    t.truthy(#D.buffer > from, "the button still writes its report")
+    t.truthy(table.concat(D.buffer, "\n", from + 1):find("addon is currently disabled", 1, true),
+        "and the report says the formats are not being applied to live chat")
+end)

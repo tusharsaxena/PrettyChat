@@ -570,13 +570,18 @@ that draws nothing raises nothing, and a `.tga` in the wrong format loads as sil
 > Why: `slash-commands-§2`. They are ALIASES, never a second switch, and the pair must never be
 > one-way.
 
-- Steps: `/pc disable`. Then `/pc`, `/pc help`, `/pc version`, and finally `/pc enable`.
+- Steps: `/pc disable`. Then `/pc`, `/pc help`, `/pc version`, `/pc get General.visibility`,
+  `/pc test`, and finally `/pc enable`.
 - Expected: `/pc disable` echoes `General.enabled = false` in the same shape `/pc set` uses, and
   chat goes back to Blizzard's wording. The **Enable PrettyChat** checkbox on the General page is
-  unticked — open it and look. Every verb above still answers while disabled, the minimap button
-  is still there, and `/pc enable` turns everything back on.
-- Failure mode: if any of `/pc`, `help` or `enable` goes quiet while disabled, the switch is
-  one-way and a player can only get back through the panel they were trying not to open.
+  unticked — open it and look. Every verb above still answers while disabled **except `/pc test`**,
+  which answers with one line naming `/pc enable` and writes nothing to the debug console
+  (`slash-commands-§2`: a disabled addon refuses a verb that drives its features). The minimap
+  button is still there, and `/pc enable` turns everything back on.
+- Failure mode: if any of `/pc`, `help`, `enable` or the schema CLI goes quiet while disabled, the
+  switch is one-way and a player can only get back through the panel they were trying not to open.
+  If `/pc test` opens the console and writes its report anyway, the refusal printed and the verb
+  then acted, which is worse than not refusing at all.
 
 #### T-69 — A broker display shows the same plugin
 
