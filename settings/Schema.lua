@@ -387,29 +387,41 @@ end
 -- the test harness to assert.
 -- ---------------------------------------------------------------------
 
+-- The minimap row's backing default, which is the one that is NOT in NS.Defaults
+-- and not carried on the row either: it is LibDBIcon's own table, declared in the
+-- GLOBAL half of core/Database.lua's AceDB defaults (launcher-§3). Checked there
+-- rather than waved through, so a default deleted from that table surfaces at load
+-- through the same channel every other unresolved path takes, instead of as a nil
+-- index the first time a player ticks the box.
+--
+-- Its own function rather than a fourth arm inline: the walk down to `.hide` is
+-- four guards on its own and inlining them put resolveBackingDefault over the
+-- CCN 15 the complexity gate holds every function in this repo to.
+local function minimapDefaultDeclared()
+    local defaults = NS.Database and NS.Database.defaults
+    local global   = defaults and defaults.global
+    local minimap  = global and global.minimap
+    return (type(minimap) == "table" and minimap.hide ~= nil) and true or false
+end
+
+-- Per-kind resolvers, so the dispatch below is a table lookup rather than a
+-- ladder. A kind absent from this table falls through to the per-string arm,
+-- which is where string_enabled and string_format both land.
+local BACKING_DEFAULT = {
+    -- The composed addon-wide rows. Their backing default is the composer's own,
+    -- carried on the row, because "General" is a virtual category with no entry
+    -- in NS.Defaults to resolve against.
+    addon_enabled    = function(row) return row.default ~= nil end,
+    addon_visibility = function(row) return row.default ~= nil end,
+    -- Session state; nothing stored to back.
+    debug_console    = function() return true end,
+    minimap_button   = minimapDefaultDeclared,
+    category_enabled = function(row) return NS.Defaults[row.category] ~= nil end,
+}
+
 local function resolveBackingDefault(row)
-    if row.kind == "addon_enabled" or row.kind == "addon_visibility" then
-        -- The composed addon-wide rows. Their backing default is the composer's
-        -- own, carried on the row, because the "General" category is virtual and
-        -- has no entry in NS.Defaults to resolve against.
-        return row.default ~= nil
-    end
-    if row.kind == "debug_console" then
-        return true                        -- session state; nothing stored to back
-    end
-    if row.kind == "minimap_button" then
-        -- The one composed row whose backing default is NOT in NS.Defaults and not
-        -- carried on the row either: it is LibDBIcon's own table, declared in the
-        -- GLOBAL half of core/Database.lua's AceDB defaults (launcher-§3). Checked
-        -- there rather than waved through, so a default deleted from that table
-        -- surfaces at load through the same channel every other unresolved path
-        -- takes instead of as a nil index the first time a player ticks the box.
-        local g = NS.Database and NS.Database.defaults and NS.Database.defaults.global
-        return (g and type(g.minimap) == "table" and g.minimap.hide ~= nil) and true or false
-    end
-    if row.kind == "category_enabled" then
-        return NS.Defaults[row.category] ~= nil
-    end
+    local resolver = BACKING_DEFAULT[row.kind]
+    if resolver then return resolver(row) end
     -- string_enabled / string_format both back onto a per-string default.
     local cat = NS.Defaults[row.category]
     return (cat and cat.strings and cat.strings[row.globalName] ~= nil) and true or false
