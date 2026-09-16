@@ -74,7 +74,7 @@ Topic detail: [module-map.md](./module-map.md).
 
 ## Namespace publishing pattern
 
-Every file opens by destructuring the two values WoW passes each chunk — the addon FOLDER name and the addon-wide namespace table. Seven files read both and spell the header `local addonName, NS = ...`: `core/Namespace.lua`, `core/CoreSetup.lua`, `core/EnvSetup.lua`, `core/MediaSetup.lua`, `core/DebugLogSetup.lua`, `core/PrettyChat.lua` (which hands the folder name to `:NewAddon`) and `settings/Panel.lua` (which builds `Interface\\AddOns\\<folder>` from it). The other eleven never read the folder name and open `local _, NS = ...` — `M4c-06` corrected them when the blanket `211/addonName` suppression that had been hiding them came out of `.luacheckrc`. A copied header naming a value the file does not use is dead code, not a convention. Modules publish their public surface onto `NS`; nothing is exported through a global. The addon object **is** that same `NS` table (`core/PrettyChat.lua` passes `NS` to `:NewAddon`, architecture-§2), so the AceAddon methods hang off it and `LibStub("AceAddon-3.0"):GetAddon("PrettyChat")` returns the very same table.
+Every file opens by destructuring the two values WoW passes each chunk — the addon FOLDER name and the addon-wide namespace table. Eight files read both and spell the header `local addonName, NS = ...`: `core/Namespace.lua`, `core/CoreSetup.lua`, `core/EnvSetup.lua`, `core/MediaSetup.lua`, `core/DebugLogSetup.lua`, `core/PrettyChat.lua` (which hands the folder name to `:NewAddon`), `core/LauncherSetup.lua` (which builds the broker object's `ICON_PATH` and its `name` from it) and `settings/Panel.lua` (which builds `Interface\\AddOns\\<folder>` from it). The other eleven never read the folder name and open `local _, NS = ...` — `M4c-06` corrected them when the blanket `211/addonName` suppression that had been hiding them came out of `.luacheckrc`. A copied header naming a value the file does not use is dead code, not a convention. Modules publish their public surface onto `NS`; nothing is exported through a global. The addon object **is** that same `NS` table (`core/PrettyChat.lua` passes `NS` to `:NewAddon`, architecture-§2), so the AceAddon methods hang off it and `LibStub("AceAddon-3.0"):GetAddon("PrettyChat")` returns the very same table.
 
 | Member | Set by | Used by |
 |--------|--------|---------|
@@ -192,7 +192,7 @@ generated directories are named once each and never enumerated per run: `docs/au
 
 | Doc | Status | Trigger |
 |---|---|---|
-| `slash-dispatch.md` | Present | 10 verbs in the command table |
+| `slash-dispatch.md` | Present | 12 verbs in the command table |
 | `midnight-quirks.md` | Not applicable | No client-version workaround of the addon’s own; the GlobalStrings work is data, not a shim |
 | `message-bus.md` | Not applicable | The addon defines no cross-module messages |
 | `compat-layer.md` | Not applicable | There is no `core/Compat.lua`. Its one shim, `Compat.GetAddOnMetadata`, is now `LibKa0s-Env-1.0` behind `core/EnvSetup.lua`, and this addon has no addon-specific client-version shim left to document |
