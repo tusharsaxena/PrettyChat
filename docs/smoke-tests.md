@@ -44,7 +44,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 > Why: `/pc` and `/prettychat` both dispatch through `OnSlashCommand`.
 
 - Steps: `/pc help` and `/prettychat help`.
-- Expected: identical output from both. Header shows `v<VERSION>` matching the TOC. All ten commands listed (`help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `test`, `debug`).
+- Expected: identical output from both. Header shows `v<VERSION>` matching the TOC. All twelve commands listed (`help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `test`, `debug`, `enable`, `disable`).
 
 ### O — Override pipeline (the three enable layers)
 
@@ -516,6 +516,78 @@ Since the `LibKa0s-Media-1.0` adoption the font and the marks both come from **i
 - Steps: enable PrettyChat, loot an item, gain XP.
 - Expected: the reformatted lines appear in the **exact same font/size/backdrop** as every other chat line — only the coloring/layout of the text differs. PrettyChat adds no border, no background, and no font change to the chat window.
 
+### G — Launcher (the minimap button and the broker plugin)
+
+Everything here is invisible to the headless suite for the same reason the M group is: a button
+that draws nothing raises nothing, and a `.tga` in the wrong format loads as silence.
+
+#### T-64 — The button is on the minimap, wearing PrettyChat's own logo
+
+> Why: `launcher-§1`/`§4`. One file is the addon's face in three places, and a missing or
+> wrongly-formatted icon draws NOTHING — anti-pattern #82's subtler half.
+
+- Steps: log in with a clean profile and look at the ring of buttons around the minimap.
+- Expected: a PrettyChat button, showing the addon's logo — not a blank square, not a Blizzard
+  icon, not a question mark. The same art appears beside **Ka0s Pretty Chat** in the AddOns list
+  (the TOC's `## IconTexture` names the same file).
+- Failure mode: a blank or checkerboard button means `media/logos/prettychat.logo.128.tga` is
+  missing from the package or is not TGA type 2 / 32 bpp. Regenerate it with layout-§4's recipe.
+
+#### T-65 — Both buttons open the settings panel (rung (c))
+
+> Why: `launcher-§2`. PrettyChat has no primary window and no preview switch, so left-click opens
+> the panel exactly as right-click does. Nothing else may happen on either button.
+
+- Steps: left-click the minimap button. Close the panel. Right-click it.
+- Expected: both open PrettyChat's settings on its landing page — the same page `/pc config` opens.
+  Nothing toggles, nothing is stored, and no chat line is printed.
+- In combat: both refuse with the same gray notice `/pc config` gives (options-ui-§2).
+
+#### T-66 — The Minimap button checkbox hides it NOW, and remembers
+
+> Why: `launcher-§3`. The row says shown and the store says hidden, so exactly one negation
+> stands between the box and the opposite of what it promises.
+
+- Steps: `/pc config` → **General** → untick **Minimap button**.
+- Expected: the button disappears immediately, not at the next reload. `/reload` — it is still
+  gone. Tick it again: it comes straight back, at the same angle it was at before.
+- Then drag the button a third of the way round the ring, untick and tick again: it returns to
+  where you dragged it, not to the default angle.
+
+#### T-67 — The button survives a profile switch and *Reset all settings*
+
+> Why: the whole reason `launcher-§3` puts the table in the GLOBAL store. A profile is how you
+> configure what an addon draws; the ring of buttons is furniture you arranged once.
+
+- Setup: hide the button, then `/reload`.
+- Steps: switch to another AceDB profile (or create one), then run **Reset all settings** on the
+  General page and confirm.
+- Expected: the button stays hidden through both. Neither a profile switch nor a profile reset
+  un-hides a button you deliberately hid.
+
+#### T-68 — `/pc enable` and `/pc disable` are the checkbox, by another name
+
+> Why: `slash-commands-§2`. They are ALIASES, never a second switch, and the pair must never be
+> one-way.
+
+- Steps: `/pc disable`. Then `/pc`, `/pc help`, `/pc version`, and finally `/pc enable`.
+- Expected: `/pc disable` echoes `General.enabled = false` in the same shape `/pc set` uses, and
+  chat goes back to Blizzard's wording. The **Enable PrettyChat** checkbox on the General page is
+  unticked — open it and look. Every verb above still answers while disabled, the minimap button
+  is still there, and `/pc enable` turns everything back on.
+- Failure mode: if any of `/pc`, `help` or `enable` goes quiet while disabled, the switch is
+  one-way and a player can only get back through the panel they were trying not to open.
+
+#### T-69 — A broker display shows the same plugin
+
+> Why: one object, registered twice. Skip this one if you run no broker display.
+
+- Setup: install Titan Panel, Bazooka, or use ElvUI's data texts.
+- Steps: add **PrettyChat** from the display's plugin list, then click the row it draws.
+- Expected: the row wears the same logo and the label **Ka0s Pretty Chat**, with no empty value
+  cell beside it (the object is typed `launcher`, not `data source`). Clicking it opens the
+  settings panel, exactly as the minimap button does — there is one click implementation.
+
 ## When to run what
 
 | Trigger | Run |
@@ -526,7 +598,8 @@ Since the `LibKa0s-Media-1.0` adoption the font and the marks both come from **i
 | Touched slash command surface in `settings/Slash.lua` | Quick recipe + L + X groups |
 | Touched the reset paths (`ResetString` / `ResetCategory` / `ResetAll` in `modules/Override.lua`, or a Reset/Defaults button) | Quick recipe + R group |
 | Touched `core/DebugLogSetup.lua`, `media/`, or panel chrome (fonts/textures/borders) | Quick recipe + M + K groups |
-| Re-vendored `libs/LibKa0s/`, or touched any of the six seam files | Quick recipe + **K group** |
+| Touched `core/LauncherSetup.lua`, the minimap row, `media/logos/`, or the TOC's `## IconTexture` | Quick recipe + **G group** |
+| Re-vendored `libs/LibKa0s/`, or touched any of the seven seam files | Quick recipe + **K group** |
 | Pre-release / pre-tag | Full suite |
 | Post WoW client patch | Full suite + regenerate `GlobalStrings/` per [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patch) |
 
@@ -536,7 +609,7 @@ Everything in this group is invisible to the headless suite by construction: a r
 `SCREAMING_SNAKE` key is a perfectly good string, a window's border only reads as wrong beside one
 that has both lines, and a degraded install is a state the loader can only simulate.
 
-Run the whole group after re-vendoring `libs/LibKa0s/`, after any change to the six seam files, or
+Run the whole group after re-vendoring `libs/LibKa0s/`, after any change to the seven seam files, or
 before tagging.
 
 #### T-90 — The degraded install: nothing errors, and the reason is said once

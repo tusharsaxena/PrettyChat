@@ -255,12 +255,15 @@ test("cross-registered globals are identified with their real categories", funct
 end)
 
 -- The composed Master controls block, which is the whole of the General page:
--- Enable PrettyChat, General visibility, Debug console. Written out as a number
--- because it is what the defaults table CANNOT imply — those three rows are
--- LibKa0s-Options-1.0's canonical block rather than this addon's data
+-- Enable PrettyChat, General visibility, Debug console, Minimap button. Written
+-- out as a number because it is what the defaults table CANNOT imply — those four
+-- rows are LibKa0s-Options-1.0's canonical block rather than this addon's data
 -- (options-ui-§15), and the frameless omission of master scale, master alpha and
--- lock frame is what makes it three rather than six.
-local MASTER_ROWS = 3
+-- lock frame is what makes it four rather than seven. The fourth arrived with the
+-- launcher (launcher-§3, OptionsCompose minor 7): stored rather than session, and
+-- its default lives in core/Database.lua's GLOBAL half rather than in NS.Defaults,
+-- which is exactly why the defaults table cannot imply it either.
+local MASTER_ROWS = 4
 
 test("the schema builds exactly the rows the defaults imply", function()
     -- the Master controls block + 1 row per backed category + 2 rows per string

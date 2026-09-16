@@ -177,6 +177,23 @@ if not lib then
                 type        = "bool",
                 sessionOnly = true,
             }
+            -- The minimap row (OptionsCompose minor 7). Emitted here for the same
+            -- reason `enabled` and `visibility` are: it is a SETTING, and a
+            -- degraded install still stores, reads and writes it. Dropping it would
+            -- delete `global.minimap.hide` from the schema and with it the only
+            -- surface left for showing the button again once LibKa0s returns.
+            --
+            -- STORED, so no `sessionOnly` -- and the leaf carries the composer's
+            -- own `true`, which is the row's SHOWN sense, not LibDBIcon's `hide`.
+            -- Opt-in on the path exactly as the live composer is, so an addon that
+            -- has not adopted the launcher emits nothing here either.
+            if spec.minimapPath then
+                out[#out + 1] = {
+                    path    = spec.minimapPath,
+                    type    = "bool",
+                    default = true,
+                }
+            end
             return out, function() end
         end,
         RegisterOptionsPage  = function() end,

@@ -134,12 +134,12 @@ test("exactly one addon-wide row exists, under the virtual General category", fu
         if r.kind == "addon_enabled" then addonRows = addonRows + 1 end
     end
     t.eq(addonRows, 1, "one master switch, not one per category")
-    -- Three now, and all three are the composed Master controls block
-    -- (options-ui-§15). MOVED here rather than added beside what was already
-    -- drawn: the console toggle used to be a bespoke SessionCheckbox
-    -- settings/Panel.lua drew through `pairWith`, and there is exactly one
-    -- declaration of it.
-    t.eq(#Schema.RowsByCategory("General"), 3, "and General hosts the whole block")
+    -- Four now, and all four are the composed Master controls block
+    -- (options-ui-§15). None of them was added beside what was already drawn: the
+    -- console toggle used to be a bespoke SessionCheckbox settings/Panel.lua drew
+    -- through `pairWith`, and the Minimap button row is the composer's own at
+    -- minor 7. There is exactly one declaration of each.
+    t.eq(#Schema.RowsByCategory("General"), 4, "and General hosts the whole block")
 end)
 
 test("the Master controls block is the composed one, in canonical order", function()
@@ -151,8 +151,8 @@ test("the Master controls block is the composed one, in canonical order", functi
     local paths = {}
     for i, r in ipairs(generalRows) do paths[i] = r.path end
     t.eq(table.concat(paths, ","),
-        "General.enabled,General.visibility,state.debugConsole",
-        "enable, visibility, console — the frameless block, in that order")
+        "General.enabled,General.visibility,state.debugConsole,global.minimap.hide",
+        "enable, visibility, console, minimap — the frameless block, in that order")
 
     for _, path in ipairs({ "General.scale", "General.alpha", "General.locked" }) do
         t.nilv(Schema.FindByPath(path), path .. " is omitted: this addon draws no frame")
@@ -364,7 +364,7 @@ end)
 -- called "Master controls".
 local PARTITION = {
     { page = "General", tabs = {
-        { tab = "Master controls", category = "General", rows = 3 },
+        { tab = "Master controls", category = "General", rows = 4 },
     } },
     { page = "Categories", tabs = {
         { tab = "Loot",       category = "Loot",       rows = 39 },

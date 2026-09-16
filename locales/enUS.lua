@@ -89,6 +89,12 @@ local enUS = {
     "Print sample chat lines to the debug console — `/pc test [all | category <name> | formatstring <NAME>]`",
     "Debug console — `/pc debug` shows it; `on`/`off` toggle logging",
     "Print the addon version",
+    -- The two reserved ALIASES (slash-commands-§2). They write the SAME stored
+    -- path the composed `Enable PrettyChat` checkbox writes, so what is
+    -- translatable from this folder is the verb's DESCRIPTION; the confirmation
+    -- line itself is LibKa0s-Slash-1.0's `set` rendering, like every other one.
+    "Enable the addon",
+    "Disable the addon",
     -- Slash-command and `/pc test` OUTPUT, as opposed to the verb descriptions
     -- above. Each key is a WHOLE sentence with `%s`/`%d` where the data goes, and
     -- each one was a concatenation of prose and data until M4-21; the routing is

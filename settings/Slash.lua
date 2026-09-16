@@ -28,7 +28,7 @@ local note    = NS.Util.note
 local trim    = NS.Util.trim
 
 local Sl                    -- forward-declared: the handlers below reach it at call time
-local listSettings, runReset, runResetAll, runTest, runDebug
+local listSettings, runReset, runResetAll, runTest, runDebug, setEnabled
 local formatValue           -- the `||` display codec; nil when the library is absent
 
 local function schemaReady()
@@ -63,6 +63,14 @@ local COMMANDS = {
         function(rest) runTest(rest) end},
     {"debug",    L["Debug console — `/pc debug` shows it; `on`/`off` toggle logging"],
         function(rest) runDebug(rest) end},
+    -- The two reserved ALIASES (slash-commands-§2). They are the LAST entries
+    -- rather than sorted in beside `config`, because `/pc help` and the landing
+    -- page both render this table in declaration order and the schema verbs are
+    -- what a user is usually looking for.
+    {"enable",   L["Enable the addon"],
+        function() setEnabled(true) end},
+    {"disable",  L["Disable the addon"],
+        function() setEnabled(false) end},
 }
 
 -- Published for the suite, which pins the host-owns-its-verbs contract against it; no
@@ -298,11 +306,58 @@ function runReset(rest)
     Sl:CliReset(rest)
 end
 
+-- ---------------------------------------------------------------------
+-- `/pc enable` and `/pc disable` — ALIASES, NEVER A SECOND SWITCH
+-- (slash-commands-§2).
+--
+-- This addon already carries an addon-wide switch: `General.enabled`, the first
+-- row of General > Master controls, wired in settings/Schema.lua's MASTER_WIRING
+-- and stored only when OFF. These two verbs write THAT path, through THAT seam,
+-- and hold nothing of their own — no second key, no session flag, no `NS.enabled`
+-- local — so the checkbox and the verbs can never show a player two answers, and
+-- whichever surface was used runs the same ApplyStrings pass and the same panel
+-- refresh. `/pc set General.enabled false` is the same write by its long name and
+-- still works; these are the short spellings the collection reserves.
+--
+-- THE ECHO IS THE LIBRARY'S, not a second copy of it. CliSet renders the
+-- confirmation in slash-commands-§5's `set` shape, so `/pc disable` and
+-- `/pc set General.enabled false` answer byte for byte.
+--
+-- THE VERBS MUST SURVIVE THE DISABLED STATE, or the pair is one-way: a player
+-- turns the addon off and the verb that turns it back on is gone. Nothing here
+-- can take them away — core/PrettyChat.lua's OnInitialize registers `/pc` and
+-- `/prettychat` unconditionally and nothing unregisters them, the COMMANDS table
+-- above is built at file load and never rebuilt, and `IsAddonEnabled` is read in
+-- exactly one place (modules/Override.lua's ApplyStrings, which decides whether a
+-- Blizzard global is overridden or restored). Disabled means this addon stands
+-- its OVERRIDES down; the dispatcher, the settings panel and the launcher are
+-- SETUP and come up in either state. tests/test_slash.lua pins that.
+local ENABLED_PATH = "General.enabled"
+
+function setEnabled(on)
+    if not schemaReady() then return end
+    if lib then
+        Sl:CliSet(ENABLED_PATH .. " " .. tostring(on))
+        return
+    end
+    -- Library absent. The CLI renderer went with it, but the SCHEMA did not —
+    -- settings/OptionsSetup.lua's stub still composes the Master controls leaves,
+    -- so the row and its write seam are both here — and slash-commands-§2 names
+    -- `enable` as the verb that MUST keep working above all others. So the write
+    -- happens and the line is the pre-library rendering, the same one
+    -- Schema.FormatValue falls back to: no colour, no `key = value` helper, just
+    -- the path and the value it now holds.
+    NS.Schema.Set(ENABLED_PATH, on)
+    local row = NS.Schema.FindByPath(ENABLED_PATH)
+    NS.Print(ENABLED_PATH .. " = "
+             .. NS.Schema.FormatValue(row, NS.Schema.Get(ENABLED_PATH)))
+end
+
 -- Kept host-owned rather than delegated to CliResetAll, for the same reason the
 -- per-category Defaults button is: PrettyChat:ResetAll wipes the profile and
 -- re-applies in ONE pass, and its OnProfileReset handler logs the ONE
 -- `[Set] reset profile '<name>' to defaults (N rows)` line (debug-logging-§10),
--- where the library's row-by-row form would run ApplyStrings 173 times.
+-- where the library's row-by-row form would run ApplyStrings 174 times.
 function runResetAll()
     PrettyChat:ResetAll()
     NS.Print(note(L["all settings reset to defaults"]))

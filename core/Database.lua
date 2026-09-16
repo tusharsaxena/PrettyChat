@@ -16,9 +16,25 @@ Database.SCHEMA_VERSION = 1
 -- Defaults merged into AceDB (PrettyChat.lua adds `profile`). `global`
 -- carries the persisted schema version. Starts at 0 so a brand-new DB
 -- runs cleanly up to SCHEMA_VERSION (a no-op while migrations is empty).
+--
+-- `minimap` is LibDBIcon's OWN table and it is DECLARED here rather than
+-- written anywhere (launcher-§3, architecture-§5): the declared default is what
+-- materializes it, and LibDBIcon then writes `minimapPos` into the same table
+-- when the player drags the button. A `minimap = { hide = false }` assignment in
+-- a setup file would be a whole-section write over a path a schema row addresses,
+-- and it would wipe the position on every login.
+--
+-- GLOBAL, and that is the decision rather than where the rest of the settings
+-- happened to land. A minimap button belongs to the INSTALLATION: a profile
+-- switch must not move a player's buttons, and options-ui-§12's `Reset all
+-- settings` -- a profile reset by definition -- must not un-hide a button the
+-- player deliberately hid. PrettyChat has never stored this table anywhere else,
+-- so there is no db.profile.minimap to carry across and no schemaVersion bump:
+-- this is a new default, not a stored-path move.
 Database.defaults = {
     global = {
         schemaVersion = 0,
+        minimap = { hide = false },
     },
 }
 

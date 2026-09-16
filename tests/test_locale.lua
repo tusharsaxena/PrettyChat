@@ -219,6 +219,9 @@ local RESIDUE = {
      "a font FACE name — an identifier LibSharedMedia and the console descriptor match on"},
     {"settings/OptionsSetup.lua", "Ka0s Pretty Chat",
      "the addon's brand name, and a LibKa0s descriptor field besides (see below)"},
+    {"core/LauncherSetup.lua", "Ka0s Pretty Chat",
+     "the same brand name, handed to LibKa0s-Launcher-1.0 as the broker object's "
+     .. "`label` — what a broker display prints beside the icon"},
     {"core/DebugLogSetup.lua", "Pretty Chat",
      "the same brand name, handed to LibKa0s-DebugLog-1.0 as its window title"},
     {"core/DebugLogSetup.lua", "Debug console",

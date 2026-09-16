@@ -20,6 +20,8 @@ local COMMANDS = {
     {"resetall", "...", function()     runResetAll()    end},
     {"test",     "...", function(rest) runTest(rest)    end},
     {"debug",    "...", function(rest) runDebug(rest)   end},
+    {"enable",   "...", function()     setEnabled(true)  end},
+    {"disable",  "...", function()     setEnabled(false) end},
 }
 ```
 
@@ -57,6 +59,7 @@ Two of this addon's shapes are not the library's default, and both are handled a
 | `/pc test` / `/pc test all` | Write a per-category Original-vs-Formatted diff for every format string **to the debug console**, opening it first — the same act as the General page's Test button, through the same `PrettyChat:TestToConsole`. It used to print to chat; eighty-odd lines in the frame this addon exists to keep readable was the wrong home for it. Output ignores enable toggles. See [settings-panel.md](./settings-panel.md#the-test-preview). |
 | `/pc test category <name>` | Filter the diff to one category. Case-insensitive name with the same unambiguous-prefix lookup as `/pc reset` (`Schema.ResolveCategory`). |
 | `/pc test formatstring <NAME>` | Filter the diff to a single global. Input is uppercased then validated against `NS.Defaults`. Globals registered under more than one category (e.g. `LOOT_ITEM_CREATED_SELF`) print under each — both registrations are shown. |
+| `/pc enable` / `/pc disable` | The two reserved **aliases** (slash-commands-§2). They write `General.enabled` — the Master-controls *Enable PrettyChat* row's own stored path — through `NS.Schema.Set`, the same single write seam the checkbox takes, and hold **no state of their own**: no second key, no session flag. The confirmation is the library's `CliSet` echo, so `/pc disable` and `/pc set General.enabled false` answer byte for byte. **Both survive the disabled state**, which is what stops the pair being one-way: `OnInitialize` registers `/pc` and `/prettychat` unconditionally, nothing unregisters them, the `COMMANDS` table is built once at file load, and `IsAddonEnabled` is read in exactly one place — `ApplyStrings` — so *disabled* means the overrides stand down, never that the dispatcher does. |
 | `/pc debug` / `/pc debug on` / `/pc debug off` | Drive the on-screen debug console (`core/DebugLogSetup.lua`). **Bare `/pc debug` toggles the console window** (the session logging state is unchanged) so capture can run with the window closed and be opened after the fact. `on` / `off` set the session logging flag `NS.State.debug` (default off, never persisted) through the single `NS.DebugLog:SetEnabled(on)` seam. Gates `NS.Debug(tag, fmt, …)`, which is a zero-alloc no-op when off and otherwise appends to the console. |
 | unknown command | Print the help index (with an "unknown command" warning first). |
 
@@ -88,6 +91,7 @@ Each command body is a small file-local function in `settings/Slash.lua`:
 | `runReset(rest)` | Intercepts a bare **category** name and answers with the deprecation plus both replacements (`LIBKA0S-10`); everything else goes to `Sl:CliReset(rest)`, which resets one row through `Schema.ApplyDefault` and echoes it. |
 | `runResetAll()` | Call `PrettyChat:ResetAll()` — the bulk implementation: one `db:ResetProfile()`, and the re-apply plus the single `[Set] reset profile '<name>' to defaults (N rows)` line land on `core/PrettyChat.lua`'s `OnProfileReset` handler (debug-logging-§10). Deliberately **not** `Sl:CliResetAll`, which is row-by-row over ~170 rows and would run `ApplyStrings` once per row. No in-chat confirmation. |
 | `runTest(rest)` | Parse the first whitespace-separated token. Empty or `all` → `PrettyChat:Test()` (every string). `category <name>` → resolve via `Schema.ResolveCategory`, then `Test({kind="category", value=matched})`. `formatstring <NAME>` → uppercase input, validate against `NS.Defaults`, then `Test({kind="formatstring", value=upper})`. Bad sub-token prints a four-line usage. |
+| `setEnabled(on)` | Host-owned, and thin on purpose. With the library present it is one call to `Sl:CliSet("General.enabled " .. tostring(on))`, so the write and the echo are both the shared ones. With it absent the schema and the write seam are still here — `settings/OptionsSetup.lua`'s stub composes the Master-controls leaves on that path too — so the write still happens and the line falls back to `Schema.FormatValue`'s pre-library rendering. |
 | `runDebug(rest)` | Bare / `toggle` → `NS.DebugLog:Toggle()` (show/hide the console window, logging state unchanged). `on` / `off` → `NS.DebugLog:SetEnabled(true/false)` (session logging flag). Other input prints a `usage:` hint. |
 
 `schemaReady()` guards each schema-touching command — prints `"schema not ready yet"` if `NS.Schema` hasn't loaded (shouldn't happen in practice given the TOC load order, but cheap to check).

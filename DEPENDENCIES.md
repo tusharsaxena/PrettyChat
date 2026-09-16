@@ -21,10 +21,16 @@ import, or a documented command. Nothing here is listed because it seemed likely
 | World of Warcraft, Retail | Interface `120100` (Midnight 12.1.0) | `PrettyChat.toc:1` — `## Interface: 120100`, the single latest-Retail line |
 
 Every library the addon uses is **vendored and committed** under `libs/` and listed in the TOC's
-`# Libraries` section (`PrettyChat.toc:16-22`), so a player installs no library packs:
+`# Libraries` section, so a player installs no library packs:
 
 - `LibStub`, `CallbackHandler-1.0`, `AceAddon-3.0`, `AceDB-3.0`, `AceConsole-3.0`, `AceGUI-3.0`,
-  and the Ka0s umbrella `LibKa0s` (vendored whole from the sibling `../LibKa0s` checkout).
+  `LibDataBroker-1.1`, `LibDBIcon-1.0`, and the Ka0s umbrella `LibKa0s` (vendored whole from the
+  sibling `../LibKa0s` checkout).
+- The broker pair is the **launcher's** (`launcher-§1`), not LibKa0s's: `core/LauncherSetup.lua`
+  builds one LibDataBroker object and hands it to LibDBIcon, so the minimap button and any broker
+  display draw from the same object. `LibKa0s-Launcher-1.0` resolves both with `LibStub(…, true)`
+  at `Register` time and degrades by name, so an install missing either one loads and says so
+  rather than raising.
 
 The TOC's `## OptionalDeps: Ace3, LibStub, CallbackHandler-1.0` (`PrettyChat.toc:8`) is a **load-order
 hint**, not an install requirement: if a standalone Ace3 is present it loads first, and if it is not,

@@ -173,6 +173,23 @@ function PrettyChat:OnEnable()
     if NS.Config and NS.Config.RegisterPanels then
         NS.Config.RegisterPanels()
     end
+
+    -- The launcher (launcher-§1). REGISTERED HERE rather than in
+    -- core/LauncherSetup.lua, where the object is built, because Register
+    -- resolves the broker libraries and the `minimap` table at CALL time and
+    -- db.global.minimap does not exist until AceDB has run in OnInitialize
+    -- above. Idempotent, so this cannot build a second button over the first.
+    --
+    -- Guarded on NS.Launcher rather than answered by a stub: nothing else in
+    -- this addon calls into the launcher except settings/Schema.lua's minimap
+    -- row, which guards the same way (see core/LauncherSetup.lua's header).
+    --
+    -- Deliberately OUTSIDE IsAddonEnabled: the button and the dispatcher are
+    -- SETUP, not features. A disabled addon that drew no button would leave the
+    -- player the settings panel they were trying not to open as the only way
+    -- back (slash-commands-§2's one-way-switch rule, and the same reason
+    -- OnInitialize registers /pc unconditionally).
+    if NS.Launcher then NS.Launcher:Register() end
     -- No boot-summary debug line here: the session-only debug flag is off at load, so it
     -- would never render. The self-identifying [Init] summary rides the DebugLog:SetEnabled
     -- seam instead (debug-logging-§5/§8).

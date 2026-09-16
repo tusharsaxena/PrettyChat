@@ -81,6 +81,10 @@ Kit.run{
         "test_database",
         "test_lifecycle",
         "test_debuglog",
+        -- The launcher seam, the composed Minimap button row and the two reserved verbs.
+        -- After test_debuglog because it is the last of the core/ seams, and BEFORE
+        -- test_slash, which reads the same COMMANDS table from the dispatcher's side.
+        "test_launcher",
         "test_slash",
         "test_panel",
         "test_doc_structure",

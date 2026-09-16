@@ -6,13 +6,14 @@ This doc covers: the six row kinds, the single write path that every panel and s
 
 ## Row kinds
 
-Six row kinds, addressed by dot path. The first three are the **composed** `Master controls` block (`H.MasterControls`, options-ui-§15); the last three are this addon's own:
+Seven row kinds, addressed by dot path. The first four are the **composed** `Master controls` block (`H.MasterControls`, options-ui-§15); the last three are this addon's own:
 
 | Path | Kind | Type | Backed by |
 |------|------|------|-----------|
 | `General.enabled` | `addon_enabled` | bool | `db.profile.enabled` (addon-wide master toggle; `General` is a *virtual category* — no entry in `NS.Defaults`) |
 | `General.visibility` | `addon_visibility` | string enum | `db.profile.visibility` (`always` / `inCombat` / `outOfCombat` / `never`; cleared when set back to `always`, so the default stores nothing). Honoured in `ApplyStrings` through `PrettyChat:IsVisible`, and the two combat modes arm `PrettyChatCombatWatcher` |
 | `state.debugConsole` | `debug_console` | bool | **nothing** — `sessionOnly`, mirroring `NS.DebugLog:IsShown()`. Unprefixed and verbatim, because session state lives outside the block's own prefix. `Schema.Set` skips its `ApplyStrings` re-apply for this row |
+| `global.minimap.hide` | `minimap_button` | bool | `db.global.minimap.hide` — LibDBIcon's **own** table, declared in `core/Database.lua`'s AceDB `global` defaults and handed straight to the library (`launcher-§3`). **Unprefixed and verbatim** for a different reason than the console row's: this table lives in the **global** store, outside the block's profile prefix entirely, because a minimap button belongs to the installation rather than to a profile — a profile switch must not move a player's buttons, and options-ui-§12's *Reset all settings*, a profile reset by definition, must not un-hide one. **The row's sense is inverted against the stored key**: the label says *shown*, `hide` says hidden, so its `get`/`set` negate and the `set` writes the LEAF (never the whole table — LibDBIcon keeps `minimapPos` in there too) and then calls `NS.Launcher:SetShown`. Stored, not session |
 | `<Category>.enabled` | `category_enabled` | bool | `db.profile.categories[Cat].enabled` (via `IsCategoryEnabled` / `EnsureCategoryDB`) |
 | `<Category>.<GLOBALNAME>.enabled` | `string_enabled` | bool | `db.profile.categories[Cat].disabledStrings[NAME]` (**inverted**: `disabledStrings[NAME] = true` means *disabled*) |
 | `<Category>.<GLOBALNAME>.format` | `string_format` | string | `db.profile.categories[Cat].strings[NAME]` (with `NS.Defaults[Cat].strings[NAME].default` fallback) |
@@ -85,7 +86,7 @@ function Schema.ResetRows(list, label)
 end
 ```
 
-It restores a list of rows to their defaults through the same `set()` step and the same gates `Schema.Set` uses, then pays the side effects once: one `ApplyStrings` pass, one panel refresh and one `[Set] reset <label>: N rows` line in place of a `[Set]` line per row (debug-logging-§10: a bulk reset is one `[Set]` line). N is the rows the reset actually changed. A row already at its default is still written, a no-op, but is not counted, and a reset with nothing to change still logs its one line as `: 0 rows`. Driving 173 rows through `Set` one at a time would cost 173 passes over 79 globals and 173 console lines. Returns N.
+It restores a list of rows to their defaults through the same `set()` step and the same gates `Schema.Set` uses, then pays the side effects once: one `ApplyStrings` pass, one panel refresh and one `[Set] reset <label>: N rows` line in place of a `[Set]` line per row (debug-logging-§10: a bulk reset is one `[Set]` line). N is the rows the reset actually changed. A row already at its default is still written, a no-op, but is not counted, and a reset with nothing to change still logs its one line as `: 0 rows`. Driving 174 rows through `Set` one at a time would cost 174 passes over 79 globals and 174 console lines. Returns N.
 
 A reset that raises partway (a row's `set()`, the pass or the refresh) still writes its one line, counting the rows changed before the raise and ending in ` (stopped by an error)`, for example `[Set] reset Loot: 2 rows (stopped by an error)`. The error is then raised again. `NS.Util.RunAct` (`core/Util.lua`) does both, through `xpcall`, so the re-raised error carries the stack of the original raise rather than only its message.
 

@@ -1,0 +1,432 @@
+-- tests/test_launcher.lua — core/LauncherSetup.lua, the LibKa0s-Launcher-1.0 seam,
+-- the composed Minimap button row behind it, and the two reserved verbs that write
+-- the addon's own switch.
+--
+-- WHAT THIS FILE EXISTS TO CATCH is the same class of failure tests/test_mediasetup.lua
+-- guards, one step further along. A launcher is four things a green suite cannot
+-- otherwise see:
+--
+--   * an ICON PATH, which is a plain string handed to the client. Name a file that
+--     is not there and the button draws NOTHING and raises NOTHING (anti-pattern
+--     #82). So the path is compared against the TOC's `## IconTexture` AND against
+--     the file on disk;
+--   * an INVERSION. The row says SHOWN and LibDBIcon's key says HIDDEN, so exactly
+--     one negation stands between a checkbox and the opposite of what it promises;
+--   * a RUNG, which for this addon is an ABSENCE. `onClick` not being passed is
+--     what makes left-click open the settings panel, and an absence is the one
+--     thing a reader cannot tell from a typo;
+--   * a ONE-WAY SWITCH. `/pc disable` must not be able to take `/pc enable` away
+--     with it.
+--
+-- THE BROKER LIBRARIES ARE STUBBED, NOT SKIPPED. tests/loader.lua derives its load
+-- list from PrettyChat.toc (addon files) and libs/LibKa0s/LibKa0s.xml (the vendored
+-- payload), and LibDataBroker-1.1 and LibDBIcon-1.0 are in NEITHER — they are their
+-- own TOC entries. So a plain ctx.loadAddon() is already the degraded install, and
+-- the wired one is built by registering two fakes into the mock's LibStub BEFORE any
+-- source loads, which is what opts.mock is for. The fakes are deliberately tiny:
+-- what is under test is this addon's wiring, and the real LibDBIcon would drag in
+-- the whole minimap frame for nothing.
+
+local ctx = _G.PC_TEST
+local t    = ctx.t
+local test = ctx.test
+
+local ICON_PATH = "Interface\\AddOns\\PrettyChat\\media\\logos\\prettychat.logo.128.tga"
+local MINIMAP_PATH = "global.minimap.hide"
+local ENABLED_PATH = "General.enabled"
+
+-- ── the two fakes ───────────────────────────────────────────────────────────
+--
+-- Registered through the mock's own LibStub:NewLibrary, which is the real one's
+-- shape, so the library resolves them exactly as it resolves the vendored LibKa0s
+-- modules beside them. Both record what they were asked to do; nothing is asserted
+-- about HOW they do it, because that is their repo's business.
+local function withBroker(mocks)
+    local ldb = mocks.LibStub:NewLibrary("LibDataBroker-1.1", 4)
+    ldb.objects = {}
+    function ldb:NewDataObject(name, obj)
+        -- nil for a name already taken, which is what the real one answers and
+        -- what the library's "take the existing object" arm depends on.
+        if self.objects[name] then return nil end
+        self.objects[name] = obj
+        return obj
+    end
+    function ldb:GetDataObjectByName(name) return self.objects[name] end
+
+    local icons = mocks.LibStub:NewLibrary("LibDBIcon-1.0", 50)
+    icons.registrations, icons.acts = {}, {}
+    function icons:Register(name, obj, db)
+        self.registrations[#self.registrations + 1] = { name = name, obj = obj, db = db }
+    end
+    function icons:Show(name) self.acts[#self.acts + 1] = "Show:" .. name end
+    function icons:Hide(name) self.acts[#self.acts + 1] = "Hide:" .. name end
+
+    mocks.__ldb, mocks.__icons = ldb, icons
+end
+
+local function wired() return ctx.loadAddon({ mock = withBroker }) end
+
+-- ── the icon ────────────────────────────────────────────────────────────────
+
+test("Launcher: the broker object's icon IS the file the TOC's IconTexture names", function()
+    -- launcher-§4: one file is the addon's face in three places — the AddOns list,
+    -- the minimap button and a broker display's row. Two spellings of it is a
+    -- player seeing two addons.
+    local inst = wired()
+    local object = inst.NS.Launcher:Object()
+    t.truthy(object, "the broker object was built")
+    t.eq(object.icon, ICON_PATH, "the LDB object wears the addon's own logo")
+
+    local fh = io.open(ctx.root .. "/PrettyChat.toc", "r")
+    local toc = fh:read("*a")
+    fh:close()
+    local declared = toc:match("##%s*IconTexture:%s*([^\r\n]+)")
+    t.eq(declared, ICON_PATH, "and the TOC names the same path, character for character")
+end)
+
+test("Launcher: that file is on disk, 128x128 uncompressed 32-bit TGA", function()
+    -- layout-§4's format rules, read from the header rather than trusted. An RLE
+    -- (type 10) or 24-bit file loads as nothing, silently, in the client only —
+    -- which is the half of anti-pattern #82 no gate would otherwise report.
+    local fh = io.open(ctx.root .. "/media/logos/prettychat.logo.128.tga", "rb")
+    t.truthy(fh, "media/logos/prettychat.logo.128.tga exists")
+    local header = fh:read(18)
+    local size = fh:seek("end")
+    fh:close()
+    t.eq(#header, 18, "and carries a whole TGA header")
+    t.eq(header:byte(3), 2, "image type 2 — uncompressed true-colour, not RLE")
+    t.eq(header:byte(17), 32, "32 bits per pixel — the alpha channel is the point")
+    t.eq(header:byte(13) + header:byte(14) * 256, 128, "128 wide")
+    t.eq(header:byte(15) + header:byte(16) * 256, 128, "128 tall, and power-of-two")
+    t.eq(size, 18 + 128 * 128 * 4 + 26, "header + raw pixels + footer, with nothing compressed")
+end)
+
+-- ── registration ────────────────────────────────────────────────────────────
+
+test("Launcher: OnEnable registers the one object, under the FOLDER name", function()
+    -- The name is not cosmetic: LibDBIcon keys the button's SAVED POSITION by it,
+    -- so a second spelling drops the angle the player dragged the button to.
+    local inst = wired()
+    t.truthy(inst.NS.Launcher:IsRegistered(), "both halves are wired after OnEnable")
+
+    local regs = inst.mocks.__icons.registrations
+    t.eq(#regs, 1, "exactly one LibDBIcon registration")
+    t.eq(regs[1].name, "PrettyChat", "under the folder name, not the branded Title")
+    t.eq(inst.mocks.__ldb.objects.PrettyChat, regs[1].obj,
+        "and LibDBIcon holds the SAME object LibDataBroker does — one object, registered twice")
+    t.eq(regs[1].obj.type, "launcher",
+        "typed `launcher`, so a broker display draws a button rather than an empty value cell")
+end)
+
+test("Launcher: LibDBIcon is handed db.global.minimap ITSELF, not a copy", function()
+    -- launcher-§3. LibDBIcon writes `minimapPos` into this table when the player
+    -- drags the button and `hide` when they use its own menu; a copy here would be
+    -- two records of one state, free to disagree the first time either was used.
+    local inst = wired()
+    local handed = inst.mocks.__icons.registrations[1].db
+    t.eq(handed, inst.addon.db.global.minimap, "the stored table, by identity")
+
+    -- And it is GLOBAL rather than profile: a profile switch must not move a
+    -- player's buttons, and options-ui-§12's reset must not un-hide one.
+    t.nilv(inst.addon.db.profile.minimap, "nothing is stored under the profile")
+end)
+
+test("Launcher: Register is idempotent — a second call builds no second button", function()
+    -- A host may call it from OnInitialize and again from a login handler. A
+    -- second LibDBIcon:Register on a name it already holds would draw a button
+    -- over the first, and the two would drift apart on the next drag.
+    local inst = wired()
+    t.eq(#inst.mocks.__icons.registrations, 1, "one registration after OnEnable")
+    t.truthy(inst.NS.Launcher:Register(), "a second Register reports success")
+    t.truthy(inst.NS.Launcher:Register(), "and a third")
+    t.eq(#inst.mocks.__icons.registrations, 1, "and still one registration")
+end)
+
+-- ── the rung ────────────────────────────────────────────────────────────────
+
+test("Launcher: RUNG (c) — left-click opens the settings panel, through the gated path",
+function()
+    -- The standard's ADDONS.md puts Ka0s Pretty Chat on rung (c), and the rung is
+    -- expressed by the ABSENCE of `onClick`: this addon has no primary window and,
+    -- being frameless, no preview switch either. What is pinned is that the click
+    -- reaches NS.Helpers.OpenOptionsPanel — LibKa0s-Options-1.0's own open, where
+    -- options-ui-§2 puts the combat gate — rather than some second open path built
+    -- beside it.
+    local inst = wired()
+    local opened = 0
+    inst.NS.Helpers.OpenOptionsPanel = function() opened = opened + 1 end
+
+    local object = inst.NS.Launcher:Object()
+    object.OnClick({}, "LeftButton")
+    t.eq(opened, 1, "left-click opened the panel")
+end)
+
+test("Launcher: RIGHT-click opens the settings panel too, as it does on every rung", function()
+    local inst = wired()
+    local opened = 0
+    inst.NS.Helpers.OpenOptionsPanel = function() opened = opened + 1 end
+
+    local object = inst.NS.Launcher:Object()
+    object.OnClick({}, "RightButton")
+    t.eq(opened, 1, "right-click opened the panel")
+    object.OnClick({}, "MiddleButton")
+    t.eq(opened, 2, "and so does any other button — only LEFT is the rung's to spend")
+end)
+
+test("Launcher: no toggle hides behind the left button — there is no state to flip", function()
+    -- The rung is an absence, and an absence is the one thing a reader cannot tell
+    -- from a typo. If a later change hands the descriptor an `onClick`, this case
+    -- is what says so: nothing about the addon's stored state may move on a click.
+    local inst = wired()
+    inst.NS.Helpers.OpenOptionsPanel = function() end
+    local before = inst.addon:IsAddonEnabled()
+
+    inst.NS.Launcher:Object().OnClick({}, "LeftButton")
+    t.eq(inst.addon:IsAddonEnabled(), before, "the master switch did not move")
+    t.eq(inst.NS.Launcher:IsShown(), true, "and neither did the button's own visibility")
+end)
+
+-- ── the Minimap button row ──────────────────────────────────────────────────
+
+test("Launcher: the Minimap button row is composed, stored, and defaults to SHOWN", function()
+    -- options-ui-§15/§16: the Master-controls set is the composer's, never
+    -- hand-written. What this addon declares is the PATH; the label, the tooltip
+    -- and the position are LibKa0s-Options-1.0's own.
+    local inst = wired()
+    local row = inst.NS.Schema.FindByPath(MINIMAP_PATH)
+    t.truthy(row, "the row exists at the verbatim global path")
+    t.eq(row.type, "bool")
+    t.eq(row.default, true, "SHOWN by default — the row's sense, not LibDBIcon's")
+    t.falsy(row.sessionOnly, "STORED: a hidden button is furniture, not session state")
+    t.eq(row.category, "General", "wired onto the virtual General category")
+    t.eq(row.label, "Minimap button", "and labelled by the composer")
+end)
+
+test("Launcher: the row's get/set INVERT onto LibDBIcon's hide key", function()
+    -- The whole cost of storing the library's own key, and the one negation
+    -- between a checkbox and the opposite of what it promises.
+    local inst = wired()
+    local Schema, db = inst.NS.Schema, inst.addon.db
+
+    t.eq(db.global.minimap.hide, false, "the declared default is not hidden")
+    t.eq(Schema.Get(MINIMAP_PATH), true, "so the row reads SHOWN")
+
+    Schema.Set(MINIMAP_PATH, false)
+    t.eq(db.global.minimap.hide, true, "unticking the box STORES hide = true")
+    t.eq(Schema.Get(MINIMAP_PATH), false, "and the row reads back false")
+
+    Schema.Set(MINIMAP_PATH, true)
+    t.eq(db.global.minimap.hide, false, "and ticking it again clears hide")
+    t.eq(Schema.Get(MINIMAP_PATH), true)
+end)
+
+test("Launcher: the write moves the BUTTON, not just the store", function()
+    -- launcher-§3: the button follows the checkbox immediately rather than at the
+    -- next reload.
+    local inst = wired()
+    local acts = inst.mocks.__icons.acts
+
+    inst.NS.Schema.Set(MINIMAP_PATH, false)
+    t.eq(acts[#acts], "Hide:PrettyChat", "unticking hid the button")
+    inst.NS.Schema.Set(MINIMAP_PATH, true)
+    t.eq(acts[#acts], "Show:PrettyChat", "ticking showed it again")
+end)
+
+test("Launcher: the write is a LEAF write — minimapPos survives a toggle", function()
+    -- architecture-§5. LibDBIcon keeps the angle the player dragged the button to
+    -- in this same table, so a whole-section `minimap = { hide = ... }` write would
+    -- throw it away every time the box was ticked.
+    local inst = wired()
+    inst.addon.db.global.minimap.minimapPos = 217.5
+
+    inst.NS.Schema.Set(MINIMAP_PATH, false)
+    inst.NS.Schema.Set(MINIMAP_PATH, true)
+    t.eq(inst.addon.db.global.minimap.minimapPos, 217.5, "the dragged angle is untouched")
+end)
+
+test("Launcher: the row is the FOURTH of the composed block, after the console", function()
+    -- options-ui-§15's canonical order, and the line it opens. Pinned here as well
+    -- as in tests/test_schema.lua because THIS is the file that would be read after
+    -- a composer minor moved it.
+    local inst = wired()
+    local rows = inst.NS.Schema.RowsByCategory("General")
+    t.eq(rows[#rows].path, MINIMAP_PATH, "last, because there is no Test mode beside it")
+    t.eq(rows[#rows].group, "Master controls", "on the Master controls tab")
+end)
+
+-- ── the two reserved verbs ──────────────────────────────────────────────────
+
+test("Launcher: /pc enable and /pc disable write the Enable row's own stored path", function()
+    -- slash-commands-§2: ALIASES, never a second switch. They hold no state of
+    -- their own, so the checkbox and the verbs can never show two answers.
+    local inst = wired()
+    local addon, Schema = inst.addon, inst.NS.Schema
+
+    addon:OnSlashCommand("disable")
+    t.eq(Schema.Get(ENABLED_PATH), false, "/pc disable turned the addon off")
+    t.eq(addon:IsAddonEnabled(), false, "and the addon agrees")
+    t.eq(addon.db.profile.enabled, false, "through the Enable row's own stored key")
+
+    addon:OnSlashCommand("enable")
+    t.eq(Schema.Get(ENABLED_PATH), true, "/pc enable turned it back on")
+    t.eq(addon:IsAddonEnabled(), true)
+    t.nilv(addon.db.profile.enabled, "and cleared the key, which is how that row stores ON")
+end)
+
+test("Launcher: the verbs hold NO state of their own — the long form is the same write",
+function()
+    local inst = wired()
+    local addon = inst.addon
+
+    addon:OnSlashCommand("disable")
+    local viaVerb = addon.db.profile.enabled
+    addon:OnSlashCommand("set " .. ENABLED_PATH .. " true")
+    addon:OnSlashCommand("set " .. ENABLED_PATH .. " false")
+    t.eq(addon.db.profile.enabled, viaVerb,
+        "/pc set General.enabled false leaves the store exactly where /pc disable did")
+
+    -- No second key anywhere. If either verb ever grew one, this is what would say so.
+    t.nilv(rawget(inst.NS, "enabled"), "no NS.enabled local")
+    t.nilv(addon.db.profile.addonEnabled, "no second stored key beside the row's")
+    t.nilv(addon.db.global.enabled, "and nothing in the global store either")
+end)
+
+test("Launcher: the verbs drive the OVERRIDES, because they take the one write seam",
+function()
+    -- The proof that "same seam" means something: the write runs ApplyStrings, so
+    -- the Blizzard globals go back to their originals and come back again.
+    local inst = wired()
+    local addon, env = inst.addon, inst.env
+    local row = inst.NS.Schema.AllRows()
+    local name
+    for _, r in ipairs(row) do
+        if r.kind == "string_format" then name = r.globalName break end
+    end
+    t.truthy(name, "the schema has at least one format row to watch")
+
+    local overridden = env[name]
+    addon:OnSlashCommand("disable")
+    t.eq(env[name], "ORIG:" .. name, "disabling restored this client's pristine string")
+    addon:OnSlashCommand("enable")
+    t.eq(env[name], overridden, "and enabling put the override back")
+end)
+
+test("Launcher: THE SWITCH IS NOT ONE-WAY — the dispatcher answers while disabled",
+function()
+    -- slash-commands-§2. A player who turns the addon off and finds the verb that
+    -- turns it back on gone is left with the settings panel they were trying not
+    -- to open. `/pc` and `enable` above all MUST survive.
+    local inst = wired()
+    local addon, env = inst.addon, inst.env
+    inst.NS.Helpers.OpenOptionsPanel = function() env.__opened = (env.__opened or 0) + 1 end
+
+    addon:OnSlashCommand("disable")
+    t.eq(addon:IsAddonEnabled(), false, "disabled")
+
+    -- The chat command is still registered: OnInitialize registers it
+    -- unconditionally and nothing unregisters it. Read from AceConsole's own
+    -- registry, which is where the mock keeps it -- it deliberately does not
+    -- invent a global SlashCmdList.
+    local AceConsole = inst.mocks.LibStub("AceConsole-3.0", true)
+    t.truthy(AceConsole.commands["pc"], "/pc is still registered")
+    t.truthy(AceConsole.commands["prettychat"], "and so is its alias")
+
+    local before = #env.DEFAULT_CHAT_FRAME.messages
+    addon:OnSlashCommand("help")
+    t.truthy(#env.DEFAULT_CHAT_FRAME.messages > before, "help still prints")
+
+    addon:OnSlashCommand("")
+    t.eq(env.__opened, 1, "a bare /pc still opens the panel")
+    addon:OnSlashCommand("version")
+    addon:OnSlashCommand("config")
+    t.eq(env.__opened, 2, "and so does /pc config")
+
+    addon:OnSlashCommand("enable")
+    t.eq(addon:IsAddonEnabled(), true, "and enable turns it back on")
+end)
+
+test("Launcher: the launcher is registered while disabled, for the same reason", function()
+    -- The button and the dispatcher are SETUP, not features. A disabled addon that
+    -- drew no button would take the other way back with it.
+    local inst = ctx.loadAddon({
+        mock = withBroker,
+        -- Nothing here can disable the addon BEFORE OnEnable without reaching into
+        -- SavedVariables, so it is disabled after the fact and the registration is
+        -- re-asserted: what matters is that nothing tears it down.
+    })
+    inst.addon:OnSlashCommand("disable")
+    t.eq(inst.addon:IsAddonEnabled(), false)
+    t.truthy(inst.NS.Launcher:IsRegistered(), "the launcher is still registered")
+    t.truthy(inst.NS.Launcher:Register(), "and re-registering is still a no-op success")
+end)
+
+-- ── degradation ─────────────────────────────────────────────────────────────
+
+test("Launcher: DEGRADED — no LibDataBroker and no LibDBIcon, and nothing raises", function()
+    -- The plain instance: neither broker library is in the TOC list the loader
+    -- derives, so this is the install the library resolves both to nil in. It
+    -- reports itself absent by name and the addon carries on.
+    local inst = ctx.loadAddon()
+    t.truthy(inst.NS.Launcher, "the seam still published an instance")
+    t.falsy(inst.NS.Launcher:IsRegistered(), "which is honestly not registered")
+    t.nilv(inst.NS.Launcher:Object(), "and holds no broker object")
+    t.falsy(inst.NS.Launcher:Register(), "a further Register still answers false")
+
+    local said = false
+    for _, m in ipairs(inst.env.DEFAULT_CHAT_FRAME.messages) do
+        if m:find("LibDataBroker", 1, true) then said = true end
+    end
+    t.truthy(said, "and it named the missing library rather than going quiet")
+end)
+
+test("Launcher: DEGRADED — the row still reads and writes, so the choice is kept", function()
+    -- The checkbox reflects what the PLAYER chose rather than reading `true`
+    -- because nothing contradicted it, and the choice takes effect the day the
+    -- library arrives.
+    local inst = ctx.loadAddon()
+    local Schema, db = inst.NS.Schema, inst.addon.db
+
+    t.eq(Schema.Get(MINIMAP_PATH), true)
+    Schema.Set(MINIMAP_PATH, false)
+    t.eq(db.global.minimap.hide, true, "the store took the write with no button to move")
+    t.eq(Schema.Get(MINIMAP_PATH), false, "and the row reads it back")
+end)
+
+test("Launcher: DEGRADED — LibDataBroker present, LibDBIcon absent: the plugin, no button",
+function()
+    -- The middle state the library documents, and the one a real install hits: a
+    -- broker display still shows the plugin; there is simply no minimap button.
+    local inst = ctx.loadAddon({ mock = function(mocks)
+        local ldb = mocks.LibStub:NewLibrary("LibDataBroker-1.1", 4)
+        ldb.objects = {}
+        function ldb:NewDataObject(name, obj) self.objects[name] = obj return obj end
+        function ldb:GetDataObjectByName(name) return self.objects[name] end
+    end })
+
+    t.falsy(inst.NS.Launcher:IsRegistered(), "not fully wired")
+    t.truthy(inst.NS.Launcher:Object(), "but the broker object exists and carries the click")
+    t.eq(inst.NS.Launcher:Object().icon, ICON_PATH)
+
+    local opened = 0
+    inst.NS.Helpers.OpenOptionsPanel = function() opened = opened + 1 end
+    inst.NS.Launcher:Object().OnClick({}, "RightButton")
+    t.eq(opened, 1, "and a broker display's row still opens the settings panel")
+end)
+
+test("Launcher: DEGRADED — no LibKa0s at all: no launcher, and the row survives", function()
+    -- The whole-payload-missing install every Ka0s addon models. There is no stub
+    -- for this major and none is needed: the two call sites guard on NS.Launcher,
+    -- and the row's get/set read and write the STORE.
+    local inst = ctx.loadAddon({ skip = { "libs/LibKa0s/Launcher.lua" } })
+    t.nilv(inst.NS.Launcher, "the seam published nothing")
+
+    local Schema = inst.NS.Schema
+    t.eq(Schema.Get(MINIMAP_PATH), true, "the row is still there")
+    Schema.Set(MINIMAP_PATH, false)
+    t.eq(inst.addon.db.global.minimap.hide, true, "and still writes, without raising")
+
+    inst.addon:OnSlashCommand("disable")
+    t.eq(inst.addon:IsAddonEnabled(), false, "and /pc disable still works")
+    inst.addon:OnSlashCommand("enable")
+    t.eq(inst.addon:IsAddonEnabled(), true, "and /pc enable still brings it back")
+end)

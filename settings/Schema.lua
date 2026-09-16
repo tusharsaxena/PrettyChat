@@ -26,14 +26,15 @@ Schema.CATEGORY_ORDER = CATEGORY_ORDER
 local CATEGORY_PAGE = "Categories"
 Schema.CATEGORY_PAGE = CATEGORY_PAGE
 
--- Six row kinds. Path scheme:
+-- Seven row kinds. Path scheme:
 --   General.enabled                     → addon-wide master toggle (bool)
 --   General.visibility                  → addon-wide visibility mode (string enum)
 --   state.debugConsole                  → the console window's own toggle (session only)
+--   global.minimap.hide                 → the minimap button, INVERTED (stored, global)
 --   <Category>.enabled                  → category master toggle (bool)
 --   <Category>.<GLOBALNAME>.enabled     → per-string enable toggle (bool)
 --   <Category>.<GLOBALNAME>.format      → per-string format string
--- The first three are the composed Master controls block below; the last three
+-- The first four are the composed Master controls block below; the last three
 -- are this addon's own.
 -- The dot path doesn't map 1:1 onto db.profile.categories[...], so each
 -- row carries its own get/set closures rather than relying on a generic
@@ -107,6 +108,22 @@ local MASTER_SPEC = {
     -- VERBATIM and unprefixed: session state lives outside the block's own
     -- prefix, and this is the one row whose path the composer does not build.
     debugConsolePath = "state.debugConsole",
+    -- The minimap button's visibility (launcher-§3, OptionsCompose minor 7).
+    -- VERBATIM and unprefixed for a DIFFERENT reason than the console path's:
+    -- this table lives in the GLOBAL store, outside this block's profile prefix
+    -- entirely, because a minimap button belongs to the installation rather than
+    -- to a profile (core/Database.lua says why).
+    --
+    -- STORED, not session, and the composer emits it that way: a hidden button is
+    -- furniture the player arranged once, not state a reload ends. The row's
+    -- default is the row's OWN sense -- SHOWN -- and the inversion onto
+    -- LibDBIcon's `hide` happens in the wiring below.
+    --
+    -- There is no `testModePath` beside it and there never will be: this addon is
+    -- frameless and its display is the chat text it rewrites, so it has no preview
+    -- to put a switch on. The composer renders the Minimap button row alone on its
+    -- line, which is exactly what it does for either row without the other.
+    minimapPath = "global.minimap.hide",
     -- options-ui-§12's global reset, through this addon's confirmation popup —
     -- the destructive path and its guard are one act (settings/Panel.lua).
     onResetAll = function() PrettyChat:ConfirmResetAll() end,
@@ -154,6 +171,36 @@ local MASTER_WIRING = {
         set  = function(v)
             PrettyChat.db.profile.visibility = (v ~= "always") and v or nil
             PrettyChat:SyncCombatWatch()
+        end,
+    },
+    -- THE INVERSION, AND IT IS OURS RATHER THAN THE LIBRARY'S (launcher-§3).
+    -- The row's label says SHOWN; LibDBIcon's key says HIDDEN. There is exactly
+    -- one boolean -- the library writes it too, from its own right-click menu --
+    -- so a second `show` key beside it would be one state kept in two records,
+    -- free to disagree the first time either surface was used (anti-pattern #81).
+    -- The whole cost of storing the library's own key is these two closures.
+    --
+    -- Both read and write the STORE, not the button: on an install with no
+    -- LibDBIcon the checkbox still reflects what the player chose rather than
+    -- reading `true` because nothing contradicted it, and the choice takes effect
+    -- the day the library arrives. NS.Launcher:SetShown is what makes the button
+    -- follow the checkbox NOW rather than at the next reload; it writes `hide`
+    -- again with the same value, which is the library's documented shape.
+    ["global.minimap.hide"] = {
+        kind = "minimap_button",
+        get  = function()
+            local mm = PrettyChat.db and PrettyChat.db.global and PrettyChat.db.global.minimap
+            return not (mm and mm.hide)
+        end,
+        set  = function(v)
+            local on = v and true or false
+            local mm = PrettyChat.db and PrettyChat.db.global and PrettyChat.db.global.minimap
+            -- A leaf write onto the declared default's table, never a whole-section
+            -- `minimap = {...}` assignment: LibDBIcon keeps `minimapPos` in here too
+            -- and replacing the table would throw the player's dragged angle away
+            -- every time they ticked the box (architecture-§5).
+            if mm then mm.hide = not on end
+            if NS.Launcher then NS.Launcher:SetShown(on) end
         end,
     },
     -- Session state, never persisted. It mirrors the console WINDOW's visibility
@@ -349,6 +396,16 @@ local function resolveBackingDefault(row)
     end
     if row.kind == "debug_console" then
         return true                        -- session state; nothing stored to back
+    end
+    if row.kind == "minimap_button" then
+        -- The one composed row whose backing default is NOT in NS.Defaults and not
+        -- carried on the row either: it is LibDBIcon's own table, declared in the
+        -- GLOBAL half of core/Database.lua's AceDB defaults (launcher-§3). Checked
+        -- there rather than waved through, so a default deleted from that table
+        -- surfaces at load through the same channel every other unresolved path
+        -- takes instead of as a nil index the first time a player ticks the box.
+        local g = NS.Database and NS.Database.defaults and NS.Database.defaults.global
+        return (g and type(g.minimap) == "table" and g.minimap.hide ~= nil) and true or false
     end
     if row.kind == "category_enabled" then
         return NS.Defaults[row.category] ~= nil
@@ -589,7 +646,7 @@ end
 --
 -- Deliberately NOT the implementation behind the per-category Defaults button or
 -- `/pc resetall`. Both of those are bulk: driving them row by row through here
--- would run ApplyStrings once per row (173 passes over 79 globals) and emit one
+-- would run ApplyStrings once per row (174 passes over 79 globals) and emit one
 -- [Set] line per row into a 1500-line console buffer, where debug-logging-§10 asks
 -- a bulk reset for ONE [Set] line. The per-category and per-string resets take
 -- Schema.ResetRows below; `/pc resetall` is the profile reset (options-ui-§12).

@@ -315,6 +315,31 @@ badge and any count quoted in the docs must agree with it.
 - a profile reset that raises logs its one line marked, exactly once
 - a profile copy that raises logs its one line marked
 
+### test_launcher.lua (22)
+
+- Launcher: the broker object's icon IS the file the TOC's IconTexture names
+- Launcher: that file is on disk, 128x128 uncompressed 32-bit TGA
+- Launcher: OnEnable registers the one object, under the FOLDER name
+- Launcher: LibDBIcon is handed db.global.minimap ITSELF, not a copy
+- Launcher: Register is idempotent — a second call builds no second button
+- Launcher: RUNG (c) — left-click opens the settings panel, through the gated path
+- Launcher: RIGHT-click opens the settings panel too, as it does on every rung
+- Launcher: no toggle hides behind the left button — there is no state to flip
+- Launcher: the Minimap button row is composed, stored, and defaults to SHOWN
+- Launcher: the row's get/set INVERT onto LibDBIcon's hide key
+- Launcher: the write moves the BUTTON, not just the store
+- Launcher: the write is a LEAF write — minimapPos survives a toggle
+- Launcher: the row is the FOURTH of the composed block, after the console
+- Launcher: /pc enable and /pc disable write the Enable row's own stored path
+- Launcher: the verbs hold NO state of their own — the long form is the same write
+- Launcher: the verbs drive the OVERRIDES, because they take the one write seam
+- Launcher: THE SWITCH IS NOT ONE-WAY — the dispatcher answers while disabled
+- Launcher: the launcher is registered while disabled, for the same reason
+- Launcher: DEGRADED — no LibDataBroker and no LibDBIcon, and nothing raises
+- Launcher: DEGRADED — the row still reads and writes, so the choice is kept
+- Launcher: DEGRADED — LibDataBroker present, LibDBIcon absent: the plugin, no button
+- Launcher: DEGRADED — no LibKa0s at all: no launcher, and the row survives
+
 ### test_slash.lua (45)
 
 - Schema.FormatValue formats bools and doubles pipes in strings
@@ -454,9 +479,10 @@ badge and any count quoted in the docs must agree with it.
 | test_database.lua | 16 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
+| test_launcher.lua | 22 |
 | test_slash.lua | 45 |
 | test_panel.lua | 46 |
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **353** |
+| **Total** | **375** |
