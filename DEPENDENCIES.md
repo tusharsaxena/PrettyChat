@@ -32,7 +32,7 @@ Every library the addon uses is **vendored and committed** under `libs/` and lis
   at `Register` time and degrades by name, so an install missing either one loads and says so
   rather than raising.
 
-The TOC's `## OptionalDeps: Ace3, LibStub, CallbackHandler-1.0` (`PrettyChat.toc:8`) is a **load-order
+The TOC's `## OptionalDeps: Ace3, LibStub, CallbackHandler-1.0, LibDataBroker-1.1, LibDBIcon-1.0` is a **load-order
 hint**, not an install requirement: if a standalone Ace3 is present it loads first, and if it is not,
 the vendored copies serve. There is no `## Dependencies` line, and there is nothing for a player to
 install alongside this addon.
