@@ -63,9 +63,12 @@ The snapshot only covers strings that exist in `NS.Defaults`. Adding a new `glob
 
 ```lua
 function PrettyChat:ApplyStrings()
-    -- General visibility rides the SAME gate as the master toggle: `never`, or a combat
-    -- mode whose condition is not met, restores every original exactly as Enable off does.
-    local addonEnabled = self:IsAddonEnabled() and self:IsVisible()
+    -- The FIRST term is the LATCH, not the stored boolean. It used to read
+    -- IsAddonEnabled(), which made this line the whole of "disabled" -- the draw gate
+    -- slash-commands-§7 ended. General visibility rides the same gate: `never`, or a
+    -- combat mode whose condition is not met, restores every original exactly as a
+    -- taken hold does.
+    local addonEnabled = (not self:IsStoodDown()) and self:IsVisible()
     -- Deterministic iteration (PC-16): fixed CATEGORY_ORDER, sorted names within each
     -- category, so a global registered under two categories resolves the same way every
     -- reload. (Elided here: applied/restored counters; ApplyStrings returns them.)
@@ -107,7 +110,7 @@ Idempotent — calling it multiple times leaves `_G` in the same state.
 
 Resolved on every `ApplyStrings` pass, in this order:
 
-1. **`General.enabled`** (addon-wide master). Stored at `db.profile.enabled` (not under `categories`). When false, **every** Blizzard original is restored regardless of per-category and per-string state — the master switch wins outright. Customizations stay in the database, just unapplied.
+1. **The latch** (`NS.Lifecycle`), fed by **`General.enabled`** (addon-wide master). The stored value lives at `db.profile.enabled` (not under `categories`); writing it takes or releases the `disabled` hold. While **any** hold is taken, every Blizzard original is restored regardless of per-category and per-string state — the master switch wins outright — and the combat watcher is **unregistered**, not merely gated, so the addon stops watching rather than stopping reacting (`slash-commands-§7`; [ARCHITECTURE.md](./ARCHITECTURE.md#the-disabled-state-is-total)). Customizations stay in the database, just unapplied. `ApplyStrings` asks the latch and not the stored boolean, which is why a `perf` hold would stand the overrides down exactly as the player's switch does.
 
    **`General.visibility` is the master switch's second dimension and rides the same gate.** Stored at `db.profile.visibility` (cleared when it is back to `always`, so the default stores nothing). This addon draws no frame — its *display* is the chat text it rewrites — so the four canonical modes (options-ui-§15) are honoured by what `ApplyStrings` writes: `always` applies, `never` restores every original exactly as `Enable` off does, and `inCombat` / `outOfCombat` are resolved against `UnitAffectingCombat("player")` on every pass. `PrettyChat:IsVisible()` is that resolution, and `addonEnabled` above is `IsAddonEnabled() and IsVisible()` — one gate rather than two, so there is one answer to "why is my chat unchanged".
 2. **`<Category>.enabled`** (per-category). Stored at `db.profile.categories[Cat].enabled`. Falls back to the per-category default in `NS.Defaults[Cat].enabled` (always `true` today).

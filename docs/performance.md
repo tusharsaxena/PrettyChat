@@ -147,8 +147,17 @@ The reasoning is kept at length as [`LIBKA0S-12`](https://github.com/tusharsaxen
 ## What the exemption does and does not suspend
 
 Suspended, and correctly absent from this repo: `core/PerfSetup.lua`, the `PrettyChatPerfDB`
-SavedVariables global (the TOC declares **one** SV global, not two), the `perf` verb registration, the
-suspend/resume contract, `tests/perf.lua`, and `docs/perf-analysis/`.
+SavedVariables global (the TOC declares **one** SV global, not two), the `perf` verb registration,
+`tests/perf.lua`, and `docs/perf-analysis/`.
+
+**The suspend/resume CONTRACT is no longer on that list, and that is the one thing this page has had
+to change.** `slash-commands-§7` makes the disabled state total and builds it on exactly the seam
+`performance-§6` asks for, so `core/LifecycleSetup.lua` now carries a `LibKa0s-Lifecycle-1.0` latch
+with two named holds. `disabled` is taken from the stored `General.enabled` path. `perf` is the hold a
+probe would take — and **nothing in this addon takes it**, because the exemption means there is no
+probe. The capability is built and exercised (`tests/test_disabled.lua` drives both holds); what is
+absent is a caller for one of them. The day the exemption's re-check trigger fires, arming the harness
+is a registration rather than a redesign.
 
 **Not suspended, and all four are live here:**
 

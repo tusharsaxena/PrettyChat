@@ -353,9 +353,17 @@ end)
 test("ResetCategory('General'): one pass, one [Set] reset line, the watcher disarmed", function()
     addon:ResetAll()
     Schema.Set(cat .. "." .. g .. ".format", "CUSTOM")
-    Schema.Set("General.enabled", false)
+    -- ARMED WHILE THE ADDON IS UP, THEN DISABLED — and the order is the whole
+    -- point now. This block used to disable first and still assert the watcher
+    -- armed, which is precisely the draw gate slash-commands-§7 ended: a disabled
+    -- addon that goes on registering PLAYER_REGEN_DISABLED has not stopped
+    -- watching, it has stopped reacting, and the client still pays the dispatch on
+    -- every combat boundary.
     Schema.Set("General.visibility", "inCombat")
     t.truthy(watcher()._events.PLAYER_REGEN_DISABLED, "a combat mode armed the watcher")
+    Schema.Set("General.enabled", false)
+    t.nilv(watcher()._events.PLAYER_REGEN_DISABLED,
+        "and disabling the addon UNREGISTERED it, rather than gating its handler")
 
     local passes, sets, resets, log, notifies = probeReset(function() addon:ResetCategory("General") end)
 

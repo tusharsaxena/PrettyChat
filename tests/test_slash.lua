@@ -467,7 +467,7 @@ test("every slash line carries the cyan [PC] tag", function()
     end
 end)
 
--- ── the disabled gate (slash-commands-§2) ───────────────────────────────────
+-- ── the disabled gate (slash-commands-§2 and §7) ────────────────────────────
 --
 -- A disabled addon refuses a verb that DRIVES ITS FEATURES rather than acting on
 -- it, on one tagged line naming `/pc enable`, and does nothing else. The verbs
@@ -481,8 +481,12 @@ end)
 -- the chat line passes over a verb that printed the refusal and then ran anyway.
 -- For `/pc test` the act is visible in the debug console's buffer, which is where
 -- its report goes; for the live verbs it is visible in the store.
-
-local REFUSAL = "does nothing while the addon is disabled"
+--
+-- The line itself is the library's -- `lib.DISABLED_LINE_FORMAT`, built by
+-- `cli:DisabledLine()` -- so `refused` below asks the addon's own dispatcher to
+-- render it rather than quoting the words. The wording is the collection's and
+-- moves when the collection's does; the one this addon used to print was a second
+-- spelling of it, and a suite that hard-coded the words would be a third.
 
 -- A throwaway instance, so the shared one at the head of this file is never left
 -- disabled for the cases that follow it in the inventory.
@@ -504,9 +508,10 @@ local function say(i, input)
     return out
 end
 
-local function refused(lines)
+local function refused(i, lines)
+    local expected = i.NS.SlashCommands:DisabledLine()
     for _, line in ipairs(lines) do
-        if line:find(REFUSAL, 1, true) then return true end
+        if line:find(expected, 1, true) then return true end
     end
     return false
 end
@@ -519,7 +524,10 @@ test("disabled: a feature verb refuses on ONE line naming /pc enable, and does n
     local lines = say(i, "test")
 
     t.eq(#lines, 1, "one line, and only one -- no partial work, no second line")
-    t.truthy(lines[1]:find(REFUSAL, 1, true), "which says why: " .. tostring(lines[1]))
+    -- The collection's sentence, byte for byte, built by the library rather than
+    -- quoted here: the refusal's wording is one string in one place (Slash 13).
+    t.truthy(lines[1]:find(i.NS.SlashCommands:DisabledLine(), 1, true),
+        "which says why: " .. tostring(lines[1]))
     t.truthy(lines[1]:find("/pc enable", 1, true), "and names the verb that turns it back on")
     t.truthy(lines[1]:sub(1, #PREFIX) == PREFIX, "tagged like every other line this addon prints")
     -- THE HALF A MESSAGE-ONLY CASE WOULD PASS OVER. `/pc test`'s act is writing
@@ -535,6 +543,12 @@ test("disabled: only the feature verbs refuse -- every verb is driven to find ou
     -- table it is declared in. `perf` is in the rule's set and not in this addon's
     -- COMMANDS (the recorded performance-§12 exemption), so the loop never reaches
     -- it; it is listed anyway, because the set is the standard's.
+    --
+    -- `help` IS ON THE LIVE SET AND STILL CARRIES THE LINE, which is not a
+    -- contradiction: the index prints in full -- the player has to be able to SEE
+    -- `enable` in it -- and the line sits under the header as a statement ABOUT the
+    -- index, because some of the rows below it are feature verbs. So `help` is
+    -- checked by what it PRINTED rather than by whether the sentence appeared.
     local LIVE = {
         help = true, config = true, version = true,
         enable = true, disable = true, debug = true, perf = true,
@@ -546,11 +560,16 @@ test("disabled: only the feature verbs refuse -- every verb is driven to find ou
         local verb = entry[1]
         i.addon:OnSlashCommand("disable")
         t.eq(i.addon:IsAddonEnabled(), false, "off before /pc " .. verb)
-        local answered = refused(say(i, verb))
-        if LIVE[verb] then
+        local lines = say(i, verb)
+        local answered = refused(i, lines)
+        if verb == "help" then
+            t.truthy(#lines > #i.NS.COMMANDS,
+                "/pc help prints the WHOLE index while disabled, header and every row")
+        elseif LIVE[verb] then
             t.falsy(answered, "/pc " .. verb .. " must answer while the addon is disabled")
         else
             t.truthy(answered, "/pc " .. verb .. " drives the addon's features and must refuse")
+            t.eq(#lines, 1, "/pc " .. verb .. " refuses on exactly one line and does nothing else")
         end
         seen = seen + 1
     end

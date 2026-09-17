@@ -65,11 +65,12 @@ badge and any count quoted in the docs must agree with it.
 - the shared cause clause names the addon and where the library should be
 - the degraded secret guard still neutralizes a protected value
 
-### test_surface_parity.lua (4)
+### test_surface_parity.lua (5)
 
 - the Core stub carries the whole live surface
 - the DebugLog stub carries the whole live surface
 - the Options stub carries the whole live surface
+- the Lifecycle stub carries the whole live surface
 - the Slash stub carries the whole live surface
 
 ### test_envsetup.lua (9)
@@ -398,6 +399,22 @@ badge and any count quoted in the docs must agree with it.
 - disabled: the gate LIFTS the moment the addon is enabled again
 - disabled: the panel's Test button is NOT gated -- the refusal is the dispatcher's
 
+### test_disabled.lua (13)
+
+- disabled/1: the enabled baseline registers something for the stand-down to remove
+- disabled/3: every registration is UNREGISTERED, not gated
+- disabled/4: no timer, ticker or OnUpdate is left armed
+- disabled/5: nothing is drawn — and for THIS addon that is the globals
+- disabled/6: firing the baseline events anyway writes nothing and says nothing
+- disabled/7: every reserved verb answers normally, and the bare /pc opens the panel
+- disabled/7: the addon's own FEATURE verb refuses on one line and reaches no write seam
+- disabled/8: the rung-(c) launcher opens the panel on BOTH buttons and writes nothing
+- disabled/9: re-enabling rebuilds the same registration set
+- disabled/9: the rebuild reads the settings as they are NOW, not as they were
+- disabled/10: releasing one hold does not resurrect an addon the other holds down
+- disabled/10: and the same with the holds taken in the other order
+- disabled/10: the perf hold is session-only and the disabled hold is stored
+
 ### test_panel.lua (46)
 
 - registration builds the parent category and two sub-pages
@@ -475,7 +492,7 @@ badge and any count quoted in the docs must agree with it.
 | test_layout_cap.lua | 5 |
 | test_lintconfig.lua | 4 |
 | test_libka0s.lua | 28 |
-| test_surface_parity.lua | 4 |
+| test_surface_parity.lua | 5 |
 | test_envsetup.lua | 9 |
 | test_constants.lua | 8 |
 | test_mediasetup.lua | 8 |
@@ -491,8 +508,9 @@ badge and any count quoted in the docs must agree with it.
 | test_debuglog.lua | 32 |
 | test_launcher.lua | 27 |
 | test_slash.lua | 50 |
+| test_disabled.lua | 13 |
 | test_panel.lua | 46 |
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **385** |
+| **Total** | **399** |

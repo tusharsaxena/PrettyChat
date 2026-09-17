@@ -27,10 +27,34 @@ function PrettyChat:GetStringValue(category, globalName)
     return NS.Defaults[category].strings[globalName].default
 end
 
+-- THE STORED PATH, and nothing else. This reads `General.enabled` — the value the
+-- checkbox and `/pc enable` both write — so the settings row's `get` has an honest
+-- answer whatever the latch is doing. It is deliberately NOT the question
+-- "is this addon running": the `perf` hold can stand the addon down over a stored
+-- `enabled = true`, and a ladder that consulted this one would come back up
+-- mid-capture. IsStoodDown below is the question the feature path asks.
 function PrettyChat:IsAddonEnabled()
     if not (self.db and self.db.profile) then return true end
     if self.db.profile.enabled == nil then return true end
     return self.db.profile.enabled
+end
+
+--- Is this addon stood down — is ANY hold taken on the latch (slash-commands-§7)?
+---
+--- THE ONE QUESTION THE FEATURE PATH ASKS, and it replaced a read of
+--- IsAddonEnabled that was the whole draw gate. Two holds means four states, and
+--- the interesting one is the state a boolean cannot carry: perf-suspended AND
+--- disabled, where releasing either hold must leave the addon down.
+---
+--- Answers `false` before core/LifecycleSetup.lua has published the latch, which
+--- is the correct reading for that window: nothing can be holding a latch that
+--- does not exist yet, and OnEnable arms it from the stored path before anything
+--- draws.
+-- Dot-defined with no receiver, like ResetCategory below: the body reads the latch
+-- through NS rather than through the addon table, and every caller still uses the
+-- colon form.
+function PrettyChat.IsStoodDown()
+    return (NS.Lifecycle and NS.Lifecycle:IsDown()) and true or false
 end
 
 -- ---------------------------------------------------------------------
@@ -73,8 +97,23 @@ end
 local COMBAT_SCOPED = { inCombat = true, outOfCombat = true }
 local combatWatcher
 
+--- Arm or disarm the combat watcher from the state as it is NOW.
+---
+--- THE LATCH IS THE FIRST TERM, and that placement is the stand-down (§7's
+--- "hidden at the source, not imperatively"). A stood-down addon answers `wanted =
+--- false` here no matter what visibility is stored, so the two registrations are
+--- actually GONE rather than gated — and they stay gone, because every other
+--- caller of this function (the visibility row's `set`, a profile switch) asks the
+--- same first question. A stand-down that instead unregistered imperatively would
+--- be undone by the next visibility change behind the switch's back, which is the
+--- shape §7 names and refuses.
+---
+--- It is also the whole rebuild on the way back up: nothing is restored from a
+--- snapshot taken on the way down, so a visibility changed while the addon was off
+--- is honoured the moment it comes back (performance-§6).
 function PrettyChat:SyncCombatWatch()
-    local wanted = COMBAT_SCOPED[self:GetVisibility()] and true or false
+    local wanted = (not self:IsStoodDown())
+                   and COMBAT_SCOPED[self:GetVisibility()] and true or false
     if not (wanted or combatWatcher) then return end
 
     if not combatWatcher then
@@ -88,13 +127,105 @@ function PrettyChat:SyncCombatWatch()
         end)
     end
 
-    for _, event in ipairs({ "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }) do
-        if wanted then
-            combatWatcher:RegisterEvent(event)
-        else
-            combatWatcher:UnregisterEvent(event)
-        end
+    if not wanted then
+        -- UnregisterAllEvents rather than the two by name: this is the seam §7's
+        -- registration assertion is made against, and an event added to the list
+        -- above must not be able to survive here because somebody edited one list
+        -- and not the other.
+        combatWatcher:UnregisterAllEvents()
+        return
     end
+    for _, event in ipairs({ "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }) do
+        combatWatcher:RegisterEvent(event)
+    end
+end
+
+-- ---------------------------------------------------------------------
+-- THE TWO LATCH ARMS (slash-commands-§7, LibKa0s-Lifecycle-1.0)
+--
+-- ONE BODY, BOTH DIRECTIONS, and that is not a shortcut — it is the reason the
+-- stand-down is total rather than a second teardown path beside the first. Both
+-- of the things this addon does read the latch at their own source:
+-- SyncCombatWatch above decides whether to be registered at all, and ApplyStrings
+-- below decides whether a global carries our text or Blizzard's. So the honest
+-- implementation of "go down" and of "come back up" is the same sentence — ask
+-- the state as it is now and make the client agree with it — and writing two
+-- would give this addon two mechanisms that must agree about what inert means
+-- (anti-pattern #85's last clause).
+--
+-- It is NOT a draw gate. A draw gate leaves the registrations in place and
+-- early-returns in the handler; this unregisters, and tests/test_disabled.lua
+-- asserts on the registration set rather than on a handler's return value.
+--
+-- There is no timer to cancel, no frame to hide and no hook to undo: see
+-- core/LifecycleSetup.lua's header for the full inventory and why it is empty.
+-- ---------------------------------------------------------------------
+
+-- How deep we are inside a settings write that will pay the pass itself. Not a
+-- boolean: `resetall` resets rows through a batch that is itself inside no other,
+-- but nesting is cheap to allow and a boolean that two writers cleared in the wrong
+-- order would leave the suppression stuck on.
+local batching = 0
+
+--- Run `fn` as ONE act. A latch arm that fires inside it still does its
+--- REGISTRATION work — that is the stand-down and it can never be deferred — but
+--- leaves the pass over the globals and the panel refresh to the caller, which is
+--- about to do both anyway.
+---
+--- settings/Schema.lua's two entries (`Set` and the batched `ResetRows`) are the
+--- only callers. Without this, flipping `General.enabled` paid for one act twice:
+--- the arm walked 79 globals and refreshed every page, and then the write seam did
+--- it again (debug-logging-§10 counts that as one pass, one refresh, one line).
+---
+--- The depth is unwound on a raise, through the same xpcall-based helper the reset
+--- paths use, so an error inside a write cannot strand the suppression on and leave
+--- every later stand-down silently skipping its pass.
+function PrettyChat.Batch(fn)
+    batching = batching + 1
+    local function unwind() batching = batching - 1 end
+    NS.Util.RunAct(fn, unwind)
+    unwind()
+end
+
+--- Make the client agree with the latch and the stored settings as they are NOW.
+--- Returns ApplyStrings' (applied, restored) counts so a caller can fold them into
+--- its own one debug line.
+---
+--- SyncCombatWatch is UNCONDITIONAL and everything after it is not, and that split
+--- is the section's own: standing down means the registrations are gone, which is
+--- never somebody else's job to finish, while what the globals hold is a value the
+--- write seam is already about to recompute.
+function PrettyChat.Reapply()
+    PrettyChat:SyncCombatWatch()
+    if batching > 0 then return 0, 0 end
+    local applied, restored = PrettyChat:ApplyStrings()
+    if NS.Schema and NS.Schema.NotifyPanelChange then
+        NS.Schema.NotifyPanelChange()   -- nil -> every category
+    end
+    return applied, restored
+end
+
+-- The latch calls these with no arguments, and it has already recorded the edge by
+-- the time either runs (Lifecycle invariant 6), so both read a latch that already
+-- says what they are for.
+--
+-- The trace goes to the DEBUG CONSOLE, never to chat: NS.Debug is the gated sink
+-- (debug-logging-§4) and answers nothing at all unless the player turned logging
+-- on. A stood-down addon that narrated its own transitions into the chat frame
+-- would be the §7 failure in its purest form.
+-- The line names the HOLDS and not a count of strings. Inside a settings write the
+-- counts belong to that write's own [Set] line (Batch above), so reporting them
+-- here would be the same act tallied twice in the console — once honestly and once
+-- as zero.
+function PrettyChat.StandDown()
+    PrettyChat.Reapply()
+    NS.Debug("Lifecycle", "stood down \226\134\146 holds: %s",
+             table.concat(NS.Lifecycle:Holds(), ", "))
+end
+
+function PrettyChat.StandUp()
+    PrettyChat.Reapply()
+    NS.Debug("Lifecycle", "stood up \226\134\146 no holds")
 end
 
 function PrettyChat:IsCategoryEnabled(category)
@@ -136,7 +267,13 @@ function PrettyChat:ApplyStrings()
     -- combat mode whose condition is not met, restores every original exactly as
     -- `Enable` off does. One gate rather than two, so there is one answer to
     -- "why is my chat unchanged".
-    local addonEnabled = self:IsAddonEnabled() and self:IsVisible()
+    --
+    -- THE FIRST TERM IS THE LATCH, NOT THE STORED BOOLEAN. It used to read
+    -- `self:IsAddonEnabled()`, which made this line the whole of "disabled" — the
+    -- draw gate slash-commands-§7 exists to end. It now asks whether ANY hold is
+    -- taken, so the `perf` hold stands the overrides down exactly as the player's
+    -- switch does, and neither can bring them back while the other is held.
+    local addonEnabled = (not self:IsStoodDown()) and self:IsVisible()
     local applied, restored = 0, 0
     for _, category in ipairs(NS.Schema.CATEGORY_ORDER) do
         local catData = NS.Defaults[category]
@@ -528,7 +665,7 @@ end
 function PrettyChat:Test(filter, sink)
     local emit = sink or NS.Print
     emit(note(L["sample of every format string (preview ignores enable toggles):"]))
-    if not self:IsAddonEnabled() then
+    if self:IsStoodDown() then
         emit(note(L["(addon is currently disabled — these formats aren't being applied to live chat)"]))
     end
 

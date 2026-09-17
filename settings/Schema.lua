@@ -151,15 +151,35 @@ local MASTER_SPEC = {
 local MASTER_WIRING = {
     ["General.enabled"] = {
         kind = "addon_enabled",
+        -- The STORED path, not the latch. A `perf` hold stands the addon down over a
+        -- stored `enabled = true`, and a checkbox that unticked itself for the
+        -- duration of a capture would be reporting somebody else's decision as the
+        -- player's (modules/Override.lua says which question is which).
         get  = function() return PrettyChat:IsAddonEnabled() end,
         -- Stored only when OFF: the default (true) is an absent key, which
         -- IsAddonEnabled already reads as enabled.
+        --
+        -- THE WRITE, THEN THE LATCH, and both live here so that every surface that
+        -- can flip this setting drives the stand-down: the Enable checkbox, `/pc
+        -- enable` / `/pc disable`, `/pc set General.enabled false`, `/pc reset
+        -- General.enabled` and a page Defaults press all arrive through this one
+        -- `set` (architecture-§5's single write seam). A latch poked from the verb
+        -- instead would be a stand-down the checkbox does not perform.
+        --
+        -- `Set` is the library's own shape rather than a host-written
+        -- `if v then Release else Hold` — a branch written eleven times is a branch
+        -- one host writes backwards — and it fires the matching arm exactly once, on
+        -- the edge. Schema.Set's own ApplyStrings below then runs a second,
+        -- idempotent pass over settings the arm has already made the client agree
+        -- with; one extra pass on a click is the price of the arms being complete on
+        -- their own, which is what the load path and the profile callbacks need.
         set  = function(v)
             if v then
                 PrettyChat.db.profile.enabled = nil
             else
                 PrettyChat.db.profile.enabled = false
             end
+            NS.Lifecycle:Set(NS.HOLD_DISABLED, not v)
         end,
     },
     ["General.visibility"] = {
@@ -628,7 +648,12 @@ function Schema.Set(path, value)
             NS.DescribeSequence(NS.ConversionSequence(row.default)))
         return false
     end
-    row.set(value)
+    -- BATCHED, because `General.enabled`'s `set` drives LibKa0s-Lifecycle-1.0 and an
+    -- edge stands the addon down or up. The arm's registration work runs inside
+    -- this; its pass over the globals and its panel refresh do not, because the two
+    -- lines below are that pass and that refresh, for this very write
+    -- (modules/Override.lua's Batch). One act, one pass, one [Set] line.
+    PrettyChat.Batch(function() row.set(value) end)
     -- A session-only row stores nothing and moves no override: showing the debug
     -- console must not drag a full pass over 79 Blizzard globals behind it. The
     -- panel refresh below still runs, because the checkbox mirroring the window
@@ -721,7 +746,12 @@ local function resetRowsBody(list, tally)
     for _, row in ipairs(list or {}) do
         if byPath[row.path] == row and not refusedBySignature(row, row.default) then
             local differs = differsFromDefault(row)
-            row.set(row.default)
+            -- Batched for the same reason Schema.Set's single write is: resetting
+            -- `General.enabled` fires a latch arm, and the batch's one pass below
+            -- is that arm's pass too. It has to be per ROW rather than around the
+            -- whole loop, so the registration work of an arm fired by row N is done
+            -- before row N+1 reads the state it left.
+            PrettyChat.Batch(function() row.set(row.default) end)
             tally.wrote = tally.wrote + 1
             if differs then tally.changed = tally.changed + 1 end
             reapply = reapply or not row.sessionOnly

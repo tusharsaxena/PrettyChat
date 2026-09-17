@@ -76,15 +76,23 @@ local function reloadProfile(self)
     if NS.Database and NS.Database.RunMigrations then
         NS.Database.RunMigrations(self.db)
     end
-    -- Before the re-apply, not after: the incoming profile may store a
-    -- combat-scoped General visibility the outgoing one did not, and ApplyStrings
-    -- has to read the mode the watcher is now armed for.
-    self:SyncCombatWatch()
-    local applied, restored = self:ApplyStrings()
-    if NS.Schema and NS.Schema.NotifyPanelChange then
-        NS.Schema.NotifyPanelChange()   -- nil -> every category
-    end
-    return applied, restored
+    -- THE LATCH FIRST, because a profile switch can flip the enable path with no
+    -- verb and no checkbox touched, and slash-commands-§7 makes re-evaluating it on
+    -- these three callbacks a MUST — a player switching to a profile where the addon
+    -- is enabled expects it to come up. `Set` takes or releases the `disabled` hold
+    -- from the INCOMING profile's stored value; `Reevaluate` then fires an arm only
+    -- if the new profile actually disagrees with the old one, and nothing at all if
+    -- it does not. Neither is a bare stand-up: a `perf` hold taken for this session
+    -- survives the switch and keeps the addon down, which is the trap the latch
+    -- exists for.
+    NS.Lifecycle:Set(NS.HOLD_DISABLED, not self:IsAddonEnabled())
+    NS.Lifecycle:Reevaluate()
+    -- Then the rest of the incoming profile, which the latch knows nothing about:
+    -- the visibility mode the combat watcher has to be armed for, and every
+    -- per-string format. Reapply is idempotent and is the same body both latch arms
+    -- run, so on an edge this is a second pass over settings that already agree
+    -- rather than a second mechanism that might not.
+    return self.Reapply()
 end
 
 local function activeProfile(self)
@@ -184,11 +192,25 @@ end
 
 function PrettyChat:OnEnable()
     self:SnapshotOriginals()
-    -- A stored General visibility of `inCombat` / `outOfCombat` arms the combat
-    -- watcher for this session; `always` and `never` arm nothing at all, so the
-    -- default install still registers no combat event (modules/Override.lua).
-    self:SyncCombatWatch()
-    self:ApplyStrings()
+
+    -- THE LATCH, ARMED FROM THE STORED PATH (slash-commands-§7). `disabled` is the
+    -- persisted hold — surviving a /reload is the entire point of the setting — so
+    -- it is re-taken here, at load, from `General.enabled`. This is not a special
+    -- case: it is the same `Set` call the checkbox and `/pc enable` make.
+    --
+    -- Then the bring-up, and the guard on it is load-bearing. Taking the hold
+    -- already fired `standDown` (empty -> non-empty is an edge); an empty hold set
+    -- is NOT an edge, so nothing ran, and something has to arm the combat watcher
+    -- and write the overrides for the enabled install. Calling the arm directly is
+    -- safe here and nowhere else, because `IsDown()` has just answered false — the
+    -- thing §7 forbids is a stand-up that IGNORES a hold somebody else is holding.
+    NS.Lifecycle:Set(NS.HOLD_DISABLED, not self:IsAddonEnabled())
+    if not NS.Lifecycle:IsDown() then
+        -- A stored General visibility of `inCombat` / `outOfCombat` arms the combat
+        -- watcher for this session; `always` and `never` arm nothing at all, so the
+        -- default install still registers no combat event (modules/Override.lua).
+        self.StandUp()
+    end
 
     -- Settings.RegisterCanvasLayoutCategory is allowed in OnEnable for a
     -- non-LoD addon (OnEnable fires after the Settings API is live and

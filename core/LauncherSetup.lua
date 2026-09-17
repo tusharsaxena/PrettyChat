@@ -20,6 +20,25 @@ local addonName, NS = ...
 -- mode row and no Lock frame row on the composed tab). Its display IS the chat
 -- text it rewrites, which cannot be previewed by toggling a frame.
 --
+-- ── THE CLICK WHILE THE ADDON IS DISABLED, AND WHY NOTHING CHANGES HERE ─────
+--
+-- slash-commands-§7 refuses the LEFT click of a disabled addon on rungs (a) and
+-- (b): those drive a primary window and a preview switch, and both are features.
+-- **Rung (c) is carved out, in launcher-§2's own words, and this addon is the
+-- rostered rung-(c) addon the clause was written for.** A rung-(c) left click
+-- opens the settings panel — which §7 itself lists among the things that SURVIVE
+-- the disabled state, because the panel is SETUP and not a feature — and refusing
+-- it would decline one button for doing exactly what the other button beside it is
+-- required to keep doing. Right-click opens that same panel in either state on
+-- every addon in the collection.
+--
+-- So BOTH buttons open the panel, in both states, and there is deliberately no
+-- `isEnabled` on this descriptor and no call to `NS.SlashCommands:DisabledLine()`
+-- anywhere near it. The other half of §7's launcher rule is satisfied by the same
+-- absence: a click here writes NO SavedVariables, because all it does is open a
+-- panel. tests/test_disabled.lua drives both buttons while the addon is off and
+-- asserts exactly that.
+--
 -- So left-click opens the settings panel, and the way that is expressed is by
 -- passing NO `onClick` AT ALL. The rung is the ABSENCE, deliberately: the
 -- library dispatches both buttons into `openSettings` when `onClick` is nil, and

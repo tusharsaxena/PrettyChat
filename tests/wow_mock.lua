@@ -104,20 +104,65 @@ local METADATA = {
 
 local frameMethods = {}
 
-local function newFrame(name)
-    local f = {
-        _name     = name,
-        _shown    = true,
-        _scripts  = {},   -- script name -> primary handler
-        _hooks    = {},   -- script name -> { handler, ... }
-        _events   = {},   -- event name -> true while registered
-        _width    = 600,
-        _height   = 400,
-        _children = {},
-        messages  = {},   -- ScrollingMessageFrame line sink
-    }
+-- The kit method names this file's own `frameMethods` has to OWN. Every one of
+-- them is rawset onto the kit's stub, so it would shadow the metatable below and
+-- this repo's richer version would never be reached. Cleared per frame, by name,
+-- so a method the kit adds later arrives rather than being silently masked.
+--
+-- Everything NOT on this list is deliberately the kit's: the event methods (see
+-- newFrame's comment), the enabled tracking, SetAtlas and the geometry opt-in.
+local SHADOWED = {
+    "Show", "Hide", "SetShown", "IsShown", "IsVisible",
+    "SetScript", "GetScript", "HookScript", "__fire",
+    "GetName", "GetHeight", "GetWidth",
+}
+
+-- ── WHY EVERY FRAME IS BUILT ON THE KIT'S TRACKED STUB ──────────────────────
+--
+-- `adopt` is the build's own `M.__stubFrame` — the kit's TRACKED frame factory,
+-- captured before this file overwrites the key. Building on it puts every frame
+-- this addon makes into the build's frame set, which is the only reason
+-- `M.__registrations()` and `M.__shownFrames()` can see them at all.
+--
+-- That is not tidiness. tests/test_disabled.lua's whole subject is the
+-- REGISTRATION SET (slash-commands-§7), and until this line existed the combat
+-- watcher — the one frame this addon registers anything on — was invisible to the
+-- kit's registry, so the suite would have asserted "nothing is registered" over a
+-- table this repo's frames never reached. A stand-down suite that passes over an
+-- empty survey is the draw gate wearing the test's clothes.
+--
+-- The EVENT methods are therefore the kit's, not this file's: `RegisterEvent`,
+-- `UnregisterEvent`, `IsEventRegistered`, `RegisterUnitEvent` and
+-- `UnregisterAllEvents` all record into `__frameEvents` / `__unitEvents`, which is
+-- what the registry reads. `_events` stays readable as this repo's suites spell
+-- it, through the metatable below rather than as a second table — a copy would go
+-- stale the first time `UnregisterAllEvents` replaced the kit's.
+local function newFrame(name, adopt)
+    local f = adopt and adopt() or {}
+    for _, key in ipairs(SHADOWED) do rawset(f, key, nil) end
+
+    f.__adopt   = adopt
+    f._name     = name
+    f._shown    = true
+    -- `__shown` is the kit's, and it keeps the kit's meaning: FALSE until something
+    -- calls Show. `_shown` keeps this repo's, which is WoW's own default for a
+    -- fresh CreateFrame. Two questions, deliberately: "is this frame visible" and
+    -- "did this addon ever show it", and a stand-down suite asks the second.
+    f.__shown   = f.__shown or false
+    f._scripts  = f.__scripts or {}   -- script name -> primary handler; the kit's table
+    f.__scripts = f._scripts
+    f._hooks    = {}                  -- script name -> { handler, ... }
+    f._width    = 600
+    f._height   = 400
+    f._children = {}
+    f.messages  = {}                  -- ScrollingMessageFrame line sink
+
     return setmetatable(f, {
-        __index = function(_, k)
+        __index = function(self, k)
+            -- The kit's live event table under the name this repo's suites read.
+            -- Answered rather than stored: UnregisterAllEvents REPLACES the kit's
+            -- table, and an alias taken once would go on reporting the old one.
+            if k == "_events" then return rawget(self, "__frameEvents") end
             local m = frameMethods[k]
             if m then return m end
             -- PascalCase => an (unmodelled) WoW method: inert, self-returning.
@@ -125,7 +170,7 @@ local function newFrame(name)
             -- catch-all answering lowercase keys with a truthy function would
             -- silently invert every `if not panel.defaultsBtn` guard in the addon.
             if type(k) == "string" and k:find("^%u") then
-                return function(self) return self end
+                return function(_) return self end
             end
             return nil
         end,
@@ -139,19 +184,6 @@ end
 
 function frameMethods:GetScript(script)
     return self._scripts[script]
-end
-
--- Recorded rather than no-opped, so a suite can see WHICH events a frame is
--- listening to right now — the gating in modules/Override.lua's combat watcher is
--- exactly that question.
-function frameMethods:RegisterEvent(event)
-    self._events[event] = true
-    return self
-end
-
-function frameMethods:UnregisterEvent(event)
-    self._events[event] = nil
-    return self
 end
 
 function frameMethods:HookScript(script, handler)
@@ -172,13 +204,16 @@ end
 -- and one written to this repo's drive the same handler.
 frameMethods.__fire = frameMethods.FireScript
 
+-- BOTH flags move together. `_shown` is this repo's (WoW's default-visible frame);
+-- `__shown` is the kit's, which `M.__shownFrames()` surveys. Writing one and not
+-- the other would leave a stand-down suite reading a screen nobody drew on.
 function frameMethods:Show()
-    self._shown = true
+    self._shown, self.__shown = true, true
     return self:FireScript("OnShow")
 end
 
 function frameMethods:Hide()
-    self._shown = false
+    self._shown, self.__shown = false, false
     return self:FireScript("OnHide")
 end
 
@@ -213,13 +248,16 @@ end
 
 -- Distinct child objects, NOT the frame itself — the base's documented divergence.
 function frameMethods:CreateFontString()
-    local fs = newFrame()
+    -- Through the SAME adopter the parent was built with, so a child is surveyed
+    -- by the build that made it rather than by whichever build happened to be the
+    -- last one constructed.
+    local fs = newFrame(nil, rawget(self, "__adopt"))
     table.insert(self._children, fs)
     return fs
 end
 
 function frameMethods:CreateTexture()
-    local tex = newFrame()
+    local tex = newFrame(nil, rawget(self, "__adopt"))
     table.insert(self._children, tex)
     return tex
 end
@@ -260,21 +298,37 @@ local function build()
     -- 1/2/3/4/5 — the richer frame, plus the creation registry.
     local frames = { all = {}, byName = {} }
     M._frames = frames
-    M.__stubFrame = newFrame
+    -- CAPTURED BEFORE THE OVERWRITE. This is the kit's tracked factory, and every
+    -- frame below is built on it (see newFrame's header) so the kit's registration
+    -- and shown-frame surveys can see this addon's frames at all.
+    local adopt = M.__stubFrame
+    local function make(name) return newFrame(name, adopt) end
+    M.__stubFrame = make
     M.CreateFrame = function(_, name)
-        local f = newFrame(name)
+        local f = make(name)
         frames.all[#frames.all + 1] = f
         if name then frames.byName[name] = f end
         return f
     end
-    M.UIParent = newFrame("UIParent")
+    M.UIParent = make("UIParent")
 
     -- 6 — a recording chat frame.
-    local chatFrame = newFrame("DEFAULT_CHAT_FRAME")
+    local chatFrame = make("DEFAULT_CHAT_FRAME")
     M.DEFAULT_CHAT_FRAME = chatFrame
+    -- ALSO into the kit's own transcript, which `M.__printed()` surveys. This
+    -- file's AddMessage (frameMethods, above) records into `.messages`, which is
+    -- what every suite in this repo reads — and it means the kit's survey saw
+    -- nothing, so "a stood-down addon printed zero lines" would have been a
+    -- statement about the harness rather than about the addon
+    -- (tests/test_disabled.lua step 6). Both records, one call.
+    function chatFrame:AddMessage(msg)
+        self.messages[#self.messages + 1] = msg
+        M.__recordPrint(msg)
+        return self
+    end
 
     -- 13 — a recording tooltip.
-    M.GameTooltip = newFrame("GameTooltip")
+    M.GameTooltip = make("GameTooltip")
 
     -- 7 — the Settings registrars, recorded.
     local settings = { categories = {}, subcategories = {}, addonCategories = {}, opened = {} }
@@ -330,7 +384,7 @@ local function build()
     for _, fname in ipairs({
         "GameFontNormal", "GameFontNormalSmall", "GameFontNormalLarge", "GameFontNormalHuge",
         "GameFontHighlight", "GameFontDisable",
-    }) do M[fname] = newFrame(fname) end
+    }) do M[fname] = make(fname) end
 
     -- 9 — AceAddon: the kit's NewAddon, called through with every argument, so
     -- `NewAddon(NS, "PrettyChat", "AceConsole-3.0")` takes the faithful path (name,
@@ -362,7 +416,7 @@ local function build()
         -- Label / Heading expose a `.label` FontString in real AceGUI; the panel's
         -- font-object branches key off it, so model it for those two types.
         if (wtype == "Label" or wtype == "Heading") and not w.label then
-            w.label = newFrame()
+            w.label = make()
         end
         -- TreeGroup's own surface, recorded rather than swallowed: the Categories
         -- page hands it the string list and reads the selection back out of it, so

@@ -80,74 +80,53 @@ local COMMANDS = {
 NS.COMMANDS = COMMANDS
 
 -- ---------------------------------------------------------------------
--- THE DISABLED GATE (slash-commands-§2) — ONE PLACE, AND IT IS THIS TABLE
+-- THE DISABLED GATE (slash-commands-§2 and §7) — THE LIBRARY'S, NOT OURS
 --
--- A disabled addon refuses a verb that DRIVES ITS FEATURES rather than acting on
--- it. Acting is the wrong answer twice over: the player asked for something the
--- addon is currently standing down from doing, and a silent no-op leaves them
--- with no clue why nothing happened. ONE tagged line, naming `/pc enable`, and
--- NOTHING ELSE — no partial work, no side effect, no second line. One line is the
--- whole courtesy; a paragraph explaining the state is a lecture stapled to a
--- command the player is about to re-run anyway.
+-- WHAT THE DISABLED SURFACE IS. Every reserved verb answers normally: `help`,
+-- `config`, `version`, `enable`, `disable`, `debug`, `perf`, and the whole schema
+-- CLI — `get`, `set`, `list`, `reset`, `resetall` — and the BARE `/pc` opens the
+-- settings panel exactly as it does when the addon is running. The reasoning is the
+-- player's rather than the addon's: they must be able to READ AND REPAIR SETTINGS
+-- and to REACH THE PANEL while the addon is off, which is precisely when they are
+-- most likely to need to, and `enable` above all or the pair is one-way again.
 --
--- IT IS WRAPPED ONTO THE HANDLER SLOT, not pasted into each verb and not written
--- into a dispatcher — because there are TWO dispatchers here, the library's and
--- the degraded stub above, and they agree on exactly one thing: both call
--- `entry[3]`. So the handler slot is the one seam every verb crosses on both
--- paths, and wrapping it once covers the pair. A guard per verb would be a dozen
--- places to forget; here the DEFAULT IS GATED and a verb opts out by being named
--- in the live set, so the thirteenth verb is gated the day it is added rather
--- than the day somebody notices.
+-- THIS IS ALSO THE ANSWER TO A RULE THAT MOVED AND MOVED BACK. The standard
+-- narrowed this surface to `enable` and `help` at v2.56.0 and REVERSED it at
+-- v2.57.0 (Slash minor 13), on the first thing anyone tried: `/pc` on a disabled
+-- addon answered with a refusal instead of opening the one panel the player uses to
+-- switch it back on by hand. This addon never shipped the narrowing, and the live
+-- set is not restated here in any case — `lib.LIVE_VERBS` carries it, and a host
+-- copy would be the thing that went stale the next time it moved.
 --
--- THE LIVE SET IS THE RULE, WRITTEN ONCE AS DATA. §2 names these, and the
--- reasoning is the player's rather than the addon's: they must be able to READ
--- AND REPAIR SETTINGS (`get` / `set` / `list` / `reset` / `resetall`) and REACH
--- THE PANEL (`config`, and with it a bare `/pc`, which runs that verb) while the
--- addon is off — which is precisely when they are most likely to need to.
--- `debug` and `perf` are diagnostics, not features: the usual reason to reach for
--- either is that the addon is misbehaving. And `enable` above all, or the pair is
--- one-way again and the only route back is the settings panel they were trying
--- not to open.
---
--- `perf` is in the set although this addon does not register it. PrettyChat holds
--- a recorded performance-§12 no-combat-path exemption, so there is no `perf`
--- entry in COMMANDS for the loop below to find — but the set is the STANDARD'S
--- list, not an inventory of this addon, and writing it whole is what makes the
--- verb already live on the day the harness is armed.
---
--- WHAT IS LEFT IS EXACTLY ONE GATED VERB: `test`, the preview no other Ka0s addon
--- has. §2 keeps the whole rule a SHOULD partly because an addon with a single
--- feature verb may reasonably read the refusal as noise — here it is not noise,
+-- SO THE GATE REFUSES EXACTLY ONE VERB HERE: `test`, the preview no other Ka0s
+-- addon has. §2 keeps the refusal a SHOULD partly because an addon with a single
+-- feature verb may reasonably read the line as noise — here it is not noise,
 -- because `/pc test` renders every format string to show what LIVE CHAT will look
 -- like, and while the addon is disabled live chat is Blizzard's wording. The
 -- panel's Test button is NOT gated and must not be: it is not a verb, it sits on
--- the page beside the switch that turned the addon off, and its report already
--- says so on its second line (modules/Override.lua's PrettyChat:Test).
+-- the page beside the switch that turned the addon off, and its report already says
+-- so on its second line (modules/Override.lua's PrettyChat:Test).
+--
+-- NO `liveVerbs` IS PASSED, and the omission is the whole decision. That field
+-- WIDENS the live set — it is how a host declares that a feature verb of its own
+-- should act rather than refuse — and this addon wants its one feature verb
+-- refused. It is emphatically not a place to narrow anything: §7 is explicit that
+-- what a host MUST NOT do is refuse something on the library's live set.
+--
+-- THE WORDING IS THE COLLECTION'S. `lib.DISABLED_LINE_FORMAT` is the one shape and
+-- `cli:DisabledLine()` builds it, so a player running six of these addons reads one
+-- answer to one question instead of six. The host-rolled line this addon used to
+-- print — "`/pc test` does nothing while the addon is disabled" — was a second
+-- spelling of a sentence the collection owns, and its locale key went with it.
+--
+-- THE DEGRADED PATH DOES NOT REFUSE, deliberately. With no LibKa0s there is no
+-- gate, and the stub does not grow one: re-implementing it would mean a host copy
+-- of the live set and of the line's wording, which are the two things this seam
+-- exists to keep in one place (the same rule core/DebugLogSetup.lua's stub follows
+-- for the line formatters). The cost is that `/pc test` prints a preview on an
+-- install with no library, which is a report about format strings and reaches no
+-- write seam.
 -- ---------------------------------------------------------------------
-
-local LIVE_WHILE_DISABLED = {
-    help = true, config = true, version = true,
-    enable = true, disable = true,
-    debug = true, perf = true,
-    get = true, set = true, list = true, reset = true, resetall = true,
-}
-
-for _, entry in ipairs(COMMANDS) do
-    if not LIVE_WHILE_DISABLED[entry[1]] then
-        local verb, handler = entry[1], entry[3]
-        entry[3] = function(rest)
-            if not PrettyChat:IsAddonEnabled() then
-                -- ONE key, not a concatenation of coloured fragments: the command
-                -- arrives as a format ARGUMENT, so the whole sentence stays
-                -- translatable and its word order is the locale's (localization-§1).
-                NS.Print(L["`/pc %s` does nothing while the addon is disabled — %s turns it back on"]
-                         :format(verb, cmd("/pc enable")))
-                return
-            end
-            return handler(rest)
-        end
-    end
-end
 
 local lib = LibStub and LibStub("LibKa0s-Slash-1.0", true)
 
@@ -215,6 +194,12 @@ if not lib then
         CliReset        = unavailable,
         CliResetAll     = unavailable,
         CliVersion      = function() NS.Print("v" .. VERSION) end,
+        -- Answers nil rather than a copy of the collection's one sentence — the
+        -- degraded arm refuses nothing (see the gate's header), so nothing here has
+        -- a line to build, and a stub spelling of it would be a second place the
+        -- wording can drift. tests/test_surface_parity.lua carries the reason as
+        -- data beside the DebugLog formatters', which are live-only by the same rule.
+        DisabledLine    = function() end,
         BuildListLines  = function() return { CLI_MISSING } end,
         SetRowAnnotator = function() end,
         Text            = function(_, key) return key end,
@@ -254,6 +239,24 @@ Sl = lib:New({
 
     print   = function(line) NS.Print(line) end,
     version = function() return VERSION end,
+
+    -- THE GATE'S TWO FIELDS (Slash minor 12, live set restored at 13).
+    --
+    -- `isEnabled` is asked at DISPATCH time and never cached, so the command after
+    -- an `/pc enable` acts rather than refusing. It reads the STORED path and not
+    -- the latch, because the line it decides to print names `/pc enable`: that is
+    -- the true and useful answer for the hold a player took, and it would be the
+    -- wrong one for a `perf` hold nobody can release with that verb. This addon
+    -- takes no `perf` hold at all (core/LifecycleSetup.lua says why), so the two
+    -- questions have one answer here today; they are still different questions.
+    --
+    -- `brandName` is the plain-text `Ka0s <Name>` — the SAME string
+    -- core/LauncherSetup.lua gives the LDB object as `label`, and the same string
+    -- for the same reason: launcher-§1 forbids escape sequences there, which is
+    -- what makes it safe to drop into a coloured line. NOT the TOC's `## Title`,
+    -- which is this addon's rainbow brand mark and a ratified toc-file-§1 deviation.
+    isEnabled = function() return PrettyChat:IsAddonEnabled() end,
+    brandName = "Ka0s Pretty Chat",
 
     -- The single write seam again — the same functions settings/OptionsSetup.lua
     -- hands the options module, so a CLI change and a checkbox click take one path.

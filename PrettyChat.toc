@@ -52,6 +52,13 @@ core\Database.lua
 core\PrettyChat.lua
 core\CoreSetup.lua
 core\DebugLogSetup.lua
+# core\LifecycleSetup.lua loads AFTER core\DebugLogSetup.lua (the NS.Debug seam the two
+# stand-down arms trace through) and BEFORE core\LauncherSetup.lua. It publishes NS.Lifecycle,
+# the one latch this addon is stood down by (slash-commands-§7); modules\Override.lua's show
+# ladder and settings\Schema.lua's Enable row both read it. Nothing resolves at load beyond the
+# LibStub lookup -- both arms reach PrettyChat through closures at CALL time -- so the position
+# is conventional rather than load-bearing.
+core\LifecycleSetup.lua
 # core\LauncherSetup.lua loads AFTER core\PrettyChat.lua (the AceAddon object its
 # openSettings hook calls OpenConfig on) and after core\DebugLogSetup.lua (the NS.Debug seam it
 # hands over as `debug`). Nothing resolves at load beyond the LibStub lookup, so unlike

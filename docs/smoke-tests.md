@@ -576,12 +576,37 @@ that draws nothing raises nothing, and a `.tga` in the wrong format loads as sil
   chat goes back to Blizzard's wording. The **Enable PrettyChat** checkbox on the General page is
   unticked — open it and look. Every verb above still answers while disabled **except `/pc test`**,
   which answers with one line naming `/pc enable` and writes nothing to the debug console
-  (`slash-commands-§2`: a disabled addon refuses a verb that drives its features). The minimap
-  button is still there, and `/pc enable` turns everything back on.
+  (`slash-commands-§2`: a disabled addon refuses a verb that drives its features). A bare `/pc`
+  **opens the settings panel**, which is the case the standard's v2.56.0 narrowing failed on and
+  v2.57.0 restored. The minimap button is still there, and `/pc enable` turns everything back on.
 - Failure mode: if any of `/pc`, `help`, `enable` or the schema CLI goes quiet while disabled, the
   switch is one-way and a player can only get back through the panel they were trying not to open.
   If `/pc test` opens the console and writes its report anyway, the refusal printed and the verb
   then acted, which is worse than not refusing at all.
+
+#### T-68a — Disabled means the addon is NOT RUNNING, not merely quiet
+
+> Why: `slash-commands-§7`. This is the half `T-68` cannot see: the surface a player can watch looks
+> identical whether the addon stood down or merely stopped reacting, which is how eleven addons in
+> this collection shipped a draw gate through eleven audits. The only place the difference shows in
+> a live client is `/eventtrace` and the frame's own registration list.
+
+- Steps: on the General page set **General visibility** to `Only out of combat` (either combat mode
+  will do — this is the one setting that makes this addon register anything at all). Confirm with
+  `/dump PrettyChatCombatWatcher:IsEventRegistered("PLAYER_REGEN_DISABLED")` — it answers `true`.
+  Now `/pc disable`. Run the same `/dump` again. Then pull a training dummy and drop combat twice.
+  Finally `/pc enable` and `/dump` once more.
+- Expected: after `/pc disable` the dump answers **`false`** — the registration is *gone*, not
+  gated. Entering and leaving combat while disabled prints nothing, writes nothing, and changes no
+  chat wording: with `/pc debug on` beforehand, the console shows **no** `[Visibility]` line at
+  either boundary. After `/pc enable` the dump answers `true` again, because the stand-up rebuilds
+  from the setting as it is now.
+- Failure mode: if the dump still answers `true` while disabled, this addon is a **draw gate** — it
+  stopped reacting rather than stopping watching, and the client goes on walking its registration
+  list and entering Lua on every combat boundary of an addon the player switched off. If a
+  `[Visibility]` line appears in the console while disabled, a handler ran that should not have been
+  reachable. Change **General visibility** while disabled and re-enable: if the watcher comes back
+  armed for the mode you *left*, the stand-up replayed a snapshot instead of reading current state.
 
 #### T-69 — A broker display shows the same plugin
 

@@ -86,6 +86,12 @@ Kit.run{
         -- test_slash, which reads the same COMMANDS table from the dispatcher's side.
         "test_launcher",
         "test_slash",
+        -- The stand-down conformance suite slash-commands-§7 requires of every addon.
+        -- AFTER test_slash because its step 7 drives the same dispatcher, and after
+        -- test_launcher because its step 8 drives the same broker object -- both of those
+        -- suites establish that the surface works AT ALL, and this one asks what it does
+        -- while the addon is switched off.
+        "test_disabled",
         "test_panel",
         "test_doc_structure",
         "test_register",

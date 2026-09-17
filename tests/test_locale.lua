@@ -222,6 +222,14 @@ local RESIDUE = {
     {"core/LauncherSetup.lua", "Ka0s Pretty Chat",
      "the same brand name, handed to LibKa0s-Launcher-1.0 as the broker object's "
      .. "`label` — what a broker display prints beside the icon"},
+    {"settings/Slash.lua", "Ka0s Pretty Chat",
+     "the same brand name again, handed to LibKa0s-Slash-1.0 as `brandName` — the "
+     .. "subject of slash-commands-§7's one refusal line. Deliberately the SAME "
+     .. "string as the launcher's `label`, which is why it is a literal in both "
+     .. "places rather than a key: launcher-§1 forbids escape sequences in that "
+     .. "field, and that is what makes it safe to drop into a coloured line. The "
+     .. "sentence around it is the COLLECTION'S and never this addon's, so it is "
+     .. "the library's `lib.DISABLED_LINE_FORMAT` and reaches no locale table"},
     {"core/DebugLogSetup.lua", "Pretty Chat",
      "the same brand name, handed to LibKa0s-DebugLog-1.0 as its window title"},
     {"core/DebugLogSetup.lua", "Debug console",

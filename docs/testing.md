@@ -39,6 +39,8 @@ tests/
   - `SettingsPanel = nil`, so the private category-tree walk takes its guarded fallback rather than "succeeding" against a stub that answers every method;
   - `C_AddOns` / `GetAddOnMetadata`, deliberately absent from the base so the `core/EnvSetup.lua` seam's library-absent fallback branch stays drivable.
 
+  **Every frame it builds is built on the kit's TRACKED stub**, and that one line is what makes `tests/test_disabled.lua` possible. The kit's recording mock surveys the frames a build actually made — `M.__registrations()`, `M.__shownFrames()` — and until this file adopted the tracked factory, the combat watcher (the one frame this addon registers anything on) was invisible to it. A stand-down suite that asserted "nothing is registered" over a table this repo's frames never reached would be green over a question it never asked. For the same reason the **event** methods are the kit's rather than this file's, and `_events` is answered through the metatable off the kit's live `__frameEvents` rather than kept as a second table that `UnregisterAllEvents` would leave stale; and the recording `DEFAULT_CHAT_FRAME` above records into the kit's transcript as well as its own, so `M.__printed()` can answer "zero lines reached the player".
+
 What the mocks deliberately do *not* model is layout: they answer "which widget, seeded from what, wired to which schema path", never where anything lands on screen. Rendering, fonts, skinning, taint and live chat stay in the [smoke-test suite](./smoke-tests.md).
 
 ## The gate
@@ -175,6 +177,14 @@ narrow the entry to `<code>/<variable>`, or put `-- luacheck: ignore <code>` bes
 that earns it — and say in a comment why the code is correct as written.
 
 ## Test-case inventory & badge sync (`testing-§5`)
+
+### `tests/test_disabled.lua` — the stand-down conformance suite
+
+`slash-commands-§7` requires every addon in the collection to carry one, and it says why: eleven addons implemented *disabled* as a **draw gate**, and a suite written against a handler's early return cannot tell a draw gate from a stand-down, because an early return is what a draw gate does. So every assertion in this suite is made against the **registration set**, through the kit's recording mock, and never against a handler's return value.
+
+Its ten steps follow the section's: a non-vacuous enabled baseline (the addon has to register something for a stand-down to remove — which is why step 1 stores a combat-scoped visibility first); the disable written through the **single write seam**, never by calling a teardown function; the registration set empty by count and by name; nothing left armed; nothing drawn; the baseline events fired at the handler **unconditionally** — the client would not fire them, so `__fireUnconditional` is what proves a survivor would have been caught — with zero SavedVariables writes, zero printed lines and zero frames shown; the slash surface; the rung-(c) launcher; restoration from **current** state; and the latch's two holds in both orders.
+
+It was proved red by reverting the latch read out of `SyncCombatWatch` and `ApplyStrings`, which is the shape this repo shipped before: **eight cases fail**, including all three the section asks for a falsification comment on. Step 5 stays green under that revert, which is exactly the point — the draw gate does restore the display, and the drawing axis is the one axis on which it is invisible.
 
 The authoritative case count lives in the **generated** inventory [`test-cases.md`](./test-cases.md) — every case, grouped by suite, with per-suite and grand totals. It is produced by the runner's `--list` mode, never hand-edited:
 

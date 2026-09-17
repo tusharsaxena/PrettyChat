@@ -94,6 +94,8 @@ Positional triple, and the handler takes **`rest` alone** — `LibKa0s-Slash-1.0
 
 The dispatcher, the help printer and the settings landing page all read the same table. If your command needs the schema, guard with `if not schemaReady() then return end` (the same pattern the existing schema-touching commands use).
 
+**A new verb is REFUSED while the addon is disabled, and you do not have to do anything to make that happen.** The gate is `LibKa0s-Slash-1.0`'s (`slash-commands-§2`, `§7`): it answers the standard's twelve reserved verbs normally and prints one line naming `/pc enable` for everything else the addon ships. So the default is gated and you opt a verb *out* by putting it in the descriptor's `liveVerbs` — which is for a verb that genuinely is not a feature. Never use it to take something off the reserved set; that is the one thing `§7` says a host MUST NOT do. Add the verb's name to `tests/test_disabled.lua`'s step-7 loop expectation if it should be live.
+
 Two follow-ups the harness enforces:
 
 1. Wrap the description in `L[…]` **and** add that exact string to the enUS manifest in `locales/enUS.lua` — `test_locale` scans the sources for `L["…"]` call sites and fails on any that the manifest doesn't carry (and on any manifest entry nothing references). The same applies to any **sentence the verb prints**: since M4-21 `test_locale` also scans the TOC-derived sources for unwrapped string literals, so a bare line of English in a handler is red until it either goes through `L` or is added, with its reason, to the residue register at the foot of `tests/test_locale.lua`. Route it if the whole sentence fits inside one colour span; record it if the prose is split across two, and say which.

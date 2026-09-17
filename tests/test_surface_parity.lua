@@ -73,9 +73,10 @@ local parityBare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
 -- different point in the run than the arms compared against them, which is the one
 -- thing the two-arms-together comment above exists to prevent.
 ctx.setSurfaceSource{
-    ["LibKa0s-Options-1.0"]  = parityLive.NS.Helpers,
-    ["LibKa0s-DebugLog-1.0"] = parityLive.NS.DebugLog,
-    ["LibKa0s-Slash-1.0"]    = parityLive.NS.SlashCommands,
+    ["LibKa0s-Options-1.0"]   = parityLive.NS.Helpers,
+    ["LibKa0s-DebugLog-1.0"]  = parityLive.NS.DebugLog,
+    ["LibKa0s-Slash-1.0"]     = parityLive.NS.SlashCommands,
+    ["LibKa0s-Lifecycle-1.0"] = parityLive.NS.Lifecycle,
 }
 
 -- LibKa0s-Core-1.0 is the one seam this addon does not keep as an instance, and so
@@ -179,6 +180,16 @@ test("the Options stub carries the whole live surface", function()
         -- which walked every key of the live table. It uses the by-name form now, so
         -- the entry is gone and the next internal the library publishes needs none.
     })
+end)
+
+test("the Lifecycle stub carries the whole live surface", function()
+    -- The latch is the one seam where a missing stub member is not a raise at some
+    -- future call site but a MASTER SWITCH THAT DOES NOTHING: `Set` is what the
+    -- Enable checkbox, `/pc enable` and every profile callback drive, and a stub
+    -- without it leaves the addon permanently on for anyone with no LibKa0s
+    -- installed. So the stub holds the hold set honestly and fires the same two arms
+    -- (core/LifecycleSetup.lua).
+    ctx.assertSurfaceParity(parityBare.NS.Lifecycle, "LibKa0s-Lifecycle-1.0", {})
 end)
 
 test("the Slash stub carries the whole live surface", function()
