@@ -191,6 +191,21 @@ The conformance suite is `tests/test_disabled.lua` (`§7`). Every assertion is m
 Every `.md` under `docs/` appears in exactly one table below (`documentation-§3`). Frozen and
 generated directories are named once each and never enumerated per run: `docs/audits/`, `docs/reviews/`, `docs/automated-tests/`, `docs/revendor/`, `docs/superpowers/`.
 
+**Audit and review history.** The most recent compliance audit is [audits/2026-09-08/](./audits/2026-09-08/)
+(audited against Standard **v2.39.0**); the most recent engineering review is
+[reviews/2026-09-07/](./reviews/2026-09-07/). Earlier audit bundles are kept for history:
+[2026-09-07](./audits/2026-09-07/) (Standard **v2.38.0**), [2026-08-05](./audits/2026-08-05/)
+(**v2.21.0**), [2026-08-04](./audits/2026-08-04/) (**v2.17.1**), [2026-07-18](./audits/2026-07-18/)
+(**v2.7.0**, its open MUST/SHOULD items remediated in `1c0248a`) and [2026-07-12](./audits/2026-07-12/),
+which predates the modular restructure and carries the only `06_EXECUTION_OUTCOME`. Re-audit with
+`/wow-addon:standards-audit`.
+
+**There is no `docs/agent-context.md`, and it MUST NOT be created** (the standard deleted it in
+v2.17.0; shipping it is anti-pattern #49). The root `CLAUDE.md` stub is the repo's only agent brief.
+Older audit bundles, review bundles and plans under `docs/` predate v2.17.0 and still name the file,
+and some describe a four-file or an `agent-context.md`-based set. Those are **frozen history** —
+never a live requirement, and never a reason to "restore" the file.
+
 ### Required (documentation-§3, Tier 1)
 
 | Doc | Covers |

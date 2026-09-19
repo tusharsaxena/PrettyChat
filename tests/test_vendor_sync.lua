@@ -22,15 +22,15 @@
 -- sibling means the comparison did not run rather than that it disagreed.
 --
 -- No `opts` are needed: this repo's root is ".", its sibling is ../LibKa0s, and its provenance
--- line — the "Bundles [LibKa0s](...) vX.Y.Z (MIT)." sentence in CLAUDE.md's repo-facts list — is
+-- line — the "Bundles [LibKa0s](...) vX.Y.Z (MIT)." sentence in the root CLAUDE.md stub — is
 -- matched by the kit's default pattern, whose default `provenanceFile` is already "CLAUDE.md". The
 -- PATTERN is quoted here, never one version that satisfies it: this line used to read v1.10.2 and
 -- went on reading it through every re-vendor since, which is the same mistake as a stale
 -- `CLAUDE.md:NNN` wearing different clothes.
 --
 -- Kit revision 9 moved that input out of README.md, with no fallback. README.md is the player's
--- page and no longer carries a bundled-library inventory at all; CLAUDE.md is where this repo
--- keeps the build facts a maintainer or an agent needs, so the line lives there and the gate
+-- page and no longer carries a bundled-library inventory at all; CLAUDE.md is the agent-facing
+-- stub documentation-§2 requires to carry it, so the line lives there and the gate
 -- follows it. The line is deliberately cited by content, not by line number, so moving it again
 -- does not leave a false `CLAUDE.md:NNN` here.
 

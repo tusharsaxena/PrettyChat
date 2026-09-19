@@ -71,6 +71,12 @@ See [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patc
 3. `/reload` in-game; verify the panel's "Original Format String" inputs still resolve.
 4. If Blizzard renamed any keys or changed signatures, update the corresponding entries in `defaults/Defaults.lua`.
 
+## Bump the client interface
+
+1. Move `## Interface:` in `PrettyChat.toc` (`/wow-addon:bump-interface`).
+2. In the **same change**, move the README's static `[WoW]` badge to match (documentation-§1): it is
+   a shields.io image that goes stale silently, and it MUST show the same client as the TOC line.
+
 ## Add an addon-wide setting
 
 Addon-wide settings live on the General page's one tab, `Master controls`, and that tab is **composed** — `H.MasterControls` owns its rows, their order and their wording (options-ui-§15). Do **not** hand-write a row into it.
@@ -119,7 +125,7 @@ If you can only reason about a change from code and cannot test it in WoW, say s
 
 ## Cut a release
 
-Before the tag, in the **same change** that bumps `## Version:` in `PrettyChat.toc` and rolls the README's `## Version History` forward:
+Never bump the version (`## Version:` in `PrettyChat.toc`, the README badges and Version History) without an explicit instruction from the owner. Once asked, before the tag, in the **same change** that bumps `## Version:` in `PrettyChat.toc` and rolls the README's `## Version History` forward:
 
 1. Produce a full automated-test bundle — `tests/_kit/run-automated-tests.sh`, from the repo root — and **read its diff**: give every newly-crossed threshold a one-line disposition in [`automated-tests/RESULTS.md`](./automated-tests/RESULTS.md)'s watch list. This is a release checkpoint, **not** a commit gate. Full rules and the stale-tooling case: [testing.md](./testing.md#automated-test-records--the-consolidated-run) and `performance-§10`.
 2. Re-check [`../DEPENDENCIES.md`](../DEPENDENCIES.md) against what the repo now actually needs (documentation-§5/§7) — a new script, a new import or a dropped tool belongs there already, but the release is the backstop.
