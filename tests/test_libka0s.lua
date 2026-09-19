@@ -425,31 +425,59 @@ test("every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh t
         "the footer control reaches the same body the header button does")
 end)
 
-test("the settings panel refuses to render under combat rather than drawing half a page", function()
+test("a settings page shown in combat is covered, not drawn and not closed", function()
     -- The Blizzard AddOns sidebar reaches a panel without going through
     -- OpenOptionsPanel, so its combat guard is bypassed on exactly the path a user
-    -- is most likely to take mid-fight. SetRenderer puts a second guard on the
-    -- render itself; without adopting SetRenderer this addon had none.
+    -- is most likely to take mid-fight. SetRenderer locks the render itself;
+    -- without adopting SetRenderer this addon had no guard there at all.
+    -- options-ui-§2 (standard v2.60.0, LibKa0s v1.46.x) changed WHAT the lock does:
+    -- the page is COVERED and left open. Closing the window from addon code ran
+    -- Blizzard's close-and-commit path tainted (anti-pattern #88), so nothing of
+    -- Blizzard's may be touched in combat, and this case pins that it is not.
     local fresh = ctx.loadAddon({
         mock = function(m) m.InCombatLockdown = function() return true end end,
     })
-    local panel
+    local touched = {}
+    local function spy(name) return function() touched[#touched + 1] = name end end
+    fresh.env.HideUIPanel    = spy("HideUIPanel")
+    fresh.env.ToggleGameMenu = spy("ToggleGameMenu")
+    fresh.env.SettingsPanel  = { Close = spy("SettingsPanel:Close"),
+                                 Hide = spy("SettingsPanel:Hide") }
+    local panels = {}
     for _, sub in ipairs(fresh.env._settings.subcategories) do
-        if sub.name == "Categories" then panel = sub.frame end
+        panels[sub.name] = sub.frame
     end
-    panel:Show()
+    local before = #fresh.env.DEFAULT_CHAT_FRAME.messages
+    panels.Categories:Show()
 
     -- The header Defaults button IS built — EnsureDefaultsButton runs ahead of the
-    -- guard, deliberately, so the control exists on a page the user can see. What
+    -- lock, deliberately, so the control exists on a page the user can see. What
     -- must not happen is the BODY: no scroll container, and therefore none of the
     -- ~50 per-string blocks a Loot render would create.
     local pageCtx = fresh.NS.Helpers.__panelFor("Categories")
     t.nilv(pageCtx.scroll, "the page body was never built under lockdown")
     t.nilv(pageCtx.__tabLayout, "and the tab strip was not placed either")
     t.eq(#pageCtx.refreshers, 0, "so nothing registered a refresher either")
+    t.truthy(pageCtx.__combatCover and pageCtx.__combatCover:IsShown(),
+        "the page is covered instead")
+    t.eq(#touched, 0, "and the settings window is left open: " .. table.concat(touched, ", "))
+
+    -- A second page shown in the same combat is covered too, and says nothing
+    -- more: one gray line per combat, not one per show.
+    panels.General:Show()
+    local genCtx = fresh.NS.Helpers.__panelFor("General")
+    t.truthy(genCtx.__combatCover and genCtx.__combatCover:IsShown(),
+        "a second page shown in the same combat is covered as well")
+    t.eq(#touched, 0, "and still nothing of Blizzard's is touched")
+
+    local opts = fresh.env.LibStub("LibKa0s-Options-1.0", true)
     local msgs = fresh.env.DEFAULT_CHAT_FRAME.messages
-    t.truthy(msgs[#msgs]:find("cannot open settings during combat", 1, true),
-        "and the refusal is surfaced, in the canonical wording")
+    local notices = 0
+    for i = before + 1, #msgs do
+        if msgs[i]:find(opts.STRINGS.COMBAT_LOCKED_NOTICE, 1, true) then notices = notices + 1 end
+    end
+    t.eq(notices, 1, "the lock is surfaced once, in the canonical wording")
+    t.truthy(opts.STRINGS.COMBAT_LOCKED_NOTICE:find("^|cffaaaaaa"), "and the line renders gray")
 end)
 
 test("with Options absent the schema still loads whole — the measured stub set", function()

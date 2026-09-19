@@ -53,7 +53,7 @@ badge and any count quoted in the docs must agree with it.
 - Options cannot express the L trap either — its own, different tripwire
 - NS.Helpers IS the library instance, decorated in place
 - every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh trio
-- the settings panel refuses to render under combat rather than drawing half a page
+- a settings page shown in combat is covered, not drawn and not closed
 - with Options absent the schema still loads whole — the measured stub set
 - the dispatcher renders prose, not its own SCREAMING_SNAKE keys
 - the COMMANDS table is the positional shape the library reads

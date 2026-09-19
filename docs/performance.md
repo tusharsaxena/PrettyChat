@@ -102,9 +102,10 @@ which is why the page went on asserting zero. Its disposition:
 - **Where it is reached from.** `buildCategoryBody` only — the render of a Categories page inside the
   options panel. Not `OnInitialize`, not `OnEnable`, not `ApplyStrings`, not the combat watcher.
   Reaching it at all takes a player opening the settings panel and selecting a category, and
-  `LibKa0s-Options-1.0`'s `OpenOptionsPanel` refuses to open under `InCombatLockdown()`
-  ([ARCHITECTURE.md § Taint Notes](./ARCHITECTURE.md#taint-notes)), so the ordinary way in is closed
-  during a fight.
+  `LibKa0s-Options-1.0`'s `OpenOptionsPanel` refuses to open under `InCombatLockdown()`, and a page
+  reached from the sidebar in combat is covered and never renders
+  ([ARCHITECTURE.md § Taint Notes](./ARCHITECTURE.md#taint-notes)), so no render reaches it during a
+  fight.
 - **What it is for.** The AceGUI `TreeGroup` cannot be sized during the render that builds it: the
   scroll frame takes its height when the page's chrome is anchored, *earlier in the same render*, and
   AceGUI has not laid the tree out yet, so there is no position to measure from. `C_Timer.After(0, …)`
