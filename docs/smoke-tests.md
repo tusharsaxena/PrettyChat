@@ -776,11 +776,13 @@ description. Since the settings revamp the General page also carries a one-tab *
 strip it did not have, a **General visibility** dropdown beside Enable, and **Reset all settings** in
 place of **Reset all to defaults** — see T-100 to T-103.
 
-#### T-96 — The panel refuses to render under combat, from the sidebar too
+#### T-96 — A settings page shown in combat is covered, not closed, from the sidebar too
 
 **Why:** the Blizzard AddOns sidebar reaches a panel without going through the panel-open, so its
-combat guard is bypassed on exactly the path a user is most likely to take mid-fight. This addon had
-no guard on the render path before adopting.
+combat guard is bypassed on exactly the path a user is most likely to take mid-fight. Through
+LibKa0s v1.45.x the page closed the Settings window, and that close ran Blizzard's close-and-commit
+path from addon code, tainted (anti-pattern #88). Since v1.46.x (options-ui-§2) the page is
+covered instead and the window is left alone.
 
 **Steps:** pull a target. While in combat:
 1. `/pc config`
@@ -788,7 +790,11 @@ no guard on the render path before adopting.
 
 **Expected:** (1) refuses with the gray
 `cannot open settings during combat — Blizzard's category-switch is protected` and does not open.
-(2) closes the Settings window and prints the same line, rather than drawing a half-built page.
+(2) the Settings window stays open; the page shows a dim cover with the centered gray
+*Settings are locked during combat.*, nothing under it can be clicked or scrolled, and chat gets
+**one** gray `settings are locked during combat — changes are refused until it ends` (clicking the
+General page as well adds no second line). No `ADDON_ACTION_BLOCKED` / taint error. Drop combat:
+the cover goes and the page draws from current state without being re-opened.
 
 #### T-97 — The TOC still reaches this addon after the LibKa0s-Env seam
 
