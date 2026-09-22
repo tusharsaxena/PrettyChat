@@ -932,7 +932,7 @@ deviation).
 **Expected:** below the **Enable Loot** checkbox, a **bordered two-pane box** — AceGUI's `TreeGroup`,
 the same widget every AceConfig options window's left nav is made of, so it should look like
 RPGLootFeed's or any Ace-based addon's. The left pane, 200px wide, lists nineteen entries, one per
-format string, labelled with the friendly names and in the same sorted order the blocks used to be
+format string, labeled with the friendly names and in the same sorted order the blocks used to be
 stacked in. **The selected entry carries a highlight bar**, not just a different text color. The
 right pane holds **one** editor, with **no heading** — the entry is its name — reading
 `[Enable] GLOBALNAME`, then **Original**, **New** and **Preview** at full width, then **Reset** at the

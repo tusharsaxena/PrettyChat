@@ -400,7 +400,7 @@ test("every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh t
     -- defaults control is the one that silently does nothing when OnDefault is
     -- missing — while the header Defaults button beside it keeps working and looks
     -- equivalent to the user. This addon shipped without all three before adopting.
-    -- rawget, and it is the whole assertion. A mock frame answers EVERY unmodelled
+    -- rawget, and it is the whole assertion. A mock frame answers EVERY unmodeled
     -- PascalCase key from its metatable with a self-returning function, so a plain
     -- `type(panel.OnCommit) == "function"` is true whether or not the library ever
     -- stamped anything — two of the three assertions here could not fail, on a case

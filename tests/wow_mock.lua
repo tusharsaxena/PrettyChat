@@ -165,7 +165,7 @@ local function newFrame(name, adopt)
             if k == "_events" then return rawget(self, "__frameEvents") end
             local m = frameMethods[k]
             if m then return m end
-            -- PascalCase => an (unmodelled) WoW method: inert, self-returning.
+            -- PascalCase => an (unmodeled) WoW method: inert, self-returning.
             -- Anything else => an addon-owned field that genuinely is nil. A
             -- catch-all answering lowercase keys with a truthy function would
             -- silently invert every `if not panel.defaultsBtn` guard in the addon.

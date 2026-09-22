@@ -62,7 +62,7 @@ end
 --
 -- Every other addon in the collection reads this against a frame it draws. This
 -- one draws no frame at all: its "display" is the chat text itself, so the four
--- canonical modes are honoured by what ApplyStrings writes to _G[GLOBALNAME].
+-- canonical modes are honored by what ApplyStrings writes to _G[GLOBALNAME].
 -- `never` restores every Blizzard original exactly as `Enable` off does, and the
 -- two combat modes restore or re-apply them at the combat boundary.
 -- ---------------------------------------------------------------------
@@ -110,7 +110,7 @@ local combatWatcher
 ---
 --- It is also the whole rebuild on the way back up: nothing is restored from a
 --- snapshot taken on the way down, so a visibility changed while the addon was off
---- is honoured the moment it comes back (performance-§6).
+--- is honored the moment it comes back (performance-§6).
 function PrettyChat:SyncCombatWatch()
     local wanted = (not self:IsStoodDown())
                    and COMBAT_SCOPED[self:GetVisibility()] and true or false

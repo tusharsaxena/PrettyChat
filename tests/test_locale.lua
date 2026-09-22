@@ -124,7 +124,7 @@ end)
 -- `defaults/Defaults.lua` is the addon's DATA table — 81 rows of Blizzard global
 -- name, English display label and replacement format string — and the format
 -- strings are content the player edits, not prose the addon speaks. Scanning it
--- would report every colour-escaped default as an unrouted sentence. It is
+-- would report every color-escaped default as an unrouted sentence. It is
 -- excluded by name and with a reason rather than by a silent omission, and the
 -- shape case below pins that its literals really are only those two fields, so
 -- the exclusion cannot quietly widen into a place a sentence could hide.
@@ -205,7 +205,7 @@ end
 -- Two reasons recur, and both come out of PC-R-06, which removed the concatenated
 -- fragments that had pinned English word order and left a translator nothing to
 -- reorder:
---   * SPLIT COLOUR — the sentence's parts carry different mandated colours
+--   * SPLIT COLOR — the sentence's parts carry different mandated colors
 --     (slash-commands-§4/§5), so one key would have to carry `|c…|r` escapes
 --     inside translatable text, and keying the halves separately re-creates
 --     exactly the fragments PC-R-06 removed.
@@ -227,7 +227,7 @@ local RESIDUE = {
      .. "subject of slash-commands-§7's one refusal line. Deliberately the SAME "
      .. "string as the launcher's `label`, which is why it is a literal in both "
      .. "places rather than a key: launcher-§1 forbids escape sequences in that "
-     .. "field, and that is what makes it safe to drop into a coloured line. The "
+     .. "field, and that is what makes it safe to drop into a colored line. The "
      .. "sentence around it is the COLLECTION'S and never this addon's, so it is "
      .. "the library's `lib.DISABLED_LINE_FORMAT` and reaches no locale table"},
     {"core/DebugLogSetup.lua", "Pretty Chat",
@@ -262,27 +262,27 @@ local RESIDUE = {
      "SHARED STEM: the panel's tail"},
     {"settings/Slash.lua", ", so the settings CLI is unavailable.", "SHARED STEM: the CLI's tail"},
 
-    -- SPLIT COLOUR — the degraded `/pc debug on|off` acknowledgement.
+    -- SPLIT COLOR — the degraded `/pc debug on|off` acknowledgment.
     {"core/DebugLogSetup.lua", "debug logging ",
-     "SPLIT COLOUR: the state word is green ON or red OFF, concatenated at the call site; "
+     "SPLIT COLOR: the state word is green ON or red OFF, concatenated at the call site; "
      .. "one key would have to carry the escapes and an English on/off pair"},
 
-    -- SPLIT COLOUR — settings/Slash.lua's `/pc reset <category>` migration notice.
-    {"settings/Slash.lua", "` now takes a setting PATH, not a category.", "SPLIT COLOUR"},
-    {"settings/Slash.lua", "  To reset one setting: ", "SPLIT COLOUR"},
-    {"settings/Slash.lua", "  To reset all of ", "SPLIT COLOUR"},
-    {"settings/Slash.lua", " button on its settings page, or ", "SPLIT COLOUR"},
-    {"settings/Slash.lua", " for everything.", "SPLIT COLOUR"},
+    -- SPLIT COLOR — settings/Slash.lua's `/pc reset <category>` migration notice.
+    {"settings/Slash.lua", "` now takes a setting PATH, not a category.", "SPLIT COLOR"},
+    {"settings/Slash.lua", "  To reset one setting: ", "SPLIT COLOR"},
+    {"settings/Slash.lua", "  To reset all of ", "SPLIT COLOR"},
+    {"settings/Slash.lua", " button on its settings page, or ", "SPLIT COLOR"},
+    {"settings/Slash.lua", " for everything.", "SPLIT COLOR"},
 
-    -- SPLIT COLOUR — the four `usage:` lines. Below the prose floor above (none of
+    -- SPLIT COLOR — the four `usage:` lines. Below the prose floor above (none of
     -- them holds two adjacent words), so the scan does not report them; they are
     -- recorded anyway because they are the sites the M4-21 plan row names, and
     -- because a register that only lists what a heuristic happens to catch is a
     -- register of the heuristic rather than of the addon.
     {"settings/Slash.lua", "usage: ",
-     "SPLIT COLOUR: uncoloured word, then a gold command syntax the player types verbatim"},
-    {"settings/Slash.lua", ". Valid: ", "SPLIT COLOUR: white clause between a gold command and a plain list"},
-    {"settings/Slash.lua", " — try ", "SPLIT COLOUR: white clause between two gold commands"},
+     "SPLIT COLOR: uncolored word, then a gold command syntax the player types verbatim"},
+    {"settings/Slash.lua", ". Valid: ", "SPLIT COLOR: white clause between a gold command and a plain list"},
+    {"settings/Slash.lua", " — try ", "SPLIT COLOR: white clause between two gold commands"},
 
     -- The `/pc test` report's footer.
     {"modules/Override.lua", "end of test output (%d %s shown",
@@ -340,7 +340,7 @@ end)
 test("every recorded residue literal is still unrouted in the file that names it", function()
     -- The direction that keeps the register from becoming a mute button: an entry
     -- whose literal was wrapped, reworded or deleted goes red here instead of
-    -- sitting on as a licence for a string that no longer exists.
+    -- sitting on as a license for a string that no longer exists.
     for _, entry in ipairs(RESIDUE) do
         local rel, text = entry[1], entry[2]
         local body = assert(readFile(ctx.root .. "/" .. rel), rel .. " is unreadable")

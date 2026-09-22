@@ -77,7 +77,7 @@ end
 -- alone rather than a pair. Nothing else is omitted: General visibility STAYS,
 -- because this addon's display IS the chat text it rewrites, and `Never` is a
 -- real, cheap master off-switch distinct from `Enable` (see
--- PrettyChat:IsVisible in modules/Override.lua, which honours all four modes).
+-- PrettyChat:IsVisible in modules/Override.lua, which honors all four modes).
 --
 -- Installed from settings/OptionsSetup.lua rather than run here: the composers
 -- live ON the options instance, and that file is the NEXT TOC entry, so

@@ -253,7 +253,7 @@ Sl = lib:New({
     -- `brandName` is the plain-text `Ka0s <Name>` — the SAME string
     -- core/LauncherSetup.lua gives the LDB object as `label`, and the same string
     -- for the same reason: launcher-§1 forbids escape sequences there, which is
-    -- what makes it safe to drop into a coloured line. NOT the TOC's `## Title`,
+    -- what makes it safe to drop into a colored line. NOT the TOC's `## Title`,
     -- which is this addon's rainbow brand mark and a ratified toc-file-§1 deviation.
     isEnabled = function() return PrettyChat:IsAddonEnabled() end,
     brandName = "Ka0s Pretty Chat",
@@ -420,7 +420,7 @@ function setEnabled(on)
     -- so the row and its write seam are both here — and slash-commands-§2 names
     -- `enable` as the verb that MUST keep working above all others. So the write
     -- happens and the line is the pre-library rendering, the same one
-    -- Schema.FormatValue falls back to: no colour, no `key = value` helper, just
+    -- Schema.FormatValue falls back to: no color, no `key = value` helper, just
     -- the path and the value it now holds.
     NS.Schema.Set(ENABLED_PATH, on)
     local row = NS.Schema.FindByPath(ENABLED_PATH)

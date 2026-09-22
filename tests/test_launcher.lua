@@ -94,7 +94,7 @@ test("Launcher: that file is on disk, 128x128 uncompressed 32-bit TGA", function
     local size = fh:seek("end")
     fh:close()
     t.eq(#header, 18, "and carries a whole TGA header")
-    t.eq(header:byte(3), 2, "image type 2 — uncompressed true-colour, not RLE")
+    t.eq(header:byte(3), 2, "image type 2 — uncompressed true-color, not RLE")
     t.eq(header:byte(17), 32, "32 bits per pixel — the alpha channel is the point")
     t.eq(header:byte(13) + header:byte(14) * 256, 128, "128 wide")
     t.eq(header:byte(15) + header:byte(16) * 256, 128, "128 tall, and power-of-two")
@@ -108,7 +108,7 @@ test("Launcher: the broker label is the BRAND NAME in plain text, not the Title"
     -- the other ten, so it is the one field that decides whether the collection
     -- reads as one collection or as eleven unrelated addons. The rule is
     -- `Ka0s <Name>` — and this addon is the case the "not the TOC Title" half of
-    -- it was written for, because PrettyChat's Title is a wall of colour escapes.
+    -- it was written for, because PrettyChat's Title is a wall of color escapes.
     local inst = wired()
     local object = inst.NS.Launcher:Object()
     t.eq(object.label, "Ka0s Pretty Chat", "the brand name, spelled as the collection spells it")
@@ -119,7 +119,7 @@ test("Launcher: the broker label is the BRAND NAME in plain text, not the Title"
     local toc = fh:read("*a")
     fh:close()
     local title = toc:match("##%s*Title:%s*([^\r\n]+)")
-    t.truthy(title:find("|cff", 1, true), "the TOC Title really is colour-escaped (toc-file-§1)")
+    t.truthy(title:find("|cff", 1, true), "the TOC Title really is color-escaped (toc-file-§1)")
     t.neq(object.label, title, "so the two fields are not wired to each other")
     t.neq(object.label, "PrettyChat", "nor is it the folder name — that is `name`, the position key")
     t.eq(inst.mocks.__ldb.objects.PrettyChat.label, object.label,
@@ -224,7 +224,7 @@ test("Launcher: the Minimap button row is composed, stored, and defaults to SHOW
     t.eq(row.default, true, "SHOWN by default — the row's sense, not LibDBIcon's")
     t.falsy(row.sessionOnly, "STORED: a hidden button is furniture, not session state")
     t.eq(row.category, "General", "wired onto the virtual General category")
-    t.eq(row.label, "Minimap button", "and labelled by the composer")
+    t.eq(row.label, "Minimap button", "and labeled by the composer")
 end)
 
 test("Launcher: the row's get/set INVERT onto LibDBIcon's hide key", function()

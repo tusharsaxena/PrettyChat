@@ -467,7 +467,7 @@ local function buildCategoryBody(ctx, scroll, category, catData)
     -- tree pane's own scrollbar when the list outgrows it are all the widget's.
     --
     -- It replaced a hand-built column of InteractiveLabels that carried the
-    -- selection in the text COLOR alone. That was a column of coloured text, not a
+    -- selection in the text COLOR alone. That was a column of colored text, not a
     -- selector: no box, no bar behind the selected row, no spacing.
     local tree = AceGUI:Create("TreeGroup")
     tree:SetFullWidth(true)

@@ -173,8 +173,8 @@ test("every schema row on every page carries a group", function()
     end
 end)
 
-test("no colour row exists, and none may appear without its class-colour companion", function()
-    -- options-ui-§17 requires every non-palette colour swatch to carry a
+test("no color row exists, and none may appear without its class-color companion", function()
+    -- options-ui-§17 requires every non-palette color swatch to carry a
     -- `useClassColor<Surface>` companion IMMEDIATELY after it, and forbids
     -- `disabledIf` on a swatch outright (the swatch is still read for its alpha, so
     -- graying it would say something untrue). PrettyChat has NONE — the schema is
@@ -182,12 +182,12 @@ test("no colour row exists, and none may appear without its class-colour compani
     -- descriptor fields settings/OptionsSetup.lua deliberately does not pass.
     --
     -- Not a vacuous loop: the count is asserted, so this case dies the moment a
-    -- colour row is hand-written into the schema instead of composed through
+    -- color row is hand-written into the schema instead of composed through
     -- H.ColorPair (which supplies the companion and the `startsLine` for free).
-    local rows, colours = Schema.AllRows(), 0
+    local rows, colors = Schema.AllRows(), 0
     for i, r in ipairs(rows) do
         if r.type == "color" then
-            colours = colours + 1
+            colors = colors + 1
             t.falsy(r.disabledIf, r.path .. " must never carry disabledIf")
             local companion = rows[i + 1]
             t.truthy(companion and companion.type == "bool"
@@ -196,13 +196,13 @@ test("no colour row exists, and none may appear without its class-colour compani
             t.truthy(r.classColorSource, r.path .. " declares which class it means")
         end
     end
-    t.eq(colours, 0, "this addon ships no colour rows at all")
+    t.eq(colors, 0, "this addon ships no color rows at all")
 end)
 
 test("the visibility row is the canonical four-mode dropdown, not a boolean", function()
     -- options-ui-§15: a boolean can only ever answer two of the four. PrettyChat
     -- never shipped a "show only in combat" checkbox, so there is no stored shape
-    -- to migrate — what there is instead is this row, with all four modes honoured
+    -- to migrate — what there is instead is this row, with all four modes honored
     -- by modules/Override.lua (tests/test_override.lua pins that end).
     local visRow = Schema.FindByPath("General.visibility")
     t.eq(visRow.type, "string", "a string enum")

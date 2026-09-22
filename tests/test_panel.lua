@@ -499,8 +499,8 @@ end)
 -- It was a secondary strip (options-ui-§13) first: a strip is packed horizontally
 -- and wraps, and Experience registers twenty strings — five rows of buttons above
 -- the editor they select. The first attempt at a list was a hand-built column of
--- InteractiveLabels carrying the selection in the text COLOUR alone, which is a
--- column of coloured text and not a selector: no box, no bar, no spacing. The §13
+-- InteractiveLabels carrying the selection in the text COLOR alone, which is a
+-- column of colored text and not a selector: no box, no bar, no spacing. The §13
 -- deviation is recorded in docs/ARCHITECTURE.md beside the §6 one this page
 -- already carries.
 --

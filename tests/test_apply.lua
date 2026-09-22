@@ -88,7 +88,7 @@ test("a string with no snapshot is left alone rather than blanked", function()
     -- pass never saw must not be written to nil. The KEY SET is what is dropped
     -- here, not the stored value -- since PC-R-07 the value's nil-ness means "this
     -- client does not define the global" and is restored, so nilling it would now
-    -- be the neighbouring case rather than this one. The two are one line apart
+    -- be the neighboring case rather than this one. The two are one line apart
     -- in the code and opposite in what they must do, which is the whole reason the
     -- key set exists.
     inst.addon.snapshotKeys[g] = nil

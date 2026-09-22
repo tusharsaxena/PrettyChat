@@ -176,7 +176,7 @@ end
 --- is nil, and nil is also what an absent entry looks like. The restore arm used
 --- to read the value's truthiness and so could not tell "the client never had
 --- this string" from "we never recorded it" -- and answered the first with the
---- behaviour owed to the second, leaving the override in place until a /reload.
+--- behavior owed to the second, leaving the override in place until a /reload.
 --- Blizzard retires and renames GLOBALNAMEs every expansion, so that is the
 --- ordinary case on any client older or newer than the defaults were written for.
 function PrettyChat:SnapshotOriginals()

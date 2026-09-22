@@ -34,6 +34,11 @@ badge and any count quoted in the docs must agree with it.
 - lintconfig: every files[...] ignore is narrowed to a file or a name
 - lintconfig: no source file carries a bare inline luacheck ignore
 
+### test_prose.lua (2)
+
+- prose: no authored file carries a British spelling from localization-§5's published list
+- prose: the gate carries localization-§5's two lists whole, and nothing of its own
+
 ### test_libka0s.lua (28)
 
 - the locale-table matcher catches both offending spellings and clears the legal one
@@ -165,7 +170,7 @@ badge and any count quoted in the docs must agree with it.
 - exactly one addon-wide row exists, under the virtual General category
 - the Master controls block is the composed one, in canonical order
 - every schema row on every page carries a group
-- no colour row exists, and none may appear without its class-colour companion
+- no color row exists, and none may appear without its class-color companion
 - the visibility row is the canonical four-mode dropdown, not a boolean
 - the debug console row is session-only and re-applies nothing
 - RowsByCategory returns only that category, in registration order
@@ -491,6 +496,7 @@ badge and any count quoted in the docs must agree with it.
 | test_vendor_sync.lua | 3 |
 | test_layout_cap.lua | 5 |
 | test_lintconfig.lua | 4 |
+| test_prose.lua | 2 |
 | test_libka0s.lua | 28 |
 | test_surface_parity.lua | 5 |
 | test_envsetup.lua | 9 |
@@ -513,4 +519,4 @@ badge and any count quoted in the docs must agree with it.
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 1 |
-| **Total** | **399** |
+| **Total** | **401** |

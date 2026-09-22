@@ -135,7 +135,7 @@ end)
 
 -- ---- General visibility -------------------------------------------
 --
--- The setting is DECLARED by the composed Master controls block and HONOURED
+-- The setting is DECLARED by the composed Master controls block and HONORED
 -- here, and these are the cases that make the second half true. A declared
 -- setting nothing reads is worse than an absent one (options-ui-§15).
 
@@ -271,7 +271,7 @@ end)
 -- actually changed (debug-logging-§10: a bulk reset is one [Set] line, never one
 -- per row, and a row already at its default is not counted).
 
--- A second Loot format row, so a reset of `g` can be shown to leave its neighbour alone.
+-- A second Loot format row, so a reset of `g` can be shown to leave its neighbor alone.
 local row2
 for _, r in ipairs(Schema.RowsByCategory(cat)) do
     if r.kind == "string_format" and r.globalName ~= g then row2 = r; break end
@@ -340,7 +340,7 @@ test("ResetCategory: one pass, one [Set] reset line counting the rows written", 
     t.nilv(addon.db.profile.categories[cat], "the category stores nothing afterwards")
     t.eq(addon.db.profile.categories.Money.enabled, false, "another category is untouched")
     t.eq(env[g], def, "the default override is live in _G again")
-    t.eq(env[g2], row2.default, "and so is the re-enabled neighbour")
+    t.eq(env[g2], row2.default, "and so is the re-enabled neighbor")
     t.eq(passes, 1, "exactly one ApplyStrings pass")
     t.eq(notifies, 1, "exactly one NotifyPanelChange")
     t.eq(sets, 1, "exactly one [Set] line for the whole reset")
@@ -395,9 +395,9 @@ test("ResetString: one pass, one [Set] reset line, both of the string's rows cle
     local catDB = addon.db.profile.categories[cat]
     t.falsy(catDB.strings[g], "the format override is gone")
     t.falsy(catDB.disabledStrings and catDB.disabledStrings[g], "and so is the disable flag")
-    t.eq(catDB.strings[g2], "CUSTOM2", "the neighbouring string keeps its override")
+    t.eq(catDB.strings[g2], "CUSTOM2", "the neighboring string keeps its override")
     t.eq(env[g], def, "the default override is live in _G again")
-    t.eq(env[g2], "CUSTOM2", "and the neighbour's is unchanged")
+    t.eq(env[g2], "CUSTOM2", "and the neighbor's is unchanged")
     t.eq(passes, 1, "exactly one ApplyStrings pass")
     t.eq(notifies, 1, "exactly one NotifyPanelChange")
     t.eq(sets, 1, "exactly one [Set] line for the whole reset")
