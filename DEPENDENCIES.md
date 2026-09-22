@@ -70,7 +70,7 @@ ahead of it. Do not "upgrade" to make the version banner look modern.
 | | |
 |---|---|
 | **Version** | **Any recent.** Verified here with 1.2.0; the config uses nothing version-specific, so pinning would be false precision. |
-| **Why** | `luacheck .` is one of the two green-gate commands (`CLAUDE.md`, "Test gate"; `docs/testing.md`, "The gate"). Its configuration is `.luacheckrc` (`std = "lua51"`, with `libs/`, `GlobalStrings/`, the vendored `tests/_kit/` and the frozen `docs/audits/`, `docs/reviews/` bundles excluded; the rest of `tests/` is in lint scope). |
+| **Why** | `luacheck .` is one of the two green-gate commands (`CLAUDE.md`, "Green gate before every commit"; `docs/testing.md`, "The gate"). Its configuration is `.luacheckrc` (`std = "lua51"`, with `libs/`, `GlobalStrings/`, the vendored `tests/_kit/` and the frozen `docs/audits/`, `docs/reviews/` bundles excluded; the rest of `tests/` is in lint scope). |
 | **Install** | `sudo apt install -y lua5.1 luarocks && sudo luarocks install luacheck` |
 | **Verify** | `luacheck --version` |
 
