@@ -903,7 +903,7 @@ drawing the pair itself — which also means a second copy of the reset's wordin
 
 #### T-101 — General visibility, all four modes
 
-**Why:** the setting is declared by the composed block and honoured by `ApplyStrings`. A declared
+**Why:** the setting is declared by the composed block and honored by `ApplyStrings`. A declared
 setting nothing reads is worse than an absent one.
 
 **Steps:** with Loot enabled and a lootable target to hand:
@@ -933,7 +933,7 @@ deviation).
 the same widget every AceConfig options window's left nav is made of, so it should look like
 RPGLootFeed's or any Ace-based addon's. The left pane, 200px wide, lists nineteen entries, one per
 format string, labelled with the friendly names and in the same sorted order the blocks used to be
-stacked in. **The selected entry carries a highlight bar**, not just a different text colour. The
+stacked in. **The selected entry carries a highlight bar**, not just a different text color. The
 right pane holds **one** editor, with **no heading** — the entry is its name — reading
 `[Enable] GLOBALNAME`, then **Original**, **New** and **Preview** at full width, then **Reset** at the
 foot.
@@ -955,7 +955,7 @@ back to **Loot** — you land on the Loot string you left, not the first one. Cl
 reopen it: every category is back on its first string (the pointer is session-only and deliberately
 not persisted).
 
-**Failure mode:** a wrapping strip of buttons (the §13 strip is back); a bare column of coloured text
+**Failure mode:** a wrapping strip of buttons (the §13 strip is back); a bare column of colored text
 with no box and no bar (the hand-built `InteractiveLabel` list is back — that is what this looked
 like before the `TreeGroup`); the longest label clipped (the tree pane went back to AceGUI's 175px
 default); the editor clipped at the bottom (the height clamp's floor is too low); a heading above the

@@ -28,7 +28,7 @@ exclude_files = {
 
 -- NO TOP-LEVEL `ignore`, and none is coming back (lint.md, `M4-11`). This file carried
 -- `ignore = { "212/self", "212/event", "211/addonName" }` until `M4c-06`. Two of those three
--- entries named something real, but a top-level ignore reaches all 43 files, so it silenced those
+-- entries named something real, but a top-level ignore reaches all 48 files, so it silenced those
 -- codes in every file that has no business producing them too. Removing the line reported SIXTEEN
 -- findings, and ELEVEN of them were not conventions at all: eleven files opened
 -- `local addonName, NS = ...` over a folder name they never read. Seven files here DO read it --
