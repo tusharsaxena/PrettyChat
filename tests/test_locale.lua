@@ -211,7 +211,7 @@ end
 --     exactly the fragments PC-R-06 removed.
 --   * SHARED STEM — core/CoreSetup.lua:29-34 makes the degraded-install sentence
 --     one stem plus a per-site tail, so a degraded install says the same thing
---     about WHY at four sites. Four whole-sentence keys would be four copies of
+--     about WHY at five sites. Five whole-sentence keys would be five copies of
 --     the stem and would end that.
 local RESIDUE = {
     -- Not prose the addon speaks.
@@ -261,7 +261,7 @@ local RESIDUE = {
 
     -- SHARED STEM — the degraded-install sentence.
     {"core/CoreSetup.lua", "The LibKa0s library is missing from this installation of Ka0s Pretty Chat ",
-     "SHARED STEM: the one sentence four seams append their own tail to"},
+     "SHARED STEM: the one sentence five seams append their own tail to"},
     {"core/CoreSetup.lua", "(expected in libs/LibKa0s)",
      "SHARED STEM: the stem's second half, naming the path a user has to go and look at"},
     {"core/CoreSetup.lua", "; running on reduced built-in fallbacks.", "SHARED STEM: CoreSetup's tail"},

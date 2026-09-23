@@ -91,12 +91,13 @@ badge and any count quoted in the docs must agree with it.
 - the shared cause clause names the addon and where the library should be
 - the degraded secret guard still neutralizes a protected value
 
-### test_surface_parity.lua (5)
+### test_surface_parity.lua (6)
 
 - the Core stub carries the whole live surface
 - the DebugLog stub carries the whole live surface
 - the Options stub carries the whole live surface
 - the Lifecycle stub carries the whole live surface
+- the Schema stub carries the whole live surface, library and instance
 - the Slash stub carries the whole live surface
 
 ### test_envsetup.lua (9)
@@ -176,7 +177,7 @@ badge and any count quoted in the docs must agree with it.
 - every string registration has both of its schema rows
 - each format row's schema default is the defaults-table default
 
-### test_schema.lua (31)
+### test_schema.lua (45)
 
 - resolves known setting paths and returns nil for unknown ones
 - resolves categories case-insensitively and by prefix
@@ -209,6 +210,20 @@ badge and any count quoted in the docs must agree with it.
 - every page's tabs hold the designed number of rows
 - the partition is total and disjoint — every row on exactly one tab
 - the Categories tabs are CATEGORY_ORDER minus the virtual General
+- seam: one write stores, re-applies once, refreshes once, logs one [Set] line, answers true
+- seam: a format write renders its [Set] value through the shared formatter
+- seam: a session-only write refreshes the panel but re-applies nothing
+- seam: a raising row store propagates, and nothing after it runs
+- seam: /pc set of a surplus-conversion format is refused once and stores nothing
+- seam: /pc reset of a format row restores the shipped default
+- seam: resetting the console row through ApplyDefault or /pc reset closes the console
+- seam: CountChangedRows counts stored rows off their default, never the console
+- seam: FindByPath, Get and AllRows answer the one schema
+- seam: the host's names ARE the library instance's members
+- seam: the schema passes the library's shape check with nothing to report (JC-13)
+- seam: the [Set] line is written before the re-apply (JC-4)
+- seam, library absent: /pc disable and /pc enable still write the master switch
+- seam, library absent: a category reset and the format gate still work
 
 ### test_render.lua (12)
 
@@ -520,14 +535,14 @@ badge and any count quoted in the docs must agree with it.
 | test_lintconfig.lua | 4 |
 | test_prose.lua | 15 |
 | test_libka0s.lua | 28 |
-| test_surface_parity.lua | 5 |
+| test_surface_parity.lua | 6 |
 | test_envsetup.lua | 9 |
 | test_constants.lua | 8 |
 | test_mediasetup.lua | 8 |
 | test_util.lua | 8 |
 | test_locale.lua | 11 |
 | test_defaults.lua | 15 |
-| test_schema.lua | 31 |
+| test_schema.lua | 45 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
 | test_override.lua | 31 |
@@ -541,4 +556,4 @@ badge and any count quoted in the docs must agree with it.
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **423** |
+| **Total** | **438** |
