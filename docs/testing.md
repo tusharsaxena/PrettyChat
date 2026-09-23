@@ -20,8 +20,10 @@ luacheck .                 # static analysis (config in .luacheckrc)
 tests/
   _kit/              -- VENDORED, never edited: framework.lua, loader.lua, mock_base.lua,
                      --                          mock_record.lua, mock_ids.lua, vendor_sync.lua,
-                     --                          test_eol.lua, run-automated-tests.sh, README.md
-  run.lua            -- the suite list, the assertion aliases, and Kit.run
+                     --                          test_eol.lua, test_prose.lua, test_layout_cap.lua,
+                     --                          run-automated-tests.sh, README.md
+  run.lua            -- the suite list, the assertion aliases, Kit.layoutCap, and Kit.run
+  prose_waivers.lua  -- the per-file, per-word waivers the kit's prose gate reads
   loader.lua         -- the instance factory: both load lists derived + per-call isolation
   wow_mock.lua       -- a thin EXTENDER over tests/_kit/mock_base.lua
   test_<module>.lua  -- one suite per module; each reads _G.PC_TEST
@@ -109,35 +111,43 @@ Run **both** of each pair and read the difference between them:
 
 ## The 1500-line cap gate
 
-`tests/test_layout_cap.lua` compares two things: every authored `.lua` git tracks, and the census
-under *Files over the 1500-line cap* in [ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both
-directions, so a file that crosses the cap unremarked and a row left behind for a file that has
-stopped breaching are each a red.
+`tests/_kit/test_layout_cap.lua` — the kit's gate since LibKa0s v1.55.0 (kit revision 25), declared
+in `tests/run.lua` as `{ name = "test_layout_cap", dir = "tests/_kit/" }` — compares two things:
+every authored `.lua` git tracks, and the census under *Files over the 1500-line cap* in
+[ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both directions, so a file that crosses the
+cap unremarked and a row left behind for a file that has stopped breaching are each a red.
 
 `layout-§1` binds **every authored file the repository tracks**, `tests/` included, and carves out
 vendored code (`libs/`, `tests/_kit/`) and generated non-shipping data. A red is cleared by giving
 the file one of the three terminal states the rule allows — peel it, open an issue naming the seam
 a peel would follow, or ratify a register row with a re-check trigger — and then adding its row to
-the census. It is not cleared by raising `CAP`, and it must not be cleared by dropping the suite
+the census. It is not cleared by raising the cap, and it must not be cleared by dropping the suite
 from the runner's list: `Kit.assertSuiteInventory` reddens on that too, which is the point of
 having one.
 
-**The part specific to this repo is the carve-out, and it is checked rather than trusted.**
-PrettyChat has no cap breach; what it has is `GlobalStrings/GlobalStrings.lua`, 23,842 lines of
-generated dump, exempt only while all three of the carve-out's conditions hold — a comment at the
+**The part specific to this repo is the carve-out, and the gate is handed it rather than inferring
+it.** PrettyChat has no cap breach; what it has is `GlobalStrings/GlobalStrings.lua`, 23,842 lines
+of generated dump, exempt only while all three of the carve-out's conditions hold — a comment at the
 top saying it is generated, no load list carrying it, a `.pkgmeta` entry keeping it out of the zip.
-Each of those is one line in one file, and each is the kind of line that gets edited for an
-unrelated reason. So the suite re-derives the exemption from the TOC, `.pkgmeta` and the file's own
-banner on every run instead of carrying the path in a skip list. Break any one condition and the
-failure names which one, because the alternative is a `layout-§1` MUST switching itself back on in
-silence. Sibling repos with no generated data have no equivalent case.
-
-The one thing that would blind it is a second load list — a non-vendored `.xml` beside
-`PrettyChat.toc` — so the arrival of one is itself a failing case, telling you to teach the gate
-about it rather than letting condition two go unread.
+No path betrays those facts, so `tests/run.lua` sets `Kit.layoutCap = { exempt = { "GlobalStrings/" } }`
+before `Kit.run`, and the census marks the dump's row `exempt`. The gate checks only that the two
+agree; whether the three conditions still hold is the auditor's. This repository used to carry a
+hand-written `tests/test_layout_cap.lua` that re-derived them on every run; revision 25's pair-keyed
+inventory reports a local file beside the kit's as a collision (`testing-§9`), so it was retired.
 
 The line figures in the census are dated measurements and nothing asserts them, so an ordinary edit
 to a large file does not redden this gate. Membership is the invariant, not the numbers.
+
+## The US-English prose gate
+
+`tests/_kit/test_prose.lua`, declared as `{ name = "test_prose", dir = "tests/_kit/" }`, holds every
+tracked authored file to `localization-§5`'s published `BRITISH` / `ALLOWED` lists. The only British
+spellings it finds are inside `GlobalStrings/` — Blizzard's English, extracted from the client — and
+they are waived **per file and per word** in `tests/prose_waivers.lua`, which is the form §5 names
+for a generated dump of the client's strings. A new British spelling in any of those files, or any
+spelling in a file the waiver does not name, still reddens. The kit also offers a folder-wide
+`Kit.prose.exempt`; it is not used, because §5 forbids a whole-file waiver and no register row
+ratifies one.
 
 ## The no-blanket-suppression gate
 

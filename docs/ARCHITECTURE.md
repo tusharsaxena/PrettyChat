@@ -315,22 +315,21 @@ What the rule does not allow is a fourth — a file over the cap that nothing an
 "the count sitting in a bundle manifest that no document reads". This table is the remark, and it
 is why an audit **MUST NOT** re-file `layout-§1` against the file in it.
 
-Measured 2026-09-08 with
+Measured 2026-09-08, re-measured 2026-09-23 (unchanged for the dump) with
 
 ```sh
 git ls-files '*.lua' | grep -v '^libs/' | grep -v '^tests/_kit/' | xargs wc -l | sort -rn
 ```
 
-| File | Lines (2026-09-08) | Disposition |
+| File | Lines (2026-09-23) | Disposition |
 |---|---|---|
-| `GlobalStrings/GlobalStrings.lua` | 23,842 | **Exempt** by `layout-§1`'s generated-data carve-out. Not a deviation and not a breach; the three conditions below are re-checked on every run by `tests/test_layout_cap.lua` |
+| `GlobalStrings/GlobalStrings.lua` | 23,842 | `exempt` — `layout-§1`'s generated-data carve-out, handed to the gate as `Kit.layoutCap = { exempt = { "GlobalStrings/" } }` in `tests/run.lua`. Not a breach, so it carries none of the three terminal states; the three conditions below are the auditor's to re-check |
 
 **This addon has no cap breach.** One file is over 1500 lines and it is the generated dump, which
 the carve-out reaches. Nothing here is peeled, and nothing needed to be.
 
 **The exemption is earned condition by condition, and each condition is one line somebody could
-delete for an unrelated reason.** `layout-§1` grants it only when **all three** hold, so all three
-are re-derived on every run rather than asserted once and then trusted:
+delete for an unrelated reason.** `layout-§1` grants it only when **all three** hold:
 
 1. **Generated, and saying so.** `GlobalStrings/GlobalStrings.lua:1` reads
    `-- AUTOMATICALLY GENERATED -- Your benefactors send their regards.` It is an extraction from
@@ -343,18 +342,25 @@ are re-derived on every run rather than asserted once and then trusted:
    zip, so no player downloads a byte of it.
 
 A file failing any one of the three "is an ordinary source file with an unusual origin, and the cap
-binds it". That is why the gate re-derives the answer instead of carrying the path in a skip list:
-a TOC line added back, or a `.pkgmeta` entry tidied away, turns a 23,842-line file into a
-`layout-§1` MUST, and it should turn a suite red on the way in rather than surface in an audit two
-months later.
+binds it". **What the gate checks, and what it leaves to a reader.** Since LibKa0s v1.55.0 the cap
+gate is the kit's (`tests/_kit/test_layout_cap.lua`, declared by the pair in `tests/run.lua`), and it
+cannot read any of the three conditions — they are facts about the repository, not properties a
+path betrays (`layout-§1`). So the exempt set arrives through `Kit.layoutCap.exempt`, and the gate
+asserts only that this table and that set agree about which paths were exempted: a row marked
+`exempt` must name a path in the set, and an over-cap path in the set must be marked `exempt` or
+absent here, never given a terminal state. Whether the exemption is *legitimate* is the auditor's
+call. Until that revision this repository ran a hand-written gate that re-derived all three
+conditions from the TOC, `.pkgmeta` and the banner on every run; it was retired rather than wired
+beside the kit's, because `testing-§9` reports the two as a collision. Nothing in the suite now
+re-derives the banner or the TOC and `.pkgmeta` conditions for this folder, so a TOC line added back
+or the `.pkgmeta` entry tidied away would reach an audit before it reached a red run.
 
-**The line count is dated because it drifts, and nothing asserts it.** What
-`tests/test_layout_cap.lua` asserts is the *membership* of this table, in both directions: a file
-that crosses 1500 and is not listed here turns the suite red, and so does a row for a file that has
-fallen back under the cap or been deleted. The figure in that column is a measurement, not a claim
-about today.
+**The line count is dated because it drifts, and nothing asserts it.** What the gate asserts is the
+*membership* of this table, in both directions: a file that crosses 1500 and is not listed here
+turns the suite red, and so does a row for a file that has fallen back under the cap or been
+deleted. The figure in that column is a measurement, not a claim about today.
 
-**The 1000-1500 band is on notice, not in breach**: `tests/test_panel.lua` (1042) is the only file
+**The 1000-1500 band is on notice, not in breach**: `tests/test_panel.lua` (1053 on 2026-09-23) is the only file
 in it, and the 26 generated chunks are deliberately cut by entry count to stay under 1000 (PC-49)
 so a regeneration cannot walk them into the band. The band is named here so a later reader can tell
 it was looked at rather than missed; nothing in it needs a disposition until it crosses.
