@@ -172,8 +172,10 @@ local batching = 0
 --- leaves the pass over the globals and the panel refresh to the caller, which is
 --- about to do both anyway.
 ---
---- settings/Schema.lua's two entries (`Set` and the batched `ResetRows`) are the
---- only callers. Without this, flipping `General.enabled` paid for one act twice:
+--- settings/Schema.lua is the only caller, in two places: every row's `set`, which is
+--- wrapped in this where the row is built because the schema runtime's `Set`
+--- (LibKa0s-Schema-1.0) calls the row's `set` itself, and the batched `ResetRows`.
+--- Without this, flipping `General.enabled` paid for one act twice:
 --- the arm walked 79 globals and refreshed every page, and then the write seam did
 --- it again (debug-logging-§10 counts that as one pass, one refresh, one line).
 ---

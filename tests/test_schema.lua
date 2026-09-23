@@ -217,10 +217,15 @@ end)
 test("the debug console row is session-only and re-applies nothing", function()
     -- It stores nothing — the console's visibility is not a setting — and it must
     -- not drag a pass over ~170 Blizzard globals behind it. Dies if the
-    -- `sessionOnly` guard in Schema.Set is removed.
+    -- `sessionOnly` guard in the write seam's `announce` is removed.
     local consoleRow = Schema.FindByPath("state.debugConsole")
     t.truthy(consoleRow.sessionOnly, "the row declares itself session-only")
-    t.nilv(consoleRow.default, "and carries no stored default")
+    -- Re-pinned at the LibKa0s-Schema-1.0 adoption (its JC-5). The default is what a
+    -- reset writes, never what is stored, and the library reads a nil default as
+    -- "no restore". It used to be nil, and a reset wrote nil, which the row's `set`
+    -- read as hide. `false` is the same hide, and the seam case below
+    -- ("resetting the console row ... closes the console") pins that it still happens.
+    t.eq(consoleRow.default, false, "and its reset target is closed")
 
     Schema.Set(row.path, "SENTINEL")
     env[row.globalName] = "UNTOUCHED"
@@ -419,4 +424,283 @@ test("the Categories tabs are CATEGORY_ORDER minus the virtual General", functio
         "tab order follows the one display order")
     t.nilv(Schema.ResolveCategory("Categories"),
         "and the page name is not itself a category — no row is stored under it")
+end)
+
+-- ---- the write seam, characterized (LibKa0s-Schema-1.0 adoption) ----------
+--
+-- Written BEFORE the seam moved onto the library's instance, and green against the
+-- host-owned seam it replaced, so each case below is a statement that the adoption
+-- did not change what a player or a caller can observe: what is stored, what reaches
+-- _G, how many passes and refreshes a write costs, the lines it prints, and what the
+-- seam returns. A fresh instance of its own, because the refresher cases above leave
+-- registrations behind.
+
+local seam   = ctx.loadAddon()
+local SS     = seam.NS.Schema
+local SD     = seam.NS.DebugLog
+local SIG    = "Loot.LOOT_ITEM_SELF.format"
+
+-- Run `fn` with the pass and the refresh counted and the debug console capturing.
+-- Returns the pcall result, the lines written, and the two counts.
+local function observed(fn)
+    local addon = seam.addon
+    local wasDebug = seam.NS.State.debug
+    seam.NS.State.debug = true
+    -- The console's frame is built by its first line, and building it fires the
+    -- window's own visibility callback (a General refresh). Warmed before the spies
+    -- go in, so the refresh count below is the write's and not the frame's.
+    seam.NS.Debug("Test", "warm-up")
+    local origApply, origNotify = addon.ApplyStrings, SS.NotifyPanelChange
+    local passes, notifies = 0, 0
+    addon.ApplyStrings = function(self, ...)
+        passes = passes + 1
+        return origApply(self, ...)
+    end
+    SS.NotifyPanelChange = function(...)
+        notifies = notifies + 1
+        return origNotify(...)
+    end
+    SD:Clear()
+    local ok, err = pcall(fn)
+    seam.NS.State.debug = wasDebug
+    addon.ApplyStrings, SS.NotifyPanelChange = origApply, origNotify
+    local lines = {}
+    for i, line in ipairs(SD.buffer) do lines[i] = line end
+    return ok, err, lines, passes, notifies
+end
+
+local function countMatching(lines, needle)
+    local n = 0
+    for _, line in ipairs(lines) do
+        if line:find(needle, 1, true) then n = n + 1 end
+    end
+    return n
+end
+
+local function packed(...) return { n = select("#", ...), ... } end
+
+local function chatSince(at)
+    local out, msgs = {}, seam.env.DEFAULT_CHAT_FRAME.messages
+    for i = at + 1, #msgs do out[#out + 1] = msgs[i] end
+    return out
+end
+
+test("seam: one write stores, re-applies once, refreshes once, logs one [Set] line, answers true", function()
+    seam.addon:ResetAll()
+    local results
+    local ok, err, lines, passes, notifies = observed(function()
+        results = packed(SS.Set("Loot.enabled", false))
+    end)
+    if not ok then error(err, 0) end
+    t.eq(results.n, 1, "a successful write answers exactly one value")
+    t.eq(results[1], true, "and it is true")
+    t.eq(SS.Get("Loot.enabled"), false, "the value is stored")
+    t.eq(seam.addon.db.profile.categories.Loot.enabled, false, "in the category's own table")
+    t.eq(passes, 1, "one ApplyStrings pass")
+    t.eq(notifies, 1, "one panel refresh")
+    t.eq(countMatching(lines, "[Set] Loot.enabled = "), 1, "one [Set] line naming the path")
+    SS.Set("Loot.enabled", true)
+    t.nilv(seam.addon.db.profile.categories.Loot, "writing the default back clears to absence")
+end)
+
+test("seam: a format write renders its [Set] value through the shared formatter", function()
+    seam.addon:ResetAll()
+    local ok, err, lines = observed(function() SS.Set(SIG, "|cffff0000Loot|r %s") end)
+    if not ok then error(err, 0) end
+    t.eq(countMatching(lines, "[Set] " .. SIG .. " = "), 1, "one line")
+    t.eq(countMatching(lines, "||cffff0000Loot||r %s"), 1,
+        "the value's pipes doubled, exactly as /pc get renders it")
+    t.eq(seam.env.LOOT_ITEM_SELF, "|cffff0000Loot|r %s", "and the override reached _G")
+    SS.Set(SIG, SS.FindByPath(SIG).default)
+end)
+
+test("seam: a session-only write refreshes the panel but re-applies nothing", function()
+    local ok, err, lines, passes, notifies = observed(function()
+        SS.Set("state.debugConsole", true)
+        SS.Set("state.debugConsole", false)
+    end)
+    if not ok then error(err, 0) end
+    t.eq(passes, 0, "no pass over the globals for the console toggle")
+    -- Four: the seam refreshes once per write, and the window's own OnShow / OnHide
+    -- refreshes the General page once more each (core/DebugLogSetup.lua).
+    t.eq(notifies, 4, "one seam refresh per write, plus the window's own on show and hide")
+    t.eq(countMatching(lines, "[Set] state.debugConsole = "), 2, "and each write is logged")
+end)
+
+test("seam: a raising row store propagates, and nothing after it runs", function()
+    seam.addon:ResetAll()
+    local r = SS.FindByPath("Money.enabled")
+    local origSet = r.set
+    r.set = function() error("boom in the store") end
+    local ok, err, lines, passes, notifies = observed(function() SS.Set("Money.enabled", false) end)
+    r.set = origSet
+    t.falsy(ok, "the error reaches the caller")
+    t.truthy(tostring(err):find("boom in the store", 1, true), "with its own message")
+    t.eq(passes, 0, "no pass ran after the failed store")
+    t.eq(notifies, 0, "no refresh ran")
+    t.eq(countMatching(lines, "[Set] Money.enabled = "), 0, "and no [Set] line claims the write")
+end)
+
+test("seam: /pc set of a surplus-conversion format is refused once and stores nothing", function()
+    -- The PC-R-01 gate driven through the CLI, the path a value-bound descriptor takes.
+    -- Dies if the gate sits anywhere the dispatcher's `set` does not cross.
+    seam.addon:ResetAll()
+    local r = SS.FindByPath(SIG)
+    local stored, inG = SS.Get(SIG), seam.env.LOOT_ITEM_SELF
+    local at = #seam.env.DEFAULT_CHAT_FRAME.messages
+    local ok, err, lines = observed(function()
+        seam.addon:OnSlashCommand("set " .. SIG .. " Loot | %s %s")
+    end)
+    if not ok then error(err, 0) end
+    t.eq(SS.Get(SIG), stored, "the stored format is unchanged")
+    t.eq(seam.env.LOOT_ITEM_SELF, inG, "and nothing reached _G")
+    local chat = chatSince(at)
+    t.eq(countMatching(chat, "Not saved"), 1, "the refusal is printed exactly once")
+    t.eq(countMatching(chat, SIG), 2, "naming the path, and the echo re-reads the stored value")
+    t.eq(countMatching(lines, "[Set] " .. SIG .. " = "), 0, "and no [Set] line claims a write")
+    t.eq(r.default, stored, "the row still reads its shipped default")
+
+    -- Non-vacuity: the same verb with a valid value writes, and says so.
+    local ok2, err2, lines2 = observed(function()
+        seam.addon:OnSlashCommand("set " .. SIG .. " Loot | %s")
+    end)
+    if not ok2 then error(err2, 0) end
+    t.eq(SS.Get(SIG), "Loot | %s", "a valid format through the same verb is stored")
+    t.eq(countMatching(lines2, "[Set] " .. SIG .. " = "), 1, "and logged")
+    SS.Set(SIG, r.default)
+end)
+
+test("seam: /pc reset of a format row restores the shipped default", function()
+    seam.addon:ResetAll()
+    local r = SS.FindByPath(SIG)
+    SS.Set(SIG, "Loot happened")
+    local ok, err, lines, passes = observed(function()
+        seam.addon:OnSlashCommand("reset " .. SIG)
+    end)
+    if not ok then error(err, 0) end
+    t.eq(SS.Get(SIG), r.default, "the default is back")
+    t.eq(seam.env.LOOT_ITEM_SELF, r.default, "and in _G")
+    t.eq(passes, 1, "one pass")
+    t.eq(countMatching(lines, "[Set] " .. SIG .. " = "), 1, "one [Set] line, as for any write")
+    t.nilv(seam.addon.db.profile.categories.Loot, "a reset to default leaves no category table")
+end)
+
+test("seam: resetting the console row through ApplyDefault or /pc reset closes the console", function()
+    local consoleRow = SS.FindByPath("state.debugConsole")
+    SS.Set("state.debugConsole", true)
+    t.truthy(SD:IsShown(), "the console is open")
+    SS.ApplyDefault(consoleRow)
+    t.falsy(SD:IsShown(), "ApplyDefault closes it")
+    SS.Set("state.debugConsole", true)
+    seam.addon:OnSlashCommand("reset state.debugConsole")
+    t.falsy(SD:IsShown(), "and so does /pc reset")
+end)
+
+test("seam: CountChangedRows counts stored rows off their default, never the console", function()
+    seam.addon:ResetAll()
+    t.eq(SS.CountChangedRows(), 0, "a fresh profile has nothing off default")
+    SS.Set("Loot.enabled", false)
+    SS.Set(SIG, "Loot happened")
+    SS.Set("General.visibility", "never")
+    SS.Set("state.debugConsole", true)
+    t.eq(SS.CountChangedRows(), 3, "three stored rows moved; the session-only row is not counted")
+    SS.Set("state.debugConsole", false)
+    seam.addon:ResetAll()
+    t.eq(SS.CountChangedRows(), 0, "and the reset brings it back to zero")
+end)
+
+test("seam: FindByPath, Get and AllRows answer the one schema", function()
+    t.truthy(SS.FindByPath(SIG), "a row resolves")
+    t.nilv(SS.FindByPath(nil), "a nil path resolves to nothing")
+    t.nilv(SS.FindByPath(42), "and so does a number")
+    t.nilv(SS.Get("Loot"), "a path with no row reads nil: rows are not path-mapped")
+    t.eq(SS.AllRows(), SS.AllRows(), "AllRows is the live table, not a copy")
+    local seen = {}
+    for i, r in ipairs(SS.AllRows()) do
+        t.falsy(seen[r.path], r.path .. " is declared once (row #" .. i .. ")")
+        seen[r.path] = true
+        t.eq(SS.FindByPath(r.path), r, r.path .. " resolves to its own row")
+    end
+end)
+
+-- ---- the write seam, after the adoption ------------------------------------
+
+test("seam: the host's names ARE the library instance's members", function()
+    local S = seam.NS.SchemaRuntime
+    t.eq(seam.NS.SchemaLib, seam.env.LibStub("LibKa0s-Schema-1.0", true),
+        "the live load runs LibKa0s-Schema-1.0, not the host stub")
+    t.eq(SS.Set, S.Set, "Schema.Set is the runtime's Set")
+    t.eq(SS.Get, S.Get, "Schema.Get is the runtime's Get")
+    t.eq(SS.FindByPath, S.FindRow, "Schema.FindByPath is the runtime's FindRow")
+    t.eq(SS.AllRows, S.AllRows, "Schema.AllRows is the runtime's AllRows")
+    t.eq(SS.ApplyDefault, S.ApplyDefault, "Schema.ApplyDefault is the runtime's ApplyDefault")
+    t.eq(SS.CountChangedRows, S.CountOffDefault, "Schema.CountChangedRows is CountOffDefault")
+end)
+
+test("seam: the schema passes the library's shape check with nothing to report (JC-13)", function()
+    -- Every row a table with a path, a known type, one of the two pages and a group,
+    -- and no path declared twice. No `defaultsRoot`: the rows are not path-mapped, so
+    -- the per-kind resolver in runValidation stays the resolution check.
+    local printed = {}
+    local origPrint = seam.NS.Print
+    seam.NS.Print = function(line) printed[#printed + 1] = line end
+    local errors, resolved, missing = seam.NS.SchemaRuntime.Validate({
+        types = { bool = true, string = true },
+        pages = { General = true, Categories = true },
+    })
+    seam.NS.Print = origPrint
+    t.eq(errors, 0, "no shape error: " .. table.concat(printed, " / "))
+    t.eq(resolved, 0, "no resolution check was asked for")
+    t.eq(missing, 0, "so none missed")
+end)
+
+test("seam: the [Set] line is written before the re-apply (JC-4)", function()
+    -- LibKa0s-Schema-1.0 logs before the reaction, so a raising re-apply cannot erase
+    -- the trace of a write that landed. Before the adoption the line came last.
+    seam.addon:ResetAll()
+    local linesAtPass
+    local origApply = seam.addon.ApplyStrings
+    local ok, err, lines = observed(function()
+        local inner = seam.addon.ApplyStrings
+        seam.addon.ApplyStrings = function(self, ...)
+            linesAtPass = #SD.buffer
+            return inner(self, ...)
+        end
+        SS.Set("Loot.enabled", false)
+    end)
+    seam.addon.ApplyStrings = origApply
+    if not ok then error(err, 0) end
+    t.eq(countMatching(lines, "[Set] Loot.enabled = "), 1, "one line")
+    t.eq(linesAtPass, 1, "and it was already in the console when the pass ran")
+    SS.Set("Loot.enabled", true)
+end)
+
+-- ---- library absent: the writes a player can still make ------------------
+--
+-- options-ui-§1 keeps Reset All real and slash-commands-§1 keeps the host verbs,
+-- so a load with no LibKa0s still writes. One case per writer kind: the host verb,
+-- a panel-less category reset, and the seam itself with its gate.
+local bareSeam = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+
+test("seam, library absent: /pc disable and /pc enable still write the master switch", function()
+    local B = bareSeam
+    B.addon:OnSlashCommand("disable")
+    t.eq(B.addon:IsAddonEnabled(), false, "/pc disable stored the switch")
+    t.eq(B.addon.db.profile.enabled, false, "in the profile")
+    B.addon:OnSlashCommand("enable")
+    t.eq(B.addon:IsAddonEnabled(), true, "/pc enable brought it back")
+    t.nilv(B.addon.db.profile.enabled, "clearing to absence")
+end)
+
+test("seam, library absent: a category reset and the format gate still work", function()
+    local B, BS = bareSeam, bareSeam.NS.Schema
+    t.truthy(BS.Set(SIG, "Loot | %s"), "a valid format lands")
+    t.eq(B.env.LOOT_ITEM_SELF, "Loot | %s", "and reaches _G")
+    t.truthy(BS.Set("Loot.enabled", false), "a toggle write lands")
+    t.falsy(BS.Set(SIG, "Loot | %s %s"), "a surplus conversion is still refused")
+    t.eq(BS.Get(SIG), "Loot | %s", "and stores nothing")
+    B.addon:ResetCategory("Loot")
+    t.eq(BS.Get("Loot.enabled"), B.NS.Defaults.Loot.enabled, "the category reset restored the toggle")
+    t.eq(BS.Get(SIG), BS.FindByPath(SIG).default, "and the format")
+    t.nilv(B.addon.db.profile.categories.Loot, "leaving no category table")
 end)

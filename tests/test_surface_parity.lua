@@ -72,11 +72,19 @@ local parityBare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
 -- full addon instance there purely to name it, and naming instances loaded at a
 -- different point in the run than the arms compared against them, which is the one
 -- thing the two-arms-together comment above exists to prevent.
+--
+-- LibKa0s-Schema-1.0 is the exception to "an instance, not the library table", and
+-- deliberately: its by-name case compares the host stub's LIBRARY level (SplitPath,
+-- Read, Write, SameValue, New), which is what the major publishes. Its instance
+-- surface is not in the major's member manifest, so it is pinned with the two-table
+-- form in its own case below, against the live instance (docs/api/Schema/
+-- version-1-docs.md, "Pinning it").
 ctx.setSurfaceSource{
     ["LibKa0s-Options-1.0"]   = parityLive.NS.Helpers,
     ["LibKa0s-DebugLog-1.0"]  = parityLive.NS.DebugLog,
     ["LibKa0s-Slash-1.0"]     = parityLive.NS.SlashCommands,
     ["LibKa0s-Lifecycle-1.0"] = parityLive.NS.Lifecycle,
+    ["LibKa0s-Schema-1.0"]    = parityLive.env.LibStub("LibKa0s-Schema-1.0", true),
 }
 
 -- LibKa0s-Core-1.0 is the one seam this addon does not keep as an instance, and so
@@ -190,6 +198,27 @@ test("the Lifecycle stub carries the whole live surface", function()
     -- installed. So the stub holds the hold set honestly and fires the same two arms
     -- (core/LifecycleSetup.lua).
     ctx.assertSurfaceParity(parityBare.NS.Lifecycle, "LibKa0s-Lifecycle-1.0", {})
+end)
+
+test("the Schema stub carries the whole live surface, library and instance", function()
+    -- The one seam the FEATURE RUNTIME and the host verbs write through, so a missing
+    -- stub member is not a dead panel but a `/pc disable` or a Reset All that raises on
+    -- the install the stub exists for. Non-vacuity first: the degraded arm really is
+    -- running the host's stub, and the live arm the library.
+    t.nilv(parityBare.env.LibStub("LibKa0s-Schema-1.0", true), "the degraded arm has no Schema major")
+    t.truthy(parityBare.NS.SchemaLib, "and falls back to the host's stub")
+    t.eq(parityLive.NS.SchemaLib, parityLive.env.LibStub("LibKa0s-Schema-1.0", true),
+        "while the live arm runs the library")
+    -- The instance, two-table form: every member a live `:New` answers.
+    ctx.assertSurfaceParity(parityLive.NS.SchemaRuntime, parityBare.NS.SchemaRuntime,
+        "schema instance vs host stub")
+    -- The library level, by name.
+    ctx.assertSurfaceParity(parityBare.NS.SchemaLib, "LibKa0s-Schema-1.0", {
+        -- The library's default refusal wording. The stub refuses in this addon's
+        -- own words and carries no copy of the library's constants (the API
+        -- document's stub contract says so).
+        STRINGS = true,
+    })
 end)
 
 test("the Slash stub carries the whole live surface", function()
