@@ -222,7 +222,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 > Why: a Texture is not an AceGUI child, so `ReleaseChildren` does not take the logo away with the
 > `SimpleGroup` that carries it — and AceGUI **pools that group's frame across every addon in the
 > session**. The library's `BuildLandingPage` hides the texture on `OnRelease`
-> (`libs/LibKa0s/OptionsWidgets.lua:337`); the hand-copied body this addon used to carry set no
+> (`libs/LibKa0s/OptionsWidgets.lua:344`); the hand-copied body this addon used to carry set no
 > `OnRelease` at all, so the next widget handed that frame inherited a 300px logo. The leak lands in
 > *somebody else's* panel, which is why no headless case and no PrettyChat-only pass can see it —
 > `tests/test_panel.lua` pins that the release hook exists and hides the texture, and step 2 below is
@@ -844,7 +844,7 @@ re-setting `OnClick` on every dress. Its only headless proof counts `CreateFrame
 selection pass, and the case that would pin band geometry as invariant under selection cannot be
 written yet: the shared mock answers `GetHeight` with 0 for every frame, and that flips at kit 16,
 not here. So a stale label, a mis-anchored button or a band that changed height on a re-dressed tab
-is invisible to every automated check in this repo. `settings/Panel.lua:618` hands `H.TabStrip` a
+is invisible to every automated check in this repo. `settings/Panel.lua:623` hands `H.TabStrip` a
 tab list and the library places the buttons, so this addon measures nothing and can prove nothing
 about the band on its own.
 
@@ -1010,9 +1010,9 @@ That is what the addon does. Do not file it. What these tests look for is an **e
 
 #### T-104 — The snapshot holds the client's own strings, and the restore gives them back
 
-**Why:** `PrettyChat:SnapshotOriginals` (`core/PrettyChat.lua:150-159`) reads `_G[globalName]` at
+**Why:** `PrettyChat:SnapshotOriginals` (`core/PrettyChat.lua:182-191`) reads `_G[globalName]` at
 `OnEnable`, so on this client it is capturing German. `ApplyStrings`'s restore arm
-(`modules/Override.lua:155-164`) writes those values back. A restore is only ever as good as what
+(`modules/Override.lua:294-304`) writes those values back. A restore is only ever as good as what
 the snapshot recorded, and nothing outside a live client can say what it recorded.
 
 **Steps:**

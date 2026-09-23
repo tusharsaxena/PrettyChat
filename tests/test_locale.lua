@@ -211,7 +211,7 @@ end
 --     exactly the fragments PC-R-06 removed.
 --   * SHARED STEM — core/CoreSetup.lua:29-34 makes the degraded-install sentence
 --     one stem plus a per-site tail, so a degraded install says the same thing
---     about WHY at four sites. Four whole-sentence keys would be four copies of
+--     about WHY at five sites. Five whole-sentence keys would be five copies of
 --     the stem and would end that.
 local RESIDUE = {
     -- Not prose the addon speaks.
@@ -243,6 +243,15 @@ local RESIDUE = {
      .. "reading a bug report"},
     {"settings/Schema.lua", "schema: unresolved path (no backing default): ",
      "the same: it names a schema path, and reaching it at all is a defect"},
+    {"settings/Schema.lua", "PrettyChat: no setting ",
+     "the schema runtime stub's refusal, returned as Set's second value on a load with "
+     .. "no LibKa0s. No surface in this addon prints it: both descriptors discard what "
+     .. "`set` returns, and no host call site reads past the first value"},
+    {"settings/Schema.lua", "PrettyChat: invalid value for ", "the same, for a `validate` refusal"},
+    {"settings/Schema.lua", "PrettyChat: nowhere to store ", "the same, for a stored row with no root"},
+    {"settings/Schema.lua", "conversion signature",
+     "the format row's `validate` reason, returned as Set's third value (`why`). Nothing "
+     .. "prints it: the player-facing refusal is the routed `Not saved` line beside it"},
     {"core/DebugLogSetup.lua", "%s v%s, schema v%s, profile '%s'",
      "the debug console's session header, which is copied INTO bug reports and is "
      .. "read by whoever receives them"},
@@ -252,7 +261,7 @@ local RESIDUE = {
 
     -- SHARED STEM — the degraded-install sentence.
     {"core/CoreSetup.lua", "The LibKa0s library is missing from this installation of Ka0s Pretty Chat ",
-     "SHARED STEM: the one sentence four seams append their own tail to"},
+     "SHARED STEM: the one sentence five seams append their own tail to"},
     {"core/CoreSetup.lua", "(expected in libs/LibKa0s)",
      "SHARED STEM: the stem's second half, naming the path a user has to go and look at"},
     {"core/CoreSetup.lua", "; running on reduced built-in fallbacks.", "SHARED STEM: CoreSetup's tail"},
@@ -261,6 +270,8 @@ local RESIDUE = {
     {"settings/OptionsSetup.lua", ", so the settings panel is unavailable.",
      "SHARED STEM: the panel's tail"},
     {"settings/Slash.lua", ", so the settings CLI is unavailable.", "SHARED STEM: the CLI's tail"},
+    {"settings/Schema.lua", ", so the schema was not checked.",
+     "SHARED STEM: the schema runtime stub's Validate tail (LibKa0s-Schema-1.0 absent)"},
 
     -- SPLIT COLOR — the degraded `/pc debug on|off` acknowledgment.
     {"core/DebugLogSetup.lua", "debug logging ",

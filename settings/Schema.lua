@@ -40,19 +40,33 @@ Schema.CATEGORY_PAGE = CATEGORY_PAGE
 -- row carries its own get/set closures rather than relying on a generic
 -- dot-walker.
 
+-- The rows array IS the schema runtime's `rows` (LibKa0s-Schema-1.0, bound at the
+-- bottom of this file): held by reference and never copied, so `/pc list`, the
+-- settings tree and the runtime's index all read one table. Built here in
+-- declaration order, then indexed once when the runtime is made.
 local rows = {}        -- ordered, used by /pc list
-local byPath = {}      -- O(1) lookup by path string
 
 local function addRow(row)
     rows[#rows + 1] = row
-    byPath[row.path] = row
+    return row
 end
 
 -- Row `set` closures are pure DB writes — they do NOT call
 -- PrettyChat:ApplyStrings() or Schema.NotifyPanelChange(). Both side
--- effects live in Schema.Set, and in its batched sibling Schema.ResetRows,
--- which applies once per batch instead of once per row. Callers must go
--- through one of the two; never invoke row.set(value) directly.
+-- effects are the write seam's `announce` (Schema.Set), and its batched sibling
+-- Schema.ResetRows pays them once per batch instead of once per row. Callers
+-- must go through one of the two; never invoke row.set(value) directly.
+--
+-- Each one is BATCHED where it is built, because the seam calls the row's `set`
+-- itself and there is no host step left around the call to batch it from.
+-- `General.enabled`'s `set` drives LibKa0s-Lifecycle-1.0, and an edge stands the
+-- addon down or up: the arm's registration work runs inside the batch, and its
+-- pass over the globals and its panel refresh do not, because `announce` is that
+-- pass and that refresh, for this very write (modules/Override.lua's Batch). One
+-- act, one pass, one [Set] line.
+local function batched(set)
+    return function(v) PrettyChat.Batch(function() set(v) end) end
+end
 --
 -- Every stored closure writes the DEFAULT as an absence: a value equal to the
 -- row's default clears its key, and an emptied `strings` / `disabledStrings` /
@@ -104,6 +118,12 @@ local MASTER_SPEC = {
     defaults  = {
         enabled    = true,
         visibility = "always",
+        -- The console row's reset target. Session state, so nothing stores it; the
+        -- default is what `/pc reset state.debugConsole` and a reset through
+        -- ApplyDefault write, and LibKa0s-Schema-1.0 reads a nil default as NO
+        -- RESTORE (its JC-5). Before the adoption the reset wrote nil, which the
+        -- row's `set` read as hide; `false` is that same hide, said as a value.
+        debugConsole = false,
     },
     -- VERBATIM and unprefixed: session state lives outside the block's own
     -- prefix, and this is the one row whose path the composer does not build.
@@ -264,6 +284,53 @@ local function existingCategoryDB(category)
     return cats and cats[category]
 end
 
+-- THE CONVERSION-SIGNATURE GATE (PC-R-01).
+--
+-- A format string is a contract with Blizzard's caller: it may drop trailing
+-- conversions — string.format ignores surplus ARGUMENTS — but a conversion with
+-- no argument behind it raises. Nothing downstream catches that. The Preview
+-- cannot: `buildSampleArgs` synthesizes its arguments FROM the format, so it
+-- renders a surplus `%s` happily and reports success, and the raise lands later
+-- inside Blizzard's chat handler, on every matching message, in a stack trace
+-- naming a Blizzard frame. So the check belongs at the write.
+--
+-- Compared against THIS ADDON'S SHIPPED DEFAULT rather than Blizzard's live
+-- string, which sounds like the weaker check and is the sound one:
+-- tests/test_defaults.lua already pins every shipped default as a positional
+-- prefix of Blizzard's, so prefix-of-default composes into prefix-of-Blizzard,
+-- and unlike `_G[globalName]` a default cannot have been overwritten by this
+-- addon's own ApplyStrings by the time it is read. The cost is that a player
+-- cannot restore a conversion one of the four SANCTIONED_TRUNCATIONS dropped;
+-- lengthening the default is the way to give it back, and that is a change to
+-- the shipped data where it belongs.
+local function refusedBySignature(row, value)
+    if row.kind ~= "string_format" or type(value) ~= "string" then return false end
+    local asked    = NS.ConversionSequence(value)
+    local supplied = NS.ConversionSequence(row.default)
+    if NS.SequenceIsPrefix(asked, supplied) then return false end
+    NS.Print(NS.L["Not saved — %s asks for %s; %s supplies %s. A format may drop trailing conversions but must not add or retype one."]
+        :format(row.path, NS.DescribeSequence(asked),
+                row.globalName, NS.DescribeSequence(supplied)))
+    return true
+end
+
+-- The gate AS THE ROW'S `validate`, which the write seam runs on every entry: a
+-- player's write, `/pc set`, `/pc reset` (ApplyDefault), a page reset and both
+-- value-bound descriptors. It used to be a wrapper in front of Schema.Set, and a
+-- wrapper is exactly what LibKa0s-Schema-1.0's ApplyDefault bypasses, because it
+-- calls the runtime's own Set (docs/api/Schema/version-1-docs.md, "A gate in front
+-- of the seam"). The refusal keeps its two side effects: the panel refresh that
+-- snaps the New box back to what is actually stored (the `/pc set` echo re-reads
+-- too), and the one debug line saying why.
+local function formatAccepted(row, value)
+    if not refusedBySignature(row, value) then return true end
+    Schema.NotifyPanelChange(row.category)
+    NS.Debug("Set", "%s refused: %s is not a prefix of %s", row.path,
+        NS.DescribeSequence(NS.ConversionSequence(value)),
+        NS.DescribeSequence(NS.ConversionSequence(row.default)))
+    return false, "conversion signature"
+end
+
 -- EVERY ROW ON EVERY PAGE CARRIES A `group` (options-ui-§13). These rows are not
 -- rendered through the flow engine — the Categories page hands H.TabStrip its tab
 -- list directly, because a category tab is one schema row followed by a bespoke
@@ -288,7 +355,7 @@ local function buildCategoryRow(category)
         tooltip  = NS.L["Enable or disable all %s string overrides."]:format(category),
         default  = default,
         get      = function() return PrettyChat:IsCategoryEnabled(category) end,
-        set      = function(v)
+        set      = batched(function(v)
             local on = v and true or false
             if on ~= default then
                 PrettyChat:EnsureCategoryDB(category).enabled = on
@@ -297,7 +364,7 @@ local function buildCategoryRow(category)
                 if catDB then catDB.enabled = nil end
             end
             pruneCategoryDB(category)
-        end,
+        end),
     })
 end
 
@@ -313,7 +380,7 @@ local function buildStringRows(category, globalName, strData)
         label      = strData.label,
         default    = true,
         get        = function() return PrettyChat:IsStringEnabled(category, globalName) end,
-        set        = function(v)
+        set        = batched(function(v)
             if v then
                 local catDB = existingCategoryDB(category)
                 if catDB and catDB.disabledStrings then
@@ -325,10 +392,10 @@ local function buildStringRows(category, globalName, strData)
                 catDB.disabledStrings[globalName] = true
             end
             pruneCategoryDB(category)
-        end,
+        end),
     })
 
-    addRow({
+    local formatRow = addRow({
         path       = category .. "." .. globalName .. ".format",
         category   = category,
         page       = CATEGORY_PAGE,
@@ -339,7 +406,7 @@ local function buildStringRows(category, globalName, strData)
         label      = strData.label,
         default    = strData.default,
         get        = function() return PrettyChat:GetStringValue(category, globalName) end,
-        set        = function(v)
+        set        = batched(function(v)
             if v == NS.Defaults[category].strings[globalName].default then
                 local catDB = existingCategoryDB(category)
                 if catDB and catDB.strings then catDB.strings[globalName] = nil end
@@ -349,8 +416,9 @@ local function buildStringRows(category, globalName, strData)
                 catDB.strings[globalName] = v
             end
             pruneCategoryDB(category)
-        end,
+        end),
     })
+    formatRow.validate = function(v) return formatAccepted(formatRow, v) end
 end
 
 -- Build the schema once at file load. NS.Defaults is populated by
@@ -473,12 +541,228 @@ end
 runValidation()
 
 -- ---------------------------------------------------------------------
+-- The schema runtime (LibKa0s-Schema-1.0), and its degradation stub
+-- ---------------------------------------------------------------------
+
+-- THE DEGRADATION STUB, for a load with no LibKa0s (every major floors on Core, so
+-- they are absent together). WRITE-COMPLETING AND LOG-SILENT, the class the
+-- library's document names (docs/api/Schema/version-1-docs.md, "The degradation
+-- stub"): reads, writes, the row's `validate` (so the PC-R-01 gate still refuses),
+-- `announce` (so the re-apply still happens) and the sweep veto all work, because a
+-- player still reaches them through `/pc enable` / `/pc disable` (slash-commands-§1)
+-- and the Options stub's Reset All (options-ui-§1). What it does not reproduce is
+-- what only feeds the debug console: the [Set] line, the bracket's tally and the
+-- reset count. core/DebugLogSetup.lua's library-less sink discards those lines
+-- anyway.
+--
+-- A DELIBERATE, DOCUMENTED DUPLICATION of the library's reference stub
+-- (tests/test_schema.lua upstream, `referenceStub`), kept close to it so the two
+-- read alike. tests/test_surface_parity.lua pins its member set against a live
+-- instance and against the library by name. Refusals are in this addon's own
+-- words, not a copy of the library's STRINGS.
+local function stubCopy(v)
+    if type(v) ~= "table" then return v end
+    local out = {}
+    for k, x in pairs(v) do out[k] = stubCopy(x) end
+    return out
+end
+
+local SchemaStub = {}
+
+function SchemaStub.SplitPath(path)
+    local parts = {}
+    if path ~= nil then
+        for seg in tostring(path):gmatch("[^%.]+") do parts[#parts + 1] = seg end
+    end
+    return parts
+end
+
+local function stubParts(p) return type(p) == "table" and p or SchemaStub.SplitPath(p) end
+
+function SchemaStub.Read(root, p, first)
+    local parts, node = stubParts(p), root
+    first = first or 1
+    if type(root) ~= "table" or #parts < first then return nil end
+    for i = first, #parts do
+        if type(node) ~= "table" then return nil end
+        node = node[parts[i]]
+    end
+    return node
+end
+
+function SchemaStub.Write(root, p, value, first)
+    local parts, node = stubParts(p), root
+    first = first or 1
+    if type(root) ~= "table" or #parts < first then return end
+    for i = first, #parts - 1 do
+        if type(node[parts[i]]) ~= "table" then node[parts[i]] = {} end
+        node = node[parts[i]]
+    end
+    node[parts[#parts]] = value
+end
+
+function SchemaStub.SameValue(a, b)
+    if a == b then return true end
+    if type(a) ~= "table" or type(b) ~= "table" then return false end
+    for k, v in pairs(a) do if not SchemaStub.SameValue(v, b[k]) then return false end end
+    for k in pairs(b) do if a[k] == nil then return false end end
+    return true
+end
+
+-- The instance's reads and registry. Split from its writes only to keep each
+-- builder under the CCN 15 the complexity gate holds this repo to.
+local function stubReads(S, d, resolve)
+    local held = d.rows
+    function S.AllRows() return held end
+    function S.FindRow(path)
+        if type(path) ~= "string" then return nil end
+        for _, row in ipairs(held) do
+            if type(row) == "table" and row.path == path then return row end
+        end
+    end
+    function S.AddRows(list, at)
+        if type(list) ~= "table" then return 0 end
+        at = type(at) == "number" and math.floor(at) or #held + 1
+        if at > #held + 1 then at = #held + 1 elseif at < 1 then at = 1 end
+        for i, row in ipairs(list) do table.insert(held, at + i - 1, row) end
+        return #list
+    end
+    function S.Reindex() end
+    function S.Get(path, id)
+        local row = S.FindRow(path)
+        if row and type(row.get) == "function" then return row.get() end
+        if type(path) ~= "string" or (row and row.sessionOnly) then return nil end
+        local parts = SchemaStub.SplitPath(path)
+        local root, first = resolve(parts, id)
+        if type(root) ~= "table" then return nil end
+        return SchemaStub.Read(root, parts, first)
+    end
+end
+
+-- The write seam's order without its log and tally: refuse, validate, store, react,
+-- announce.
+local function stubSet(S, d, resolve)
+    return function(path, value, id)
+        local row = S.FindRow(path)
+        if not row then return false, "PrettyChat: no setting " .. tostring(path) end
+        local stored = type(row.set) ~= "function" and not row.sessionOnly
+        local parts, root, first, rid = nil, nil, nil, id
+        if stored then
+            parts = SchemaStub.SplitPath(path)
+            local r, f, got = resolve(parts, id)
+            if type(r) == "table" then root, first = r, f end
+            if got ~= nil then rid = got end
+        end
+        if type(row.validate) == "function" then
+            local ok, why = row.validate(value, rid)
+            if not ok then return false, "PrettyChat: invalid value for " .. path, why end
+        end
+        if stored and not root then return false, "PrettyChat: nowhere to store " .. path end
+        if type(row.set) == "function" then
+            row.set(value)
+        elseif stored then
+            SchemaStub.Write(root, parts, stubCopy(value), first)
+        end
+        if type(row.onChange) == "function" then row.onChange(value, rid) end
+        if type(d.announce) == "function" then d.announce(row, path, value, rid) end
+        return true
+    end
+end
+
+-- Colon-called like the library's own constructor (`SchemaLib:New{...}`); the
+-- receiver is unused because the stub keeps no library-level state.
+function SchemaStub.New(_, d)
+    local S, depth = {}, 0
+    local function resolve(parts, id)
+        if type(d.resolveRoot) ~= "function" then return nil end
+        return d.resolveRoot(parts, id)
+    end
+    stubReads(S, d, resolve)
+    S.Set = stubSet(S, d, resolve)
+    function S.Default(path)
+        local row = S.FindRow(path)
+        return row and stubCopy(row.default)
+    end
+    function S.ApplyDefault(row)
+        if type(row) ~= "table" or type(row.path) ~= "string" or row.default == nil then return false end
+        local exempt = d.resetExempt
+        if depth > 0 and type(exempt) == "table" and exempt[row.path] then return false end
+        return S.Set(row.path, stubCopy(row.default))
+    end
+    -- The bracket keeps its depth, because the sweep veto above reads it; it counts nothing.
+    function S.BulkBegin() depth = depth + 1 end
+    function S.BulkEnd() if depth > 0 then depth = depth - 1 end end
+    function S.BulkRun(act, scope, fn)
+        S.BulkBegin(act, scope)
+        local ok, err = pcall(fn, { profileReset = false })
+        S.BulkEnd(act, scope)
+        if not ok then error(err, 0) end
+    end
+    function S.BulkAdd() end
+    function S.InBulk() return depth > 0 end
+    function S.CountOffDefault() return 0 end
+    function S.ResetCounted(fn) fn() end
+    function S.ConsumeResetCount() return nil end
+    function S.Validate()
+        if type(d.print) == "function" then
+            d.print(NS.LIBKA0S_MISSING .. ", so the schema was not checked.")
+        end
+        return 0, 0, 0
+    end
+    return S
+end
+
+local SchemaLib = LibStub and LibStub("LibKa0s-Schema-1.0", true) or SchemaStub
+NS.SchemaLib = SchemaLib
+
+-- ONE INSTANCE, over the live `rows`. No `resolveRoot`: every row carries its own
+-- get/set, because the dot path does not map onto db.profile (the path scheme above),
+-- so the runtime never walks a stored tree here. Every field is read at call time, so
+-- NS.Debug and NS.Print are resolved when a line is written, the way a suite that
+-- swaps either one expects.
+local S = SchemaLib:New({
+    rows = rows,
+    -- The write's tail, after the store and the [Set] line. A session-only row
+    -- stores nothing and moves no override: showing the debug console must not drag
+    -- a full pass over 79 Blizzard globals behind it. The panel refresh still runs,
+    -- because the checkbox mirroring the window is what has to move.
+    announce = function(row)
+        if not row.sessionOnly then PrettyChat:ApplyStrings() end
+        Schema.NotifyPanelChange(row.category)
+    end,
+    -- The single settings-change trace (debug-logging-§10): `[Set] <path> = <value>`,
+    -- through the shared value formatter so it reads like `/pc get`. ApplyStrings'
+    -- re-apply is an implied consequence and is deliberately not re-echoed.
+    debug  = function(tag, fmt, ...) return NS.Debug(tag, fmt, ...) end,
+    format = function(row, v) return Schema.FormatValue(row, v) end,
+    print  = function(line) return NS.Print(line) end,
+})
+NS.SchemaRuntime = S
+
+-- ---------------------------------------------------------------------
 -- Public API
 -- ---------------------------------------------------------------------
 
-function Schema.FindByPath(path)
-    return byPath[path]
-end
+-- THE HOST'S NAMES, BOUND TO THE RUNTIME'S MEMBERS. Every caller in core/,
+-- modules/ and settings/ keeps calling what it called before; the bodies are the
+-- library's. Values, not wrappers, so each one IS the member.
+--
+--   FindByPath       the index, first-registered wins on a duplicate path (none is)
+--   Get              row.get(); nil for a path with no row
+--   Set              THE single write seam (architecture-§5), in the library's order:
+--                    refuse an unknown path, validate (the PC-R-01 gate above), store
+--                    through the row's batched `set`, the [Set] line, `announce`.
+--                    Answers true, or false, err[, why].
+--   AllRows          the live `rows` table, in declaration order
+--   ApplyDefault     one row back to its default, through Set
+--   CountChangedRows the stored rows that differ from their default (session-only
+--                    rows skipped, because AceDB's profile reset never touches them)
+Schema.FindByPath       = S.FindRow
+Schema.Get              = S.Get
+Schema.Set              = S.Set
+Schema.AllRows          = S.AllRows
+Schema.ApplyDefault     = S.ApplyDefault
+Schema.CountChangedRows = S.CountOffDefault
 
 --- Splice the composed Master controls block in at the HEAD of the schema.
 ---
@@ -496,17 +780,15 @@ function Schema.InstallMasterControls(H)
     if Schema.masterAfterGroup then return end
 
     local composed, tail = H.MasterControls(MASTER_SPEC)
-    local at = 0
+    local wired = {}
     for _, row in ipairs(composed or {}) do
         local wiring = MASTER_WIRING[row.path]
         if wiring then
             row.category = "General"
             row.kind     = wiring.kind
             row.get      = wiring.get
-            row.set      = wiring.set
-            at = at + 1
-            table.insert(rows, at, row)
-            byPath[row.path] = row
+            row.set      = batched(wiring.set)
+            wired[#wired + 1] = row
         else
             -- A canonical leaf this addon has not wired. NOT installed as a
             -- control that reads and writes nothing; reported instead, loudly and
@@ -514,16 +796,12 @@ function Schema.InstallMasterControls(H)
             unwiredMasterPaths[#unwiredMasterPaths + 1] = row.path
         end
     end
+    -- At the head, in declaration order, and re-indexed by the runtime.
+    S.AddRows(wired, 1)
 
     Schema.masterAfterGroup = tail or function() end
     runValidation()
     return composed
-end
-
-function Schema.Get(path)
-    local row = byPath[path]
-    if not row then return nil end
-    return row.get()
 end
 
 -- THE value formatter, and there is exactly one of it (slash-commands-§5: the value
@@ -533,8 +811,8 @@ end
 -- It lives here, beside the rows it renders, rather than in settings/Slash.lua,
 -- because it has two consumers that are not both CLI surfaces: every `list` / `get` /
 -- `set` / `reset` echo, which reaches it as the Slash descriptor's `format` hook, and
--- the `[Set] <path> = <value>` debug trace at the write seam below
--- (debug-logging-§10). Two implementations would let a settings value read one way in
+-- the `[Set] <path> = <value>` debug trace at the write seam, which reaches it as the
+-- schema runtime's `format` (debug-logging-§10). Two implementations would let a settings value read one way in
 -- chat and another in the console log — for the same stored value, at the same
 -- instant.
 --
@@ -597,100 +875,16 @@ function Schema.NotifyPanelChange(category)
     if fn then pcall(fn) end
 end
 
--- THE CONVERSION-SIGNATURE GATE (PC-R-01).
---
--- A format string is a contract with Blizzard's caller: it may drop trailing
--- conversions — string.format ignores surplus ARGUMENTS — but a conversion with
--- no argument behind it raises. Nothing downstream catches that. The Preview
--- cannot: `buildSampleArgs` synthesizes its arguments FROM the format, so it
--- renders a surplus `%s` happily and reports success, and the raise lands later
--- inside Blizzard's chat handler, on every matching message, in a stack trace
--- naming a Blizzard frame. So the check belongs at the write, and the write seam
--- is here.
---
--- Compared against THIS ADDON'S SHIPPED DEFAULT rather than Blizzard's live
--- string, which sounds like the weaker check and is the sound one:
--- tests/test_defaults.lua already pins every shipped default as a positional
--- prefix of Blizzard's, so prefix-of-default composes into prefix-of-Blizzard,
--- and unlike `_G[globalName]` a default cannot have been overwritten by this
--- addon's own ApplyStrings by the time it is read. The cost is that a player
--- cannot restore a conversion one of the four SANCTIONED_TRUNCATIONS dropped;
--- lengthening the default is the way to give it back, and that is a change to
--- the shipped data where it belongs.
-local function refusedBySignature(row, value)
-    if row.kind ~= "string_format" or type(value) ~= "string" then return false end
-    local asked    = NS.ConversionSequence(value)
-    local supplied = NS.ConversionSequence(row.default)
-    if NS.SequenceIsPrefix(asked, supplied) then return false end
-    NS.Print(NS.L["Not saved — %s asks for %s; %s supplies %s. A format may drop trailing conversions but must not add or retype one."]
-        :format(row.path, NS.DescribeSequence(asked),
-                row.globalName, NS.DescribeSequence(supplied)))
-    return true
-end
-
--- Set is the write path the panel widgets, /pc set and /pc reset <path>
--- (via ApplyDefault) all take, so a change in one surface notifies the
--- other. Owns the two post-write side effects (ApplyStrings +
--- NotifyPanelChange) so row closures stay pure DB writes. Its one sibling is
--- Schema.ResetRows below, the batched entry the two reset verbs take.
-function Schema.Set(path, value)
-    local row = byPath[path]
-    if not row then return false end
-    if refusedBySignature(row, value) then
-        -- Refreshed even though nothing was written: the panel's New box is still
-        -- holding the text that was just refused, and the refresher re-reads the
-        -- DB, so this is what snaps it back to what is actually stored. The
-        -- library's `/pc set` echo re-reads too and reports the same unchanged
-        -- value.
-        Schema.NotifyPanelChange(row.category)
-        NS.Debug("Set", "%s refused: %s is not a prefix of %s", row.path,
-            NS.DescribeSequence(NS.ConversionSequence(value)),
-            NS.DescribeSequence(NS.ConversionSequence(row.default)))
-        return false
-    end
-    -- BATCHED, because `General.enabled`'s `set` drives LibKa0s-Lifecycle-1.0 and an
-    -- edge stands the addon down or up. The arm's registration work runs inside
-    -- this; its pass over the globals and its panel refresh do not, because the two
-    -- lines below are that pass and that refresh, for this very write
-    -- (modules/Override.lua's Batch). One act, one pass, one [Set] line.
-    PrettyChat.Batch(function() row.set(value) end)
-    -- A session-only row stores nothing and moves no override: showing the debug
-    -- console must not drag a full pass over 79 Blizzard globals behind it. The
-    -- panel refresh below still runs, because the checkbox mirroring the window
-    -- is what has to move.
-    if not row.sessionOnly then
-        PrettyChat:ApplyStrings()
-    end
-    Schema.NotifyPanelChange(row.category)
-    -- The single settings-change trace (debug-logging-§10): logged once here, at the write
-    -- seam, as `[Set] <path> = <value>` (shared value formatter, so it reads like /pc get).
-    -- ApplyStrings' re-apply is an implied consequence and is deliberately not re-echoed.
-    NS.Debug("Set", "%s = %s", path, Schema.FormatValue(row, value))
-    return true
-end
-
--- Every row, in DECLARATION order — which is the order `/pc list` prints and the
--- order the settings tree shows, so the two can never disagree. Returned as the
--- live table rather than a copy: callers iterate it, and a per-call copy of 173
--- rows on every `list` would be a real cost for no safety nobody asked for.
-function Schema.AllRows()
-    return rows
-end
-
--- Restore ONE row to its default, through the same single write seam a panel
+-- Schema.ApplyDefault restores ONE row, through the same single write seam a panel
 -- checkbox and a slash `set` take, so the debug line, the re-apply and the panel
 -- refresh are identical on all three paths.
 --
 -- Deliberately NOT the implementation behind the per-category Defaults button or
--- `/pc resetall`. Both of those are bulk: driving them row by row through here
+-- `/pc resetall`. Both of those are bulk: driving them row by row through it
 -- would run ApplyStrings once per row (174 passes over 79 globals) and emit one
 -- [Set] line per row into a 1500-line console buffer, where debug-logging-§10 asks
 -- a bulk reset for ONE [Set] line. The per-category and per-string resets take
 -- Schema.ResetRows below; `/pc resetall` is the profile reset (options-ui-§12).
-function Schema.ApplyDefault(row)
-    if not row then return false end
-    return Schema.Set(row.path, row.default)
-end
 
 -- Would writing this row's default change what is stored? Every getter reads its
 -- own stored key and falls back to the default (none cascades through a parent
@@ -700,7 +894,8 @@ local function differsFromDefault(row)
     return row.get() ~= row.default
 end
 
--- Every stored row that currently differs from its default. Session-only rows are
+-- Schema.CountChangedRows (the runtime's CountOffDefault, bound above) counts every
+-- stored row that currently differs from its default. Session-only rows are
 -- skipped, because AceDB's profile reset never touches them.
 --
 -- NOT, on its own, "the rows a profile reset would rewrite" — it used to be
@@ -712,13 +907,6 @@ end
 -- OnProfileReset takes it again afterwards and reports the difference. A row the
 -- reset cannot reach appears in both readings and cancels out, which is why
 -- neither side needs a list of them.
-function Schema.CountChangedRows()
-    local n = 0
-    for _, row in ipairs(rows) do
-        if not row.sessionOnly and differsFromDefault(row) then n = n + 1 end
-    end
-    return n
-end
 
 -- THE BATCHED ENTRY (architecture-§5, #15). Restore a list of rows to their
 -- defaults through the same write step Schema.Set takes, then pay the two side
@@ -744,7 +932,7 @@ end
 local function resetRowsBody(list, tally)
     local reapply, category = false, nil
     for _, row in ipairs(list or {}) do
-        if byPath[row.path] == row and not refusedBySignature(row, row.default) then
+        if S.FindRow(row.path) == row and not refusedBySignature(row, row.default) then
             local differs = differsFromDefault(row)
             -- Batched for the same reason Schema.Set's single write is: resetting
             -- `General.enabled` fires a latch arm, and the batch's one pass below

@@ -176,6 +176,7 @@ if not lib then
                 path        = spec.debugConsolePath or "state.debugConsole",
                 type        = "bool",
                 sessionOnly = true,
+                default     = defaults.debugConsole,
             }
             -- The minimap row (OptionsCompose minor 7). Emitted here for the same
             -- reason `enabled` and `visibility` are: it is a SETTING, and a
@@ -262,14 +263,18 @@ NS.Helpers = lib:New({
 
     -- The single write seam (options-ui-§1). A panel checkbox takes exactly the path
     -- `/pc set` takes: the same [Set] debug line, the same ApplyStrings re-apply, the
-    -- same panel refresh. Two-argument by construction, so no adapter is needed.
-    get          = function(path) return NS.Schema.Get(path) end,
-    set          = function(path, value) NS.Schema.Set(path, value) end,
-    applyDefault = function(row) NS.Schema.ApplyDefault(row) end,
+    -- same panel refresh. The schema runtime's members (LibKa0s-Schema-1.0), handed
+    -- over AS VALUES: they are dot-called closures for exactly this, and there is no
+    -- gate in front of the seam to keep a wrapper for. The PC-R-01 format check is
+    -- each format row's own `validate`, which Set runs on every entry, this one and
+    -- ApplyDefault's included (settings/Schema.lua).
+    get          = NS.SchemaRuntime.Get,
+    set          = NS.SchemaRuntime.Set,
+    applyDefault = NS.SchemaRuntime.ApplyDefault,
 
     -- The page key IS the category name, so no translation layer is needed.
     rowsForPage = function(pageKey) return NS.Schema.RowsByCategory(pageKey) end,
-    allRows     = function() return NS.Schema.AllRows() end,
+    allRows     = NS.SchemaRuntime.AllRows,
 
     -- The landing page's body — the logo, the tagline and the command list — is the
     -- host's half by design (options-ui-§5), handed over as a hook so the library

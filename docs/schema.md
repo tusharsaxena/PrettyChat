@@ -12,7 +12,7 @@ Seven row kinds, addressed by dot path. The first four are the **composed** `Mas
 |------|------|------|-----------|
 | `General.enabled` | `addon_enabled` | bool | `db.profile.enabled` (addon-wide master toggle; `General` is a *virtual category* — no entry in `NS.Defaults`) |
 | `General.visibility` | `addon_visibility` | string enum | `db.profile.visibility` (`always` / `inCombat` / `outOfCombat` / `never`; cleared when set back to `always`, so the default stores nothing). Honored in `ApplyStrings` through `PrettyChat:IsVisible`, and the two combat modes arm `PrettyChatCombatWatcher` |
-| `state.debugConsole` | `debug_console` | bool | **nothing** — `sessionOnly`, mirroring `NS.DebugLog:IsShown()`. Unprefixed and verbatim, because session state lives outside the block's own prefix. `Schema.Set` skips its `ApplyStrings` re-apply for this row |
+| `state.debugConsole` | `debug_console` | bool | **nothing** — `sessionOnly`, mirroring `NS.DebugLog:IsShown()`. Unprefixed and verbatim, because session state lives outside the block's own prefix. The write seam's `announce` skips its `ApplyStrings` re-apply for this row. Its `default` is `false`, the reset target (`MASTER_SPEC.defaults.debugConsole`): `LibKa0s-Schema-1.0` reads a nil default as "no restore", so `/pc reset state.debugConsole` needs a value to write |
 | `global.minimap.hide` | `minimap_button` | bool | `db.global.minimap.hide` — LibDBIcon's **own** table, declared in `core/Database.lua`'s AceDB `global` defaults and handed straight to the library (`launcher-§3`). **Unprefixed and verbatim** for a different reason than the console row's: this table lives in the **global** store, outside the block's profile prefix entirely, because a minimap button belongs to the installation rather than to a profile — a profile switch must not move a player's buttons. **Surviving a reset is a property of the setting, not of that scope** (`launcher-§3`): neither options-ui-§12's *Reset all settings* nor a page-scoped **Defaults** button may un-hide it or re-hide a shown one. Neither reaches it here — the first is `db:ResetProfile()` over a profile this table is not in, and the second does not exist on the General page (`modules/Override.lua`'s `GENERAL_RESET_PATHS` names the two profile rows one by one instead of walking the category, which would reach this one). **The row's sense is inverted against the stored key**: the label says *shown*, `hide` says hidden, so its `get`/`set` negate and the `set` writes the LEAF (never the whole table — LibDBIcon keeps `minimapPos` in there too) and then calls `NS.Launcher:SetShown`. Stored, not session |
 | `<Category>.enabled` | `category_enabled` | bool | `db.profile.categories[Cat].enabled` (via `IsCategoryEnabled` / `EnsureCategoryDB`) |
 | `<Category>.<GLOBALNAME>.enabled` | `string_enabled` | bool | `db.profile.categories[Cat].disabledStrings[NAME]` (**inverted**: `disabledStrings[NAME] = true` means *disabled*) |
@@ -22,33 +22,47 @@ Each row carries its own `get()` and `set(value)` closures. PrettyChat's storage
 
 ## Single write path
 
-Every settings mutation goes through `Schema.Set(path, value)`. `/pc reset <path>` does too, through `Schema.ApplyDefault`. The per-category and per-string resets (`PrettyChat:ResetCategory` / `:ResetString` in `modules/Override.lua`) take its batched entry, `Schema.ResetRows` (see [Reset semantics](#reset-semantics)). The only other writer is `/pc resetall`'s profile reset, which architecture-§5 exempts as a wholesale replacement. The seam itself:
+Every settings mutation goes through `Schema.Set(path, value)`. `/pc reset <path>` does too, through `Schema.ApplyDefault`. The per-category and per-string resets (`PrettyChat:ResetCategory` / `:ResetString` in `modules/Override.lua`) take its batched entry, `Schema.ResetRows` (see [Reset semantics](#reset-semantics)). The only other writer is `/pc resetall`'s profile reset, which architecture-§5 exempts as a wholesale replacement.
+
+**The seam is `LibKa0s-Schema-1.0`'s.** `settings/Schema.lua` builds the rows, then makes one runtime instance over them, `NS.SchemaRuntime`. The instance comes from the library, or from the host's degradation stub when LibKa0s is absent. `Schema.Set`, `Schema.Get`, `Schema.FindByPath`, `Schema.AllRows`, `Schema.ApplyDefault` and `Schema.CountChangedRows` are the instance's `Set`, `Get`, `FindRow`, `AllRows`, `ApplyDefault` and `CountOffDefault`, bound under the names every caller already used. The Options and Slash descriptors take the same members as values. What the host hands the runtime:
 
 ```lua
-function Schema.Set(path, value)
-    local row = byPath[path]
-    if not row then return false end
-    if refusedBySignature(row, value) then      -- the conversion-signature gate
-        Schema.NotifyPanelChange(row.category)  -- snap the New box back to what IS stored
-        return false
-    end
-    row.set(value)                              -- pure DB write
-    if not row.sessionOnly then                 -- the console toggle stores nothing
-        PrettyChat:ApplyStrings()               -- reconcile live _G overrides
-    end
-    Schema.NotifyPanelChange(row.category)      -- refresh the affected page / tab
-    NS.Debug("Set", "%s = %s", path, Schema.FormatValue(row, value))  -- [Set] trace (debug-logging-§10)
-    return true
-end
+local S = SchemaLib:New({
+    rows     = rows,                                  -- the live array, by reference
+    announce = function(row)                          -- the write's tail
+        if not row.sessionOnly then PrettyChat:ApplyStrings() end   -- console toggle stores nothing
+        Schema.NotifyPanelChange(row.category)        -- refresh the affected page / tab
+    end,
+    debug    = function(tag, fmt, ...) return NS.Debug(tag, fmt, ...) end,
+    format   = function(row, v) return Schema.FormatValue(row, v) end,  -- the [Set] value
+    print    = function(line) return NS.Print(line) end,
+})
 ```
+
+No `resolveRoot`: every row carries its own `get` / `set`, so the runtime never walks a stored tree. The runtime's `Set` does, in this order:
+
+1. It refuses an unknown path (`false, err`).
+2. It runs the row's `validate`, which is the conversion-signature gate on a format row (`false, err, why`).
+3. It stores through the row's `set`. Each `set` is wrapped in `PrettyChat.Batch` where the row is built, so a latch arm the write fires leaves its pass to the tail.
+4. It writes the `[Set] <path> = <value>` line.
+5. It runs `announce`.
+6. It answers `true`.
+
+The line comes before the re-apply (the library's order, its JC-4). A raising re-apply therefore cannot erase the trace of a write that landed.
 
 ### The conversion-signature gate
 
 A `string_format` write is refused unless its conversion sequence is a **positional prefix** of the
 shipped default's — never longer, never a different class at a position they share.
 `NS.ConversionSequence(fmt)` (`modules/Override.lua`) is the walk both sides read; the refusal names
-the path, both signatures and the Blizzard global, through `NS.Print`, and writes a `[Set] … refused`
-trace.
+the path, both signatures and the Blizzard global, through `NS.Print`, refreshes the panel so the New
+box snaps back to what is stored, and writes a `[Set] … refused` trace.
+
+The gate is **each format row's `validate`**, not a wrapper in front of `Schema.Set`. The runtime
+runs `validate` on every entry: a panel write, `/pc set`, `/pc reset` through `ApplyDefault`, and
+both value-bound descriptors. A wrapper would be bypassed by `ApplyDefault`, which calls the
+runtime's own `Set` (LibKa0s's `docs/api/Schema/version-1-docs.md`, "A gate in front of the seam").
+`tests/test_schema.lua` drives the refusal through the `/pc set` dispatcher.
 
 Dropping trailing conversions is allowed and deliberately so: `string.format` ignores surplus
 *arguments*, so a shorter format is safe. Asking for one more conversion than the caller passes is the
@@ -68,15 +82,15 @@ The `NS.Debug("Set", …)` line is the single settings-change trace (debug-loggi
 Both surfaces go through the same row's `set()`:
 
 - **Panel widget callbacks** in `settings/Panel.lua` call `NS.Schema.Set(path, val)`.
-- **`/pc set`** goes through `LibKa0s-Slash-1.0`'s `CliSet`, which parses the value through the descriptor's `parse` hook and then calls `NS.Schema.Set(path, newVal)`.
+- **`/pc set`** goes through `LibKa0s-Slash-1.0`'s `CliSet`, which parses the value through the descriptor's `parse` hook and then calls the descriptor's `set`, the runtime's `Set` itself.
 
-Row `set()` closures are pure DB writes — they do **not** run `ApplyStrings` or `NotifyPanelChange` themselves. Both side effects live in `Schema.Set`, and in `Schema.ResetRows`, which applies them once per batch instead of N times. Callers must therefore never invoke `row.set(value)` directly; always go through one of the two.
+Row `set()` closures are pure DB writes — they do **not** run `ApplyStrings` or `NotifyPanelChange` themselves. Both side effects are the write seam's `announce`, and `Schema.ResetRows` pays them once per batch instead of N times. Callers must therefore never invoke `row.set(value)` directly; always go through one of the two.
 
 ### The batched entry: `Schema.ResetRows(rows, label)`
 
 ```lua
 function Schema.ResetRows(list, label)
-    -- for each row: skip it unless byPath owns it and the signature gate passes,
+    -- for each row: skip it unless the runtime's index owns it and the signature gate passes,
     -- then row.set(row.default)
     -- once:  ApplyStrings (unless every row was session-only),
     --        NotifyPanelChange(the rows' shared category, or nil for every page),
@@ -117,12 +131,14 @@ So writing a format back to its default value via `/pc set` or the panel acts as
 | Function | Purpose |
 |----------|---------|
 | `Schema.RowsByCategory(category)` | Filtered subset for one category. Used by `/pc list <Category>` and the no-arg `/pc list` (iterating `CATEGORY_ORDER`); also used by `schemaReady()` as the presence-check sentinel for "is the schema fully built?". |
-| `Schema.FindByPath(path)` | O(1) lookup; returns the row or `nil`. |
-| `Schema.Get(path)` / `Schema.Set(path, value)` | Read/write through the row's closures. `Set` returns `false` if the path is unknown, **or if a `string_format` write fails the conversion-signature gate** (see [Single write path](#single-write-path)); `true` when the write landed. |
-| `Schema.AllRows()` | Every row in **declaration** order — the order `/pc list` prints and the order the settings tree shows. Returned as the live table, not a copy. The `allRows` both the Slash and the Options descriptors are handed. |
-| `Schema.ApplyDefault(row)` | Restore **one** row to `row.default` through `Schema.Set`, so the `[Set]` trace, the re-apply and the panel refresh are identical to a checkbox click. Deliberately **not** the implementation behind the per-category Defaults button or `/pc resetall` — both of those are bulk (see [Reset semantics](#reset-semantics)). |
+| `NS.SchemaRuntime` | The `LibKa0s-Schema-1.0` instance over `rows` (or the host stub's, with LibKa0s absent). Its members are dot-called and are what the Options and Slash descriptors take as values. |
+| `NS.SchemaLib` | The library the runtime came from: `LibStub("LibKa0s-Schema-1.0")`, or the host's write-completing, log-silent degradation stub. `tests/test_surface_parity.lua` pins the stub's surface against both levels of the library. |
+| `Schema.FindByPath(path)` | The runtime's `FindRow`: an indexed lookup; returns the row or `nil`. First-registered wins on a duplicate path, and no path is declared twice (`tests/test_schema.lua` runs the library's `Validate` to zero). |
+| `Schema.Get(path)` / `Schema.Set(path, value)` | The runtime's `Get` / `Set`: read/write through the row's closures. `Set` returns `false, err` if the path is unknown, `false, err, why` **if a `string_format` write fails the conversion-signature gate** (see [Single write path](#single-write-path)), and `true` when the write landed. No caller reads past the first value. |
+| `Schema.AllRows()` | The runtime's `AllRows`: every row in **declaration** order — the order `/pc list` prints and the order the settings tree shows. Returned as the live table, not a copy. The `allRows` both the Slash and the Options descriptors are handed. |
+| `Schema.ApplyDefault(row)` | The runtime's `ApplyDefault`: restore **one** row to a copy of `row.default` through `Set`, so the `[Set]` trace, the re-apply and the panel refresh are identical to a checkbox click. A row with no default is not restored, which is why the console row declares `false`. Deliberately **not** the implementation behind the per-category Defaults button or `/pc resetall` — both of those are bulk (see [Reset semantics](#reset-semantics)). |
 | `Schema.ResetRows(rows, label)` | The write helper's **batched** entry: restores each row to `row.default` through its `set()` behind `Set`'s gates, then runs one `ApplyStrings` pass, one `NotifyPanelChange` and one `[Set] reset <label>: N rows` line, N the rows it changed (debug-logging-§10). A raise partway still writes that line, ending ` (stopped by an error)`, then raises again. Returns N. Called by `PrettyChat:ResetCategory` and `PrettyChat:ResetString`. |
-| `Schema.CountChangedRows()` | The rows a whole-profile reset would rewrite: every stored (non-`sessionOnly`) row whose value differs from its default. `PrettyChat:ResetAll` counts with it **before** `db:ResetProfile()`, because afterwards every row reads as its default. |
+| `Schema.CountChangedRows()` | The runtime's `CountOffDefault`. The rows a whole-profile reset would rewrite: every stored (non-`sessionOnly`) row whose value differs from its default. `PrettyChat:ResetAll` counts with it **before** `db:ResetProfile()`, because afterwards every row reads as its default. |
 | `Schema.FormatValue(row, value)` | **The** value formatter, and there is exactly one of it (slash-commands-§5). The rendering is `LibKa0s-Slash-1.0`'s `FormatValue`; what is this addon's is the one thing the library cannot know — a Blizzard format string is full of `\|c…\|r` escapes, so `\|` is doubled to `\|\|` on the way out, matching what the panel's New box shows and accepts. Two consumers, and that is why it lives here rather than in `settings/Slash.lua`: every `list` / `get` / `set` / `reset` echo (as the Slash descriptor's `format` hook) **and** the `[Set]` debug trace at the write seam (debug-logging-§10), so a value cannot read one way in chat and another in the console log. With the library absent it falls back to the pre-library rendering — no color codes, no `key = value` shape. |
 | `Schema.ResolveCategory(name)` | Case-insensitive PascalCase resolver — `/pc reset loot` finds `Loot`. Returns `nil` for unknowns. |
 | `Schema.NotifyPanelChange(category?)` | Invokes the closure registered for `category` via `RegisterRefresher`. Pass `nil` (or `"General"`) to fire every registered refresher. Safe to call before any tab has been drawn — unregistered categories are no-ops. |

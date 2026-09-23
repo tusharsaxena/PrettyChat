@@ -258,13 +258,15 @@ Sl = lib:New({
     isEnabled = function() return PrettyChat:IsAddonEnabled() end,
     brandName = "Ka0s Pretty Chat",
 
-    -- The single write seam again — the same functions settings/OptionsSetup.lua
-    -- hands the options module, so a CLI change and a checkbox click take one path.
-    get          = function(path) return NS.Schema.Get(path) end,
-    set          = function(path, value) NS.Schema.Set(path, value) end,
-    findRow      = function(path) return NS.Schema.FindByPath(path) end,
-    allRows      = function() return NS.Schema.AllRows() end,
-    applyDefault = function(row) NS.Schema.ApplyDefault(row) end,
+    -- The single write seam again — the same schema-runtime members settings/OptionsSetup.lua
+    -- hands the options module, as values, so a CLI change and a checkbox click take one
+    -- path. `/pc set` of a format crosses the PC-R-01 gate because the gate is the row's
+    -- `validate`, which the runtime's Set runs (settings/Schema.lua).
+    get          = NS.SchemaRuntime.Get,
+    set          = NS.SchemaRuntime.Set,
+    findRow      = NS.SchemaRuntime.FindRow,
+    allRows      = NS.SchemaRuntime.AllRows,
+    applyDefault = NS.SchemaRuntime.ApplyDefault,
 
     -- A row's page IS its category here, and rows are declared in CATEGORY_ORDER, so
     -- `list` groups in the order the settings tree shows.

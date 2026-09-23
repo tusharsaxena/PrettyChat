@@ -46,23 +46,41 @@ _G.PC_TEST = Kit.expose{
     root      = root,
 }
 
+-- layout-§1's generated-data carve-out, handed to the kit's cap gate. `GlobalStrings/` is a dump
+-- extracted from the client (banner at `GlobalStrings/GlobalStrings.lua:1`), loaded by nothing
+-- (no `GlobalStrings\` line in PrettyChat.toc; tests/test_defaults.lua reads the chunks as data)
+-- and dropped from the packaged zip by `.pkgmeta`'s `- GlobalStrings`. The gate cannot read those
+-- three facts, so it takes the set from here and grades the census's `exempt` row against it; the
+-- legitimacy of the exemption is the auditor's (docs/ARCHITECTURE.md, *Files over the 1500-line
+-- cap*).
+--
+-- There is deliberately NO `Kit.prose = { exempt = ... }` beside it. localization-§5 lists a
+-- generated dump of the client's strings among the spellings that MAY be waived per FILE and per
+-- WORD, and forbids a whole-file waiver, so the dump's spellings are waived word by word in
+-- tests/prose_waivers.lua instead.
+Kit.layoutCap = { exempt = { "GlobalStrings/" } }
+
 -- Order is load-order-sensitive; keep it stable.
 Kit.run{
     dir    = "tests/",
     suites = {
         "test_harness",
         "test_vendor_sync",
-        -- The 1500-line cap gate (layout-§1). Beside test_vendor_sync because it is the same
-        -- kind of case: it loads no addon and asserts nothing about behavior, it reads the
-        -- repository itself and compares it against what a document claims about it.
-        "test_layout_cap",
+        -- The 1500-line cap gate (layout-§1), the kit's since revision 25. Beside
+        -- test_vendor_sync because it is the same kind of case: it loads no addon and asserts
+        -- nothing about behavior, it reads the repository itself and compares it against what a
+        -- document claims about it. Declared by the pair (testing-§9): the bare name would wire a
+        -- file of this repo's own, and this repo's hand-written copy was retired for this one.
+        { name = "test_layout_cap", dir = "tests/_kit/" },
         -- The "no blanket suppression" gate (lint.md, `M4-11`). Third of the three
         -- repository-reading gates for the same reason the other two sit here: it loads no
         -- addon and asserts nothing about behavior, it reads `.luacheckrc` and the tracked
         -- set and compares them against a rule. It is what keeps the top-level `ignore`
         -- `M4c-06` removed from being one line for anyone to re-add.
         "test_lintconfig",
-        "test_prose",
+        -- The US-English prose gate (localization-§5), the kit's copy, declared by the pair for
+        -- the same reason; this repo's hand-written copy was retired rather than wired beside it.
+        { name = "test_prose", dir = "tests/_kit/" },
         "test_libka0s",
         -- The four degradation-stub parity cases, split out of test_libka0s by M4-09 so the
         -- gate sits at the path all nine addons carry it at. Immediately after test_libka0s
