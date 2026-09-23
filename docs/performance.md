@@ -44,31 +44,34 @@ under `docs/` and are covered by it. The rest are the vendored payloads (`libs/`
 the generated data (`GlobalStrings/`). **Nothing that ships is excluded**, and `tests/` is deliberately
 still in scope.
 
-Result, verbatim, at the commit that carries this page — **nine lines across five files**:
+Result, verbatim, at the commit that carries this page — **twelve lines across seven files**:
 
 ```
 .luacheckrc:62:    "C_Timer",
-modules/Override.lua:82:        combatWatcher:SetScript("OnEvent", function()
-modules/Override.lua:93:            combatWatcher:RegisterEvent(event)
-settings/Panel.lua:530:    -- A frame later, both are true. C_Timer.After(0, ...) is the client's own way
-settings/Panel.lua:533:    if C_Timer and C_Timer.After then
-settings/Panel.lua:534:        C_Timer.After(0, function() fitTree(ctx) end)
-tests/test_panel.lua:612:-- red under: dropping the C_Timer.After, or scheduling it per render without the
+core/LifecycleSetup.lua:40:-- no AceTimer, no C_Timer ticker and no OnUpdate, it registers no message and no
+modules/Override.lua:121:        combatWatcher:SetScript("OnEvent", function()
+modules/Override.lua:139:        combatWatcher:RegisterEvent(event)
+settings/Panel.lua:535:    -- A frame later, both are true. C_Timer.After(0, ...) is the client's own way
+settings/Panel.lua:538:    if C_Timer and C_Timer.After then
+settings/Panel.lua:539:        C_Timer.After(0, function() fitTree(ctx) end)
+tests/test_disabled.lua:28:-- arms no AceTimer, no C_Timer ticker and no OnUpdate, registers no message and no
+tests/test_panel.lua:623:-- red under: dropping the C_Timer.After, or scheduling it per render without the
 tests/wow_mock.lua:72:--  15.  frame RegisterEvent / UnregisterEvent
-tests/wow_mock.lua:147:function frameMethods:RegisterEvent(event)
+tests/wow_mock.lua:134:-- The EVENT methods are therefore the kit's, not this file's: `RegisterEvent`,
+tests/wow_mock.lua:135:-- `UnregisterEvent`, `IsEventRegistered`, `RegisterUnitEvent` and
 ```
 
 Reconciled, so a future drift is visible rather than arguable. One is a lint declaration
-(`.luacheckrc:62`). Three are the pattern names appearing **inside comments** — `settings/Panel.lua:530`,
-`tests/test_panel.lua:612`, `tests/wow_mock.lua:72` — which describe the discipline rather than doing
-anything. One is the headless harness's own mock (`tests/wow_mock.lua:147` defines
-`frameMethods:RegisterEvent`, which no client ever runs). The remaining **four are call sites in
-shipped code**, and they are the two sections below: the combat watcher, and one next-frame layout
-fit in the settings panel.
+(`.luacheckrc:62`). Seven are the pattern names appearing **inside comments** — `core/LifecycleSetup.lua:40`,
+`settings/Panel.lua:535`, `tests/test_disabled.lua:28`, `tests/test_panel.lua:623` and
+`tests/wow_mock.lua:72`, `:134`, `:135` — which describe the discipline rather than doing anything; the
+harness mock no longer defines its own `RegisterEvent`, because the frame event methods are the kit's.
+The remaining **four are call sites in shipped code**, and they are the two sections below: the combat
+watcher, and one next-frame layout fit in the settings panel.
 
-One thing the grep does *not* return, said out loud so nobody re-adds it: `combatWatcher:UnregisterEvent`
-at `modules/Override.lua:95` **does not match**, because the pattern spells `RegisterEvent` with a
-capital R and `UnregisterEvent` spells it lowercase. An earlier revision of this page printed that
+One thing the grep does *not* return, said out loud so nobody re-adds it: `combatWatcher:UnregisterAllEvents`
+at `modules/Override.lua:135` **does not match**, because the pattern spells `RegisterAllEvents` with a
+capital R and `UnregisterAllEvents` spells it lowercase. An earlier revision of this page printed that
 line inside its result block; the command above cannot produce it, and a result block holding a line
 its own command cannot return is worse than no result block at all.
 
@@ -77,14 +80,14 @@ its own command cannot return is worse than no result block at all.
 What does not survive is *"zero `C_Timer` call"*: `.luacheckrc:62` declares `C_Timer` in
 `read_globals`, and since 2026-09-03 that declaration has a real consumer.
 
-### The combat watcher — `modules/Override.lua:82`, `:93`
+### The combat watcher — `modules/Override.lua:121`, `:139`
 
 Both hits are `PrettyChat:SyncCombatWatch`, and what matters about them is *when they are reached*:
 
 - the frame is **created lazily**, on the first write that stores `General.visibility` as `inCombat`
   or `outOfCombat`. A default install (`always`) creates no frame and registers no event, so on the
   shipped configuration this half of the sweep's runtime answer is still zero;
-- both events are **unregistered** the moment the mode leaves that pair (`modules/Override.lua:95`),
+- both events are **unregistered** the moment the mode leaves that pair (`modules/Override.lua:135`),
   so the subscription tracks the setting rather than outliving it;
 - the handler fires at the combat **boundary** — `PLAYER_REGEN_DISABLED` on entry,
   `PLAYER_REGEN_ENABLED` on exit — at most twice per fight, and never *during* one. Its whole body is
@@ -93,7 +96,7 @@ Both hits are `PrettyChat:SyncCombatWatch`, and what matters about them is *when
 `tests/test_override.lua` pins all three: no frame on a default load, both events registered on a
 combat-scoped write, both dropped on the way back out.
 
-### The settings panel's next-frame fit — `settings/Panel.lua:533-534`
+### The settings panel's next-frame fit — `settings/Panel.lua:538-539`
 
 **A guarded one-shot `C_Timer.After(0, …)` on the settings-panel render path, and nothing else.** It
 arrived on 2026-09-03 with the string-list revamp (`92c43f5`), after this page's sweep was last taken,
@@ -123,7 +126,7 @@ which is why the page went on asserting zero. Its disposition:
   deferred layout measurement, not per-frame and not repeating, and it schedules exactly one
   callback per render rather than one per category click.
 
-`tests/test_panel.lua:614` pins it: the render schedules exactly one fit for the following frame, and
+`tests/test_panel.lua:625` pins it: the render schedules exactly one fit for the following frame, and
 the case goes red if the hop is dropped or if the change guard stops holding.
 
 The addon's other lifecycle hooks are the two AceAddon callbacks above. Both run at login, neither
