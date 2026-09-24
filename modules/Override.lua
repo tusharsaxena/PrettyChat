@@ -1,6 +1,6 @@
 local _, NS = ...
 
--- The override pipeline — PrettyChat's one feature module. Owns the enable-cascade
+-- modules/Override.lua — the override pipeline, PrettyChat's one feature module. Owns the enable-cascade
 -- predicates, the ApplyStrings engine that rewrites _G[GLOBALNAME], the reset paths, and
 -- the sample-render / Test engine. Methods hang off the shared PrettyChat AceAddon object
 -- created in core/PrettyChat.lua; NS.RenderSample is published for the panel's Preview row.

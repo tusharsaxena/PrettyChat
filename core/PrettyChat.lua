@@ -1,6 +1,6 @@
 local addonName, NS = ...
 
--- Core AceAddon object + lifecycle. The override engine (snapshot / ApplyStrings / Test)
+-- core/PrettyChat.lua — the core AceAddon object + lifecycle. The override engine (snapshot / ApplyStrings / Test)
 -- lives in modules/Override.lua; the /pc dispatcher in settings/Slash.lua. This file owns
 -- registration, OnInitialize/OnEnable, the shared chat printer, and the combat-gated
 -- panel open. Methods defined in the other files hang off this same PrettyChat object.

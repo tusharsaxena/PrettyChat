@@ -1,6 +1,6 @@
 local _, NS = ...
 
--- NS.L — localization table with English-key fallback. Keys ARE the
+-- locales/enUS.lua — NS.L, the localization table with English-key fallback. Keys ARE the
 -- enUS strings, so a missing translation returns the key verbatim: any
 -- unwrapped or untranslated string still renders in English (zero
 -- behavior change on enUS). Translators add locale files that assign

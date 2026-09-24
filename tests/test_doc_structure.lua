@@ -351,3 +351,63 @@ test("docs/smoke-tests.md carries a non-English-client section", function()
         .. "heading with a sentence under it records the gap as coverage, which is the failure "
         .. "M5-08 was filed for")
 end)
+
+-- ── Authored source: the self-naming header and the idempotent publish ─────────────────────────
+
+-- WHAT IT PROVES. Two source-shape rules, read off every authored file the TOC loads (libs/ are the
+-- kit loader's to drop, and GlobalStrings/ is loaded by nothing). documentation-§9: directly under
+-- the `local ..., NS = ...` bootstrap, the first comment names the file's own path and one-line
+-- purpose, `-- <path> — <purpose>`, so a reader who lands in the file from a grep knows where they
+-- are. architecture-§3: a module publishes onto NS with `NS.<X> = NS.<X> or {}`, never with a bare
+-- constructor that would replace a table something earlier seeded (PRETTYCHAT-A-20, A-25).
+--
+-- WHAT IT DOES NOT DO. It does not judge the purpose text, and it does not catch a data table
+-- published as a filled literal (`NS.Defaults = { Loot = ... }`) -- that is a declaration, not a
+-- module table, and nothing seeds it earlier.
+local Loader = dofile("tests/_kit/loader.lua")
+
+local function authoredSources()
+    return Loader.tocFiles(ROOT .. "/PrettyChat.toc")
+end
+
+test("every TOC-loaded authored file names its own path in its first comment", function()
+    local files, bad = authoredSources(), {}
+    assertTrue(#files > 0, "PrettyChat.toc lists no authored .lua file")
+    for _, rel in ipairs(files) do
+        local seenVararg, first = false, nil
+        for _, line in ipairs(lines(rel)) do
+            if not seenVararg then
+                seenVararg = line:match("^local [%w_, ]+= %.%.%.%s*$") ~= nil
+            elseif line:match("^%-%-") then
+                first = line
+                break
+            end
+        end
+        local want = "-- " .. rel .. " — "
+        if not (first and first:sub(1, #want) == want) then
+            bad[#bad + 1] = rel .. " (first comment: " .. tostring(first) .. ")"
+        end
+    end
+    assertTrue(#bad == 0, "documentation-§9 wants `-- <path> — <purpose>` as the first comment "
+        .. "under the vararg line; these do not lead with their own path: " .. table.concat(bad, "; "))
+end)
+
+test("no module publishes NS.<X> with a bare table constructor", function()
+    local bad = {}
+    for _, rel in ipairs(authoredSources()) do
+        local bareLocals = {}
+        for n, line in ipairs(lines(rel)) do
+            local ns = line:match("^NS%.(%u[%w_]*)%s*=%s*{}%s*$")
+            if ns then bad[#bad + 1] = ("%s:%d NS.%s = {}"):format(rel, n, ns) end
+            local loc = line:match("^local ([%a_][%w_]*)%s*=%s*{}%s*$")
+            if loc then bareLocals[loc] = n end
+            local key, rhs = line:match("^NS%.(%u[%w_]*)%s*=%s*([%a_][%w_]*)%s*$")
+            if key and bareLocals[rhs] then
+                bad[#bad + 1] = ("%s:%d local %s = {} published as NS.%s at line %d")
+                    :format(rel, bareLocals[rhs], rhs, key, n)
+            end
+        end
+    end
+    assertTrue(#bad == 0, "architecture-§3 publishes a module as `NS.<X> = NS.<X> or {}`; a bare "
+        .. "constructor replaces whatever an earlier file seeded: " .. table.concat(bad, "; "))
+end)

@@ -1,5 +1,8 @@
 local _, NS = ...
 
+-- core/Constants.lua — NS.Const: the chat colors, the [PC] prefix, the string row spacing
+-- and the monospace font every other file reads instead of retyping a literal.
+
 NS.Const = NS.Const or {}
 local Const = NS.Const
 

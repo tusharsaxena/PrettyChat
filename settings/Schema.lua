@@ -1,9 +1,12 @@
 local _, NS = ...
 
+-- settings/Schema.lua — NS.Schema, the settings schema: the category order, one row per
+-- setting, and the helpers the panel, /pc and the reset paths drive those rows through.
+
 local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 
-local Schema = {}
-NS.Schema = Schema
+NS.Schema = NS.Schema or {}
+local Schema = NS.Schema
 
 -- Display order shared with settings/Panel.lua. Iterating NS.Defaults via
 -- pairs() would give a non-deterministic order; this keeps `/pc list`, `/pc test`

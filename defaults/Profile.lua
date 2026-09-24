@@ -1,6 +1,6 @@
 local _, NS = ...
 
--- THE ONE DECLARATION SITE (savedvariables-§2, PRETTYCHAT-A-19). Every setting
+-- defaults/Profile.lua — THE ONE DECLARATION SITE (savedvariables-§2, PRETTYCHAT-A-19). Every setting
 -- default this addon has is typed in this file and nowhere else; readers elsewhere
 -- (the Master block spec, the reader fallbacks, the set arms, the load-time
 -- validator) name these tables instead of retyping a literal. The per-string

@@ -545,7 +545,7 @@ badge and any count quoted in the docs must agree with it.
 - the landing logo is hidden when its group goes back to AceGUI's pool
 - the parent page shows the TOC tagline
 
-### test_doc_structure.lua (8)
+### test_doc_structure.lua (10)
 
 - docs/ARCHITECTURE.md carries the ten sections documentation-§3 names
 - every mandated hub section that has a topic doc has spilled into it
@@ -555,6 +555,8 @@ badge and any count quoted in the docs must agree with it.
 - root CLAUDE.md carries the adherence line documentation-§2 puts second
 - the README's settings table is page-granular, not per-tab
 - docs/smoke-tests.md carries a non-English-client section
+- every TOC-loaded authored file names its own path in its first comment
+- no module publishes NS.<X> with a bare table constructor
 
 ### test_register.lua (1)
 
@@ -593,7 +595,7 @@ badge and any count quoted in the docs must agree with it.
 | test_slash.lua | 52 |
 | test_disabled.lua | 13 |
 | test_panel.lua | 48 |
-| test_doc_structure.lua | 8 |
+| test_doc_structure.lua | 10 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **478** |
+| **Total** | **480** |

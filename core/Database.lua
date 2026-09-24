@@ -1,6 +1,6 @@
 local _, NS = ...
 
--- NS.Database — SavedVariables schema version + migration runner.
+-- core/Database.lua — NS.Database, the SavedVariables schema version + migration runner.
 --
 -- The addon's live settings are keyed by Blizzard GLOBALNAME constants,
 -- which are stable; what moves is which CATEGORY owns a global. The runner gives

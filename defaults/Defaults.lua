@@ -1,5 +1,8 @@
 local _, NS = ...
 
+-- defaults/Defaults.lua — NS.Defaults, the per-category reference data: every GLOBALNAME
+-- PrettyChat overrides, with its row label and the PrettyChat format it defaults to.
+
 NS.Defaults = {
     Loot = {
         enabled = true,
