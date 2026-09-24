@@ -415,9 +415,9 @@ test("every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh t
 
     -- And OnDefault FORWARDS rather than being an assignment taken at build time:
     -- every host parks defaultsOnClick after CreatePanel returns.
-    -- The Categories page's forwarder resolves the ACTIVE TAB at click time, so the
-    -- footer control resets the category the player is looking at. Loot is the first
-    -- tab, hence the one a page nobody has clicked is showing.
+    -- The Categories page's forwarder reaches the page-wide reset, so the footer
+    -- control resets every category tab, the one showing (Loot, on a page nobody
+    -- has clicked) among them.
     local categories = NS.Helpers.__panelFor("Categories")
     NS.Schema.Set("Loot.enabled", false)
     categories.panel.OnDefault()

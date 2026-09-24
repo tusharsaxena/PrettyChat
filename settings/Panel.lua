@@ -699,9 +699,18 @@ local LANDING_SPEC = {
 -- used to run are one page with eight tabs (buildCategoriesBody above).
 H.RegisterOptionsPage("General", "General", function(mainCategory)
     local ctx = H.CreatePanel(nil, "General", {
-        pageKey        = "General",
-        defaultsButton = false,
+        pageKey         = "General",
+        defaultsButton  = true,
+        defaultsTooltip = L["Reset every setting to its default."],
     })
+
+    -- options-ui-§5 gives every sub-page a header Defaults button, and §12 puts the
+    -- General page's behind the SAME implementation as the composed `Reset all
+    -- settings` and `/pc resetall`: the confirmation popup, then PrettyChat:ResetAll.
+    -- Not ResetCategory("General"), which would be a Defaults button doing less than
+    -- the reset beside it. The minimap choice survives because it lives in the
+    -- global store, which a profile reset does not reach (launcher-§3).
+    ctx.panel.defaultsOnClick = function() PrettyChat:ConfirmResetAll() end
     H.SetRenderer(ctx, buildGeneralBody)
     return Settings.RegisterCanvasLayoutSubcategory(mainCategory, ctx.panel, "General")
 end)
@@ -710,28 +719,23 @@ H.RegisterOptionsPage(CATEGORY_PAGE, CATEGORY_PAGE, function(mainCategory)
     local ctx = H.CreatePanel(nil, L["Categories"], {
         pageKey        = CATEGORY_PAGE,
         defaultsButton = true,
-        -- One button, eight tabs, so the sentence names the SELECTED tab rather
-        -- than a category. It replaces the per-page `Reset all %s strings to
-        -- defaults.` this addon carried while every category was its own page:
-        -- that string is built at CreatePanel time and the button is built once,
-        -- on first show, so a per-category wording here could only ever name the
-        -- tab the page happened to open on.
-        defaultsTooltip = L["Reset the strings on the selected category tab to their defaults."],
+        -- One button over eight tabs, and it resets all eight (options-ui-§13: a
+        -- page's Defaults MUST NOT narrow to the visible tab), so the sentence names
+        -- every tab rather than a category or the selected one.
+        defaultsTooltip = L["Reset the strings on every category tab to their defaults."],
     })
 
-    -- Parked for the library to wire onto the Defaults button on first OnShow,
-    -- and forwarded to by the panel's OnDefault so the Settings window's own
-    -- footer control reaches the same body (options-ui-§1). It reads the ACTIVE
-    -- tab at click time rather than closing over one category, because the button
-    -- is wired once and the strip moves underneath it.
+    -- Parked for the library to wire onto the Defaults button on first OnShow, and
+    -- forwarded to by the panel's OnDefault so the Settings window's own footer
+    -- control reaches the same body (options-ui-§1).
     --
-    -- PrettyChat:ResetCategory rather than the library's row-by-row
-    -- RestoreDefaults: it writes every row of the category through the helper's
+    -- PrettyChat:ResetCategoriesPage rather than the library's row-by-row
+    -- RestoreDefaults: it writes every message category's rows through the helper's
     -- batched entry (Schema.ResetRows) and re-applies in ONE pass with ONE
-    -- `[Set] reset <cat>: N rows` line (debug-logging-§10), where the row-by-row
+    -- `[Set] reset Categories: N rows` line (debug-logging-§10), where the row-by-row
     -- form would run ApplyStrings once per row.
     ctx.panel.defaultsOnClick = function()
-        PrettyChat:ResetCategory(activeCategory(ctx))
+        PrettyChat:ResetCategoriesPage()
     end
 
     H.SetRenderer(ctx, buildCategoriesBody)

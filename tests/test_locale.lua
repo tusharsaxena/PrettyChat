@@ -291,8 +291,8 @@ local RESIDUE = {
     -- SPLIT COLOR — settings/Slash.lua's `/pc reset <category>` migration notice.
     {"settings/Slash.lua", "` now takes a setting PATH, not a category.", "SPLIT COLOR"},
     {"settings/Slash.lua", "  To reset one setting: ", "SPLIT COLOR"},
-    {"settings/Slash.lua", "  To reset all of ", "SPLIT COLOR"},
-    {"settings/Slash.lua", " button on its settings page, or ", "SPLIT COLOR"},
+    {"settings/Slash.lua", "  To reset every category: the ", "SPLIT COLOR"},
+    {"settings/Slash.lua", " button on the Categories settings page, or ", "SPLIT COLOR"},
     {"settings/Slash.lua", " for everything.", "SPLIT COLOR"},
 
     -- SPLIT COLOR — the four `usage:` lines. Below the prose floor above (none of

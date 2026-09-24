@@ -290,11 +290,12 @@ end)
 -- Two shapes of addon are genuinely reached by that and this one is neither, so
 -- what these cases exist to do is keep it that way. PrettyChat has a real
 -- `profile` section, so its global reset -- db:ResetProfile() -- cannot see a
--- table in db.global; and its General page draws no Defaults button at all, while
--- the one Defaults button it does draw resets a MESSAGE category. But the minimap
--- row carries `category = "General"` and a `default`, which is exactly the shape a
--- page walk rewrites, so both of those are one edit away from being false and
--- neither edit would look wrong. These drive the real resets and read the store.
+-- table in db.global; its General page's Defaults button is that same profile
+-- reset behind the same confirmation (options-ui-§12), and the Categories page's
+-- button resets the MESSAGE categories. But the minimap row carries
+-- `category = "General"` and a `default`, which is exactly the shape a page walk
+-- rewrites, so both of those are one edit away from being false and neither edit
+-- would look wrong. These drive the real resets and read the store.
 
 local function hidden(inst)
     inst.NS.Schema.Set(MINIMAP_PATH, false)
@@ -342,13 +343,37 @@ function()
     t.eq(inst.addon.db.global.minimap.hide, true, "and the button is still hidden")
 end)
 
-test("Launcher: no page-scoped Defaults button reaches the row either", function()
-    -- The General page is registered with `defaultsButton = false` and never sets
-    -- `ctx.panel.defaultsOnClick`, so the library's OnDefault forwarder has nothing
-    -- to call; the one Defaults button this addon draws is on the Categories page
-    -- and resets the SELECTED MESSAGE CATEGORY. Every category that button can be
-    -- pointed at is driven here, plus the General body itself, which is the one a
-    -- widening would reach.
+-- The General page's REAL header Defaults button, driven end to end: its click
+-- raises the reset-all popup, and accepting it runs PrettyChat:ResetAll, a profile
+-- reset that cannot reach db.global. red under: a General Defaults button bound to
+-- a page walk over RowsByCategory("General"), which would rewrite the minimap row.
+test("Launcher: a hidden minimap button survives the General page's real Defaults button",
+function()
+    local inst = wired()
+    local Schema, db, env = inst.NS.Schema, inst.addon.db, inst.env
+    local panel
+    for _, sub in ipairs(env._settings.subcategories) do
+        if sub.name == "General" then panel = sub.frame end
+    end
+    t.truthy(panel and panel.defaultsOnClick, "the General page wires a Defaults click")
+    hidden(inst)
+    Schema.Set("General.visibility", "never")
+
+    panel.defaultsOnClick()
+    t.eq(env._popupsShown[#env._popupsShown], "PRETTYCHAT_RESET_ALL",
+        "the click asks first")
+    env.StaticPopupDialogs["PRETTYCHAT_RESET_ALL"].OnAccept()
+
+    t.eq(Schema.Get("General.visibility"), "always", "the accepted reset really ran")
+    t.eq(db.global.minimap.hide, true, "and the button is STILL hidden")
+end)
+
+test("Launcher: no per-category reset reaches the row either", function()
+    -- PrettyChat:ResetCategory is the public per-category method. No panel button
+    -- calls it any more (the Categories page's resets every message category in one
+    -- batch, and General's is the profile reset above), and `/pc` never did, but it
+    -- stays public, so every category is driven here, plus the General body itself,
+    -- which is the one a widening of its allow-list would reach.
     local inst = wired()
     local Schema, db = inst.NS.Schema, inst.addon.db
 

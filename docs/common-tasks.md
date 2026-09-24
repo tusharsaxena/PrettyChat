@@ -17,7 +17,7 @@ The single source of truth is `defaults/Defaults.lua` — the schema, the settin
    - `default` is the PrettyChat format. Match Blizzard's `%`-conversion signature exactly — see [Fix a broken format string](#fix-a-broken-format-string) below for what happens if you don't.
 2. `/reload` in-game. The schema rebuilds at file-load, so the new row appears in `/pc list <Category>`, on the category's tab of the Categories page, and the override pipeline starts targeting `_G[YOUR_GLOBAL_NAME]`.
 
-No code changes needed. The Schema row, panel widgets, slash-set parsing, Test preview, and the per-category **Defaults** button all pick the new entry up automatically.
+No code changes needed. The Schema row, panel widgets, slash-set parsing, Test preview, and the Categories page's **Defaults** button all pick the new entry up automatically.
 
 ## Add a new category
 
@@ -59,7 +59,7 @@ If you want the *shipped* default for a key to change (not just per-user overrid
 
 1. Edit the `default` field of the entry in `defaults/Defaults.lua`.
 2. Existing users with a saved override won't see the change — their stored value still wins. The auto-clear on default match doesn't help retroactively (a value that was the *old* default isn't the *new* default).
-3. If you want to force-reset existing users to the new default for that one string, there's no graceful path — they'd need the category page's **Defaults** button (clears every override in that category, not just yours) or to set the format to the new default text exactly (which then auto-clears).
+3. If you want to force-reset existing users to the new default for that one string, there's no graceful path — they'd need the Categories page's **Defaults** button (clears every override in every category, not just yours) or to set the format to the new default text exactly (which then auto-clears).
 4. For most cases, prefer "ship the new default; existing overrides keep working" — that's the contract.
 
 ## Regenerate `GlobalStrings_*.lua` after a WoW patch

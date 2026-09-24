@@ -375,7 +375,7 @@ badge and any count quoted in the docs must agree with it.
 - a profile reset that raises logs its one line marked, exactly once
 - a profile copy that raises logs its one line marked
 
-### test_launcher.lua (27)
+### test_launcher.lua (28)
 
 - Launcher: the broker object's icon IS the file the TOC's IconTexture names
 - Launcher: that file is on disk, 128x128 uncompressed 32-bit TGA
@@ -393,7 +393,8 @@ badge and any count quoted in the docs must agree with it.
 - Launcher: the row is the FOURTH of the composed block, after the console
 - Launcher: `Reset all settings` does not un-hide the button
 - Launcher: `/pc resetall` counts the rows it rewrote, and not the minimap row
-- Launcher: no page-scoped Defaults button reaches the row either
+- Launcher: a hidden minimap button survives the General page's real Defaults button
+- Launcher: no per-category reset reaches the row either
 - Launcher: a reset does not RE-HIDE a shown button either
 - Launcher: /pc enable and /pc disable write the Enable row's own stored path
 - Launcher: the verbs hold NO state of their own — the long form is the same write
@@ -475,7 +476,7 @@ badge and any count quoted in the docs must agree with it.
 - disabled/10: and the same with the holds taken in the other order
 - disabled/10: the perf hold is session-only and the disabled hold is stored
 
-### test_panel.lua (46)
+### test_panel.lua (47)
 
 - registration builds the parent category and two sub-pages
 - the strip carries one tab per message category, in CATEGORY_ORDER
@@ -496,8 +497,9 @@ badge and any count quoted in the docs must agree with it.
 - /pc test writes the same report to the same place the button does
 - Reset all asks for confirmation instead of resetting immediately
 - the Defaults button is deferred to first show, not built at registration
-- the General page has no Defaults button
-- the Defaults button resets the visible tab's category only
+- the General page declares a Defaults button whose click opens the reset-all popup
+- the Categories Defaults button resets every category, not only the selected tab
+- the footer OnDefault forwards to the same page-wide body
 - a category tab builds a toggle, a secondary strip, and ONE string block
 - the category Enable stays ABOVE the tree
 - the list offers the strings in sorted global-name order
@@ -568,11 +570,11 @@ badge and any count quoted in the docs must agree with it.
 | test_database.lua | 26 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
-| test_launcher.lua | 27 |
+| test_launcher.lua | 28 |
 | test_slash.lua | 51 |
 | test_disabled.lua | 13 |
-| test_panel.lua | 46 |
+| test_panel.lua | 47 |
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **457** |
+| **Total** | **459** |

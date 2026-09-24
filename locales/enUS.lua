@@ -39,12 +39,16 @@ local enUS = {
     "Test",
     "Print a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` prints the same report to chat.",
     "Reset this profile to the addon's defaults? Everything you have configured or added in it is discarded — your other profiles are not affected.",
+    -- The General page's header Defaults tooltip. The button is the same reset as
+    -- `Reset all settings` (options-ui-§12), confirmation included.
+    "Reset every setting to its default.",
     -- Categories sub-page (the tab strip). The page name is a heading rather
     -- than a schema path segment, so unlike the category names interpolated
     -- below it is fully translatable.
     "Categories",
     "Strings on these tabs are rewritten only while the master Enable on the General page is on.",
-    "Reset the strings on the selected category tab to their defaults.",
+    -- The page's Defaults tooltip. The button resets every tab (options-ui-§13).
+    "Reset the strings on every category tab to their defaults.",
     -- Category sub-page. `%s` is the category name, which is itself English —
     -- see the `localization-§1` row in docs/ARCHITECTURE.md's deviations
     -- register. The placeholder is what makes the SENTENCE translatable; these

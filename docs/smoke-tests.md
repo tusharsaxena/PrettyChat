@@ -144,14 +144,23 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 - Expected: button stays visible; nothing changes (no error, no panel re-render visible to the user).
 - Note: this covers only the always-visible / no-op-at-default behavior. For the per-string Reset *restoring both format and enable state*, see **T-56** (which supersedes the reset-effect coverage this test used to imply).
 
-#### T-26 — Defaults button acts on the visible tab (header)
+#### T-26 — Defaults button resets every category tab (header)
 
-> Why: the page parks `ctx.panel.defaultsOnClick = function() PrettyChat:ResetCategory(activeCategory(ctx)) end`, the library wires it onto the button it builds on first `OnShow`, and the canvas's `OnDefault` forwards to the same body — no popup. It resolves the tab at **click** time, because the button is wired once and the strip moves underneath it.
+> Why: options-ui-§13 keeps a page's Defaults page-wide. The page parks `ctx.panel.defaultsOnClick = function() PrettyChat:ResetCategoriesPage() end`, the library wires it onto the button it builds on first `OnShow`, and the canvas's `OnDefault` forwards to the same body — no popup.
 
 - Setup: edit one Loot format and disable one Loot string via the panel. Edit one Money format too.
-- Steps: on Categories > Loot, click **Defaults** in the page header. Then click the **Money** tab and click **Defaults** again.
-- Expected: each click reverts only the tab you were looking at; no popup confirmation appears. `/pc list Loot` and `/pc list Money` show everything at default, and no other category moved. Hovering **Defaults** reads "Reset the strings on the selected category tab to their defaults."
-- Failure mode to watch for: the button resets **Loot** no matter which tab is showing. That is the handler having closed over one category instead of reading the active tab.
+- Steps: on Categories > Loot, click **Defaults** in the page header. Set the same edits up again and use the Blizzard Settings window's footer defaults control instead.
+- Expected: each reverts **both** Loot and Money, not only the tab you were looking at; no popup confirmation appears. `/pc list Loot` and `/pc list Money` show everything at default. Hovering **Defaults** reads "Reset the strings on every category tab to their defaults." With the debug console logging, each press writes exactly one `[Set] reset Categories: N rows` line.
+- Failure mode to watch for: Money keeps its edit. That is the handler having narrowed to the active tab.
+
+#### T-26b — The General page's Defaults button is the reset-all path
+
+> Why: options-ui-§5 gives the General page a header Defaults button and §12 puts it behind the same implementation as **Reset all settings** and `/pc resetall`.
+
+- Setup: edit one Loot format, set **General visibility** to *Never*, and untick **Minimap button**.
+- Steps: on the General page, click **Defaults** in the page header. Click **Yes** on the popup.
+- Expected: the click shows the same reset-all confirmation as **Reset all settings**, and nothing changes until you accept. After **Yes**, the profile is back to defaults (Loot at default, visibility *Always*), and the minimap button **stays hidden** (launcher-§3). Hovering **Defaults** reads "Reset every setting to its default."
+- Failure mode to watch for: no popup, or the minimap button reappears.
 
 #### T-26a — The tab strip itself
 
@@ -440,7 +449,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 ### R — Reset standardization
 
-The four reset entry points — per-string **Reset** button, per-category **Defaults** button, `/pc reset <cat>`, `/pc resetall` — share one semantic: each wipes every dimension it owns (custom format *and* enable/disable flag), re-applies via `ApplyStrings`, re-syncs the panel via `NotifyPanelChange`, and emits one `[Set]` line counting the rows it changed (debug-logging-§10).
+The four reset entry points — per-string **Reset** button, the Categories page's **Defaults** button, `/pc reset <path>`, `/pc resetall` — share one semantic: each wipes every dimension it owns (custom format *and* enable/disable flag), re-applies via `ApplyStrings`, re-syncs the panel via `NotifyPanelChange`, and emits one `[Set]` line counting the rows it changed (debug-logging-§10).
 
 #### T-56 — Per-string Reset restores format AND enable state
 
@@ -453,19 +462,19 @@ The four reset entry points — per-string **Reset** button, per-category **Defa
 
 #### T-57 — Reset paths are semantically identical across all four entry points
 
-> Why: per-string Reset, per-category **Defaults**, `/pc reset <cat>`, and `/pc resetall` should all wipe every dimension they own — no path may leave a stale disable flag or override.
+> Why: per-string Reset, the Categories page's **Defaults**, `/pc reset <path>`, and `/pc resetall` should all wipe every dimension they own — no path may leave a stale disable flag or override.
 
 - Setup: disable one Loot string via its toggle **and** edit its format.
-- Steps: repeat the same setup four times, clearing it once each way: (1) row **Reset** button, (2) Loot header **Defaults** button, (3) `/pc reset loot`, (4) `/pc resetall`.
+- Steps: repeat the same setup four times, clearing it once each way: (1) row **Reset** button, (2) the Categories page's header **Defaults** button, (3) `/pc reset loot`, (4) `/pc resetall`.
 - Expected: all four leave `/pc list Loot` fully at default — no lingering `disabledStrings` entry, no lingering override. Confirm after a `/reload` too: `PrettyChatDB.profiles.Default.categories.Loot` is absent (or empty).
 
 #### T-58 — Every reset emits a consistent debug summary
 
-> Why: a reset is a bulk act, so it logs ONE `[Set]` line counting the rows it changed, instead of a `[Set]` line per row (debug-logging-§10). The per-string and per-category resets emit it from `Schema.ResetRows`, the write helper's batched entry. `/pc resetall` is a profile reset, logged once by the `OnProfileReset` handler in `core/PrettyChat.lua`.
+> Why: a reset is a bulk act, so it logs ONE `[Set]` line counting the rows it changed, instead of a `[Set]` line per row (debug-logging-§10). The per-string and Categories-page resets emit it from `Schema.ResetRows`, the write helper's batched entry. `/pc resetall` is a profile reset, logged once by the `OnProfileReset` handler in `core/PrettyChat.lua`.
 
 - Setup: `/pc debug` to open the console and enable logging (toggle green).
-- Steps: trigger each reset once — a row Reset, a category **Defaults**, `/pc resetall`.
-- Expected: exactly one `[Set]` line per reset and no other line, formatted respectively `[Set] reset Loot.LOOT_ITEM_SELF: N rows`, `[Set] reset Loot: N rows`, `[Set] reset profile 'Default' to defaults (N rows)`. N counts only rows that differed from their default, so a reset of an untouched category reads `: 0 rows`. No `[Reset]` line appears, and no line ends in ` (stopped by an error)`: that marker means the reset raised partway, and the error it names is a bug.
+- Steps: trigger each reset once — a row Reset, the Categories page's **Defaults**, `/pc resetall`.
+- Expected: exactly one `[Set]` line per reset and no other line, formatted respectively `[Set] reset Loot.LOOT_ITEM_SELF: N rows`, `[Set] reset Categories: N rows`, `[Set] reset profile 'Default' to defaults (N rows)`. N counts only rows that differed from their default, so a reset of untouched categories reads `: 0 rows`. No `[Reset]` line appears, and no line ends in ` (stopped by an error)`: that marker means the reset raised partway, and the error it names is a bug.
 
 #### T-59 — Reset reflects live in an open panel
 
@@ -737,8 +746,8 @@ single-line border only looks wrong beside a window that has both lines.
 **Expected:**
 - (2) resets **only** that row and echoes `Loot.enabled = true`.
 - (3) resets **nothing**, and prints three lines: that `reset` now takes a PATH not a category, the
-  `/pc reset <path>` replacement with a pointer to `/pc list Loot`, and the **Defaults** button plus
-  `/pc resetall` as the category- and global-scoped replacements.
+  `/pc reset <path>` replacement with a pointer to `/pc list Loot`, and the Categories page's **Defaults**
+  button (every category at once) plus `/pc resetall` as the wider replacements.
 - (4) behaves the same for both spellings — the deprecation resolves the category name the way
   `/pc list` does.
 - (5) is a plain `Setting not found: zzz`; it is neither a path nor a category, so there is nothing
@@ -757,7 +766,7 @@ the other one.
    than the header button.
 3. Repeat once more, and use `/pc resetall`.
 
-**Expected:** all three restore Loot to defaults. (2) is the one that regressed silently before the
+**Expected:** all three restore Loot to defaults (the first two restore every other category tab as well). (2) is the one that regressed silently before the
 adoption — this addon shipped without `OnDefault` on its canvas frames, so the footer control did
 nothing while the header button beside it worked.
 

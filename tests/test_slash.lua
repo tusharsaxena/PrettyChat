@@ -384,7 +384,9 @@ test("/pc reset <Category> answers with the deprecation and both replacements", 
     t.truthy(text:find("now takes a setting PATH, not a category", 1, true),
         "the change itself is named")
     t.truthy(text:find("/pc reset <path>", 1, true), "the per-setting replacement is offered")
-    t.truthy(text:find("Defaults", 1, true), "so is the per-category one")
+    t.truthy(text:find("Defaults", 1, true), "so is the Categories page's button")
+    t.truthy(text:find("To reset every category", 1, true),
+        "which says it resets every category, not only the one named (options-ui-§13)")
     t.truthy(text:find("/pc resetall", 1, true), "and the global one")
     Schema.Set("Loot.enabled", NS.Defaults.Loot.enabled)
 end)

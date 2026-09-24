@@ -411,35 +411,85 @@ test("the Defaults button is deferred to first show, not built at registration",
     t.eq(panel.defaultsBtn.text, L["Defaults"], "labeled Defaults")
 end)
 
-test("the General page has no Defaults button", function()
-    t.falsy(generalPanel.wantsDefaultsButton, "General opts out")
-    t.nilv(generalPanel.defaultsBtn, "and none is built for it")
+-- options-ui-§5 and §12: the General page has a header Defaults button, and it is
+-- the same reset-all path as `Reset all settings` and `/pc resetall`, confirmation
+-- included. A General-only reset would be a Defaults button doing less than the
+-- reset beside it, which §12 forbids.
+test("the General page declares a Defaults button whose click opens the reset-all popup", function()
+    local fresh = ctx.loadAddon()
+    local panel = panelFrame(fresh.env, "General")
+    t.truthy(panel.wantsDefaultsButton, "General asks for a Defaults button")
+    t.eq(panel.defaultsTooltip, fresh.NS.L["Reset every setting to its default."],
+        "with the reset-all tooltip")
+    panel:Show()
+    t.truthy(panel.defaultsBtn, "the first show builds it")
+
+    fresh.NS.Schema.Set("Loot.enabled", false)
+    panel.defaultsBtn:Fire("OnClick")
+    t.eq(fresh.env._popupsShown[#fresh.env._popupsShown], "PRETTYCHAT_RESET_ALL",
+        "the click raises the reset-all confirmation")
+    t.eq(fresh.NS.Schema.Get("Loot.enabled"), false, "and resets nothing until it is accepted")
 end)
 
-test("the Defaults button resets the visible tab's category only", function()
-    -- One button over eight tabs, so it has to resolve the tab at CLICK time. It
-    -- is wired once, on the page's first show, and the strip moves underneath it.
+-- Run fn on a fresh instance's console and hand back its [Set] lines.
+local function setLines(fresh, fn)
+    local D = fresh.NS.DebugLog
+    local wasDebug = fresh.NS.State.debug
+    fresh.NS.State.debug = true
+    fresh.NS.Debug("Test", "warm-up")
+    D:Clear()
+    local ok, err = pcall(fn)
+    fresh.NS.State.debug = wasDebug
+    if not ok then error(err, 0) end
+    local out = {}
+    for _, line in ipairs(D.buffer) do
+        if line:find("[Set]", 1, true) then out[#out + 1] = line end
+    end
+    return out
+end
+
+-- options-ui-§13: the per-page Defaults button stays page-wide, and its blast
+-- radius MUST NOT narrow to the visible tab. One batch over every category's
+-- rows, so one pass and one `[Set] reset Categories: N rows` line.
+--
+-- red under: defaultsOnClick calling ResetCategory(activeCategory(ctx)).
+test("the Categories Defaults button resets every category, not only the selected tab", function()
     local fresh = ctx.loadAddon()
-    fresh.NS.Schema.Set("Loot.enabled", false)
-    fresh.NS.Schema.Set("Money.enabled", false)
+    local S = fresh.NS.Schema
     local panel = panelFrame(fresh.env, "Categories")
     panel:Show()
-    panel.defaultsBtn:Fire("OnClick")
-    t.eq(fresh.NS.Schema.Get("Loot.enabled"), fresh.NS.Defaults.Loot.enabled,
-        "the visible tab's category is reset")
-    t.eq(fresh.NS.Schema.Get("Money.enabled"), false, "other categories are untouched")
+    t.eq(fresh.NS.Helpers.__panelFor("Categories").activeTab, "Loot", "the Loot tab is selected")
+    local lootG = sortedNames("Loot")[1]
+    S.Set("Loot." .. lootG .. ".format", "CUSTOM")
+    S.Set("Money.enabled", false)
 
-    -- Move the strip and the same button follows it.
-    local pageCtx = fresh.NS.Helpers.__panelFor("Categories")
-    for _, b in ipairs(pageCtx.__tabLayout.buttons) do
-        if b.text == "Money" then b:FireScript("OnClick") end
-    end
-    t.eq(pageCtx.activeTab, "Money", "the click moved the strip")
-    fresh.NS.Schema.Set("Loot.enabled", false)
-    panel.defaultsBtn:Fire("OnClick")
-    t.eq(fresh.NS.Schema.Get("Money.enabled"), fresh.NS.Defaults.Money.enabled,
-        "the button now resets the tab the player is looking at")
-    t.eq(fresh.NS.Schema.Get("Loot.enabled"), false, "and leaves the tab they left alone")
+    local lines = setLines(fresh, function() panel.defaultsOnClick() end)
+
+    t.nilv(fresh.addon.db.profile.categories.Loot, "the selected tab's override is cleared")
+    t.nilv(fresh.addon.db.profile.categories.Money, "and so is the other tab's")
+    t.eq(#lines, 1, "exactly one [Set] line for the whole page")
+    t.truthy(lines[1] and lines[1]:find("[Set] reset Categories: 2 rows", 1, true),
+        "naming the page and counting the two changed rows: " .. tostring(lines[1]))
+    t.eq(panel.defaultsBtn.text, fresh.NS.L["Defaults"], "the header button is the one wired")
+    t.eq(panel.defaultsTooltip,
+        fresh.NS.L["Reset the strings on every category tab to their defaults."],
+        "and its tooltip names every tab")
+end)
+
+test("the footer OnDefault forwards to the same page-wide body", function()
+    local fresh = ctx.loadAddon()
+    local S = fresh.NS.Schema
+    local panel = panelFrame(fresh.env, "Categories")
+    panel:Show()
+    S.Set("Loot.enabled", false)
+    S.Set("Misc.enabled", false)
+
+    local lines = setLines(fresh, function() panel.OnDefault() end)
+
+    t.eq(S.Get("Loot.enabled"), fresh.NS.Defaults.Loot.enabled, "the selected tab is reset")
+    t.eq(S.Get("Misc.enabled"), fresh.NS.Defaults.Misc.enabled, "and so is a tab never opened")
+    t.eq(#lines, 1, "through the one batch")
+    t.truthy(lines[1] and lines[1]:find("[Set] reset Categories:", 1, true), tostring(lines[1]))
 end)
 
 -- ---- category sub-page + per-string rows ---------------------------

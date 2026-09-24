@@ -76,7 +76,7 @@ All panel layout dimensions live in **`LibKa0s-Options-1.0`'s `LAYOUT` table**, 
 
 **What moved here, and what was deleted to make room.** `Enable PrettyChat` was a hand-written row in `settings/Schema.lua`; it is composed now, at the same stored path. The `Debug console` checkbox was a bespoke `H.SessionCheckbox` drawn through `buildGeneralBody`'s `pairWith` seam and wired to `NS.DebugLog:ConsoleCheckbox()`; that declaration is **deleted**, and the console toggle is an ordinary schema row with exactly one declaration. `Reset all to defaults` was a hand-written half of an `H.InlineButtonPair`; it is the composer's `Reset all settings` now. Four locale keys left `locales/enUS.lua` with them.
 
-The General sub-page does not show a `Defaults` button in the header — the in-body reset with its popup confirm is the only addon-wide reset surface, and showing both would be redundant.
+The General sub-page's header `Defaults` button (`options-ui-§5`) sits behind the **same implementation** as the in-body `Reset all settings` and `/pc resetall` (`options-ui-§12`): its `defaultsOnClick` is `PrettyChat:ConfirmResetAll()`, so it raises the `PRETTYCHAT_RESET_ALL` popup, and Accept runs `PrettyChat:ResetAll()`, the profile reset. Its tooltip is "Reset every setting to its default." It is never a General-only `ResetCategory('General')`, which would be a Defaults button doing less than the reset beside it. The minimap-button choice survives it because `global.minimap.hide` lives in the global store, which a profile reset does not reach (`launcher-§3`).
 
 ## The `Categories` sub-page and its two strips
 
@@ -136,7 +136,7 @@ The entry that selects a string *is* its name, which is why the `Heading` each b
 
 **Refresher hygiene.** `Schema.refreshers` is keyed by *category*, not by page, so an entry left behind by the tab the player just left is a closure over released AceGUI widgets that the next master-toggle fan-out would still reach. `buildCategoriesBody` drops every category's entry before it draws, and the body it draws re-registers the one now on screen.
 
-**The Defaults button** in the header resolves the **active tab** at click time — it is wired once, on the page's first show, and the strip moves underneath it — and calls `PrettyChat:ResetCategory(...)` directly, no popup confirm. Its tooltip therefore names the selected tab rather than a category: one button cannot carry eight wordings that are fixed at panel-build time. Per-row reset is preserved via the per-string `Reset` button (see below), and the master `Reset all settings` on General has the popup, so a Defaults click is a single recoverable action.
+**The Defaults button** in the header is **page-wide** (`options-ui-§13`: a page's Defaults MUST NOT narrow to the visible tab). It calls `PrettyChat:ResetCategoriesPage()` directly, no popup confirm, which hands `Schema.ResetRows` the rows of every message category (`CATEGORY_ORDER` minus the virtual `General`) as one batch: one `ApplyStrings` pass and one `[Set] reset Categories: N rows` line. The canvas's `OnDefault` forwards to the same body, so the Settings window's footer control does the same. Its tooltip reads "Reset the strings on every category tab to their defaults." Per-row reset is preserved via the per-string `Reset` button (see below), and the master `Reset all settings` on General has the popup.
 
 ## Per-string block
 

@@ -374,9 +374,10 @@ end
 -- `reset` takes a PATH, not a category (slash-commands-§2, convergence #1).
 --
 -- This is a BREAKING change to a verb this addon has shipped since 1.0, and it is
--- deliberate: a page is a property of a settings panel, not of the data, and every
--- category page already carries a Defaults button that resets it. The capability
--- did not move — only its CLI route.
+-- deliberate: a page is a property of a settings panel, not of the data. The
+-- Categories page's Defaults button resets every category tab at once (it is
+-- page-wide, options-ui-§13), and one row at a time is `/pc reset <path>`.
+-- The replacements below say so rather than promising a per-category reset.
 --
 -- It ships with a deprecation message rather than silently, because the old form
 -- still PARSES as something: `/pc reset Loot` would otherwise reach the library and
@@ -394,8 +395,8 @@ function runReset(rest)
                      .. note("` now takes a setting PATH, not a category."))
             NS.Print(note("  To reset one setting: ") .. cmd("/pc reset <path>") .. note(" (try ")
                      .. cmd("/pc list " .. matched) .. note(")"))
-            NS.Print(note("  To reset all of ") .. matched .. note(": the ") .. cmd("Defaults")
-                     .. note(" button on its settings page, or ") .. cmd("/pc resetall")
+            NS.Print(note("  To reset every category: the ") .. cmd("Defaults")
+                     .. note(" button on the Categories settings page, or ") .. cmd("/pc resetall")
                      .. note(" for everything."))
             return
         end
@@ -453,7 +454,7 @@ function setEnabled(on)
 end
 
 -- Kept host-owned rather than delegated to CliResetAll, for the same reason the
--- per-category Defaults button is: PrettyChat:ResetAll wipes the profile and
+-- Categories page's Defaults button is: PrettyChat:ResetAll wipes the profile and
 -- re-applies in ONE pass, and its OnProfileReset handler logs the ONE
 -- `[Set] reset profile '<name>' to defaults (N rows)` line (debug-logging-§10),
 -- where the library's row-by-row form would run ApplyStrings 170 times.

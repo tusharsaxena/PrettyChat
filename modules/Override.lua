@@ -326,13 +326,20 @@ end
 -- Widening this back to the category walk would un-hide a hidden button, and
 -- nothing else in the file would look wrong. tests/test_launcher.lua drives the
 -- reset and asserts the stored value survived it.
+--
+-- NO PANEL BUTTON REACHES THIS ANY MORE, and `/pc` never did. The General page's
+-- header Defaults button is the options-ui-§12 profile reset (ConfirmResetAll ->
+-- ResetAll), and the Categories page's is ResetCategoriesPage below. The allow-list
+-- stays because ResetCategory stays public, and its General arm is the one call
+-- that could still walk the minimap row.
 local GENERAL_RESET_PATHS = { "General.enabled", "General.visibility" }
 
 -- Restore one category to its defaults, every row of it through the write
 -- helper's batched entry (architecture-§5): one ApplyStrings pass, one panel
 -- refresh and one `[Set] reset <cat>: N rows` line, never a pass or a [Set] line
 -- per row (debug-logging-§10). For General the visibility row's own set()
--- re-syncs the combat watcher.
+-- re-syncs the combat watcher. The public per-category method: no panel button
+-- calls it (see GENERAL_RESET_PATHS above).
 --
 -- Dot-defined with a `_` receiver: callers still use the colon form, and the body
 -- reads the schema through NS rather than through the addon table.
@@ -348,6 +355,23 @@ function PrettyChat.ResetCategory(_, category)
         list = Schema.RowsByCategory(category)
     end
     Schema.ResetRows(list, category)
+end
+
+-- The Categories page's Defaults button, and the Settings window's footer control
+-- that forwards to it. options-ui-§13: a page's Defaults stays PAGE-WIDE, and its
+-- blast radius MUST NOT narrow to the visible tab, so this is every message
+-- category's rows (CATEGORY_ORDER minus the virtual General, which is its own
+-- page) in ONE batch: one ApplyStrings pass, one panel refresh and one
+-- `[Set] reset Categories: N rows` line (debug-logging-§10).
+function PrettyChat.ResetCategoriesPage()
+    local Schema = NS.Schema
+    local list = {}
+    for _, category in ipairs(Schema.CATEGORY_ORDER) do
+        if category ~= "General" then
+            for _, row in ipairs(Schema.RowsByCategory(category)) do list[#list + 1] = row end
+        end
+    end
+    return Schema.ResetRows(list, Schema.CATEGORY_PAGE)
 end
 
 --- The global reset, and it is a PROFILE reset (options-ui-§12).
