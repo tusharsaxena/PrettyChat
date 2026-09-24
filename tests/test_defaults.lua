@@ -262,7 +262,7 @@ end)
 -- (options-ui-§15), and the frameless omission of master scale, master alpha and
 -- lock frame is what makes it four rather than seven. The fourth arrived with the
 -- launcher (launcher-§3, OptionsCompose minor 7): stored rather than session, and
--- its default lives in core/Database.lua's GLOBAL half rather than in NS.Defaults,
+-- its default lives in defaults/Profile.lua's NS.GlobalDefaults rather than in NS.Defaults,
 -- which is exactly why the defaults table cannot imply it either.
 local MASTER_ROWS = 4
 
@@ -297,4 +297,40 @@ test("each format row's schema default is the defaults-table default", function(
         t.eq(row.default, e[3].default,
             ("%s.%s format row carries the defaults value"):format(e[1], e[2]))
     end
+end)
+
+-- savedvariables-§2: defaults/Profile.lua is the only place a setting's default is
+-- hard-coded (PRETTYCHAT-A-19). Scans every authored source the TOC loads, with
+-- line comments stripped, for the literals the old copies used. defaults/Defaults.lua
+-- is exempt: it is the per-string reference data (NS.Defaults), whose per-category
+-- `enabled = true` IS that data's declaration, and it sits in defaults/ too.
+test("defaults are declared only in defaults/Profile.lua", function()
+    local EXEMPT = { ["defaults/Profile.lua"] = true, ["defaults/Defaults.lua"] = true }
+    local LITERALS = {
+        "schemaVersion%s*=%s*0%f[^%w_]",
+        "hide%s*=%s*false",
+        'visibility%s*=%s*"always"',
+        "enabled%s*=%s*true",
+    }
+    local scanned, hits = 0, {}
+    for _, rel in ipairs(ctx.loadAddon.tocFiles) do
+        local path = rel:gsub("\\", "/")
+        if path:match("%.lua$") and not EXEMPT[path] then
+            local fh = assert(io.open(ctx.root .. "/" .. path, "r"))
+            local n = 0
+            for line in fh:lines() do
+                n = n + 1
+                local code = line:gsub("%-%-.*$", "")
+                for _, pat in ipairs(LITERALS) do
+                    if code:find(pat) then
+                        hits[#hits + 1] = ("%s:%d: %s"):format(path, n, pat)
+                    end
+                end
+            end
+            fh:close()
+            scanned = scanned + 1
+        end
+    end
+    t.truthy(scanned > 5, "the scan read the addon's authored sources")
+    t.eq(table.concat(hits, "\n"), "", "no default literal outside defaults/Profile.lua")
 end)

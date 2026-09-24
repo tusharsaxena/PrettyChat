@@ -118,8 +118,10 @@ local MASTER_SPEC = {
     -- players already have. It is also what lets the degraded stub in
     -- settings/OptionsSetup.lua answer without a copy of the library's defaults.
     defaults  = {
-        enabled    = true,
-        visibility = "always",
+        -- Read from NS.GeneralDefaults (defaults/Profile.lua), the one place these
+        -- two are declared (savedvariables-§2), never retyped here.
+        enabled    = NS.GeneralDefaults.enabled,
+        visibility = NS.GeneralDefaults.visibility,
         -- The console row's reset target. Session state, so nothing stores it; the
         -- default is what `/pc reset state.debugConsole` and a reset through
         -- ApplyDefault write, and LibKa0s-Schema-1.0 reads a nil default as NO
@@ -134,7 +136,7 @@ local MASTER_SPEC = {
     -- VERBATIM and unprefixed for a DIFFERENT reason than the console path's:
     -- this table lives in the GLOBAL store, outside this block's profile prefix
     -- entirely, because a minimap button belongs to the installation rather than
-    -- to a profile (core/Database.lua says why).
+    -- to a profile (NS.GlobalDefaults in defaults/Profile.lua says why).
     --
     -- STORED, not session, and the composer emits it that way: a hidden button is
     -- furniture the player arranged once, not state a reload ends. The row's
@@ -218,7 +220,8 @@ local MASTER_WIRING = {
         -- format row clears itself: SavedVariables stays empty until a player has
         -- actually chosen something.
         set  = function(v)
-            PrettyChat.db.profile.visibility = (v ~= "always") and v or nil
+            local default = NS.GeneralDefaults.visibility
+            PrettyChat.db.profile.visibility = (v ~= default) and v or nil
             PrettyChat:SyncCombatWatch()
         end,
     },
@@ -480,8 +483,8 @@ end
 
 -- The minimap row's backing default, which is the one that is NOT in NS.Defaults
 -- and not carried on the row either: it is LibDBIcon's own table, declared in the
--- GLOBAL half of core/Database.lua's AceDB defaults (launcher-§3). Checked there
--- rather than waved through, so a default deleted from that table surfaces at load
+-- AceDB `global` defaults, NS.GlobalDefaults in defaults/Profile.lua
+-- (launcher-§3). Checked there rather than waved through, so a default deleted from that table surfaces at load
 -- through the same channel every other unresolved path takes, instead of as a nil
 -- index the first time a player ticks the box.
 --
@@ -489,9 +492,8 @@ end
 -- four guards on its own and inlining them put resolveBackingDefault over the
 -- CCN 15 the complexity gate holds every function in this repo to.
 local function minimapDefaultDeclared()
-    local defaults = NS.Database and NS.Database.defaults
-    local global   = defaults and defaults.global
-    local minimap  = global and global.minimap
+    local global  = NS.GlobalDefaults
+    local minimap = global and global.minimap
     return (type(minimap) == "table" and minimap.hide ~= nil) and true or false
 end
 

@@ -145,7 +145,7 @@ if Launcher then
 
         -- A FUNCTION, not the table — see the header. Resolved at Register time,
         -- which is after AceDB has provisioned `global` from
-        -- NS.Database.defaults.
+        -- NS.GlobalDefaults (defaults/Profile.lua).
         minimap = function()
             return NS.db and NS.db.global and NS.db.global.minimap
         end,

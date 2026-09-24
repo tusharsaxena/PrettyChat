@@ -58,8 +58,8 @@ end
 -- `enabled = true`, and a ladder that consulted this one would come back up
 -- mid-capture. IsStoodDown below is the question the feature path asks.
 function PrettyChat:IsAddonEnabled()
-    if not (self.db and self.db.profile) then return true end
-    if self.db.profile.enabled == nil then return true end
+    if not (self.db and self.db.profile) then return NS.GeneralDefaults.enabled end
+    if self.db.profile.enabled == nil then return NS.GeneralDefaults.enabled end
     return self.db.profile.enabled
 end
 
@@ -92,8 +92,8 @@ end
 -- ---------------------------------------------------------------------
 
 function PrettyChat:GetVisibility()
-    if not (self.db and self.db.profile) then return "always" end
-    return self.db.profile.visibility or "always"
+    if not (self.db and self.db.profile) then return NS.GeneralDefaults.visibility end
+    return self.db.profile.visibility or NS.GeneralDefaults.visibility
 end
 
 function PrettyChat:IsVisible()
@@ -421,8 +421,8 @@ end
 ---
 --- IT DOES NOT REACH THE MINIMAP BUTTON, AND THAT IS THE POINT OF THE SCOPE.
 --- `db.global.minimap` is LibDBIcon's own table and lives in the GLOBAL store
---- (core/Database.lua), so a profile reset cannot touch it: the player's
---- minimap-button choice, and the angle they dragged the button to, both survive
+--- (NS.GlobalDefaults, defaults/Profile.lua), so a profile reset cannot touch
+--- it: the player's minimap-button choice, and the angle they dragged the button to, both survive
 --- this. launcher-§3 makes that a PROPERTY of the setting rather than a
 --- consequence of the storage, and this addon satisfies it here because it has a
 --- real `profile` section for the reset to empty — an addon that stores

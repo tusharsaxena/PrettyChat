@@ -15,9 +15,8 @@ local _, NS = ...
 --   * THE RUNNER OWNS THE STAMP. `global.schemaVersion` advances only past a
 --     step that completed: a step that raises is printed, the walk STOPS, and the
 --     stamp stays at the last version that succeeded, so the next load retries.
---   * `global.schemaVersion = 0` is the declared default, and the stamp survives
---     AceDB's removeDefaults: a stamp above 0 differs from the default so it is
---     never stripped, and a stored 0 that is stripped reads back as the default 0.
+--   * The stamp's declared default is 0 (NS.GlobalDefaults in defaults/Profile.lua,
+--     which says why it survives AceDB's removeDefaults).
 --   * A PROFILE-scoped step is run on EVERY stored profile (db.sv.profiles), not
 --     only the active one, because the stamp is global: an inactive profile the
 --     runner skipped would never be lifted, since a later switch sees the stamp
@@ -32,30 +31,9 @@ local Database = NS.Database
 -- migrations[N] entry that upgrades a DB at version N-1 to version N.
 Database.SCHEMA_VERSION = 2
 
--- Defaults merged into AceDB (PrettyChat.lua adds `profile`). `global`
--- carries the persisted schema version. Starts at 0 so a brand-new DB
--- runs cleanly up to SCHEMA_VERSION (every step is a no-op on a fresh profile).
---
--- `minimap` is LibDBIcon's OWN table and it is DECLARED here rather than
--- written anywhere (launcher-§3, architecture-§5): the declared default is what
--- materializes it, and LibDBIcon then writes `minimapPos` into the same table
--- when the player drags the button. A `minimap = { hide = false }` assignment in
--- a setup file would be a whole-section write over a path a schema row addresses,
--- and it would wipe the position on every login.
---
--- GLOBAL, and that is the decision rather than where the rest of the settings
--- happened to land. A minimap button belongs to the INSTALLATION: a profile
--- switch must not move a player's buttons, and options-ui-§12's `Reset all
--- settings` -- a profile reset by definition -- must not un-hide a button the
--- player deliberately hid. PrettyChat has never stored this table anywhere else,
--- so there is no db.profile.minimap to carry across and no schemaVersion bump:
--- this is a new default, not a stored-path move.
-Database.defaults = {
-    global = {
-        schemaVersion = 0,
-        minimap = { hide = false },
-    },
-}
+-- The AceDB `global` defaults -- the declared 0 stamp and LibDBIcon's minimap
+-- table -- are NS.GlobalDefaults in defaults/Profile.lua, the one declaration site
+-- savedvariables-§2 names (PRETTYCHAT-A-19); the reasoning for both lives there.
 
 -- migrations[v] = { scope = "profile" | "global", run = function(target, db, profileName) end }
 -- upgrades a DB from version v-1 to v. `target` is one raw stored profile table

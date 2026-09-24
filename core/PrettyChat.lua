@@ -26,13 +26,12 @@ function PrettyChat:OnInitialize()
     -- divergence would sit there until the first reader arrived. The copy is
     -- shallow on purpose: AceDB is handed the same `profile` sub-table either
     -- way, so what is being protected here is the published table's KEY SET.
+    -- `global` is NS.GlobalDefaults (defaults/Profile.lua, the one declaration
+    -- site savedvariables-§2 names); defaults/ loads after core/, which is why it
+    -- is assembled here at OnInitialize rather than at file scope.
     local defaults = {}
     for k, v in pairs(NS.ProfileDefaults) do defaults[k] = v end
-    if NS.Database and NS.Database.defaults then
-        for k, v in pairs(NS.Database.defaults) do
-            if defaults[k] == nil then defaults[k] = v end
-        end
-    end
+    defaults.global = NS.GlobalDefaults
 
     self.db = LibStub("AceDB-3.0"):New("PrettyChatDB", defaults, true)
 

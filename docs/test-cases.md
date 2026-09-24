@@ -165,7 +165,7 @@ badge and any count quoted in the docs must agree with it.
 - every recorded residue literal is still unrouted in the file that names it
 - the excluded data table holds only row labels and default format strings
 
-### test_defaults.lua (15)
+### test_defaults.lua (16)
 
 - the defaults table is non-empty and carries real entries
 - every defaults category appears in CATEGORY_ORDER
@@ -182,6 +182,7 @@ badge and any count quoted in the docs must agree with it.
 - the schema builds exactly the rows the defaults imply
 - every string registration has both of its schema rows
 - each format row's schema default is the defaults-table default
+- defaults are declared only in defaults/Profile.lua
 
 ### test_schema.lua (45)
 
@@ -260,10 +261,12 @@ badge and any count quoted in the docs must agree with it.
 - ResetString clears both the custom format and the per-string disable
 - the Tradeskill format is the one that reaches _G for LOOT_ITEM_CREATED_SELF
 
-### test_override.lua (44)
+### test_override.lua (46)
 
 - GetStringValue falls back to the defaults table until overridden
 - IsAddonEnabled treats an absent flag as default-true
+- IsAddonEnabled answers true with no stored key
+- GetVisibility answers always with no stored key
 - IsCategoryEnabled falls back to the category's shipped default
 - IsStringEnabled is true unless the string is explicitly disabled
 - EnsureCategoryDB creates the sub-table once and reuses it
@@ -578,11 +581,11 @@ badge and any count quoted in the docs must agree with it.
 | test_mediasetup.lua | 8 |
 | test_util.lua | 8 |
 | test_locale.lua | 12 |
-| test_defaults.lua | 15 |
+| test_defaults.lua | 16 |
 | test_schema.lua | 45 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
-| test_override.lua | 44 |
+| test_override.lua | 46 |
 | test_database.lua | 26 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
@@ -593,4 +596,4 @@ badge and any count quoted in the docs must agree with it.
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **475** |
+| **Total** | **478** |

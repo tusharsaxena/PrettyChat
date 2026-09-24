@@ -39,7 +39,8 @@ end)
 test("the schema version is a positive integer the defaults start below", function()
     t.eq(type(Database.SCHEMA_VERSION), "number", "SCHEMA_VERSION is a number")
     t.truthy(Database.SCHEMA_VERSION >= 1, "and at least 1")
-    t.eq(Database.defaults.global.schemaVersion, 0,
+    -- Declared in defaults/Profile.lua (savedvariables-§2), not in NS.Database.
+    t.eq(inst.NS.GlobalDefaults and inst.NS.GlobalDefaults.schemaVersion, 0,
         "a brand-new DB starts at 0 so it runs cleanly up to current")
 end)
 
