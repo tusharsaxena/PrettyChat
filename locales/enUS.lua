@@ -23,7 +23,7 @@ local _, NS = ...
 -- library ships no locale files, so a translator restores them by passing a
 -- PLAIN table of just those keys as the module's descriptor `L`, in
 -- core/DebugLogSetup.lua and settings/OptionsSetup.lua — never NS.L itself
--- (see LibKa0s's README, "The `L` trap"). Recorded at LIBKA0S-05.
+-- (see LibKa0s's README.md, "The `L` trap").
 
 local L = setmetatable({}, {
     __index = function(_, k) return k end,

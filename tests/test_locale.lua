@@ -266,7 +266,7 @@ local RESIDUE = {
      "the same brand name, handed to LibKa0s-DebugLog-1.0 as its window title"},
     {"core/DebugLogSetup.lua", "Debug console",
      "a descriptor field crossing to LibKa0s. NS.L must never be handed to a library "
-     .. "descriptor as its `L` (LIBKA0S-05, 'The L trap'); a translator restores these "
+     .. "descriptor as its `L` (LibKa0s README.md, 'The L trap'); a translator restores these "
      .. "by passing a PLAIN table of just these keys, which locales/enUS.lua records"},
 
     -- Developer diagnostics that happen to print to chat.
