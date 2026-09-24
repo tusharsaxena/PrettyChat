@@ -225,27 +225,8 @@ local function buildStringRow(pane, category, globalName, refreshers)
         NS.Schema.Set(enabledPath, value and true or false)
     end)
 
-    local enableTooltip =
-        L["Use the rewritten format for this message. When unchecked, Blizzard's original is used."]
-    local sharedCats = Schema.crossRegisteredGlobals
-                       and Schema.crossRegisteredGlobals[globalName]
-    if sharedCats then
-        local others = {}
-        for _, c in ipairs(sharedCats) do
-            if c ~= category then others[#others + 1] = c end
-        end
-        if #others > 0 then
-            -- One localized sentence with a `%s`, not four concatenated
-            -- fragments (localization-§1). The color escapes stay outside it so
-            -- a translator never has to carry `|cff…|r` through.
-            enableTooltip = enableTooltip
-                .. "\n\n" .. Color.gray
-                .. L["Shared with %s — both registrations write the same Blizzard global; the last category to apply wins on /reload."]
-                     :format(table.concat(others, ", "))
-                .. Color.reset
-        end
-    end
-    H.AttachTooltip(enable, L["Enable"], enableTooltip)
+    H.AttachTooltip(enable, L["Enable"],
+        L["Use the rewritten format for this message. When unchecked, Blizzard's original is used."])
     row1:AddChild(enable)
 
     -- The Blizzard GLOBALNAME, beside the tick rather than under it. It is what

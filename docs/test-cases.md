@@ -176,7 +176,7 @@ badge and any count quoted in the docs must agree with it.
 - every default format string renders with sample arguments
 - every default's conversion sequence is a positional prefix of Blizzard's
 - no default carries a raw newline or tab
-- cross-registered globals are identified with their real categories
+- no Blizzard global is registered under two categories
 - the schema builds exactly the rows the defaults imply
 - every string registration has both of its schema rows
 - each format row's schema default is the defaults-table default
@@ -200,7 +200,7 @@ badge and any count quoted in the docs must agree with it.
 - the visibility row is the canonical four-mode dropdown, not a boolean
 - the debug console row is session-only and re-applies nothing
 - RowsByCategory returns only that category, in registration order
-- a cross-registered global carries one format row per category
+- the load-time duplicate check finds no global registered twice
 - an exact category name beats any prefix interpretation
 - an ambiguous prefix resolves to nothing rather than guessing
 - a non-string or empty category name resolves to nothing
@@ -256,7 +256,7 @@ badge and any count quoted in the docs must agree with it.
 - a global this client does not define is restored to nil, not left overridden
 - repeated applies are idempotent across the whole surface
 - ResetString clears both the custom format and the per-string disable
-- cross-registered global resolves to the last CATEGORY_ORDER registrant, stably
+- the Tradeskill format is the one that reaches _G for LOOT_ITEM_CREATED_SELF
 
 ### test_override.lua (31)
 
@@ -292,7 +292,7 @@ badge and any count quoted in the docs must agree with it.
 - an unrenderable override is reported as an error line, not a crash
 - every Test line routes through the [PC] printer
 
-### test_database.lua (20)
+### test_database.lua (26)
 
 - NS.Database and the db.global namespace exist
 - a fresh DB is stamped at the current schema version
@@ -314,6 +314,12 @@ badge and any count quoted in the docs must agree with it.
 - a raising step leaves the stamp where it was
 - a step after a failed one does not run
 - a profile step runs again safely on an already-lifted profile
+- migration v2 moves a Loot-only override onto Tradeskill
+- migration v2 keeps an existing Tradeskill override and drops Loot's copy
+- migration v2 does not lift a value equal to Tradeskill's default
+- migration v2 drops Loot's disabledStrings and prunes what empties
+- migration v2 run a second time changes nothing
+- migration v2 lifts an inactive stored profile too
 
 ### test_lifecycle.lua (12)
 
@@ -507,7 +513,7 @@ badge and any count quoted in the docs must agree with it.
 - disabling the category grays the per-string controls
 - a master-toggle change refreshes every built page, not just its own
 - a slash-command write re-syncs the open panel
-- a cross-registered string warns about the shared Blizzard global
+- no per-string enable tooltip carries a second-category note
 - the page says its controls are read only while the master switch is on
 - clicking a tab swaps the body and drops the tab it left
 - the parent page lists every slash command through the one row formatter
@@ -555,7 +561,7 @@ badge and any count quoted in the docs must agree with it.
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
 | test_override.lua | 31 |
-| test_database.lua | 20 |
+| test_database.lua | 26 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
 | test_launcher.lua | 27 |
@@ -565,4 +571,4 @@ badge and any count quoted in the docs must agree with it.
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **447** |
+| **Total** | **453** |

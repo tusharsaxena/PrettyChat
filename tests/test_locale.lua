@@ -121,7 +121,7 @@ end)
 -- next run, which is the whole point of the pass.
 -- ---------------------------------------------------------------------
 
--- `defaults/Defaults.lua` is the addon's DATA table — 81 rows of Blizzard global
+-- `defaults/Defaults.lua` is the addon's DATA table — 79 rows of Blizzard global
 -- name, English display label and replacement format string — and the format
 -- strings are content the player edits, not prose the addon speaks. Scanning it
 -- would report every color-escaped default as an unrouted sentence. It is
@@ -250,6 +250,9 @@ local RESIDUE = {
      .. "reading a bug report"},
     {"settings/Schema.lua", "schema: unresolved path (no backing default): ",
      "the same: it names a schema path, and reaching it at all is a defect"},
+    {"settings/Schema.lua", "schema: %s is registered under more than one category (%s)",
+     "the same: it names a Blizzard global registered twice in defaults/Defaults.lua "
+     .. "(PRETTYCHAT-R-02), and reaching it at all is a defect"},
     {"settings/Schema.lua", "PrettyChat: no setting ",
      "the schema runtime stub's refusal, returned as Set's second value on a load with "
      .. "no LibKa0s. No surface in this addon prints it: both descriptors discard what "

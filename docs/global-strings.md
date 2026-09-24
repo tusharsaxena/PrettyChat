@@ -29,7 +29,7 @@ Historically there was a third path: `GlobalStrings/GlobalStrings.toc`, a `LoadO
 
 Keyed by Blizzard's `GLOBALNAME` constants, valued with the Blizzard-default format string as of the client patch the dump was cut from. **It is not built at runtime any more** — only inside `tests/test_defaults.lua`, which loads the chunks into a local table of its own.
 
-At runtime the equivalent data is `addon.originalStrings`, snapshotted from `_G` at `OnEnable`. It covers only the ~81 keys `NS.Defaults` mentions, which is every key any surface draws: the panel builds one block per `NS.Defaults` entry and `/pc test` prints one row per entry. The old argument for the full 22,879 was that a key added to `defaults/Defaults.lua` since the last ship would still resolve — but a key can only reach `NS.Defaults` by editing a file, which needs a `/reload`, after which the snapshot covers it too. The load-time nature of the snapshot is recorded under Known Limitations in [ARCHITECTURE.md](./ARCHITECTURE.md).
+At runtime the equivalent data is `addon.originalStrings`, snapshotted from `_G` at `OnEnable`. It covers only the 79 keys `NS.Defaults` mentions, which is every key any surface draws: the panel builds one block per `NS.Defaults` entry and `/pc test` prints one row per entry. The old argument for the full 22,879 was that a key added to `defaults/Defaults.lua` since the last ship would still resolve — but a key can only reach `NS.Defaults` by editing a file, which needs a `/reload`, after which the snapshot covers it too. The load-time nature of the snapshot is recorded under Known Limitations in [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Regenerating chunks after a WoW patch
 

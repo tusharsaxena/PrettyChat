@@ -3,9 +3,10 @@ local _, NS = ...
 -- NS.Database — SavedVariables schema version + migration runner.
 --
 -- The addon's live settings are keyed by Blizzard GLOBALNAME constants,
--- which are stable, so no migration is needed yet — the runner exists so
--- a future storage-shape change (renamed key, restructured category
--- table) has a versioned home instead of ad-hoc `if db.x then` patches.
+-- which are stable; what moves is which CATEGORY owns a global. The runner gives
+-- such a storage-shape change (a global moved between categories, a renamed key,
+-- a restructured category table) a versioned home instead of ad-hoc
+-- `if db.x then` patches. v2 is the first step (see migrations[2] below).
 --
 -- THE CONTRACT, which a first step can rely on:
 --
@@ -29,11 +30,11 @@ local Database = NS.Database
 
 -- The runner's target. Bump when the stored shape changes AND add a
 -- migrations[N] entry that upgrades a DB at version N-1 to version N.
-Database.SCHEMA_VERSION = 1
+Database.SCHEMA_VERSION = 2
 
 -- Defaults merged into AceDB (PrettyChat.lua adds `profile`). `global`
 -- carries the persisted schema version. Starts at 0 so a brand-new DB
--- runs cleanly up to SCHEMA_VERSION (a no-op while migrations is empty).
+-- runs cleanly up to SCHEMA_VERSION (every step is a no-op on a fresh profile).
 --
 -- `minimap` is LibDBIcon's OWN table and it is DECLARED here rather than
 -- written anywhere (launcher-§3, architecture-§5): the declared default is what
@@ -60,9 +61,49 @@ Database.defaults = {
 -- upgrades a DB from version v-1 to v. `target` is one raw stored profile table
 -- (scope "profile", run once per stored profile, with its name) or db.global
 -- (scope "global", run once). Published so a suite can inject steps on a fresh
--- instance. Empty today.
+-- instance.
 local migrations = {}
 Database.migrations = migrations
+
+-- v2 (PRETTYCHAT-R-02): LOOT_ITEM_CREATED_SELF and _MULTIPLE were registered under
+-- BOTH Loot and Tradeskill, and the Loot copy was a dead setting -- ApplyStrings
+-- walks CATEGORY_ORDER, Tradeskill comes after Loot, so Tradeskill always won.
+-- The Loot registration is gone; this step carries a Loot-only override across to
+-- Tradeskill (unless Tradeskill already has its own, or the value is Tradeskill's
+-- default, which the setters store as absence), drops Loot's strings and
+-- disabledStrings entries for the two globals, and prunes what that empties.
+-- Idempotent: a lifted profile has no Loot entry left to move.
+local LIFTED_TO_TRADESKILL = { "LOOT_ITEM_CREATED_SELF", "LOOT_ITEM_CREATED_SELF_MULTIPLE" }
+
+local function pruneEmpty(parent, key)
+    if type(parent[key]) == "table" and next(parent[key]) == nil then parent[key] = nil end
+end
+
+local function liftOne(cats, loot, globalName)
+    local value = type(loot.strings) == "table" and loot.strings[globalName] or nil
+    local trade = NS.Defaults.Tradeskill.strings[globalName]
+    if value ~= nil and value ~= trade.default then
+        if type(cats.Tradeskill) ~= "table" then cats.Tradeskill = {} end
+        cats.Tradeskill.strings = cats.Tradeskill.strings or {}
+        if cats.Tradeskill.strings[globalName] == nil then
+            cats.Tradeskill.strings[globalName] = value
+        end
+    end
+    if type(loot.strings) == "table" then loot.strings[globalName] = nil end
+    if type(loot.disabledStrings) == "table" then loot.disabledStrings[globalName] = nil end
+end
+
+local function liftLootCreatedSelf(profile)
+    local cats = profile.categories
+    local loot = type(cats) == "table" and cats.Loot
+    if type(loot) ~= "table" then return end
+    for _, globalName in ipairs(LIFTED_TO_TRADESKILL) do liftOne(cats, loot, globalName) end
+    pruneEmpty(loot, "strings")
+    pruneEmpty(loot, "disabledStrings")
+    pruneEmpty(cats, "Loot")
+end
+
+migrations[2] = { scope = "profile", run = liftLootCreatedSelf }
 
 -- Drop every stored key no schema row owns, then prune what that empties
 -- (savedvariables-§1: the load pass may repair). Resets write ROWS, so a key

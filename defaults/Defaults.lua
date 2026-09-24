@@ -36,14 +36,6 @@ NS.Defaults = {
                 label = "Bonus Roll Multiple (Self)",
                 default = "|cffff0000Loot|cffffffff | |cff76a5afBonus|cffffffff | |cff93c47dYou|cffffffff | |cffffffff+ %s x%d|cffffffff",
             },
-            LOOT_ITEM_CREATED_SELF = {
-                label = "Item Created (Self)",
-                default = "|cffff0000Loot|cffffffff | |cff93c47dCreate|cffffffff | |cff93c47dYou|cffffffff | |cffffffff+ %s|cffffffff",
-            },
-            LOOT_ITEM_CREATED_SELF_MULTIPLE = {
-                label = "Item Created Multiple (Self)",
-                default = "|cffff0000Loot|cffffffff | |cff93c47dCreate|cffffffff | |cff93c47dYou|cffffffff | |cffffffff+ %s x%d|cffffffff",
-            },
             LOOT_ITEM_MULTIPLE = {
                 label = "Item Looted Multiple (Other)",
                 default = "|cffff0000Loot|cffffffff | |cfff6b26b%s|cffffffff | |cffffffff+ %s x%d|cffffffff",

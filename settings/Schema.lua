@@ -443,26 +443,22 @@ for _, category in ipairs(CATEGORY_ORDER) do
     end
 end
 
--- Globals that NS.Defaults registers under more than one category
--- (today: LOOT_ITEM_CREATED_SELF and LOOT_ITEM_CREATED_SELF_MULTIPLE
--- under both Loot and Tradeskill). Each registration produces a separate
--- string_format row, both writing the same _G[GLOBALNAME] in
--- ApplyStrings — the last category to iterate wins on /reload, and
--- pairs() order is non-deterministic. The panel reads this map to
--- decorate the per-string enable checkbox tooltip so the user can see
--- the conflict in-page rather than discovering it via lost edits.
-Schema.crossRegisteredGlobals = {}
+-- ONE GLOBAL, ONE REGISTRATION (PRETTYCHAT-R-02). Two categories registering the
+-- same GLOBALNAME build two format rows that write the same _G key, and
+-- ApplyStrings' fixed CATEGORY_ORDER walk makes the later one win on every pass --
+-- the earlier becomes a setting that saves and never applies. That was the Loot
+-- copy of LOOT_ITEM_CREATED_SELF[_MULTIPLE] until migration v2 (core/Database.lua).
+-- Collected here as `globalName -> { firstCategory, secondCategory, ... }` and
+-- reported by runValidation below, loudly at load, without raising.
+Schema.duplicateGlobals = {}
 do
-    local seen = {}
+    local owners = {}
     for _, r in ipairs(rows) do
         if r.kind == "string_format" then
-            seen[r.globalName] = seen[r.globalName] or {}
-            seen[r.globalName][#seen[r.globalName] + 1] = r.category
-        end
-    end
-    for globalName, cats in pairs(seen) do
-        if #cats > 1 then
-            Schema.crossRegisteredGlobals[globalName] = cats
+            owners[r.globalName] = owners[r.globalName] or {}
+            local cats = owners[r.globalName]
+            cats[#cats + 1] = r.category
+            if #cats > 1 then Schema.duplicateGlobals[r.globalName] = cats end
         end
     end
 end
@@ -535,6 +531,13 @@ local function runValidation()
     for _, path in ipairs(unwiredMasterPaths) do
         Schema.validation.checked = Schema.validation.checked + 1
         miss(path)
+    end
+    for globalName, cats in pairs(Schema.duplicateGlobals) do
+        Schema.validation.failed = Schema.validation.failed + 1
+        if NS.Print then
+            NS.Print(("schema: %s is registered under more than one category (%s)")
+                :format(globalName, table.concat(cats, ", ")))
+        end
     end
 end
 
@@ -936,7 +939,7 @@ end
 --
 -- Deliberately NOT the implementation behind the per-category Defaults button or
 -- `/pc resetall`. Both of those are bulk: driving them row by row through it
--- would run ApplyStrings once per row (174 passes over 79 globals) and emit one
+-- would run ApplyStrings once per row (170 passes over 79 globals) and emit one
 -- [Set] line per row into a 1500-line console buffer, where debug-logging-§10 asks
 -- a bulk reset for ONE [Set] line. The per-category and per-string resets take
 -- Schema.ResetRows below; `/pc resetall` is the profile reset (options-ui-§12).

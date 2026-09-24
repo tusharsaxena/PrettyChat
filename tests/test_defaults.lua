@@ -242,15 +242,16 @@ test("no default carries a raw newline or tab", function()
     end
 end)
 
-test("cross-registered globals are identified with their real categories", function()
-    local shared = Schema.crossRegisteredGlobals
-    t.truthy(shared, "the cross-registration map is published")
-    for globalName, cats in pairs(shared) do
-        t.truthy(#cats > 1, globalName .. " is listed only because it is shared")
-        for _, c in ipairs(cats) do
-            t.truthy(NS.Defaults[c] and NS.Defaults[c].strings[globalName],
-                ("%s really is registered under %s"):format(globalName, c))
-        end
+test("no Blizzard global is registered under two categories", function()
+    -- One _G key, one row: two registrations write the same global and the later
+    -- category in CATEGORY_ORDER silently wins, which left the other a dead setting
+    -- (PRETTYCHAT-R-02, the Loot copies of LOOT_ITEM_CREATED_SELF[_MULTIPLE]).
+    local owner = {}
+    for _, e in ipairs(entries) do
+        local category, globalName = e[1], e[2]
+        t.nilv(owner[globalName],
+            ("%s is registered under %s and %s"):format(globalName, tostring(owner[globalName]), category))
+        owner[globalName] = category
     end
 end)
 

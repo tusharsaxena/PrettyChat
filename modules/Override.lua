@@ -258,13 +258,10 @@ function PrettyChat:ApplyStrings()
     -- restored regardless of per-category / per-string state.
     --
     -- Iterate CATEGORY_ORDER (fixed order) and, within each category, a
-    -- SORTED name list rather than pairs(NS.Defaults) (PC-16). A handful
-    -- of globals are registered under more than one category (e.g.
-    -- LOOT_ITEM_CREATED_SELF under Loot + Tradeskill); both write the same
-    -- _G key, so the last category to run wins. Deterministic iteration
-    -- makes that winner stable across /reload (documented last-writer:
-    -- the later entry in CATEGORY_ORDER), instead of depending on
-    -- non-deterministic hash order.
+    -- SORTED name list rather than pairs(NS.Defaults) (PC-16), so the order
+    -- globals are written in is stable across /reload. No global is registered
+    -- under two categories (PRETTYCHAT-R-02; settings/Schema.lua reports one at
+    -- load if it ever is), so each _G key has exactly one writer here.
     -- The visibility mode rides the same gate as the master toggle: `never`, or a
     -- combat mode whose condition is not met, restores every original exactly as
     -- `Enable` off does. One gate rather than two, so there is one answer to

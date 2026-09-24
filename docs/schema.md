@@ -100,7 +100,7 @@ function Schema.ResetRows(list, label)
 end
 ```
 
-It restores a list of rows to their defaults through the same `set()` step and the same gates `Schema.Set` uses, then pays the side effects once: one `ApplyStrings` pass, one panel refresh and one `[Set] reset <label>: N rows` line in place of a `[Set]` line per row (debug-logging-§10: a bulk reset is one `[Set]` line). N is the rows the reset actually changed. A row already at its default is still written, a no-op, but is not counted, and a reset with nothing to change still logs its one line as `: 0 rows`. Driving 174 rows through `Set` one at a time would cost 174 passes over 79 globals and 174 console lines. Returns N.
+It restores a list of rows to their defaults through the same `set()` step and the same gates `Schema.Set` uses, then pays the side effects once: one `ApplyStrings` pass, one panel refresh and one `[Set] reset <label>: N rows` line in place of a `[Set]` line per row (debug-logging-§10: a bulk reset is one `[Set]` line). N is the rows the reset actually changed. A row already at its default is still written, a no-op, but is not counted, and a reset with nothing to change still logs its one line as `: 0 rows`. Driving 170 rows through `Set` one at a time would cost 170 passes over 79 globals and 170 console lines. Returns N.
 
 A reset that raises partway (a row's `set()`, the pass or the refresh) still writes its one line, counting the rows changed before the raise and ending in ` (stopped by an error)`, for example `[Set] reset Loot: 2 rows (stopped by an error)`. The error is then raised again. `NS.Util.RunAct` (`core/Util.lua`) does both, through `xpcall`, so the re-raised error carries the stack of the original raise rather than only its message.
 

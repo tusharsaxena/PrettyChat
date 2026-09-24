@@ -4,7 +4,7 @@
 ![CurseForge Version](https://img.shields.io/curseforge/v/919766)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-447%2F447_passing-green)
+![Tests](https://img.shields.io/badge/Tests-453%2F453_passing-green)
 
 World of Warcraft tells you about loot, currency, gold, reputation, experience, honor and crafting in a stream of sentences that all look alike. PrettyChat rewrites them. Same information, laid out and color-coded, so the line you actually cared about is findable in a chat window that is scrolling past you.
 
@@ -61,7 +61,7 @@ Switching a message off does not throw your version away — it stops being appl
 | The settings panel won't open | `/pc config` opens it from chat. Wait until you're fully loaded in, and note it won't open during combat. If the main page opens but a sub-page doesn't, click the sub-page's row in the settings list (**General** or **Categories**). |
 | I want a clean slate | One message: its **Reset** button, or `/pc reset path` (`/pc list` shows the paths). One category: open its tab and use the page's **Defaults** button, which acts on the tab you are looking at. Everything: `/pc resetall`, or **Reset all settings** on the General page. |
 | I opened the debug console but it's empty | The window and logging are separate switches. Opening the window (`/pc debug`) doesn't start logging. Turn logging on first with `/pc debug on`, or the **Debug** toggle inside the window, then reproduce the problem. Use **Copy** to lift the log into a bug report. |
-| I edited a crafting message and my change won't stick | A couple of strings (item and multi-item crafting results) live under both **Loot** and **Tradeskill**. They share one game template, so whichever of the two you edited last, after a `/reload` the **Tradeskill** version wins. Edit it in one place — the panel's Enable tooltip flags these shared strings. |
+| The "you create an item" messages are gone from the Loot tab | They live on the **Tradeskill** tab now, and only there. They used to appear on both tabs, but only the Tradeskill copy ever reached chat. If you had customized the Loot copy, your wording was moved to the Tradeskill tab the first time you logged in on this version. |
 
 ## Issues and feature requests
 

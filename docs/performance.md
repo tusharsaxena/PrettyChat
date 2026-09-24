@@ -17,7 +17,7 @@ per-frame work. Its runtime is:
 | When | What runs |
 |---|---|
 | `OnInitialize` | AceDB open, migrations, two `RegisterChatCommand` calls |
-| `OnEnable` | one snapshot pass over ~81 Blizzard originals, one `ApplyStrings` pass, panel registration |
+| `OnEnable` | one snapshot pass over 79 Blizzard originals, one `ApplyStrings` pass, panel registration |
 | A settings change | one `ApplyStrings` pass |
 | A combat boundary, and only while `General.visibility` is `inCombat` / `outOfCombat` | one `ApplyStrings` pass |
 | A settings-panel category render, and only while the player has that panel open | one AceGUI tree build, and **one** `C_Timer.After(0, …)` fit for the frame after the layout |

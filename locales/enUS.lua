@@ -55,7 +55,6 @@ local enUS = {
     -- tabs cannot name a category (settings/Panel.lua, the Categories page).
     "Enable %s",
     "Enable or disable all %s string overrides.",
-    "Shared with %s — both registrations write the same Blizzard global; the last category to apply wins on /reload.",
     -- Per-string row
     "Enable",
     "Use the rewritten format for this message. When unchecked, Blizzard's original is used.",

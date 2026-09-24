@@ -337,7 +337,7 @@ test("/pc list formatstring lists every Category.GLOBALNAME pair", function()
         for _ in pairs(catData.strings) do total = total + 1 end
     end
     t.truthy(out[1]:find(("Format strings (%d)"):format(total), 1, true),
-        "the header counts every registration, including cross-registered ones")
+        "the header counts every registration")
     t.eq(#out, total + 1, "one line per registration under the header")
     t.truthy(out[2]:find("Currency.", 1, true),
         "the listing is sorted by category then global name")

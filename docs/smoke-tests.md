@@ -263,7 +263,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 - Steps:
   1. `/pc list category` — should print `Categories (9):` followed by every category name in alphabetical order (Currency, Experience, General, Honor, Loot, Misc, Money, Reputation, Tradeskill).
-  2. `/pc list formatstring` — should print `Format strings (81):` followed by every `Category.GLOBALNAME` pair sorted by category then by global name (e.g. `Currency.CURRENCY_GAINED`, `Currency.CURRENCY_GAINED_MULTIPLE`, …, `Tradeskill.TRADESKILL_LOG_THIRDPERSON`).
+  2. `/pc list formatstring` — should print `Format strings (79):` followed by every `Category.GLOBALNAME` pair sorted by category then by global name (e.g. `Currency.CURRENCY_GAINED`, `Currency.CURRENCY_GAINED_MULTIPLE`, …, `Tradeskill.TRADESKILL_LOG_THIRDPERSON`).
 - Expected: both forms succeed without falling through to the unknown-category error path. Counts in headers match the actual list lengths.
 
 #### T-32 — `/pc get` for each row kind
@@ -402,23 +402,27 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 - Steps:
   1. `/pc test all` — same output as bare `/pc test`.
-  2. `/pc test category Loot` — only the Loot block prints. Footer count matches Loot's string count (19).
+  2. `/pc test category Loot` — only the Loot block prints. Footer count matches Loot's string count (17), and neither `LOOT_ITEM_CREATED_SELF` global is among them.
   3. `/pc test category loo` — same output as case 2 (case-insensitive prefix match via `Schema.ResolveCategory`).
   4. `/pc test category General` — emits `(no matching strings)` and skips the footer (General is virtual, no strings).
   5. `/pc test category nope` — chat prints `unknown category 'nope'. Valid: General, Loot, ...`. No test output.
   6. `/pc test formatstring CURRENCY_GAINED` — only the Currency category header prints, and only the `CURRENCY_GAINED` 3-line block under it. Footer count is `1`.
   7. `/pc test formatstring currency_gained` — same as case 6 (input is uppercased).
-  8. `/pc test formatstring LOOT_ITEM_CREATED_SELF` — both Loot and Tradeskill headers print, each with a single block for that global. Footer count is `2` (one per registration).
+  8. `/pc test formatstring LOOT_ITEM_CREATED_SELF` — only the Tradeskill header prints, with a single block for that global. Footer count is `1`.
   9. `/pc test formatstring NOPE_NOPE` — chat prints `unknown format string 'NOPE_NOPE' — try /pc list formatstring`. No test output.
   10. `/pc test bogus` — chat prints the four-line usage (no-arg, all, category, formatstring forms).
 - Expected: all ten cases run without Lua errors; subset, no-match, and error cases each behave as listed.
 
-#### T-53 — Cross-category shared global (`LOOT_ITEM_CREATED_SELF`)
+#### T-53 — Single registration of `LOOT_ITEM_CREATED_SELF` (Tradeskill only)
 
-> Why: this key is registered under both `Loot` and `Tradeskill`. `ApplyStrings` iterates `CATEGORY_ORDER` in fixed order (sorted names within each), so the last category wins **deterministically** (PC-16) — `Tradeskill` comes after `Loot`, so the Tradeskill format wins.
+> Why: this key and its `_MULTIPLE` twin were registered under both `Loot` and `Tradeskill`, and the Loot copy was a dead setting — Tradeskill applies after Loot and always won (PRETTYCHAT-R-02). Schema v2 dropped the Loot registration and migrates a Loot-only override onto Tradeskill. See [data-flow.md](./data-flow.md#one-global-one-category).
 
-- Setup: edit `Loot.LOOT_ITEM_CREATED_SELF.format` and `Tradeskill.LOOT_ITEM_CREATED_SELF.format` to visibly different strings. `/reload` a few times and trigger creation events.
-- Expected: live chat shows the **Tradeskill** format on *every* load (stable across reloads, not a coin-flip). Documented behavior — see [data-flow.md](./data-flow.md#known-quirk-globals-shared-across-categories). Do not "fix" without a triggering complaint.
+- Setup: set a visibly custom `Tradeskill.LOOT_ITEM_CREATED_SELF.format` on the Tradeskill tab, then create or loot-create an item.
+- Expected:
+  1. The chat line uses the custom Tradeskill format.
+  2. `/pc test category Tradeskill` shows `LOOT_ITEM_CREATED_SELF` once; `/pc test category Loot` no longer lists it, and the Loot tab has no row for it.
+  3. The Enable tooltip on the Tradeskill row is the one-line tooltip, with no note naming another category.
+  4. Migration: with a pre-v2 SavedVariables whose Loot tab held an override for `LOOT_ITEM_CREATED_SELF` (and nothing under Tradeskill), `/reload` — the override now shows on the Tradeskill tab, and `/pc get Tradeskill.LOOT_ITEM_CREATED_SELF.format` returns it.
 
 #### T-54 — Disabled state propagates to UI inputs
 

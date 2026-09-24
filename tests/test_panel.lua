@@ -911,32 +911,24 @@ test("a slash-command write re-syncs the open panel", function()
     addon:ResetAll()
 end)
 
-test("a cross-registered string warns about the shared Blizzard global", function()
-    -- Two categories writing the same _G key is surfaced in-page rather
-    -- than discovered through lost edits.
-    local shared = next(Schema.crossRegisteredGlobals)
-    t.truthy(shared, "the defaults register at least one shared global")
-
+test("no per-string enable tooltip carries a second-category note", function()
+    -- PRETTYCHAT-R-02: no global is registered twice any more, so the in-page
+    -- cross-registration warning (a gray paragraph naming the other category)
+    -- has nothing to warn about and is gone.
     local sorted = {}
     for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
     table.sort(sorted)
-    local index
-    for i, globalName in ipairs(sorted) do
-        if Schema.crossRegisteredGlobals[globalName] then index = i break end
-    end
-    t.truthy(index, "one of them lives on the Loot page")
-
-    -- One editor on screen, so the shared string's row is selected first.
     local pageCtx = NS.Helpers.__panelFor("Categories")
-    selectEntry("Categories", index)
-    local sharedBlock = paneParts(stringSplit(pageCtx.scroll).pane)
-
-    env.GameTooltip.lines = nil
-    sharedBlock.enable:Fire("OnEnter")
-    local joined = table.concat(env.GameTooltip.lines or {}, "\n")
-    t.truthy(joined:find("Shared with", 1, true), "the tooltip names the conflict")
-    t.truthy(joined:find("last category to apply wins", 1, true),
-        "and explains the documented last-writer rule")
+    for index = 1, #sorted do
+        selectEntry("Categories", index)
+        local block = paneParts(stringSplit(pageCtx.scroll).pane)
+        env.GameTooltip.lines = nil
+        block.enable:Fire("OnEnter")
+        local joined = table.concat(env.GameTooltip.lines or {}, "\n")
+        t.truthy(joined:find("rewritten format", 1, true), "the enable tooltip rendered")
+        t.falsy(joined:find("Blizzard global", 1, true), sorted[index] .. " carries no shared-global note")
+        t.falsy(joined:find("Tradeskill", 1, true), sorted[index] .. " names no other category")
+    end
 end)
 
 test("the page says its controls are read only while the master switch is on", function()
