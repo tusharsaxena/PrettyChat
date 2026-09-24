@@ -15,9 +15,10 @@ local addonName, NS = ...
 --
 -- The shim was the WHOLE of core/Compat.lua here, so that file went with it
 -- rather than staying behind as an empty shim seam for the next one to land in
--- without anyone asking whether it should. If PrettyChat ever grows a genuinely
--- addon-specific client-version shim, `core/Compat.lua` comes back for it; a
--- library-owned reader does not qualify.
+-- without anyone asking whether it should. `core/Compat.lua` comes back only when
+-- compat's applicability condition (Standard v2.65.0) fires: PrettyChat starts
+-- calling a deprecated or version-variant client API that no LibKa0s major
+-- covers. A library-owned reader does not qualify.
 --
 -- ── Why the library has to be told our name ─────────────────────────────────
 --
@@ -48,13 +49,13 @@ local addonName, NS = ...
 --
 -- ── What a degraded install gets ────────────────────────────────────────────
 --
--- Exactly what this addon got before the library existed. Both helpers below
--- repeat the ladder the deleted shim ran, so an install missing LibKa0s still
--- reads its own TOC. That is why the fallbacks are written out rather than left
--- to answer nil: this is a seam, not a feature. Nothing here may CHANGE an
--- answer either — the shim already agreed with the library rung for rung, so a
--- difference in what comes back is a defect in the adoption rather than an
--- improvement. tests/test_envsetup.lua pins both halves.
+-- Its own TOC, read through a two-rung ladder: C_AddOns.GetAddOnMetadata, then
+-- nil. An install missing LibKa0s still reads its manifest, which is why the
+-- fallback is written out rather than left to answer nil: this is a seam, not a
+-- feature. The deleted shim's third rung, the legacy _G.GetAddOnMetadata, is not
+-- repeated — every supported client provides the C_AddOns reader, and compat
+-- (Standard v2.65.0) calls a rung only a retired client could reach dead code to
+-- delete, not to shim. tests/test_envsetup.lua pins both halves.
 
 local Env = LibStub and LibStub("LibKa0s-Env-1.0", true)
 
@@ -71,9 +72,6 @@ function NS.Meta(field)
     if Env then return Env.GetAddOnMetadata(addonName, field) end
     if C_AddOns and C_AddOns.GetAddOnMetadata then
         return C_AddOns.GetAddOnMetadata(addonName, field)
-    end
-    if GetAddOnMetadata then
-        return GetAddOnMetadata(addonName, field)
     end
     return nil
 end

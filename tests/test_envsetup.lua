@@ -126,23 +126,25 @@ test("EnvSetup degraded: an install with no LibKa0s still reads its own TOC", fu
     t.eq(bare.NS.Version(), FIXTURE.Version)
 end)
 
-test("EnvSetup degraded: the fallback prefers C_AddOns and falls back to the legacy global",
+test("EnvSetup degraded: the fallback reads C_AddOns and never the legacy global",
 function()
-    -- GetAddOnMetadata moved from the _G global into C_AddOns in 10.1. With the library
-    -- absent this ladder is THIS addon's again, so all four rungs stay pinned here —
-    -- they are not a copy of the library's coverage, they are what replaces it when the
-    -- library is missing.
+    -- With the library absent this ladder is THIS addon's again, so its rungs stay
+    -- pinned here: C_AddOns, then nil. The legacy _G.GetAddOnMetadata rung is gone —
+    -- every supported client provides C_AddOns.GetAddOnMetadata, and compat
+    -- (Standard v2.65.0) calls a rung only a retired client could reach dead code to
+    -- delete, not to shim. The legacy global is planted in every case below so a rung
+    -- that crept back would answer "LEGACY" and fail here.
     local bare = degraded()
     t.eq(withSurfaces(bare, { GetAddOnMetadata = function() return "NAMESPACED" end },
         function() return "LEGACY" end,
         function() return bare.NS.Meta("Version") end), "NAMESPACED",
         "the namespaced surface wins when both exist")
-    t.eq(withSurfaces(bare, nil, function() return "LEGACY" end,
-        function() return bare.NS.Meta("Version") end), "LEGACY",
-        "the legacy global is used when C_AddOns is absent")
-    t.eq(withSurfaces(bare, {}, function() return "LEGACY" end,
-        function() return bare.NS.Meta("Version") end), "LEGACY",
-        "a C_AddOns table missing the getter still falls back")
+    t.nilv(withSurfaces(bare, nil, function() return "LEGACY" end,
+        function() return bare.NS.Meta("Version") end),
+        "a legacy-only surface yields nil: the global is never read")
+    t.nilv(withSurfaces(bare, {}, function() return "LEGACY" end,
+        function() return bare.NS.Meta("Version") end),
+        "a C_AddOns table missing the getter yields nil")
     t.nilv(withSurfaces(bare, nil, nil, function() return bare.NS.Meta("Version") end),
         "no metadata surface at all yields nil, never a raise")
 end)

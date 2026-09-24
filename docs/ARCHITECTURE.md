@@ -50,7 +50,7 @@ Modular layout (`core/`, `defaults/`, `locales/`, `modules/`, `settings/`) — t
 
 | Module | Publishes on `NS` | Role |
 |--------|-------------------|------|
-| `core/EnvSetup.lua` | `NS.Meta`, `NS.Version` | The `LibKa0s-Env-1.0` seam. Reads one field of this addon's own TOC manifest, and answers its version string (the TOC first, then `NS.version`, then `"?"`), telling the library which addon FOLDER is asking — a vendored copy cannot work that out for itself. Falls back to the C_AddOns-then-legacy-global ladder when the library is absent, so a degraded install reads its own TOC exactly as it did before. Replaced `core/Compat.lua`, which held nothing but the same reader. |
+| `core/EnvSetup.lua` | `NS.Meta`, `NS.Version` | The `LibKa0s-Env-1.0` seam. Reads one field of this addon's own TOC manifest, and answers its version string (the TOC first, then `NS.version`, then `"?"`), telling the library which addon FOLDER is asking — a vendored copy cannot work that out for itself. Falls back to `C_AddOns.GetAddOnMetadata` (then nil) when the library is absent, so a degraded install still reads its own TOC. Replaced `core/Compat.lua`, which held nothing but the same reader. |
 | `core/Constants.lua` | `NS.Const`, `NS.PREFIX` | `Const.Color` palette (incl. `azure` / `listHead` slash-output codes), `Const.STRING_VSPACER`, `Const.FONT_MONO_NAME` / `Const.FONT_MONO` (JetBrains Mono, resolved through `NS.MediaFont` from the LibKa0s payload, falling back to `STANDARD_TEXT_FONT`), and the shared cyan `[PC]` chat prefix. Carries **no** panel layout constants — those are `LibKa0s-Options-1.0`'s `LAYOUT` table (options-ui-§8). Side-effect-free. |
 | `core/Namespace.lua` | `NS.name`, `NS.version` | Identity bootstrap — records the addon name + version so any module can read them without re-querying the TOC. |
 | `core/State.lua` | `NS.State` | Session-only runtime state (`{ debug = false }`); never persisted, reset every reload/login. |
@@ -232,7 +232,7 @@ never a live requirement, and never a reason to "restore" the file.
 | `slash-dispatch.md` | Present | 12 verbs in the command table |
 | `midnight-quirks.md` | Not applicable | No client-version workaround of the addon’s own; the GlobalStrings work is data, not a shim |
 | `message-bus.md` | Not applicable | The addon defines no cross-module messages |
-| `compat-layer.md` | Not applicable | There is no `core/Compat.lua`. Its one shim, `Compat.GetAddOnMetadata`, is now `LibKa0s-Env-1.0` behind `core/EnvSetup.lua`, and this addon has no addon-specific client-version shim left to document |
+| `compat-layer.md` | Not applicable | Not applicable — compat's applicability condition (Standard v2.65.0): PrettyChat calls no deprecated or version-variant client API outside LibKa0s's majors, so it carries no `core/Compat.lua`. Its one former shim, `Compat.GetAddOnMetadata`, is now `LibKa0s-Env-1.0` behind `core/EnvSetup.lua` |
 | `profiles.md` | Not applicable | No profile control ships in the options UI |
 | `debug.md` | Not applicable | The console is `LibKa0s-DebugLog-1.0`’s, with no debug surface of the addon’s own |
 | `perf-analysis/README.md` | Not applicable | No performance harness is wired — see `performance.md` |

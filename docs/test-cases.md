@@ -113,7 +113,7 @@ badge and any count quoted in the docs must agree with it.
 - EnvSetup: NS.Version answers a string, never nil — it goes straight into a banner
 - EnvSetup: every file-scope read resolved through the seam
 - EnvSetup degraded: an install with no LibKa0s still reads its own TOC
-- EnvSetup degraded: the fallback prefers C_AddOns and falls back to the legacy global
+- EnvSetup degraded: the fallback reads C_AddOns and never the legacy global
 - EnvSetup degraded: NS.Version falls back to this addon's own constant
 - EnvSetup: the deleted shim is gone from Compat
 

@@ -833,8 +833,8 @@ disagrees with the `.toc`, means a file-scope read did not reach the seam.
 
 #### T-98 — A degraded install with no LibKa0s still knows its own version
 
-**Why:** `core/EnvSetup.lua` writes its fallback ladder out in full so an install missing the
-vendored payload reads its own TOC exactly as it did before the library existed. That arm is
+**Why:** `core/EnvSetup.lua` writes its fallback out in full so an install missing the vendored
+payload still reads its own TOC through `C_AddOns.GetAddOnMetadata`. That arm is
 covered headlessly, but only the client proves the addon still boots with the payload absent.
 
 **Setup:** rename `Interface/AddOns/PrettyChat/libs/LibKa0s` to `libs/LibKa0s.off`. Restore it

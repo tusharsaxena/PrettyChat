@@ -74,7 +74,6 @@ read_globals = {
     "UnitAffectingCombat",
     -- core/Util.lua's RunAct appends the original stack to a re-raised error.
     "debugstack",
-    "GetAddOnMetadata",
     "UIParent",
     "YES",
     "NO",
