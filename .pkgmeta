@@ -29,14 +29,20 @@ ignore:
   - CLAUDE.md
   - DEPENDENCIES.md
 
-  # Generated reference data — the WHOLE folder, source dump, 26 chunks,
-  # splitter and all. Nothing in the addon loads it: PrettyChat.toc dropped the
+  # Generated reference data — the WHOLE folder, source dump and 26 chunks
+  # (the splitter that writes the chunks lives in tools/, ignored below).
+  # Nothing in the addon loads it: PrettyChat.toc dropped the
   # chunk list once the settings panel started reading this client's OnEnable
   # snapshot instead (PC-R-04/PC-R-05), which had the client parsing 1.89 MB and
   # 22,879 entries at every login to serve zero lookups. What is left is repo
   # reference data that tests/test_defaults.lua loads directly to check every
   # override against Blizzard's real signature — dev-only, like docs/ and tests/.
   - GlobalStrings
+
+  # Authored dev tooling — the program that writes the GlobalStrings chunks.
+  # packaging-§1: a generator this repo authors is .pkgmeta-ignored, and
+  # layout-§1 ("Where an authored generator lives") puts it under tools/.
+  - tools       # authored dev tooling (the GlobalStrings splitter); never shipped
 
   # Project-page art, served from the CurseForge CDN — never downloaded by a
   # player. Only the .tga logo is loadable at runtime (settings/Panel.lua);

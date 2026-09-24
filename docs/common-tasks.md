@@ -67,7 +67,7 @@ If you want the *shipped* default for a key to change (not just per-user overrid
 See [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patch). Short version:
 
 1. Drop the new `GlobalStrings.lua` into `GlobalStrings/`.
-2. `python3 GlobalStrings/split_globalstrings.py` — it rewrites the chunk files and asserts `PrettyChat.toc` still does not load them (PC-R-05). The chunk count changes whenever the entry count crosses a multiple of 900. Then run `lua tests/run.lua`: `tests/test_defaults.lua` reads the chunks, so a changed Blizzard signature surfaces there.
+2. `python3 tools/split_globalstrings.py` — it rewrites the chunk files and asserts `PrettyChat.toc` still does not load them (PC-R-05). The chunk count changes whenever the entry count crosses a multiple of 900. Then run `lua tests/run.lua`: `tests/test_defaults.lua` reads the chunks, so a changed Blizzard signature surfaces there.
 3. `/reload` in-game; verify the panel's "Original Format String" inputs still resolve.
 4. If Blizzard renamed any keys or changed signatures, update the corresponding entries in `defaults/Defaults.lua`.
 

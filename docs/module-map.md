@@ -248,10 +248,15 @@ Source `.lua` is grouped under `core/`, `defaults/`, `locales/`, `modules/`, and
 
 | Path | Purpose |
 |------|---------|
-| `GlobalStrings/GlobalStrings.lua` | Blizzard reference (~1.6 MB, ~22,879 entries). Input to `split_globalstrings.py`. |
+| `GlobalStrings/GlobalStrings.lua` | Blizzard reference (~1.6 MB, ~22,879 entries). Input to `tools/split_globalstrings.py`. |
 | `GlobalStrings/GlobalStrings_001.lua` … `_026.lua` | Chunk files, each a contiguous alphabetical range of keys. Each emits `NS.GlobalStrings["KEY"] = "value"` assignments. **Loaded by nothing at runtime** (PC-R-05) and not shipped; `tests/test_defaults.lua` reads them to check every override against Blizzard's real signature. |
-| `GlobalStrings/split_globalstrings.py` | Splitter script. Re-run after a WoW patch updates `GlobalStrings.lua`; rewrites the chunk files and refuses to finish if `PrettyChat.toc` has started loading them again. |
 | `GlobalStrings/README.md` | Splitter usage instructions (where to source the latest `GlobalStrings.lua`, how to regenerate). |
+
+### Dev tooling
+
+| Path | Purpose |
+|------|---------|
+| `tools/split_globalstrings.py` | Splitter script (`layout-§1`, "Where an authored generator lives"; `.pkgmeta`-ignored, never loaded). Re-run after a WoW patch updates `GlobalStrings/GlobalStrings.lua`; rewrites the chunk files in `GlobalStrings/` and refuses to finish if `PrettyChat.toc` has started loading them again. |
 
 ### Shared infrastructure
 

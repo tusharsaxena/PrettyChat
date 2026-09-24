@@ -14,15 +14,15 @@ What remains is **repo-local reference data**. `tests/test_defaults.lua` loads t
 
 Historically there was a third path: `GlobalStrings/GlobalStrings.toc`, a `LoadOnDemand: 1` sub-addon (`PrettyChat - GlobalStrings`). Nothing ever called `C_AddOns.LoadAddOn("GlobalStrings")`, and it was broken as written — after PC-14 the chunks key off `...`, so under the sub-addon they would have populated **that sub-addon's** private table rather than PrettyChat's. It was removed rather than left as a fallback that could not work.
 
-**Do not re-add the TOC block.** `split_globalstrings.py` used to rewrite it and now asserts its absence instead, exiting non-zero if a `# GlobalStrings` section or a `GlobalStrings\…` line reappears. If a real runtime consumer ever comes back, change that check and this section together.
+**Do not re-add the TOC block.** `tools/split_globalstrings.py` used to rewrite it and now asserts its absence instead, exiting non-zero if a `# GlobalStrings` section or a `GlobalStrings\…` line reappears. If a real runtime consumer ever comes back, change that check and this section together.
 
 ## Files
 
 | Path | Purpose |
 |------|---------|
-| `GlobalStrings/GlobalStrings.lua` | Full Blizzard reference (~1.6 MB, source file). Input to `split_globalstrings.py`. |
+| `GlobalStrings/GlobalStrings.lua` | Full Blizzard reference (~1.6 MB, source file). Input to `tools/split_globalstrings.py`. |
 | `GlobalStrings/GlobalStrings_001.lua` … `_026.lua` | Chunk files, each a contiguous alphabetical range of keys. Each emits `NS.GlobalStrings["KEY"] = "value"` assignments. **Not in the TOC, not in the shipped zip** — read only by `tests/test_defaults.lua`. |
-| `GlobalStrings/split_globalstrings.py` | Splitter script — re-run after a WoW patch. |
+| `tools/split_globalstrings.py` | Splitter script — re-run after a WoW patch. It lives under `tools/` (`layout-§1`, "Where an authored generator lives") and reads and writes `GlobalStrings/` by repo-root path. |
 | `GlobalStrings/README.md` | Splitter usage instructions. |
 
 ## The `NS.GlobalStrings` table
@@ -36,7 +36,7 @@ At runtime the equivalent data is `addon.originalStrings`, snapshotted from `_G`
 When Blizzard ships a new client (TWW patch, Midnight feature drop, etc.) the `GlobalStrings.lua` reference may add / rename / remove entries. To resync:
 
 1. Drop the new `GlobalStrings.lua` into `GlobalStrings/`. Source: [townlong-yak.com](https://www.townlong-yak.com/framexml/live/Helix/GlobalStrings.lua).
-2. From the project root: `python3 GlobalStrings/split_globalstrings.py`.
+2. From the project root: `python3 tools/split_globalstrings.py`.
 
 The script:
 

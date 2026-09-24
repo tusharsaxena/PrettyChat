@@ -6,20 +6,21 @@ A searchable copy of Blizzard's GlobalStrings (~22,879 entries), split into 26 c
 
 ## Files
 
-- `GlobalStrings.lua` — Full Blizzard reference (~1.6 MB, source file, not loaded by any TOC; only used as input to `split_globalstrings.py`)
+- `GlobalStrings.lua` — Full Blizzard reference (~1.6 MB, source file, not loaded by any TOC; only used as input to `tools/split_globalstrings.py`)
 - `GlobalStrings_001.lua` ... `GlobalStrings_026.lua` — Chunk files, each a contiguous alphabetical range of keys
-- `split_globalstrings.py` — Python script to regenerate chunk files from `GlobalStrings.lua`
 
-## split_globalstrings.py
+## The splitter: `tools/split_globalstrings.py`
+
+The generator does not live in this folder. `layout-§1` puts every authored generator under `tools/` ("Where an authored generator lives"), and `.pkgmeta` ignores `tools` whole; only the program moved — its input and its output stay here, where `tests/test_defaults.lua` reads the chunks.
 
 Parses `GlobalStrings.lua` for `KEY = "value";` entries (ignoring `_G["KEY"]` entries), then splits them into evenly-sized chunk files that each stay under `layout-§1`'s 1500-LOC cap.
 
 ### Usage
 
-From the project root:
+From the project root (it resolves every path from the repo root, so any working directory works):
 
 ```
-python3 GlobalStrings/split_globalstrings.py
+python3 tools/split_globalstrings.py
 ```
 
 ### What it does
