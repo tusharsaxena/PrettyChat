@@ -160,7 +160,7 @@ local MASTER_SPEC = {
     -- lives in settings/Panel.lua, which loads after this file.
     leadButton = {
         text    = NS.L["Test"],
-        tooltip = NS.L["Print a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` prints the same report to chat."],
+        tooltip = NS.L["Write a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` writes the same report there."],
         onClick = function() PrettyChat:TestToConsole() end,
     },
 }

@@ -544,7 +544,7 @@ end
 
 -- ---------------------------------------------------------------------
 -- Categories sub-page — one PRIMARY tab per message category, and inside each,
--- one SECONDARY tab per format string (options-ui-§13).
+-- a TreeGroup list of its format strings beside the editor (options-ui-§13).
 --
 -- Every category used to be a sub-page of its own: nine rows in the Blizzard
 -- left rail for one addon, eight of which were the same page with a different

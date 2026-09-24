@@ -57,7 +57,7 @@ local COMMANDS = {
         function(rest) Sl:CliSet(rest) end},
     {"reset",    L["Reset one setting to its default — `/pc reset <path>`"],
         function(rest) runReset(rest) end},
-    {"resetall", L["Reset every category to addon defaults"],
+    {"resetall", L["Reset every setting to defaults"],
         function() runResetAll() end},
     {"test",     L["Print sample chat lines to the debug console — `/pc test [all | category <name> | formatstring <NAME>]`"],
         function(rest) runTest(rest) end},

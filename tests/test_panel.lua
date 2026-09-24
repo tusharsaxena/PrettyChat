@@ -358,7 +358,7 @@ test("the Test button writes the report to the console, never into chat", functi
 end)
 
 test("/pc test writes the same report to the same place the button does", function()
-    -- This case read "still prints the same report to chat" and pinned the two callers
+    -- This case used to say the verb still printed the report to chat, and pinned the two callers
     -- DISAGREEING: the button opened the console, the verb put eighty-odd lines into the
     -- chat frame. One name, two acts. The sink is still a PARAMETER on Test rather than a
     -- redirection of NS.Print -- both callers simply pass the console writer now

@@ -125,6 +125,21 @@ test("/pc help lists every command with its description", function()
     t.truthy(text:find("/prettychat", 1, true), "help documents the alias")
 end)
 
+test("the resetall help row says it resets every setting", function()
+    -- `/pc resetall` is PrettyChat:ResetAll, which is db:ResetProfile(): the
+    -- addon-wide enable flag and the visibility choice go with every category's
+    -- overrides. The row used to promise only a per-category reset,
+    -- which undersold it (PRETTYCHAT-R-04).
+    local row
+    for _, entry in ipairs(NS.COMMANDS) do
+        if entry[1] == "resetall" then row = entry end
+    end
+    t.truthy(row, "resetall is in NS.COMMANDS")
+    t.eq(row[2], NS.L["Reset every setting to defaults"], "the row names the whole-profile reset")
+    t.truthy(joined("help"):find("Reset every setting to defaults", 1, true),
+        "and /pc help prints it")
+end)
+
 test("an unknown verb says so and then prints the help index", function()
     local out = slash("nonsense")
     t.truthy(out[1]:find("unknown command 'nonsense'", 1, true), "the verb is echoed back")

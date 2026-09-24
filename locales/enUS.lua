@@ -37,7 +37,7 @@ local enUS = {
     -- confirmation's wording. The page's own explainer was removed at the owner's
     -- request -- the tab opened on a paragraph rather than on its controls.
     "Test",
-    "Print a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` prints the same report to chat.",
+    "Write a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` writes the same report there.",
     "Reset this profile to the addon's defaults? Everything you have configured or added in it is discarded — your other profiles are not affected.",
     -- The General page's header Defaults tooltip. The button is the same reset as
     -- `Reset all settings` (options-ui-§12), confirmation included.
@@ -88,7 +88,7 @@ local enUS = {
     "Print a setting's current value — `/pc get <path>`",
     "Set a setting — `/pc set <path> <value>` (try /pc list)",
     "Reset one setting to its default — `/pc reset <path>`",
-    "Reset every category to addon defaults",
+    "Reset every setting to defaults",
     "Print sample chat lines to the debug console — `/pc test [all | category <name> | formatstring <NAME>]`",
     "Debug console — `/pc debug` shows it; `on`/`off` toggle logging",
     "Print the addon version",

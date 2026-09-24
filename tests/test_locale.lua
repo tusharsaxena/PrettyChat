@@ -107,6 +107,31 @@ test("every slash-command description is localized", function()
     end
 end)
 
+test("no locale string tells a player /pc test prints to chat", function()
+    -- `/pc test` writes its report to the DEBUG CONSOLE (settings/Slash.lua's
+    -- runTest routes every arm through PrettyChat:TestToConsole). The Test
+    -- button's tooltip went on sending the reader to chat for a week after
+    -- that move (PRETTYCHAT-R-04). The guard is conditional on the
+    -- routing, read from the source: if runTest is ever pointed back at chat,
+    -- this case stops constraining the wording rather than lying about it.
+    -- "chat" alone is not the tell -- the help row's "sample chat lines" names
+    -- the SUBJECT of the report -- so only chat as a DESTINATION is refused.
+    local src = assert(readFile(ctx.root .. "/settings/Slash.lua"), "settings/Slash.lua is unreadable")
+    local body = src:match("\nfunction runTest%(rest%)(.-)\nend%s")
+    t.truthy(body, "runTest is found in settings/Slash.lua")
+    if not (body and body:find("TestToConsole", 1, true)) then return end
+    local destinations = { "to chat", "in chat", "into chat", "to the chat", "in the chat", "into the chat" }
+    for key in pairs(L) do
+        if key:find("/pc test", 1, true) then
+            local lower = key:lower()
+            for _, phrase in ipairs(destinations) do
+                t.falsy(lower:find(phrase, 1, true),
+                    ("manifest entry %q says /pc test writes %s"):format(key, phrase))
+            end
+        end
+    end
+end)
+
 -- ---------------------------------------------------------------------
 -- The other direction: literals that never reached `L` at all.
 --

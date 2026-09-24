@@ -150,7 +150,7 @@ badge and any count quoted in the docs must agree with it.
 - note and cmd wrap text in the documented slash colors
 - RunAct calls onRaise once, then re-raises with the original stack
 
-### test_locale.lua (11)
+### test_locale.lua (12)
 
 - NS.L is published as a table
 - an unknown key falls back to itself verbatim
@@ -159,6 +159,7 @@ badge and any count quoted in the docs must agree with it.
 - every localized call site is in the enUS manifest
 - the manifest carries no entry that nothing references
 - every slash-command description is localized
+- no locale string tells a player /pc test prints to chat
 - the literal scan sees the sources it is meant to guard
 - every user-facing literal is routed through L or recorded as residue
 - every recorded residue literal is still unrouted in the file that names it
@@ -409,7 +410,7 @@ badge and any count quoted in the docs must agree with it.
 - Launcher: DEGRADED — LibDataBroker present, LibDBIcon absent: the plugin, no button
 - Launcher: DEGRADED — no LibKa0s at all: no launcher, and the row survives
 
-### test_slash.lua (51)
+### test_slash.lua (52)
 
 - Schema.FormatValue formats bools and doubles pipes in strings
 - NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
@@ -417,6 +418,7 @@ badge and any count quoted in the docs must agree with it.
 - a whitespace-only /pc is bare too
 - /pc help prints the help index
 - /pc help lists every command with its description
+- the resetall help row says it resets every setting
 - an unknown verb says so and then prints the help index
 - the verb is lower-cased but the argument keeps its case
 - extra whitespace around the verb is tolerated
@@ -565,7 +567,7 @@ badge and any count quoted in the docs must agree with it.
 | test_constants.lua | 8 |
 | test_mediasetup.lua | 8 |
 | test_util.lua | 8 |
-| test_locale.lua | 11 |
+| test_locale.lua | 12 |
 | test_defaults.lua | 15 |
 | test_schema.lua | 45 |
 | test_render.lua | 12 |
@@ -575,10 +577,10 @@ badge and any count quoted in the docs must agree with it.
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
 | test_launcher.lua | 28 |
-| test_slash.lua | 51 |
+| test_slash.lua | 52 |
 | test_disabled.lua | 13 |
 | test_panel.lua | 48 |
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **463** |
+| **Total** | **465** |
