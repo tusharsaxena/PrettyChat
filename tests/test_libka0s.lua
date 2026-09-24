@@ -789,3 +789,26 @@ test("degraded Get forwards the instance id", function()
     t.eq(changed, "instance-9", "and the instance id reaches the write")
 end)
 
+
+test("degraded: /pc test category Loot prints the report to chat every time", function()
+    -- red under: the stub's no-op Add, where the second run prints nothing.
+    -- TestToConsole used to hand Test the console's writer unconditionally, so with
+    -- the library absent the first run printed only the window's "unavailable"
+    -- line and every run after it printed nothing at all. The NS.Print default the
+    -- comments promised was unreachable.
+    local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    t.nilv(bare.env.LibStub("LibKa0s-DebugLog-1.0", true), "the console library is absent")
+    local msgs = bare.env.DEFAULT_CHAT_FRAME.messages
+    local function lootHeaders(from)
+        local n = 0
+        for i = from, #msgs do
+            if msgs[i]:find("Category: Loot", 1, true) then n = n + 1 end
+        end
+        return n
+    end
+    for run = 1, 2 do
+        local before = #msgs
+        bare.NS.SlashCommands:OnSlash("test category Loot")
+        t.eq(lootHeaders(before + 1), 1, "run " .. run .. " puts the Loot header in chat")
+    end
+end)

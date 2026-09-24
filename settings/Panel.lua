@@ -78,14 +78,26 @@ end
 -- the Categories page rather than as simpler.
 -- ---------------------------------------------------------------------
 
--- The report the Test button writes, and where it writes it.
+-- The console library itself, resolved ONCE at file load: it is what tells a live
+-- console from core/DebugLogSetup.lua's degraded stub, whose Add is a no-op and
+-- whose Show only announces the window's absence the first time it is asked.
+local DebugLogLib = LibStub and LibStub("LibKa0s-DebugLog-1.0", true)
+
+-- The report the Test button and `/pc test` write, and where they write it.
 --
 -- To the DEBUG CONSOLE, not to chat: `PrettyChat:Test()` prints one line per
 -- format string plus a header and a footer — 500+ lines with every category
 -- enabled — into the chat frame this addon exists to keep readable. The console
 -- is a window with a scrollbar and a copy button, which is what a report that
--- long actually needs. `/pc test` is unchanged and still prints to chat, because
--- the sink is a PARAMETER on Test rather than a redirection of NS.Print.
+-- long actually needs. The sink is a PARAMETER on Test rather than a redirection
+-- of NS.Print, so both destinations get the same report.
+--
+-- A DEGRADED INSTALL FALLS BACK TO CHAT. With LibKa0s-DebugLog-1.0 absent there is
+-- no console to write to: the stub's Add swallows every line, so handing Test the
+-- console's writer would print nothing at all after the first run's "unavailable"
+-- notice. Calling Test with NO sink instead lets its NS.Print default serve the
+-- report, every run (PRETTYCHAT-R-06).
+--
 -- A METHOD, not a file-local, because settings/Schema.lua's MASTER_SPEC now names
 -- it: the Test button is the composer's `leadButton` and its click is declared
 -- beside the reset's, late-bound through PrettyChat exactly as
@@ -99,6 +111,7 @@ end
 -- is what the verb's `category` / `formatstring` forms need; the button passes
 -- none, which is the `all` case.
 function PrettyChat:TestToConsole(filter)
+    if not DebugLogLib then return PrettyChat:Test(filter) end
     NS.DebugLog:Show()
     PrettyChat:Test(filter, function(line) NS.DebugLog:Add("Test", line) end)
 end

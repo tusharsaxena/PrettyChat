@@ -692,10 +692,11 @@ end
 -- to keep readable -- and that was true of the verb as much as of the button, which
 -- is why they no longer disagree. One name, one act.
 --
--- It still DEFAULTS to NS.Print, and the default is still the right one: a caller
--- with no console -- a degraded load where LibKa0s-DebugLog-1.0 never registered --
--- gets chat rather than nothing. NS.Print's own destination is untouched either way;
--- the sink is a parameter, not a redirection.
+-- It still DEFAULTS to NS.Print, and the default is still the right one: on a
+-- degraded load where LibKa0s-DebugLog-1.0 never registered, TestToConsole sees the
+-- library is absent and calls Test with NO sink, so the report goes to chat rather
+-- than into the console stub's no-op Add (PRETTYCHAT-R-06). NS.Print's own
+-- destination is untouched either way; the sink is a parameter, not a redirection.
 function PrettyChat:Test(filter, sink)
     local emit = sink or NS.Print
     emit(note(L["sample of every format string (preview ignores enable toggles):"]))
