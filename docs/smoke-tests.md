@@ -643,6 +643,7 @@ that draws nothing raises nothing, and a `.tga` in the wrong format loads as sil
 | Touched `core/DebugLogSetup.lua`, `media/`, or panel chrome (fonts/textures/borders) | Quick recipe + M + K groups |
 | Touched `core/LauncherSetup.lua`, the minimap row, `media/logos/`, or the TOC's `## IconTexture` | Quick recipe + **G group** |
 | Re-vendored `libs/LibKa0s/`, or touched any of the seven seam files | Quick recipe + **K group** |
+| Touched `ApplyStrings`, the combat watcher or `General.visibility`, or a sibling addon that parses loot/currency chat changed | Quick recipe + **F group** |
 | Pre-release / pre-tag | Full suite |
 | Post WoW client patch | Full suite + regenerate `GlobalStrings/` per [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patch) |
 
@@ -992,6 +993,43 @@ open the console.
 **Failure mode:** the button prints into chat (the sink was dropped); `/pc test` stops printing to
 chat (the sink was made the default rather than the caller's choice); the console opens empty (the
 report was written before the window existed).
+
+## F — The chat text other addons read
+
+PrettyChat's output is not private to the chat frame: overriding `_G[GLOBALNAME]` changes the
+payload of the chat event itself, so every addon that parses it reads PrettyChat's wording. No
+headless suite can see a sibling addon's pattern cache, so this group is in-client only. Background:
+`## Known Limitations` in [ARCHITECTURE.md](./ARCHITECTURE.md), handoff H-1 (PRETTYCHAT-R-01).
+
+#### SMK-F001 — The chat text contract with LootHistory (H-1)
+
+**Why:** under `General.visibility` `inCombat` or `outOfCombat` the loot globals change at every
+combat boundary. A consumer that compiled its patterns once (LootHistory, `core/Util.lua:118/147/187/210`)
+matches only the wording it first saw and silently records nothing in the other state.
+
+**Setup:** PrettyChat defaults, then `/pc set General.visibility inCombat`. LootHistory installed and
+enabled, its browser open on the current session. A mob to kill and a target dummy (or any way into
+combat) nearby.
+
+**Steps:**
+1. `/etrace`, filtered to `CHAT_MSG_LOOT`.
+2. Out of combat, kill a mob and loot one item. In `/etrace`, read arg1 of `CHAT_MSG_LOOT`.
+3. Enter combat (pull the target dummy) and loot one item, for example by opening a container from
+   your bags. Read arg1 again.
+4. Leave combat and loot one more item.
+5. Check LootHistory's browser for all three items.
+6. `/pc set General.visibility always` to put the setting back.
+
+**Expected:**
+- Out of combat, arg1 is Blizzard's wording ("You receive loot: …").
+- In combat, arg1 is PrettyChat's format (`Loot | You | + …`).
+- **Before LootHistory's H-1 fix:** LootHistory records only the items looted in the state its first
+  loot happened in. That is the known limitation, not a PrettyChat regression.
+- **After LootHistory's H-1 fix:** LootHistory records all three.
+
+**Failure mode:** arg1 does not change with combat state (the combat watcher is not re-applying the
+globals); or, once H-1 has shipped in LootHistory, any of the three items is missing from its
+browser.
 
 ## N — Non-English client
 

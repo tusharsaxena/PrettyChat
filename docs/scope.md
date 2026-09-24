@@ -9,7 +9,7 @@ What's in scope, what's out, and the resolved decisions that shaped the contract
 - **Settings panel** integrated into Blizzard's AddOns settings via canvas-layout subcategories: a virtual `General` sub-page for the master switch / Test / Reset all controls, and a `Categories` sub-page carrying one tab per message category.
 - **Schema-driven slash CLI** (`/pc list / get / set / reset / resetall / test / debug`) sharing one write path with the panel. Every panel-shaped operation is reachable from chat by dot path.
 - **Live per-string preview** in the panel — a Preview EditBox on every string's block, always rendered, re-syncing on each commit — and a `/pc test` / Test-button preview that walks every format regardless of enable state.
-- **Compatibility with any chat UI** (default Blizzard, ElvUI, Glass, …) by overriding `_G[GLOBALNAME]` rather than hooking chat events.
+- **Compatibility with any chat UI** (default Blizzard, ElvUI, Glass, …) by overriding `_G[GLOBALNAME]` rather than hooking chat events. The flip side is that every addon parsing those chat events sees PrettyChat's wording, which changes mid-session (and at every combat boundary under the `inCombat` / `outOfCombat` visibility modes), so a sibling parser must build its patterns from the live globals; that fix is the consumer's (handoff H-1, LootHistory), and see `## Known Limitations` in [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Out of scope
 

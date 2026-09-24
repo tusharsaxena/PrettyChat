@@ -152,7 +152,7 @@ What stands in its place is a **direct, synchronous fan-out inside the single wr
 
 ## Event Subscriptions
 
-**Two, and only while the player has asked for them.** PrettyChat registers no chat filters and hooks no chat frames — the entire mechanism is overriding `_G[GLOBALNAME]` and letting WoW's chat code read it lazily — and the only lifecycle hooks are the AceAddon callbacks `OnInitialize` (DB + migrations + slash registration) and `OnEnable` (snapshot Blizzard originals → arm the combat watcher → `ApplyStrings` → register panels).
+**Two, and only while the player has asked for them.** PrettyChat registers no chat filters and hooks no chat frames — the entire mechanism is overriding `_G[GLOBALNAME]` and letting WoW's chat code read it lazily (which is why every other addon reading those chat events sees PrettyChat's wording too: `## Known Limitations`, handoff H-1) — and the only lifecycle hooks are the AceAddon callbacks `OnInitialize` (DB + migrations + slash registration) and `OnEnable` (snapshot Blizzard originals → arm the combat watcher → `ApplyStrings` → register panels).
 
 | Event | Registered by | When it is registered | What it does |
 |---|---|---|---|
@@ -193,6 +193,7 @@ The conformance suite is `tests/test_disabled.lua` (`§7`). Every assertion is m
 - **Snapshot is load-time.** `OnEnable` snapshots Blizzard originals only for strings mentioned in `NS.Defaults` (79). Adding a new `globalName` needs a `/reload` for the snapshot to capture its pristine value.
 - **Positional format rendering is WoW-only.** `%n$s` specifiers rely on WoW's extended `string.format`; the headless test harness (stock Lua 5.1) can't render them and asserts graceful degradation instead.
 - **Single shared profile.** Per-character / per-realm profile scoping is not exposed.
+- **The rewritten text is every addon's text (handoff H-1).** Overriding `_G[GLOBALNAME]` changes the payload Blizzard's chat code builds, so the `CHAT_MSG_LOOT`, `CHAT_MSG_CURRENCY`, `CHAT_MSG_MONEY` and `CHAT_MSG_COMBAT_*` (XP, honor, faction) lines reach **every** addon in PrettyChat's format, not only the chat frame. A parser that compiles match patterns from those globals must build them from the live global, or re-check them against it on each parse; a pattern compiled once goes stale silently. The globals change mid-session on any settings write, a profile change and a stand-down, and under `General.visibility` `inCombat` or `outOfCombat` at **every combat boundary** (`## Event Subscriptions`). Known consumer: LootHistory caches its loot and currency patterns once (`LootHistory/core/Util.lua:118/147/187/210`) and stops recording self-loot in the other state. The fix is LootHistory's (handoff H-1, PRETTYCHAT-R-01); PrettyChat adds no API, bus message or chat filter for it. In-client check: [SMK-F001](./smoke-tests.md#smk-f001--the-chat-text-contract-with-loothistory-h-1).
 
 ## Documentation map
 
