@@ -18,11 +18,11 @@ ignore:
   # Agent tooling, and untracked -- the directory holds one file,
   # settings.local.json, and `git ls-files .claude` returns nothing -- so no
   # packager clone has ever carried it and this line changes no downloaded byte.
-  # It is listed because packaging.md:28 MUSTs every root dot-entry present in
+  # It is listed because packaging-§1 MUSTs every root dot-entry present in
   # the repo be named or justified, tracked or not: the check is about an
   # enumeration going stale, not about a package growing. There is deliberately
   # no .superpowers line, because no such directory exists at this root.
-  - .claude     # untracked; listed under packaging.md:28
+  - .claude     # untracked; listed under packaging-§1
 
   # Developer documentation. README.md and LICENSE stay in the package, because
   # players do read those.

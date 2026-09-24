@@ -427,8 +427,8 @@ end
 -- `/prettychat` unconditionally and nothing unregisters them, and the COMMANDS
 -- table above is built at file load and never rebuilt. Disabled means this addon
 -- stands its OVERRIDES down, and that a verb DRIVING those overrides refuses (the
--- disabled gate above, which is the second reader of `IsAddonEnabled` beside
--- modules/Override.lua's ApplyStrings); the dispatcher, the settings panel and
+-- disabled gate above, which asks the stored path through `IsAddonEnabled`, while
+-- ApplyStrings asks the lifecycle latch through `IsStoodDown`); the dispatcher, the settings panel and
 -- the launcher are SETUP and come up in either state, and these two verbs are
 -- named in the live set so the gate can never reach them.
 -- tests/test_slash.lua and tests/test_launcher.lua pin that.

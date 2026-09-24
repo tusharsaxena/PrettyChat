@@ -352,8 +352,8 @@ end
 
 -- EVERY ROW ON EVERY PAGE CARRIES A `group` (options-ui-§13). These rows are not
 -- rendered through the flow engine — the Categories page hands H.TabStrip its tab
--- list directly, because a category tab is one schema row followed by a bespoke
--- 40/60 editor the engine cannot express — but the declaration is what an audit
+-- list directly, because a category tab is one schema row followed by a TreeGroup
+-- (the string tree beside a per-string editor) the engine cannot express — but the declaration is what an audit
 -- reads and what would partition the page correctly the day that stops being
 -- true. The group IS the category, which is the tab it is drawn under.
 local function buildCategoryRow(category)

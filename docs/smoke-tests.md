@@ -908,7 +908,7 @@ Categories page's eight. Below it, in this order and two to a line:
 composer's `leadButton` now (LibKa0s v1.25.0), which puts it in the pair's empty right half — the
 cell §15 leaves a frameless addon, which has no *Reset position*.
 
-The explainer line sits above them. **Failure mode:** no strip (the page went back to `RenderRows`);
+Nothing but the strip sits above them. **Failure mode:** no strip (the page went back to `RenderRows`);
 a strip with a tab named `General` (the group was renamed, which also detaches the closing button's
 `afterGroup` hook silently); the Test or Reset button missing (the hook detached); the two on
 separate rows again (the `leadButton` was dropped from `MASTER_SPEC`, or the addon went back to
