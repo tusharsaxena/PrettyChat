@@ -389,7 +389,7 @@ badge and any count quoted in the docs must agree with it.
 - a profile reset that raises logs its one line marked, exactly once
 - a profile copy that raises logs its one line marked
 
-### test_launcher.lua (31)
+### test_launcher.lua (36)
 
 - Launcher: the broker object's icon IS the file the TOC's IconTexture names
 - Launcher: that file is on disk, 128x128 uncompressed 32-bit TGA
@@ -400,6 +400,11 @@ badge and any count quoted in the docs must agree with it.
 - Launcher: RUNG (c) — left-click opens the settings panel, through the gated path
 - Launcher: RIGHT-click opens the settings panel too, as it does on every rung
 - Launcher: no toggle hides behind the left button — there is no state to flip
+- Launcher tooltip: the library draws it — brand, TOC version, status, the rung-(c) hints
+- Launcher tooltip: the version is the TOC's metadata, never a hand-typed copy
+- Launcher tooltip: Enabled is green Yes, and red No while disabled — shown either way
+- Launcher tooltip: the status is read on every show, never cached
+- Launcher tooltip: passing isEnabled does NOT gate the rung-(c) left click
 - Launcher: the Minimap button row is composed, stored, and defaults to SHOWN
 - Launcher: the row's get/set INVERT onto LibDBIcon's hide key
 - Launcher: /pc get global.minimap.shown answers true on a fresh install, and /pc set global.minimap.shown false stores hide = true
@@ -592,11 +597,11 @@ badge and any count quoted in the docs must agree with it.
 | test_database.lua | 26 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
-| test_launcher.lua | 31 |
+| test_launcher.lua | 36 |
 | test_slash.lua | 52 |
 | test_disabled.lua | 13 |
 | test_panel.lua | 48 |
 | test_doc_structure.lua | 11 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **481** |
+| **Total** | **486** |

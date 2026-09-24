@@ -556,6 +556,19 @@ that draws nothing raises nothing, and a `.tga` in the wrong format loads as sil
   Nothing toggles, nothing is stored, and no chat line is printed.
 - In combat: both refuse with the same gray notice `/pc config` gives (options-ui-§2).
 
+#### T-65a — Hovering the button shows the status tooltip, enabled and disabled
+
+> Why: `launcher-§1` as of the standard's v2.66.0. LibKa0s-Launcher (minor 3) draws one tooltip
+> shape in all eleven addons; PrettyChat has no lock and no test mode, so it gets the short form.
+
+- Steps: hover the minimap button. Then `/pc disable`, hover it again. `/pc enable`.
+- Expected, enabled: `Ka0s Pretty Chat  v<the TOC version>`, `Enabled: Yes` (green),
+  `Left-click: Open settings`, `Right-click: Open settings`, and nothing else.
+- Expected, disabled: the same four lines with `Enabled: No` (red). The left-click hint does not
+  change (rung (c) is never refused), and there is no `Locked` or `Test mode` line either way.
+- Failure mode: no tooltip, a second title or second set of click hints (anti-pattern #89), or an
+  `Enabled` line that lags the switch until `/reload`.
+
 #### T-66 — The Minimap button checkbox hides it NOW, and remembers
 
 > Why: `launcher-§3`. The row says shown and the store says hidden, so exactly one negation

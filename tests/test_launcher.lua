@@ -211,6 +211,109 @@ test("Launcher: no toggle hides behind the left button — there is no state to 
     t.eq(inst.NS.Launcher:IsShown(), true, "and neither did the button's own visibility")
 end)
 
+-- ── the status tooltip (Launcher minor 3, launcher-§1 as of v2.66.0) ────────
+--
+-- The library draws the whole tooltip; this addon only answers its questions. So
+-- what is pinned here is the DESCRIPTOR, read back through the one place a player
+-- sees it: `version` answers the TOC's own `## Version`, `isEnabled` answers the
+-- master switch on every show, and `isLocked` / `isTestMode` / `leftClickLabel` /
+-- `onTooltipShow` are ABSENT. A frameless rung-(c) addon has no lock, no test mode
+-- and no line of its own to add, and a label on rung (c) is one the library ignores.
+-- An absent field is pinned by the line it would have drawn not being there.
+
+--- A fake GameTooltip: records AddLine and nothing else, which is all the library
+--- draws with. Color escapes are stripped so a case reads the words a player reads;
+--- the raw lines come back second for the one case that looks at the color.
+local function hover(inst)
+    local tt = { lines = {} }
+    function tt:AddLine(line) self.lines[#self.lines + 1] = line end
+    inst.NS.Launcher:Object().OnTooltipShow(tt)
+    local plain = {}
+    for n, line in ipairs(tt.lines) do
+        plain[n] = (line:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
+    end
+    return plain, tt.lines
+end
+
+local function tocVersion()
+    local fh = io.open(ctx.root .. "/PrettyChat.toc", "r")
+    local toc = fh:read("*a")
+    fh:close()
+    return toc:match("##%s*Version:%s*([^\r\n]+)")
+end
+
+local function block(lines) return table.concat(lines, "\n") end
+
+test("Launcher tooltip: the library draws it — brand, TOC version, status, the rung-(c) hints",
+function()
+    local inst = wired()
+    local version = tocVersion()
+    t.truthy(version and version ~= "", "the TOC declares a version")
+    t.eq(block(hover(inst)), block({
+        "Ka0s Pretty Chat  v" .. version,
+        "Enabled: Yes",
+        "Left-click: Open settings",
+        "Right-click: Open settings",
+    }), "exactly four lines: no Locked, no Test mode, no line of the addon's own")
+end)
+
+test("Launcher tooltip: the version is the TOC's metadata, never a hand-typed copy", function()
+    -- NS.Version() reads `## Version` through LibKa0s-Env; the tooltip must say
+    -- what `/pc version` says, so a bump that edits the TOC moves both.
+    local inst = wired()
+    local title = hover(inst)[1]
+    t.eq(title, "Ka0s Pretty Chat  v" .. inst.NS.Version(),
+        "the title carries the same version /pc version prints")
+    t.falsy(title:find("vv", 1, true), "and a leading v is not doubled")
+end)
+
+test("Launcher tooltip: Enabled is green Yes, and red No while disabled — shown either way",
+function()
+    local inst = wired()
+    local _, raw = hover(inst)
+    t.truthy(raw[2]:find("|cff%x%x%x%x%x%xYes|r") or raw[2]:find("|cFF%x%x%x%x%x%xYes|r"),
+        "Enabled answers a colored Yes on a fresh install: " .. raw[2])
+
+    inst.NS.Schema.Set(ENABLED_PATH, false)
+    local lines, rawOff = hover(inst)
+    t.eq(block(lines), block({
+        "Ka0s Pretty Chat  v" .. tocVersion(),
+        "Enabled: No",
+        "Left-click: Open settings",
+        "Right-click: Open settings",
+    }), "the tooltip is still drawn while disabled, and says so")
+    t.neq(rawOff[2]:match("|c%x%x%x%x%x%x%x%x"), raw[2]:match("|c%x%x%x%x%x%x%x%x"),
+        "and No wears a different color from Yes")
+    t.falsy(lines[3]:find("disabled", 1, true),
+        "rung (c) is never gated, so its hint does not become the refusal pointer")
+end)
+
+test("Launcher tooltip: the status is read on every show, never cached", function()
+    local inst = wired()
+    t.eq(hover(inst)[2], "Enabled: Yes")
+    inst.addon:OnSlashCommand("disable")
+    t.eq(hover(inst)[2], "Enabled: No", "the same object reads the switch the verb just wrote")
+    inst.addon:OnSlashCommand("enable")
+    t.eq(hover(inst)[2], "Enabled: Yes", "and reads it back the moment it flips again")
+end)
+
+test("Launcher tooltip: passing isEnabled does NOT gate the rung-(c) left click", function()
+    -- isEnabled is on the descriptor for the tooltip's sake. The library gates the
+    -- left click only where `onClick` is present, so this addon's left click keeps
+    -- opening the panel while disabled (launcher-§2's rung-(c) carve-out).
+    local inst = wired()
+    local opened = 0
+    inst.NS.Helpers.OpenOptionsPanel = function() opened = opened + 1 end
+    inst.NS.Schema.Set(ENABLED_PATH, false)
+    inst.env.__resetPrinted()
+    inst.NS.Launcher:Object().OnClick({}, "LeftButton")
+    t.eq(opened, 1, "a disabled addon's left click still opens the settings panel")
+    local refusal = inst.NS.SlashCommands:DisabledLine()
+    for _, line in ipairs(inst.env.__printed()) do
+        t.falsy(line:find(refusal, 1, true), "and prints no refusal line")
+    end
+end)
+
 -- ── the Minimap button row ──────────────────────────────────────────────────
 
 test("Launcher: the Minimap button row is composed, stored, and defaults to SHOWN", function()
