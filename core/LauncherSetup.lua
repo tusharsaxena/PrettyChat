@@ -68,7 +68,7 @@ local addonName, NS = ...
 -- because something calls into it at load or from a page body and a nil member
 -- would raise there. This one does not, and that is the library's own documented
 -- shape rather than an omission: nothing in this addon calls back into the
--- launcher except the Register line in OnEnable and the `global.minimap.hide`
+-- launcher except the Register line in OnEnable and the `global.minimap.shown`
 -- wiring in settings/Schema.lua, and BOTH already guard on `NS.Launcher`. A stub
 -- here would be a second no-op object for two guarded call sites to find, and the
 -- checkbox would go on working either way because its `get` reads the STORE, not

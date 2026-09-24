@@ -32,7 +32,7 @@ local t    = ctx.t
 local test = ctx.test
 
 local ICON_PATH = "Interface\\AddOns\\PrettyChat\\media\\logos\\prettychat.logo.128.tga"
-local MINIMAP_PATH = "global.minimap.hide"
+local MINIMAP_PATH = "global.minimap.shown"
 local ENABLED_PATH = "General.enabled"
 
 -- ── the two fakes ───────────────────────────────────────────────────────────
@@ -243,6 +243,62 @@ test("Launcher: the row's get/set INVERT onto LibDBIcon's hide key", function()
     Schema.Set(MINIMAP_PATH, true)
     t.eq(db.global.minimap.hide, false, "and ticking it again clears hide")
     t.eq(Schema.Get(MINIMAP_PATH), true)
+end)
+
+-- WS-06: the settings PATH names the row's sense, SHOWN; the stored key stays
+-- LibDBIcon's own `hide` (launcher-§3, anti-pattern #81). No SavedVariables change,
+-- no migration: only the CLI name moved.
+local function lastLine(inst)
+    local msgs = inst.env.DEFAULT_CHAT_FRAME.messages
+    return msgs[#msgs] or ""
+end
+
+test("Launcher: /pc get global.minimap.shown answers true on a fresh install, and "
+    .. "/pc set global.minimap.shown false stores hide = true", function()
+    local inst = wired()
+    local addon, db = inst.addon, inst.addon.db
+
+    addon:OnSlashCommand("get " .. MINIMAP_PATH)
+    t.truthy(lastLine(inst):find("global.minimap.shown|r = |cFFFFFFFFtrue", 1, true),
+        "a fresh install reads SHOWN")
+
+    addon:OnSlashCommand("set " .. MINIMAP_PATH .. " false")
+    t.eq(db.global.minimap.hide, true, "the set lands on LibDBIcon's own hide key")
+    t.nilv(db.sv.global.minimap.shown, "and no `shown` key is ever stored")
+end)
+
+test("Launcher: global.minimap.hide is no longer a settings path", function()
+    local inst = wired()
+    t.nilv(inst.NS.Schema.FindByPath("global.minimap.hide"),
+        "the old CLI name answers unknown setting")
+    inst.addon:OnSlashCommand("get global.minimap.hide")
+    t.truthy(lastLine(inst):find("Setting not found: global.minimap.hide", 1, true),
+        "and /pc get says so")
+end)
+
+test("Launcher: a LEGACY store keeps its choice under the renamed path", function()
+    -- A player who hid the button before WS-06: the stored table is exactly what
+    -- LibDBIcon wrote, and nothing migrates it.
+    local inst = wired()
+    local addon, db = inst.addon, inst.addon.db
+    local acts = inst.mocks.__icons.acts
+    local m = db.global.minimap
+    m.hide, m.minimapPos = true, 200
+
+    addon:OnSlashCommand("get " .. MINIMAP_PATH)
+    t.truthy(lastLine(inst):find("global.minimap.shown|r = |cFFFFFFFFfalse", 1, true),
+        "the legacy hide = true reads as shown = false")
+
+    addon:OnSlashCommand("set " .. MINIMAP_PATH .. " false")
+    t.eq(acts[#acts], "Hide:PrettyChat", "the button stays hidden")
+    t.eq(db.global.minimap.hide, true, "hide is still true")
+    t.eq(db.global.minimap.minimapPos, 200, "minimapPos is untouched")
+    t.nilv(db.sv.global.minimap.shown, "and no `shown` key reached the raw SV")
+
+    addon:OnSlashCommand("set " .. MINIMAP_PATH .. " true")
+    t.eq(db.sv.global.minimap.hide, false, "showing it writes hide = false")
+    t.nilv(db.sv.global.minimap.shown, "still no `shown` key")
+    t.eq(db.global.minimap.minimapPos, 200, "and minimapPos still untouched")
 end)
 
 test("Launcher: the write moves the BUTTON, not just the store", function()

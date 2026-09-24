@@ -386,7 +386,7 @@ badge and any count quoted in the docs must agree with it.
 - a profile reset that raises logs its one line marked, exactly once
 - a profile copy that raises logs its one line marked
 
-### test_launcher.lua (28)
+### test_launcher.lua (31)
 
 - Launcher: the broker object's icon IS the file the TOC's IconTexture names
 - Launcher: that file is on disk, 128x128 uncompressed 32-bit TGA
@@ -399,6 +399,9 @@ badge and any count quoted in the docs must agree with it.
 - Launcher: no toggle hides behind the left button — there is no state to flip
 - Launcher: the Minimap button row is composed, stored, and defaults to SHOWN
 - Launcher: the row's get/set INVERT onto LibDBIcon's hide key
+- Launcher: /pc get global.minimap.shown answers true on a fresh install, and /pc set global.minimap.shown false stores hide = true
+- Launcher: global.minimap.hide is no longer a settings path
+- Launcher: a LEGACY store keeps its choice under the renamed path
 - Launcher: the write moves the BUTTON, not just the store
 - Launcher: the write is a LEAF write — minimapPos survives a toggle
 - Launcher: the row is the FOURTH of the composed block, after the console
@@ -583,11 +586,11 @@ badge and any count quoted in the docs must agree with it.
 | test_database.lua | 26 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
-| test_launcher.lua | 28 |
+| test_launcher.lua | 31 |
 | test_slash.lua | 52 |
 | test_disabled.lua | 13 |
 | test_panel.lua | 48 |
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **472** |
+| **Total** | **475** |

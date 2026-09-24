@@ -344,8 +344,8 @@ end
 --
 --   * the session-only `state.debugConsole` row is in that category too, and a
 --     Defaults press must not close the player's debug console;
---   * `global.minimap.hide` is in it as well — settings/Schema.lua wires the
---     composed Master-controls rows onto the virtual General category, so the
+--   * `global.minimap.shown` (stored as db.global.minimap.hide) is in it as
+--     well — settings/Schema.lua wires the composed Master-controls rows onto the virtual General category, so the
 --     minimap row carries `category = "General"` AND a `default`, which is
 --     exactly the shape a page walk rewrites. launcher-§3 (Standard v2.54.0)
 --     states as a PROPERTY that a player's minimap-button choice survives both

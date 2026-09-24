@@ -127,9 +127,9 @@ end
 --- MEASURED, NOT PREDICTED, and the difference is the point. The parked count is
 --- taken before the wipe, because nothing can count a change after it has
 --- happened — but it counts every stored row that differed from its default, and
---- a PROFILE reset does not reach every stored row. `global.minimap.hide` is
---- stored outside the profile deliberately (launcher-§3): a player's
---- minimap-button choice is a per-installation display preference, in the same
+--- a PROFILE reset does not reach every stored row. `global.minimap.shown` is
+--- stored (as db.global.minimap.hide) outside the profile deliberately
+--- (launcher-§3): a player's minimap-button choice is a per-installation display preference, in the same
 --- class as the angle they dragged the button to, and it survives this reset. A
 --- line claiming the reset rewrote that row is the ledger saying the opposite of
 --- what the store says, and it read `(2 rows)` for a one-row reset whenever the

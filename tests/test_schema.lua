@@ -151,7 +151,7 @@ test("the Master controls block is the composed one, in canonical order", functi
     local paths = {}
     for i, r in ipairs(generalRows) do paths[i] = r.path end
     t.eq(table.concat(paths, ","),
-        "General.enabled,General.visibility,state.debugConsole,global.minimap.hide",
+        "General.enabled,General.visibility,state.debugConsole,global.minimap.shown",
         "enable, visibility, console, minimap — the frameless block, in that order")
 
     for _, path in ipairs({ "General.scale", "General.alpha", "General.locked" }) do

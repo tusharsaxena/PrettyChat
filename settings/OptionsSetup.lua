@@ -181,7 +181,7 @@ if not lib then
             -- The minimap row (OptionsCompose minor 7). Emitted here for the same
             -- reason `enabled` and `visibility` are: it is a SETTING, and a
             -- degraded install still stores, reads and writes it. Dropping it would
-            -- delete `global.minimap.hide` from the schema and with it the only
+            -- delete `global.minimap.shown` from the schema and with it the only
             -- surface left for showing the button again once LibKa0s returns.
             --
             -- STORED, so no `sessionOnly` -- and the leaf carries the composer's

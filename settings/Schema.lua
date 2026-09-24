@@ -30,7 +30,8 @@ Schema.CATEGORY_PAGE = CATEGORY_PAGE
 --   General.enabled                     → addon-wide master toggle (bool)
 --   General.visibility                  → addon-wide visibility mode (string enum)
 --   state.debugConsole                  → the console window's own toggle (session only)
---   global.minimap.hide                 → the minimap button, INVERTED (stored, global)
+--   global.minimap.shown                → the minimap button, INVERTED onto LibDBIcon's
+--                                         stored `hide` (stored, global; WS-06)
 --   <Category>.enabled                  → category master toggle (bool)
 --   <Category>.<GLOBALNAME>.enabled     → per-string enable toggle (bool)
 --   <Category>.<GLOBALNAME>.format      → per-string format string
@@ -144,7 +145,14 @@ local MASTER_SPEC = {
     -- frameless and its display is the chat text it rewrites, so it has no preview
     -- to put a switch on. The composer renders the Minimap button row alone on its
     -- line, which is exactly what it does for either row without the other.
-    minimapPath = "global.minimap.hide",
+    --
+    -- THE PATH NAMES THE ROW'S SENSE, THE STORE KEEPS THE LIBRARY'S (WS-06,
+    -- launcher-§3, anti-pattern #81). `/pc get|set global.minimap.shown` reads
+    -- the way the checkbox does, while the stored key stays LibDBIcon's own
+    -- db.global.minimap.hide -- no SavedVariables change, no migration, and no
+    -- `shown` key is ever written. The old `global.minimap.hide` path is simply
+    -- an unknown setting now.
+    minimapPath = "global.minimap.shown",
     -- options-ui-§12's global reset, through this addon's confirmation popup —
     -- the destructive path and its guard are one act (settings/Panel.lua).
     onResetAll = function() PrettyChat:ConfirmResetAll() end,
@@ -227,7 +235,11 @@ local MASTER_WIRING = {
     -- the day the library arrives. NS.Launcher:SetShown is what makes the button
     -- follow the checkbox NOW rather than at the next reload; it writes `hide`
     -- again with the same value, which is the library's documented shape.
-    ["global.minimap.hide"] = {
+    --
+    -- The KEY here is the settings path, and it names the row's SHOWN sense
+    -- (WS-06); the closures are what map it onto the stored `hide` leaf, so the
+    -- path and the store may differ in sense without a second record.
+    ["global.minimap.shown"] = {
         kind = "minimap_button",
         get  = function()
             local mm = PrettyChat.db and PrettyChat.db.global and PrettyChat.db.global.minimap
@@ -944,9 +956,9 @@ end
 -- skipped, because AceDB's profile reset never touches them.
 --
 -- NOT, on its own, "the rows a profile reset would rewrite" — it used to be
--- described that way and the description was one row wrong. `global.minimap.hide`
--- is stored, differs whenever the player has hidden the button, and lives in the
--- GLOBAL store, which a profile reset does not reach (launcher-§3). So this is one
+-- described that way and the description was one row wrong. `global.minimap.shown`
+-- (stored as db.global.minimap.hide) is stored, differs whenever the player has
+-- hidden the button, and lives in the GLOBAL store, which a profile reset does not reach (launcher-§3). So this is one
 -- half of a subtraction: PrettyChat:ResetAll takes it before the wipe, because
 -- nothing can count a change after it has happened, and core/PrettyChat.lua's
 -- OnProfileReset takes it again afterwards and reports the difference. A row the
