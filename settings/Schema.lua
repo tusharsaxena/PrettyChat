@@ -555,6 +555,12 @@ runValidation()
 -- reset count. core/DebugLogSetup.lua's library-less sink discards those lines
 -- anyway.
 --
+-- The instance id a caller passes is forwarded the way Schema minor 2 forwards it:
+-- Get hands it to the row's own `get`, ApplyDefault(row, id) hands it to Set, and
+-- Set hands it to validate, normalize, onChange and announce. This addon keeps one
+-- instance and no row reads the id today, so this is shape, not behavior: a stub that
+-- dropped it would be the one path where a future per-instance row reads nil.
+--
 -- A DELIBERATE, DOCUMENTED DUPLICATION of the library's reference stub
 -- (tests/test_schema.lua upstream, `referenceStub`), kept close to it so the two
 -- read alike. tests/test_surface_parity.lua pins its member set against a live
@@ -630,7 +636,7 @@ local function stubReads(S, d, resolve)
     function S.Reindex() end
     function S.Get(path, id)
         local row = S.FindRow(path)
-        if row and type(row.get) == "function" then return row.get() end
+        if row and type(row.get) == "function" then return row.get(id) end
         if type(path) ~= "string" or (row and row.sessionOnly) then return nil end
         local parts = SchemaStub.SplitPath(path)
         local root, first = resolve(parts, id)
@@ -656,20 +662,28 @@ local function stubPrepare(row, path, value, rid)
     return true, value
 end
 
+-- Where a stored row's write lands: the split path, the root resolveRoot answers (nil
+-- when it answers none) with its first segment, and the instance id resolveRoot may
+-- rewrite. Split from stubSet, with stubStored, to hold every stub function at CCN
+-- 10 or below.
+local function stubStored(row) return type(row.set) ~= "function" and not row.sessionOnly end
+local function stubTarget(path, id, resolve)
+    local parts = SchemaStub.SplitPath(path)
+    local r, f, got = resolve(parts, id)
+    if type(r) ~= "table" then r, f = nil, nil end
+    if got == nil then got = id end
+    return parts, r, f, got
+end
+
 -- The write seam's order without its log and tally: refuse, validate and normalize,
 -- store, react, announce.
 local function stubSet(S, d, resolve)
     return function(path, value, id)
         local row = S.FindRow(path)
         if not row then return false, "PrettyChat: no setting " .. tostring(path) end
-        local stored = type(row.set) ~= "function" and not row.sessionOnly
+        local stored = stubStored(row)
         local parts, root, first, rid = nil, nil, nil, id
-        if stored then
-            parts = SchemaStub.SplitPath(path)
-            local r, f, got = resolve(parts, id)
-            if type(r) == "table" then root, first = r, f end
-            if got ~= nil then rid = got end
-        end
+        if stored then parts, root, first, rid = stubTarget(path, id, resolve) end
         local ok, prepared, err, why = stubPrepare(row, path, value, rid)
         if not ok then return false, err, why end
         value = prepared
@@ -724,11 +738,11 @@ function SchemaStub.New(_, d)
         local row = S.FindRow(path)
         return row and stubCopy(row.default)
     end
-    function S.ApplyDefault(row)
+    function S.ApplyDefault(row, id)
         if type(row) ~= "table" or type(row.path) ~= "string" or row.default == nil then return false end
         local exempt = d.resetExempt
         if depth > 0 and type(exempt) == "table" and exempt[row.path] then return false end
-        return S.Set(row.path, stubCopy(row.default))
+        return S.Set(row.path, stubCopy(row.default), id)
     end
     -- The bracket keeps its depth, because the sweep veto above reads it; it counts nothing.
     function S.BulkBegin() depth = depth + 1 end

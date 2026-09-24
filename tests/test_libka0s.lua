@@ -726,3 +726,57 @@ test("degraded SetMany is all-or-nothing", function()
     t.eq(BS.Get(FMT), "Loot | %s", "and the format")
     t.falsy(RT.InBulk(), "the bracket closed behind it")
 end)
+
+test("degraded SafeRegisterEvents records a rejected name and registers the rest", function()
+    -- red under: drop the SafeRegister* bodies from core/CoreSetup.lua's degraded arm
+    -- (the call raises on nil), call target:RegisterEvent without the pcall (the bad
+    -- name raises and ENABLED is never reached), or append without the dedup check
+    -- (#rejected is 2 after the second call).
+    local bare = ctx.loadAddon({
+        skip = { "libs/LibKa0s/Core.lua" },
+        mock = function(m) m.__badEvents = { PLAYER_REGEN_DISABLED = true } end,
+    })
+    local Util = bare.NS.Util
+    t.nilv(bare.env.LibStub("LibKa0s-Core-1.0", true), "the stub is what answers here")
+    local frame = bare.env.CreateFrame("Frame")
+    local events, rejected = { "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }, {}
+    local ok, n = pcall(Util.SafeRegisterEvents, frame, events, nil, rejected)
+    t.truthy(ok, "an unknown name does not raise out of the helper")
+    t.eq(n, 1, "it answers how many registered")
+    t.eq(#rejected, 1, "one name was refused")
+    t.eq(rejected[1], "PLAYER_REGEN_DISABLED", "and it is the unknown one")
+    local seen = false
+    for _, r in ipairs(bare.env.__registrations()) do
+        if r.target == frame and r.event == "PLAYER_REGEN_ENABLED" then seen = true end
+        t.falsy(r.target == frame and r.event == "PLAYER_REGEN_DISABLED", "the unknown name is not registered")
+    end
+    t.truthy(seen, "the name after the refused one is still registered")
+
+    t.eq(Util.SafeRegisterEvents(frame, events, nil, rejected), 1, "a second walk answers the same")
+    t.eq(#rejected, 1, "and does not record the refused name twice")
+    t.falsy(Util.SafeRegisterEvent(frame, "PLAYER_REGEN_DISABLED"), "one name answers false with no list")
+    t.truthy(Util.SafeRegisterUnitEvent(frame, "UNIT_HEALTH", rejected, "player"), "the unit form registers")
+    t.falsy(Util.SafeRegisterUnitEvent(frame, "PLAYER_REGEN_DISABLED", rejected, "player"),
+        "and refuses the unknown name")
+    t.eq(#rejected, 1, "still without a duplicate")
+end)
+
+test("degraded Get forwards the instance id", function()
+    -- red under: settings/Schema.lua's stub S.Get calling row.get() with no argument,
+    -- or its S.ApplyDefault(row, id) dropping id on the way to S.Set.
+    local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    local RT = bare.NS.SchemaRuntime
+    t.nilv(bare.env.LibStub("LibKa0s-Schema-1.0", true), "the stub is what answers here")
+    local got, changed = "unset", "unset"
+    RT.AddRows({ {
+        path = "Spy.value", type = "string", default = "d",
+        get = function(id) got = id; return "v" end,
+        set = function() end,
+        onChange = function(_, id) changed = id end,
+    } })
+    t.eq(RT.Get("Spy.value", "instance-7"), "v", "the row's getter answers")
+    t.eq(got, "instance-7", "and was handed the instance id")
+    t.truthy(RT.ApplyDefault(RT.FindRow("Spy.value"), "instance-9"), "the reset answers true")
+    t.eq(changed, "instance-9", "and the instance id reaches the write")
+end)
+

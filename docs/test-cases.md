@@ -60,7 +60,7 @@ badge and any count quoted in the docs must agree with it.
 - prose self-test: the disclosure names what each entry suppressed, and says when it is bounded
 - prose self-test: a malformed waived is a failure, not a silence
 
-### test_libka0s.lua (29)
+### test_libka0s.lua (31)
 
 - the locale-table matcher catches both offending spellings and clears the legal one
 - no seam file hands a LibKa0s descriptor the addon-wide locale table
@@ -91,6 +91,8 @@ badge and any count quoted in the docs must agree with it.
 - the shared cause clause names the addon and where the library should be
 - the degraded secret guard still neutralizes a protected value
 - degraded SetMany is all-or-nothing
+- degraded SafeRegisterEvents records a rejected name and registers the rest
+- degraded Get forwards the instance id
 
 ### test_surface_parity.lua (6)
 
@@ -535,7 +537,7 @@ badge and any count quoted in the docs must agree with it.
 | test_layout_cap.lua | 13 |
 | test_lintconfig.lua | 4 |
 | test_prose.lua | 15 |
-| test_libka0s.lua | 29 |
+| test_libka0s.lua | 31 |
 | test_surface_parity.lua | 6 |
 | test_envsetup.lua | 9 |
 | test_constants.lua | 8 |
@@ -557,4 +559,4 @@ badge and any count quoted in the docs must agree with it.
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **439** |
+| **Total** | **441** |

@@ -105,13 +105,20 @@ local function coreSurface(instance)
         -- whole hazard -- the first caller would work everywhere the library is
         -- installed and answer nil in the one install this branch exists for.
         MakeCloseButton = instance.NS.MakeCloseButton,
+        -- Core minor 8's pcalled event registration helper (events-frames-taint-§1).
+        -- The live arm binds the library's three; the stub carries the one-rung
+        -- bodies docs/api/Core/version-8-docs.md "Degradation" prescribes.
+        SafeRegisterEvent     = instance.NS.Util.SafeRegisterEvent,
+        SafeRegisterUnitEvent = instance.NS.Util.SafeRegisterUnitEvent,
+        SafeRegisterEvents    = instance.NS.Util.SafeRegisterEvents,
     }
 end
 
 test("the Core stub carries the whole live surface", function()
     local live = coreSurface(parityLive)
     -- Non-vacuity: a projection that read nothing would pass parity trivially.
-    for _, key in ipairs({ "Print", "Format", "IsConcatSafe", "SafeToString", "MakeCloseButton" }) do
+    for _, key in ipairs({ "Print", "Format", "IsConcatSafe", "SafeToString", "MakeCloseButton",
+                          "SafeRegisterEvent", "SafeRegisterUnitEvent", "SafeRegisterEvents" }) do
         t.eq(type(live[key]), "function", "the live Core seam publishes " .. key)
     end
     ctx.assertSurfaceParity(live, coreSurface(parityBare), "Core stub")

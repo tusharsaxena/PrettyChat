@@ -48,6 +48,11 @@ if not lib then
     -- pre-library implementations, kept short — and the honest "it is not installed"
     -- line is said ONCE, on the first line the addon prints, rather than stapled to
     -- every one of them.
+    --
+    -- What this arm publishes, so its shape can be read against the live arm below:
+    -- Util.IsConcatSafe, Util.SafeToString, NS.Print, NS.Format, NS.MakeCloseButton,
+    -- and the three one-rung Util.SafeRegisterEvent / SafeRegisterUnitEvent /
+    -- SafeRegisterEvents bodies (tests/test_surface_parity.lua pins the set).
     local function probeConcat(v) return table.concat({ v }) end
     function Util.IsConcatSafe(v)
         return (pcall(probeConcat, v)) and true or false
@@ -92,14 +97,49 @@ if not lib then
     -- exists and the caller gets nothing", which a caller can test, rather than
     -- "indexing the namespace raises", which it cannot.
     function NS.MakeCloseButton() return nil end
+
+    -- The pcalled event registration helper (Core minor 8, events-frames-taint-§1),
+    -- as ONE-RUNG bodies: the pcall and the rejected-list append, with no
+    -- C_EventUtils front gate and no probe frame. That is the shape LibKa0s
+    -- docs/api/Core/version-8-docs.md "Degradation" prescribes for a stub: the path
+    -- for a missing library, not a second implementation. The pcall alone is what
+    -- keeps one retired event name from taking the rest of a registration block down.
+    -- On an AceEvent target it inherits the first-registrant blind spot the library's
+    -- probe exists to close; a degraded install accepts that.
+    local function addRejected(list, name)
+        if type(list) ~= "table" then return end
+        for i = 1, #list do if list[i] == name then return end end
+        list[#list + 1] = name
+    end
+    function Util.SafeRegisterEvent(target, event, handler, rejected)
+        local ok = pcall(target.RegisterEvent, target, event, handler)
+        if not ok then addRejected(rejected, event) end
+        return ok
+    end
+    function Util.SafeRegisterUnitEvent(frame, event, rejected, unit1, unit2)
+        local ok = pcall(frame.RegisterUnitEvent, frame, event, unit1, unit2)
+        if not ok then addRejected(rejected, event) end
+        return ok
+    end
+    function Util.SafeRegisterEvents(target, events, handler, rejected)
+        local n = 0
+        for _, event in ipairs(events) do
+            if Util.SafeRegisterEvent(target, event, handler, rejected) then n = n + 1 end
+        end
+        return n
+    end
     return
 end
+
 
 -- Published under the keys the addon already reads. Bound to the library's own
 -- function objects rather than wrapped, so `NS.Util.SafeToString` and the value
 -- the console's descriptor forwards to are provably the same implementation.
 Util.IsConcatSafe = lib.IsConcatSafe
 Util.SafeToString = lib.SafeToString
+Util.SafeRegisterEvent     = lib.SafeRegisterEvent
+Util.SafeRegisterUnitEvent = lib.SafeRegisterUnitEvent
+Util.SafeRegisterEvents    = lib.SafeRegisterEvents
 
 -- WRAPPED, TO SAY WHO IS ASKING — the one seam here that is not a direct bind.
 -- LibKa0s draws this collection's own `close` mark when it is told which addon
