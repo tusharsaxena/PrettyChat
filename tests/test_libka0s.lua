@@ -434,9 +434,15 @@ test("a settings page shown in combat is covered, not drawn and not closed", fun
     -- the page is COVERED and left open. Closing the window from addon code ran
     -- Blizzard's close-and-commit path tainted (anti-pattern #88), so nothing of
     -- Blizzard's may be touched in combat, and this case pins that it is not.
+    -- LibKa0s Options minor 24 parks a CreateOptionsPanel called under
+    -- InCombatLockdown() until PLAYER_REGEN_ENABLED, so a load taken in combat has
+    -- no page to show yet. The load runs out of combat, and combat starts before
+    -- the page is shown: the sidebar path this case is about.
+    local inCombat = false
     local fresh = ctx.loadAddon({
-        mock = function(m) m.InCombatLockdown = function() return true end end,
+        mock = function(m) m.InCombatLockdown = function() return inCombat end end,
     })
+    inCombat = true
     local touched = {}
     local function spy(name) return function() touched[#touched + 1] = name end end
     fresh.env.HideUIPanel    = spy("HideUIPanel")
@@ -691,4 +697,32 @@ test("the degraded secret guard still neutralizes a protected value", function()
     local secret = setmetatable({}, { __concat = function() error("secret") end })
     t.eq(bare.NS.Util.SafeToString(secret), "<secret>", "the fallback answers the same sentinel")
     t.falsy(bare.NS.Util.IsConcatSafe(secret), "and the fallback probe still refuses it")
+end)
+
+test("degraded SetMany is all-or-nothing", function()
+    -- red under: drop S.SetMany from settings/Schema.lua's SchemaStub.New (the call
+    -- raises), or store inside stubSetMany's phase 1 (Loot.enabled moves on a refusal).
+    local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    local BS, RT, FMT = bare.NS.Schema, bare.NS.SchemaRuntime, "Loot.LOOT_ITEM_SELF.format"
+    t.nilv(bare.env.LibStub("LibKa0s-Schema-1.0", true), "the stub is what answers here")
+    local before = BS.Get(FMT)
+    local ok, err, why, at = RT.SetMany({
+        { path = "Loot.enabled", value = false },
+        { path = FMT, value = "%s %s %s %s" },
+        { path = FMT, value = "Loot | %s %s" },
+    })
+    t.falsy(ok, "one refused entry refuses the batch")
+    t.eq(at, 2, "and names the first entry refused")
+    t.truthy(type(err) == "string" and err:find(FMT, 1, true), "the refusal names the path")
+    t.truthy(why ~= nil, "and carries the row's reason")
+    t.eq(BS.Get("Loot.enabled"), bare.NS.Defaults.Loot.enabled, "nothing was stored: not the valid first entry")
+    t.eq(BS.Get(FMT), before, "and not the format")
+
+    t.truthy(RT.SetMany({
+        { path = "Loot.enabled", value = false },
+        { path = FMT, value = "Loot | %s" },
+    }, { act = "test", scope = "Loot" }), "a valid pair answers true")
+    t.eq(BS.Get("Loot.enabled"), false, "and stores the toggle")
+    t.eq(BS.Get(FMT), "Loot | %s", "and the format")
+    t.falsy(RT.InBulk(), "the bracket closed behind it")
 end)

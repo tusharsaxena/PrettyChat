@@ -184,8 +184,16 @@ end)
 test("the buffer is capped and drops its oldest lines first", function()
     D:Clear()
     for i = 1, 1520 do D:Add("Bulk", "line " .. i) end
-    t.eq(#D.buffer, 1500, "the buffer holds at most MAX_BUFFER lines")
-    t.truthy(D.buffer[1]:find("line 21", 1, true), "the oldest lines were dropped")
+    -- LibKa0s DebugLog minor 13 batches the trim: the raw array may run up to 64
+    -- lines past the cap between compactions, so the kept lines are read through
+    -- the public readers (BufferSize, CopyText, FindLine), never #D.buffer.
+    t.eq(D:BufferSize(), 1500, "the buffer holds at most MAX_BUFFER lines")
+    local text = D:CopyText()
+    local _, lines = text:gsub("\n", "")
+    t.eq(lines + 1, 1500, "and the copy text carries exactly the kept lines")
+    t.truthy(text:match("^[^\n]*"):find("line 21$"),
+        "the oldest kept line is line 21: the oldest lines were dropped")
+    t.falsy(text:find("line 20\n", 1, true), "and no evicted line reaches the copy text")
     t.truthy(D.buffer[#D.buffer]:find("line 1520", 1, true), "the newest line is kept")
 end)
 

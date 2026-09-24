@@ -639,8 +639,25 @@ local function stubReads(S, d, resolve)
     end
 end
 
--- The write seam's order without its log and tally: refuse, validate, store, react,
--- announce.
+-- Everything the stub checks before it stores, shared by Set and SetMany so a batch
+-- refuses on exactly the rules a single write does: the row's validate, then its
+-- normalize (which answers the value to store, or nil and why). Answers
+-- `true, value` with the value to store, or `false, nil, err, why`.
+local function stubPrepare(row, path, value, rid)
+    if type(row.validate) == "function" then
+        local ok, why = row.validate(value, rid)
+        if not ok then return false, nil, "PrettyChat: invalid value for " .. path, why end
+    end
+    if type(row.normalize) == "function" then
+        local out, why = row.normalize(value, rid)
+        if out == nil then return false, nil, "PrettyChat: invalid value for " .. path, why end
+        value = out
+    end
+    return true, value
+end
+
+-- The write seam's order without its log and tally: refuse, validate and normalize,
+-- store, react, announce.
 local function stubSet(S, d, resolve)
     return function(path, value, id)
         local row = S.FindRow(path)
@@ -653,10 +670,9 @@ local function stubSet(S, d, resolve)
             if type(r) == "table" then root, first = r, f end
             if got ~= nil then rid = got end
         end
-        if type(row.validate) == "function" then
-            local ok, why = row.validate(value, rid)
-            if not ok then return false, "PrettyChat: invalid value for " .. path, why end
-        end
+        local ok, prepared, err, why = stubPrepare(row, path, value, rid)
+        if not ok then return false, err, why end
+        value = prepared
         if stored and not root then return false, "PrettyChat: nowhere to store " .. path end
         if type(row.set) == "function" then
             row.set(value)
@@ -665,6 +681,30 @@ local function stubSet(S, d, resolve)
         end
         if type(row.onChange) == "function" then row.onChange(value, rid) end
         if type(d.announce) == "function" then d.announce(row, path, value, rid) end
+        return true
+    end
+end
+
+-- The all-or-nothing batch, without the library's announceBatch tail: this descriptor
+-- declares none, so each write's own announce runs, as the live fallback does.
+-- Phase 1 checks every entry before anything is stored; phase 2 writes through S.Set,
+-- inside one bracket when opts.act is given.
+local function stubSetMany(S)
+    return function(entries, opts)
+        if type(entries) ~= "table" then entries = {} end
+        if type(opts) ~= "table" then opts = {} end
+        local prepared = {}
+        for i, e in ipairs(entries) do
+            local row = type(e) == "table" and S.FindRow(e.path)
+            if not row then return false, "PrettyChat: no setting " .. tostring(type(e) == "table" and e.path), nil, i end
+            local ok, value, err, why = stubPrepare(row, e.path, e.value, opts.instanceId)
+            if not ok then return false, err, why, i end
+            prepared[i] = value
+        end
+        local function commit()
+            for i, e in ipairs(entries) do S.Set(e.path, prepared[i], opts.instanceId) end
+        end
+        if opts.act ~= nil then S.BulkRun(opts.act, opts.scope, commit) else commit() end
         return true
     end
 end
@@ -679,6 +719,7 @@ function SchemaStub.New(_, d)
     end
     stubReads(S, d, resolve)
     S.Set = stubSet(S, d, resolve)
+    S.SetMany = stubSetMany(S)
     function S.Default(path)
         local row = S.FindRow(path)
         return row and stubCopy(row.default)
