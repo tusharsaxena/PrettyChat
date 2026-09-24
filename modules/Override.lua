@@ -596,9 +596,14 @@ local function collectNames(catData, filter)
     return names
 end
 
--- Blizzard's pristine format for one global: the OnEnable snapshot first,
--- falling back to the live global for a key registered since the last /reload
--- (the snapshot is load-time — see ARCHITECTURE's Known Limitations).
+-- Blizzard's pristine format for one global. The snapshot's KEY SET is the
+-- authority, the same one ApplyStrings restores by (PC-R-07): a key the OnEnable
+-- pass looked at answers its snapshotted value, and a snapshotted nil is a real
+-- answer — this client never defined the global. Falling through to _G there
+-- would answer PrettyChat's own override, which ApplyStrings has written into
+-- that global (PRETTYCHAT-R-05). The live global is consulted only for a key
+-- registered since the last /reload, which the snapshot never saw (it is
+-- load-time — see ARCHITECTURE's Known Limitations).
 --
 -- ONE READER, TWO SURFACES. `/pc test`'s Original line and the settings panel's
 -- read-only Original box are answers to the same question and used to consult
@@ -608,8 +613,10 @@ end
 -- any patch that reworded a string the panel showed a player something the game
 -- no longer says. Both surfaces call this.
 function NS.OriginalFormat(addon, globalName)
-    return (addon and addon.originalStrings and addon.originalStrings[globalName])
-           or _G[globalName]
+    if addon and addon.snapshotKeys and addon.snapshotKeys[globalName] then
+        return addon.originalStrings[globalName]
+    end
+    return _G[globalName]
 end
 
 -- One string's three-line block: name, the rendered Blizzard original, the
@@ -622,8 +629,12 @@ end
 local function printStringRow(emit, addon, category, globalName)
     emit(LABEL.name .. globalName)
 
+    -- A nil original (the client never defined the global) reads as the same
+    -- placeholder the panel's Original box shows, and is not an error: there is
+    -- nothing to render, and RenderSample would call it an empty format.
     local origFmt = NS.OriginalFormat(addon, globalName)
-    local origLine, origErr = renderOrError(origFmt)
+    local origLine, origErr = Color.gray .. L["(original not available)"] .. Color.reset, false
+    if origFmt ~= nil then origLine, origErr = renderOrError(origFmt) end
     emit(LABEL.original .. origLine)
 
     local newFmt = addon:GetStringValue(category, globalName)

@@ -258,7 +258,7 @@ badge and any count quoted in the docs must agree with it.
 - ResetString clears both the custom format and the per-string disable
 - the Tradeskill format is the one that reaches _G for LOOT_ITEM_CREATED_SELF
 
-### test_override.lua (35)
+### test_override.lua (37)
 
 - GetStringValue falls back to the defaults table until overridden
 - IsAddonEnabled treats an absent flag as default-true
@@ -290,6 +290,8 @@ badge and any count quoted in the docs must agree with it.
 - Test prints a header, a per-category block, and a counted footer
 - Test writes every line to the sink it is given, and nothing to chat
 - Test previews the Blizzard original from the OnEnable snapshot
+- OriginalFormat answers nil for a global the client never defined, even after ApplyStrings
+- /pc test's Original line for that global reads (original not available)
 - a formatstring filter narrows the report to one string
 - a filter that matches nothing says so instead of printing an empty report
 - Test warns when the addon is disabled but still previews
@@ -566,7 +568,7 @@ badge and any count quoted in the docs must agree with it.
 | test_schema.lua | 45 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
-| test_override.lua | 35 |
+| test_override.lua | 37 |
 | test_database.lua | 26 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
@@ -577,4 +579,4 @@ badge and any count quoted in the docs must agree with it.
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **459** |
+| **Total** | **461** |

@@ -623,6 +623,46 @@ test("Test previews the Blizzard original from the OnEnable snapshot", function(
     t.truthy(sawOriginal, "the Original line renders the snapshotted Blizzard string")
 end)
 
+-- A client that never defined LOOT_ITEM_SELF: the snapshot records nil for it,
+-- and ApplyStrings then writes PrettyChat's override into the live global. The
+-- global is cleared and the addon's own snapshot pass re-run, rather than the
+-- loader's `mock` hook, because the loader seeds every registered global with
+-- "ORIG:<NAME>" after that hook and before OnEnable.
+local function loadWithoutGlobal(globalName)
+    local fresh = ctx.loadAddon()
+    fresh.env[globalName] = nil
+    fresh.addon:SnapshotOriginals()
+    fresh.addon:ApplyStrings()
+    return fresh
+end
+
+test("OriginalFormat answers nil for a global the client never defined, even after ApplyStrings", function()
+    -- red under: `originalStrings[g] or _G[g]`
+    local fresh = loadWithoutGlobal("LOOT_ITEM_SELF")
+    t.truthy(fresh.addon.snapshotKeys.LOOT_ITEM_SELF, "the snapshot pass looked at it")
+    t.nilv(fresh.addon.originalStrings.LOOT_ITEM_SELF, "and recorded that it was not there")
+    t.eq(fresh.env.LOOT_ITEM_SELF, fresh.addon:GetStringValue("Loot", "LOOT_ITEM_SELF"),
+        "the live global now holds PrettyChat's override")
+    t.nilv(fresh.NS.OriginalFormat(fresh.addon, "LOOT_ITEM_SELF"),
+        "the original is the snapshot's nil, not the override sitting in _G")
+end)
+
+test("/pc test's Original line for that global reads (original not available)", function()
+    local fresh = loadWithoutGlobal("LOOT_ITEM_SELF")
+    local sunk = {}
+    fresh.addon:Test({ kind = "formatstring", value = "LOOT_ITEM_SELF" },
+        function(line) sunk[#sunk + 1] = line end)
+    local original
+    for _, line in ipairs(sunk) do
+        if line:find("Original: ", 1, true) then original = line end
+    end
+    t.truthy(original and original:find(fresh.NS.L["(original not available)"], 1, true),
+        "the Original line carries the panel's placeholder")
+    t.falsy(original and original:find("(error: ", 1, true), "not an error line")
+    t.truthy(sunk[#sunk]:find("1 string shown", 1, true),
+        "and a missing original is not counted as an errored string")
+end)
+
 test("a formatstring filter narrows the report to one string", function()
     local at = mark()
     addon:Test({ kind = "formatstring", value = g })
