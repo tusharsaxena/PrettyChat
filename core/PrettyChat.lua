@@ -51,9 +51,12 @@ function PrettyChat:OnInitialize()
     -- profiles -- until options-ui-§12 made the GLOBAL RESET a profile reset,
     -- which fires the same event and needs the same reaction.
     --
-    -- The migrations run first, because a copied profile may have been authored at
-    -- an older schema version, and ApplyStrings must not read a shape that has not
-    -- been brought forward yet.
+    -- The load pass runs first. It is NOT what lifts an incoming profile's shape:
+    -- the OnInitialize run above already lifted EVERY stored profile (a profile step
+    -- walks db.sv.profiles, core/Database.lua), so a switched-to or copied profile is
+    -- already current, and one created since is built from the current defaults.
+    -- Here the migration walk is an idempotent no-op (the stamp is at target); what
+    -- does work is the orphan repair, Database.PruneOrphans, on the incoming profile.
     --
     -- ONE BODY, THREE LINES. The work is identical for all three events (the
     -- shared reloadProfile below); only the one debug line differs, worded by the

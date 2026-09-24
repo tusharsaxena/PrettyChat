@@ -292,7 +292,7 @@ badge and any count quoted in the docs must agree with it.
 - an unrenderable override is reported as an error line, not a crash
 - every Test line routes through the [PC] printer
 
-### test_database.lua (16)
+### test_database.lua (20)
 
 - NS.Database and the db.global namespace exist
 - a fresh DB is stamped at the current schema version
@@ -310,6 +310,10 @@ badge and any count quoted in the docs must agree with it.
 - the repair traces once when it drops keys, and stays silent otherwise
 - the repair tolerates a db with no profile or no categories
 - migrating emits no debug noise when nothing ran
+- a profile-scoped step lifts every stored profile, not only the active one
+- a raising step leaves the stamp where it was
+- a step after a failed one does not run
+- a profile step runs again safely on an already-lifted profile
 
 ### test_lifecycle.lua (12)
 
@@ -551,7 +555,7 @@ badge and any count quoted in the docs must agree with it.
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
 | test_override.lua | 31 |
-| test_database.lua | 16 |
+| test_database.lua | 20 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
 | test_launcher.lua | 27 |
@@ -561,4 +565,4 @@ badge and any count quoted in the docs must agree with it.
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **443** |
+| **Total** | **447** |

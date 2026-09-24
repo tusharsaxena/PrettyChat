@@ -163,3 +163,109 @@ test("migrating emits no debug noise when nothing ran", function()
     t.eq(#inst.NS.DebugLog.buffer, 0, "a no-op migration logs nothing")
     inst.NS.State.debug = false
 end)
+
+-- ---- the runner's contract: scope, and a stamp that only moves past success ----
+--
+-- Each case boots its own instance and injects steps into NS.Database.migrations
+-- under a test-local SCHEMA_VERSION, restoring both at the end, so the shipped
+-- runner (whose migrations table is empty) is what every other case sees.
+
+local function withSteps(target, steps, body)
+    local fresh = ctx.loadAddon()
+    local D = fresh.NS.Database
+    local saved = D.SCHEMA_VERSION
+    D.SCHEMA_VERSION = target
+    for v, step in pairs(steps) do D.migrations[v] = step end
+    local ok, err = pcall(body, fresh, D, fresh.addon.db)
+    for v in pairs(steps) do D.migrations[v] = nil end
+    D.SCHEMA_VERSION = saved
+    if not ok then error(err, 0) end
+end
+
+-- Seeds two stored profiles carrying the v1 shape (`oldMarker`), stamped at v1.
+local function seedTwoProfiles(pdb)
+    pdb.sv.profiles.Default.oldMarker = "D"
+    pdb.sv.profiles.Alt = { oldMarker = "A" }
+    pdb.global.schemaVersion = 1
+end
+
+-- The v2 shape: `oldMarker` renamed to `newMarker`. Idempotent -- a profile
+-- already carrying `newMarker` is left as it is.
+local renameStep = {
+    scope = "profile",
+    run = function(profile)
+        if profile.oldMarker ~= nil then
+            profile.newMarker = profile.newMarker or profile.oldMarker
+            profile.oldMarker = nil
+        end
+    end,
+}
+
+-- Captures NS.Print for the duration of `body`.
+local function capturePrints(NS, body)
+    local lines, orig = {}, NS.Print
+    NS.Print = function(msg) lines[#lines + 1] = tostring(msg) end
+    local ok, err = pcall(body)
+    NS.Print = orig
+    if not ok then error(err, 0) end
+    return lines
+end
+
+test("a profile-scoped step lifts every stored profile, not only the active one", function()
+    -- red under: runSteps calling step(db) once and RunMigrations stamping unconditionally
+    withSteps(2, { [2] = renameStep }, function(_, D, pdb)
+        seedTwoProfiles(pdb)
+        D.RunMigrations(pdb)
+        t.eq(pdb.sv.profiles.Default.newMarker, "D", "the active profile is lifted")
+        t.eq(pdb.sv.profiles.Alt.newMarker, "A", "the inactive stored profile is lifted too")
+        t.nilv(pdb.sv.profiles.Alt.oldMarker, "the old shape is gone from the inactive profile")
+        t.eq(pdb.global.schemaVersion, 2, "the stamp advances past the step that succeeded")
+        pdb:SetProfile("Alt")
+        t.eq(pdb.profile.newMarker, "A", "switching to Alt reads the lifted shape")
+        t.nilv(pdb.profile.oldMarker, "and never the old one")
+    end)
+end)
+
+test("a raising step leaves the stamp where it was", function()
+    -- red under: runSteps calling step(db) once and RunMigrations stamping unconditionally
+    local boom = { scope = "global", run = function() error("boom") end }
+    withSteps(2, { [2] = boom }, function(fresh, D, pdb)
+        pdb.global.schemaVersion = 1
+        local lines = capturePrints(fresh.NS, function() D.RunMigrations(pdb) end)
+        t.eq(pdb.global.schemaVersion, 1, "the stamp does not move past a step that raised")
+        local failed = 0
+        for _, line in ipairs(lines) do
+            if line:find("schema migration 2 failed", 1, true) then failed = failed + 1 end
+        end
+        t.eq(failed, 1, "one 'schema migration 2 failed' line is printed")
+    end)
+end)
+
+test("a step after a failed one does not run", function()
+    -- red under: runSteps calling step(db) once and RunMigrations stamping unconditionally
+    local ranThree = false
+    local steps = {
+        [2] = { scope = "global", run = function() error("boom") end },
+        [3] = { scope = "global", run = function() ranThree = true end },
+    }
+    withSteps(3, steps, function(fresh, D, pdb)
+        pdb.global.schemaVersion = 1
+        capturePrints(fresh.NS, function() D.RunMigrations(pdb) end)
+        t.falsy(ranThree, "the v3 step never ran after v2 raised")
+        t.eq(pdb.global.schemaVersion, 1, "the stamp stays at the last version that completed")
+    end)
+end)
+
+test("a profile step runs again safely on an already-lifted profile", function()
+    -- red under: runSteps calling step(db) once and RunMigrations stamping unconditionally
+    withSteps(2, { [2] = renameStep }, function(_, D, pdb)
+        seedTwoProfiles(pdb)
+        D.RunMigrations(pdb)
+        pdb.global.schemaVersion = 1   -- force the same step over the lifted profiles again
+        D.RunMigrations(pdb)
+        t.eq(pdb.sv.profiles.Default.newMarker, "D", "the active profile is unchanged by the re-run")
+        t.eq(pdb.sv.profiles.Alt.newMarker, "A", "the inactive profile is unchanged by the re-run")
+        t.nilv(pdb.sv.profiles.Alt.oldMarker, "no old key reappears")
+        t.eq(pdb.global.schemaVersion, 2, "the re-run stamps the target again")
+    end)
+end)

@@ -6,11 +6,29 @@ local _, NS = ...
 -- which are stable, so no migration is needed yet — the runner exists so
 -- a future storage-shape change (renamed key, restructured category
 -- table) has a versioned home instead of ad-hoc `if db.x then` patches.
+--
+-- THE CONTRACT, which a first step can rely on:
+--
+--   * SCHEMA_VERSION is the runner's TARGET. A step migrations[v] lifts a DB
+--     from v-1 to v, and the runner walks from the stamp up to the target.
+--   * THE RUNNER OWNS THE STAMP. `global.schemaVersion` advances only past a
+--     step that completed: a step that raises is printed, the walk STOPS, and the
+--     stamp stays at the last version that succeeded, so the next load retries.
+--   * `global.schemaVersion = 0` is the declared default, and the stamp survives
+--     AceDB's removeDefaults: a stamp above 0 differs from the default so it is
+--     never stripped, and a stored 0 that is stripped reads back as the default 0.
+--   * A PROFILE-scoped step is run on EVERY stored profile (db.sv.profiles), not
+--     only the active one, because the stamp is global: an inactive profile the
+--     runner skipped would never be lifted, since a later switch sees the stamp
+--     already at target. A GLOBAL-scoped step runs once, on db.global.
+--   * Every step is idempotent against a fresh default profile and against one
+--     it already lifted, because a profile created after the stamp moved is
+--     built from the (current) defaults, and a retried walk re-runs a step.
 NS.Database = NS.Database or {}
 local Database = NS.Database
 
--- Bump when the stored shape changes AND add a migrations[N] entry that
--- upgrades a DB at version N-1 to version N.
+-- The runner's target. Bump when the stored shape changes AND add a
+-- migrations[N] entry that upgrades a DB at version N-1 to version N.
 Database.SCHEMA_VERSION = 1
 
 -- Defaults merged into AceDB (PrettyChat.lua adds `profile`). `global`
@@ -38,8 +56,13 @@ Database.defaults = {
     },
 }
 
--- migrations[v](db) upgrades a DB from version v-1 to v. Empty today.
+-- migrations[v] = { scope = "profile" | "global", run = function(target, db, profileName) end }
+-- upgrades a DB from version v-1 to v. `target` is one raw stored profile table
+-- (scope "profile", run once per stored profile, with its name) or db.global
+-- (scope "global", run once). Published so a suite can inject steps on a fresh
+-- instance. Empty today.
 local migrations = {}
+Database.migrations = migrations
 
 -- Drop every stored key no schema row owns, then prune what that empties
 -- (savedvariables-§1: the load pass may repair). Resets write ROWS, so a key
@@ -75,41 +98,88 @@ function Database.PruneOrphans(db)
     return dropped
 end
 
--- Run every registered step above `from`, in order, each under its own pcall so
--- one failing step is reported and the rest still run. Returns how many ran.
+-- Run one profile-scoped step over every stored profile. The RAW SavedVariables
+-- profiles (db.sv.profiles, which real AceDB and the kit's fake both expose) are
+-- walked, so a profile nobody has activated this session is lifted too; db.profile
+-- is the fallback only when there is no db.sv. Names are walked sorted, so a
+-- failure is reported against the same profile every time. Returns false, err on
+-- the first raise.
+local function byName(a, b) return tostring(a) < tostring(b) end
+
+local function runProfileStep(db, step)
+    local profiles = db.sv and db.sv.profiles
+    if type(profiles) ~= "table" then
+        if type(db.profile) ~= "table" then return true end
+        return pcall(step.run, db.profile, db, db.GetCurrentProfile and db:GetCurrentProfile())
+    end
+    local names = {}
+    for name, profile in pairs(profiles) do
+        if type(profile) == "table" then names[#names + 1] = name end
+    end
+    table.sort(names, byName)
+    for _, name in ipairs(names) do
+        local ok, err = pcall(step.run, profiles[name], db, name)
+        if not ok then return false, err end
+    end
+    return true
+end
+
+local function runStep(db, step)
+    if step.scope == "profile" then return runProfileStep(db, step) end
+    return pcall(step.run, db.global, db)
+end
+
+-- Walk the steps above `from`, in order. A step that raises is printed and the
+-- walk STOPS there, so no later step runs over a shape it was not written for.
+-- A version with no step advances `reached` as if it had run. Returns how many
+-- steps ran and the last version that completed.
 local function runSteps(db, from)
-    local ran = 0
+    local ran, reached = 0, from
     for v = from + 1, Database.SCHEMA_VERSION do
         local step = migrations[v]
         if step then
-            local ok, err = pcall(step, db)
-            if not ok and NS.Print then
-                NS.Print("schema migration " .. v .. " failed: " .. tostring(err))
+            local ok, err = runStep(db, step)
+            if not ok then
+                if NS.Print then
+                    NS.Print("schema migration " .. v .. " failed: " .. tostring(err))
+                end
+                return ran, reached
             end
             ran = ran + 1
         end
+        reached = v
     end
-    return ran
+    return ran, reached
 end
 
--- Run every pending migration in order, then stamp the current version, then
--- run the orphan repair above. Idempotent: a DB already at SCHEMA_VERSION runs
--- no steps, and a clean profile has nothing to prune.
+-- The load pass's two [Migrate] traces (debug-logging-§8). The walk's line only
+-- when a step actually ran; the repair's line only when it dropped something,
+-- once for the pass and never once per key.
+local function plural(n) return n == 1 and "" or "s" end
+
+local function traceLoadPass(from, reached, ran, dropped)
+    if not NS.Debug then return end
+    if ran > 0 then
+        NS.Debug("Migrate", "v%d→v%d (%d step%s)", from, reached, ran, plural(ran))
+    end
+    if dropped > 0 then
+        NS.Debug("Migrate", "pruned %d stored key%s with no schema row", dropped, plural(dropped))
+    end
+end
+
+-- Run every pending migration in order, stamp the last version that completed,
+-- then run the orphan repair above. A stamp already ahead of SCHEMA_VERSION (a
+-- DB written by a newer build) is normalized down to it. Idempotent: a DB
+-- already at SCHEMA_VERSION runs no steps, and a clean profile has nothing to
+-- prune.
 function Database.RunMigrations(db)
     if not (db and db.global) then return end
     local from = db.global.schemaVersion or 0
-    local ran = runSteps(db, from)
-    db.global.schemaVersion = Database.SCHEMA_VERSION
-    -- Lifecycle trace (debug-logging-§8): only when a migration step actually ran.
-    if ran > 0 and NS.Debug then
-        NS.Debug("Migrate", "v%d→v%d (%d step%s)",
-            from, Database.SCHEMA_VERSION, ran, ran == 1 and "" or "s")
+    local ran, reached = runSteps(db, from)
+    if from < Database.SCHEMA_VERSION then
+        db.global.schemaVersion = reached
+    else
+        db.global.schemaVersion = Database.SCHEMA_VERSION
     end
-    -- The repair, and its one trace: silent on a clean profile, one line (never
-    -- one per key) when it dropped something.
-    local dropped = Database.PruneOrphans(db)
-    if dropped > 0 and NS.Debug then
-        NS.Debug("Migrate", "pruned %d stored key%s with no schema row",
-            dropped, dropped == 1 and "" or "s")
-    end
+    traceLoadPass(from, reached, ran, Database.PruneOrphans(db))
 end
