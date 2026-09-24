@@ -245,6 +245,22 @@ test("/pc set with no path prints usage, and with no value refuses by path", fun
     t.eq(Schema.Get(formatPath), formatRow.default, "and nothing was written")
 end)
 
+test("/pc set refuses a format the game cannot fill, and names why", function()
+    -- red under: Slash minor 14, which echoed the unchanged value
+    -- Since Slash minor 15 CliSet prints the write seam's refusal (INVALID, then the
+    -- reason indented) instead of re-reading the store as though the write landed.
+    -- The format row's `validate` is settings/Schema.lua's formatAccepted gate: four
+    -- `%s` against a default that fills one is a conversion the game cannot fill.
+    Schema.Set(formatPath, formatRow.default)
+    local before = Schema.Get(formatPath)
+    local text = joined("set " .. formatPath .. " %s %s %s %s")
+    t.truthy(text:find("Invalid value for " .. formatPath, 1, true), "the refusal names the path")
+    t.truthy(text:find("\n" .. PREFIX .. "  conversion signature", 1, true)
+             or text:find("\n  conversion signature", 1, true),
+        "and formatAccepted's reason follows on an indented line: " .. text)
+    t.eq(Schema.Get(formatPath), before, "and the stored value is unchanged")
+end)
+
 test("/pc set on an unknown path reports it as not found", function()
     t.truthy(joined("set Nope.nope true"):find("Setting not found: Nope.nope", 1, true),
         "an unknown path is rejected before any write")

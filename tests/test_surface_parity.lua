@@ -238,3 +238,29 @@ test("the Slash stub carries the whole live surface", function()
         HelpHeader = true,
     })
 end)
+
+test("the degraded DisabledLine is the library's line, byte for byte", function()
+    -- slash-commands-§1 and the Slash version-15 doc's "The degradation stub": a
+    -- library-absent stub may carry exactly ONE library string, DISABLED_LINE_FORMAT,
+    -- copied verbatim, and a case must pin the copy against the live library so it
+    -- cannot drift. This is that case (kit revision 26's assertLibraryConstant).
+    --
+    -- The source above maps the Slash major to the INSTANCE, which carries no
+    -- lib-level constant, and this repo's mock exposes no LibStub for the kit's
+    -- fallback (see the registration's comment). So for this one call the major is
+    -- pointed at the live LIBRARY table, and the instance mapping is restored
+    -- straight after — whether or not the assertion passed — so the parity cases
+    -- keep comparing instances.
+    local swapped = {}
+    local previous = ctx.setSurfaceSource(swapped)
+    for name, surface in pairs(previous) do swapped[name] = surface end
+    swapped["LibKa0s-Slash-1.0"] = parityLive.env.LibStub("LibKa0s-Slash-1.0", true)
+    local ok, err = pcall(ctx.assertLibraryConstant,
+        parityBare.NS.SlashCommands.__disabledLineFormat, "LibKa0s-Slash-1.0", "DISABLED_LINE_FORMAT")
+    ctx.setSurfaceSource(previous)
+    if not ok then error(err, 0) end
+    -- And the stub FORMATS it the way cli:DisabledLine() does: the plain-text
+    -- brandName, then `/pc enable`. Both arms answer the same line.
+    t.eq(parityBare.NS.SlashCommands:DisabledLine(), parityLive.NS.SlashCommands:DisabledLine(),
+        "the degraded DisabledLine matches the live one")
+end)

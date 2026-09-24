@@ -94,7 +94,7 @@ badge and any count quoted in the docs must agree with it.
 - degraded SafeRegisterEvents records a rejected name and registers the rest
 - degraded Get forwards the instance id
 
-### test_surface_parity.lua (6)
+### test_surface_parity.lua (7)
 
 - the Core stub carries the whole live surface
 - the DebugLog stub carries the whole live surface
@@ -102,6 +102,7 @@ badge and any count quoted in the docs must agree with it.
 - the Lifecycle stub carries the whole live surface
 - the Schema stub carries the whole live surface, library and instance
 - the Slash stub carries the whole live surface
+- the degraded DisabledLine is the library's line, byte for byte
 
 ### test_envsetup.lua (9)
 
@@ -390,7 +391,7 @@ badge and any count quoted in the docs must agree with it.
 - Launcher: DEGRADED — LibDataBroker present, LibDBIcon absent: the plugin, no button
 - Launcher: DEGRADED — no LibKa0s at all: no launcher, and the row survives
 
-### test_slash.lua (50)
+### test_slash.lua (51)
 
 - Schema.FormatValue formats bools and doubles pipes in strings
 - NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
@@ -413,6 +414,7 @@ badge and any count quoted in the docs must agree with it.
 - /pc set stores a format string and echoes the stored value
 - /pc set echoes the value the DB actually kept, not the input
 - /pc set with no path prints usage, and with no value refuses by path
+- /pc set refuses a format the game cannot fill, and names why
 - /pc set on an unknown path reports it as not found
 - /pc set keeps the whole remainder, spaces and all
 - /pc set and /pc get round-trip a pipe through the || escape
@@ -538,7 +540,7 @@ badge and any count quoted in the docs must agree with it.
 | test_lintconfig.lua | 4 |
 | test_prose.lua | 15 |
 | test_libka0s.lua | 31 |
-| test_surface_parity.lua | 6 |
+| test_surface_parity.lua | 7 |
 | test_envsetup.lua | 9 |
 | test_constants.lua | 8 |
 | test_mediasetup.lua | 8 |
@@ -553,10 +555,10 @@ badge and any count quoted in the docs must agree with it.
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
 | test_launcher.lua | 27 |
-| test_slash.lua | 50 |
+| test_slash.lua | 51 |
 | test_disabled.lua | 13 |
 | test_panel.lua | 46 |
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **441** |
+| **Total** | **443** |

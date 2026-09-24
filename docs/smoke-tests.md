@@ -308,7 +308,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
   4. `/pc set Loot.LOOT_ITEM_SELF.format Loot happened` (no conversion at all), then loot an item.
   5. Open `/pc`, pick any Loot string, and type a format with an extra conversion into **New**.
   6. `/pc reset Loot.LOOT_ITEM_SELF.format`.
-- Expected: step 1 prints `Not saved — Loot.LOOT_ITEM_SELF.format asks for [string,string]; LOOT_ITEM_SELF supplies [string]. …` and the echo that follows still shows the OLD value, unchanged. Step 2 confirms nothing was stored. Step 3 saves and the loot line renders. Step 4 saves too — dropping trailing conversions is safe and must stay allowed. Step 5 refuses the same way *and* the New box snaps back to the stored format rather than keeping the rejected text.
+- Expected: step 1 prints `Not saved — Loot.LOOT_ITEM_SELF.format asks for [string,string]; LOOT_ITEM_SELF supplies [string]. …` and then the library's refusal, `Invalid value for Loot.LOOT_ITEM_SELF.format` with `conversion signature` indented under it, in place of the old value's echo (Slash minor 15). Step 2 confirms nothing was stored. Step 3 saves and the loot line renders. Step 4 saves too — dropping trailing conversions is safe and must stay allowed. Step 5 refuses the same way *and* the New box snaps back to the stored format rather than keeping the rejected text.
 - Failure mode: a surplus conversion that saves ⇒ the gate is not on the write path the surface used (`Schema.Set` is the only one; a widget writing `row.set` directly bypasses it). A refusal on step 4 ⇒ the check is testing equality rather than a positional prefix.
 
 #### T-35 — `/pc reset <path>`

@@ -638,7 +638,16 @@ test("with Slash absent the host verbs survive and the schema CLI says why", fun
         "and that line is config's, not the help header")
 
     -- And the stub re-implements none of the library's rendering.
+    -- The ONE exception slash-commands-§1 sanctions is DISABLED_LINE_FORMAT's
+    -- verbatim copy (its `/pc enable` is yellow in the library's own bytes), pinned
+    -- by tests/test_surface_parity.lua. It is cut out of the source first, exactly
+    -- once, so any OTHER copied color code still turns this red.
     local src = readFile("settings/Slash.lua")
+    local sanctioned = 'local STUB_DISABLED_LINE_FORMAT = '
+        .. '"%s is disabled \\226\\128\\148 enable it with |cFFFFFF00%s|r"'
+    local at = src:find(sanctioned, 1, true)
+    t.truthy(at, "the sanctioned DISABLED_LINE_FORMAT copy is where the stub declares it")
+    src = src:sub(1, at - 1) .. src:sub(at + #sanctioned)
     t.falsy(src:find("cFFFFFF00", 1, true), "no copied row/key color codes in the seam")
     t.falsy(src:find("cFFFFFFFF", 1, true), "either of them")
 end)

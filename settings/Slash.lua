@@ -119,16 +119,32 @@ NS.COMMANDS = COMMANDS
 -- print — "`/pc test` does nothing while the addon is disabled" — was a second
 -- spelling of a sentence the collection owns, and its locale key went with it.
 --
--- THE DEGRADED PATH DOES NOT REFUSE, deliberately. With no LibKa0s there is no
--- gate, and the stub does not grow one: re-implementing it would mean a host copy
--- of the live set and of the line's wording, which are the two things this seam
--- exists to keep in one place (the same rule core/DebugLogSetup.lua's stub follows
--- for the line formatters). The cost is that `/pc test` prints a preview on an
--- install with no library, which is a report about format strings and reaches no
--- write seam.
+-- THE DEGRADED PATH BUILDS THE LINE BUT STILL REFUSES NOTHING. With no LibKa0s
+-- there is no gate, and the stub does not grow one: re-implementing it would mean
+-- a host copy of the live set, which `lib.LIVE_VERBS` exists to keep in one place.
+-- What the stub DOES carry is the one library string slash-commands-§1 (v2.65.0)
+-- lets a degradation stub copy verbatim, `DISABLED_LINE_FORMAT`, so its
+-- `DisabledLine` answers the collection's sentence rather than nil — the shape the
+-- LibKa0s Slash version-15 document's "The degradation stub" prescribes, pinned
+-- against the live library by tests/test_surface_parity.lua. Nothing on the
+-- degraded arm prints it today: `enable` and `disable` write through the
+-- stub-composed General.enabled row (setEnabled, below), which is route (a) of
+-- that document, and `/pc test` prints its preview, a report about format strings
+-- that reaches no write seam.
 -- ---------------------------------------------------------------------
 
 local lib = LibStub and LibStub("LibKa0s-Slash-1.0", true)
+
+-- The plain-text `Ka0s <Name>` both arms name the addon by: the live descriptor's
+-- `brandName` and the degraded DisabledLine's subject. One local, so the two lines
+-- cannot disagree about whose addon is disabled.
+local BRAND_NAME = "Ka0s Pretty Chat"
+
+-- The verbatim bytes of LibKa0s-Slash-1.0's `lib.DISABLED_LINE_FORMAT` (the em dash
+-- is \226\128\148). The ONE library string the degraded stub may carry
+-- (slash-commands-§1); tests/test_surface_parity.lua pins it byte for byte with
+-- Kit.assertLibraryConstant, so a library rewording turns that case red here.
+local STUB_DISABLED_LINE_FORMAT = "%s is disabled \226\128\148 enable it with |cFFFFFF00%s|r"
 
 -- The one sentence every lost verb says. Hoisted out of the branch below because
 -- `list`'s category filter reads it on the degraded path too.
@@ -194,12 +210,18 @@ if not lib then
         CliReset        = unavailable,
         CliResetAll     = unavailable,
         CliVersion      = function() NS.Print("v" .. VERSION) end,
-        -- Answers nil rather than a copy of the collection's one sentence — the
-        -- degraded arm refuses nothing (see the gate's header), so nothing here has
-        -- a line to build, and a stub spelling of it would be a second place the
-        -- wording can drift. tests/test_surface_parity.lua carries the reason as
-        -- data beside the DebugLog formatters', which are live-only by the same rule.
-        DisabledLine    = function() end,
+        -- The collection's one sentence, built the way `cli:DisabledLine()` builds
+        -- it: the plain-text brand, then `/pc enable`. From the verbatim copy above,
+        -- never a host spelling, so a degraded build words the refusal exactly as a
+        -- live one does (slash-commands-§1, the Slash version-15 degradation stub).
+        -- The degraded arm still refuses nothing (see the gate's header): its
+        -- `enable` and `disable` take the WS-02 route and write through the
+        -- stub-composed General.enabled row in setEnabled below.
+        DisabledLine    = function(_) return STUB_DISABLED_LINE_FORMAT:format(BRAND_NAME, "/pc enable") end,
+        -- Published for tests/test_surface_parity.lua's assertLibraryConstant pin.
+        -- The `__` prefix keeps it out of Kit.publicMembers, so the parity case
+        -- does not ask the live instance to carry it.
+        __disabledLineFormat = STUB_DISABLED_LINE_FORMAT,
         BuildListLines  = function() return { CLI_MISSING } end,
         SetRowAnnotator = function() end,
         Text            = function(_, key) return key end,
@@ -256,7 +278,7 @@ Sl = lib:New({
     -- what makes it safe to drop into a colored line. NOT the TOC's `## Title`,
     -- which is this addon's rainbow brand mark and a ratified toc-file-§1 deviation.
     isEnabled = function() return PrettyChat:IsAddonEnabled() end,
-    brandName = "Ka0s Pretty Chat",
+    brandName = BRAND_NAME,
 
     -- The single write seam again — the same schema-runtime members settings/OptionsSetup.lua
     -- hands the options module, as values, so a CLI change and a checkbox click take one

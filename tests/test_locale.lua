@@ -230,6 +230,13 @@ local RESIDUE = {
      .. "field, and that is what makes it safe to drop into a colored line. The "
      .. "sentence around it is the COLLECTION'S and never this addon's, so it is "
      .. "the library's `lib.DISABLED_LINE_FORMAT` and reaches no locale table"},
+    {"settings/Slash.lua", "%s is disabled \\226\\128\\148 enable it with |cFFFFFF00%s|r",
+     "the degraded Slash stub's verbatim copy of LibKa0s-Slash-1.0's "
+     .. "`lib.DISABLED_LINE_FORMAT`, the ONE library string slash-commands-§1 lets a "
+     .. "degradation stub carry. It is the COLLECTION'S sentence, not this addon's: "
+     .. "routing it through L would let a translation make the degraded line differ "
+     .. "from the live one, which is the drift the copy exists to prevent. "
+     .. "tests/test_surface_parity.lua pins it byte for byte against the library"},
     {"core/DebugLogSetup.lua", "Pretty Chat",
      "the same brand name, handed to LibKa0s-DebugLog-1.0 as its window title"},
     {"core/DebugLogSetup.lua", "Debug console",
