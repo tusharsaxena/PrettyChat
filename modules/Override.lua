@@ -113,13 +113,25 @@ end
 -- the moment the mode leaves that set: a default install registers nothing, runs
 -- nothing in combat, and the exemption stands unchanged.
 --
--- A plain event frame rather than AceEvent-3.0: this addon does not embed it and
--- adding a library for two events would be a dependency the DEPENDENCIES.md
--- ledger has to carry forever. It is not a display frame and never becomes one —
--- no size, no anchor, no SetMovable — so the composed Master controls tab stays
--- correctly `frameless`.
+-- A plain event frame rather than AceEvent-3.0, and that is the standard's own
+-- carve-out rather than a deviation: events-frames-taint-§1 (Standard v2.65.0)
+-- admits ONE lazily created private watcher for non-unit boundary events,
+-- provided it is fully unregistered on stand-down, and such a watcher is listed
+-- in docs/ARCHITECTURE.md ## Event Subscriptions with no Documented deviations
+-- row. This one is exactly that: created on the first combat-scoped write, and
+-- UnregisterAllEvents below takes both events down with the mode or the latch.
+-- It is not a display frame and never becomes one — no size, no anchor, no
+-- SetMovable — so the composed Master controls tab stays correctly `frameless`.
+--
+-- Registration goes through LibKa0s-Core's SafeRegisterEvents (bound as
+-- NS.Util.SafeRegisterEvents by core/CoreSetup.lua): the C_EventUtils.IsEventValid
+-- front gate, then a pcall, so a name the client has retired costs only itself.
+-- Refused names land, once each, in NS.RejectedEvents, which the [Init] session
+-- summary (core/DebugLogSetup.lua) surfaces.
 local COMBAT_SCOPED = { inCombat = true, outOfCombat = true }
+local WATCH_EVENTS  = { "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }
 local combatWatcher
+NS.RejectedEvents = NS.RejectedEvents or {}
 
 --- Arm or disarm the combat watcher from the state as it is NOW.
 ---
@@ -159,8 +171,9 @@ function PrettyChat:SyncCombatWatch()
         combatWatcher:UnregisterAllEvents()
         return
     end
-    for _, event in ipairs({ "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }) do
-        combatWatcher:RegisterEvent(event)
+    local n = NS.Util.SafeRegisterEvents(combatWatcher, WATCH_EVENTS, nil, NS.RejectedEvents)
+    if n < #WATCH_EVENTS then
+        NS.Debug("Events", "rejected %s", table.concat(NS.RejectedEvents, ", "))
     end
 end
 

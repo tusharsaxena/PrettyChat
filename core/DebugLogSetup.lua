@@ -14,10 +14,11 @@ local addonName, NS = ...
 -- secret-safe stringifier) and before every module that calls NS.Debug
 -- (debug-logging-§1).
 
--- One line naming the build, the schema version and the active profile, for the
--- [Init] bracket. The library owns WHEN it is emitted — on enable, because the
--- flag is session-only and off at login, so a load-time summary would always be
--- gated off and never render — and only we can know what it says
+-- One line naming the build, the schema version and the active profile (plus any
+-- event names the client refused), for the [Init] bracket. The library owns WHEN
+-- it is emitted — on enable, because the flag is session-only and off at login,
+-- so a load-time summary would always be gated off and never render — and only
+-- we can know what it says
 -- (debug-logging-§5/§8).
 local function sessionSummary()
     local name    = NS.name or "PrettyChat"
@@ -33,7 +34,15 @@ local function sessionSummary()
             if ok and p then profile = tostring(p) end
         end
     end
-    return ("%s v%s, schema v%s, profile '%s'"):format(name, version, schema, profile)
+    local line = ("%s v%s, schema v%s, profile '%s'"):format(name, version, schema, profile)
+    -- The player-reachable record of event names the client refused
+    -- (events-frames-taint-§1). Absent when nothing was refused, so a current
+    -- client's summary is byte-for-byte the shape tests/test_debuglog.lua pins.
+    local rejected = NS.RejectedEvents
+    if type(rejected) == "table" and #rejected > 0 then
+        line = line .. ", rejected events: " .. table.concat(rejected, ", ")
+    end
+    return line
 end
 
 local lib = LibStub and LibStub("LibKa0s-DebugLog-1.0", true)

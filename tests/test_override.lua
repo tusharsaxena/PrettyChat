@@ -230,6 +230,80 @@ test("a stored visibility arms the watcher at login, not only on a write", funct
     addon:ResetAll()
 end)
 
+-- ---- the watcher's registration (events-frames-taint-§1) -----------
+--
+-- Both names go through NS.Util.SafeRegisterEvents (LibKa0s-Core), so a name the
+-- client no longer knows costs only itself and is recorded in NS.RejectedEvents
+-- rather than raising through SyncCombatWatch or silently deafening the watcher.
+
+-- A fresh instance whose client refuses `name` at the frame's RegisterEvent and,
+-- with C_EventUtils absent, has no front gate: the older-client shape.
+local function refusingInstance(name)
+    return ctx.loadAddon({ mock = function(m)
+        m.__badEvents = { [name] = true }
+        m.C_EventUtils = nil
+    end })
+end
+
+local function watcherEvents(instEnv)
+    local out = {}
+    local f = instEnv._frames.byName["PrettyChatCombatWatcher"]
+    for _, reg in ipairs(instEnv.__registrations()) do
+        if reg.target == f and reg.kind == "frame" then out[reg.event] = true end
+    end
+    return out
+end
+
+test("a rejected combat event is recorded and the other still registers", function()
+    local fresh = refusingInstance("PLAYER_REGEN_DISABLED")
+    local ok, err = pcall(fresh.NS.Schema.Set, "General.visibility", "inCombat")
+    t.truthy(ok, "an unknown event name must not raise through SyncCombatWatch: " .. tostring(err))
+    local live = watcherEvents(fresh.env)
+    t.truthy(live.PLAYER_REGEN_ENABLED, "the other event still registers")
+    t.nilv(live.PLAYER_REGEN_DISABLED, "the refused one is not registered")
+    t.eq(table.concat(fresh.NS.RejectedEvents or {}, ","), "PLAYER_REGEN_DISABLED",
+        "and the refused name is recorded, once")
+end)
+
+test("IsEventValid rejects a name without calling RegisterEvent", function()
+    -- The frame itself would accept the name (no __badEvents), so the only way it
+    -- can be missing from the registrations is that the front gate refused it first.
+    local fresh = ctx.loadAddon({ mock = function(m)
+        m.__badEvents = {}
+        m.C_EventUtils = {
+            IsEventValid = function(name) return name ~= "PLAYER_REGEN_ENABLED" end,
+        }
+    end })
+    fresh.NS.Schema.Set("General.visibility", "outOfCombat")
+    local live = watcherEvents(fresh.env)
+    t.truthy(live.PLAYER_REGEN_DISABLED, "the valid name registers")
+    t.nilv(live.PLAYER_REGEN_ENABLED, "the gated name never reached RegisterEvent")
+    t.eq(table.concat(fresh.NS.RejectedEvents or {}, ","), "PLAYER_REGEN_ENABLED",
+        "and it is recorded as rejected")
+end)
+
+test("toggling visibility twice does not duplicate a rejected name", function()
+    local fresh = refusingInstance("PLAYER_REGEN_DISABLED")
+    local S = fresh.NS.Schema
+    S.Set("General.visibility", "inCombat")
+    S.Set("General.visibility", "always")
+    S.Set("General.visibility", "outOfCombat")
+    S.Set("General.visibility", "always")
+    S.Set("General.visibility", "inCombat")
+    t.eq(#(fresh.NS.RejectedEvents or {}), 1, "one refused name, recorded once across re-arms")
+    t.truthy(watcherEvents(fresh.env).PLAYER_REGEN_ENABLED, "and the other is live again")
+end)
+
+test("the [Init] summary names a rejected event", function()
+    local fresh = refusingInstance("PLAYER_REGEN_DISABLED")
+    t.falsy(fresh.NS.DebugLog.SessionSummary():find("rejected events", 1, true),
+        "no tail while nothing has been refused")
+    pcall(fresh.NS.Schema.Set, "General.visibility", "inCombat")
+    t.truthy(fresh.NS.DebugLog.SessionSummary():find(
+        ", rejected events: PLAYER_REGEN_DISABLED", 1, true),
+        "the refused name surfaces in the summary")
+end)
+
 -- ---- resets -------------------------------------------------------
 
 test("ResetCategory drops the whole category table", function()

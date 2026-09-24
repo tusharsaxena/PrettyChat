@@ -290,6 +290,9 @@ local RESIDUE = {
     {"core/DebugLogSetup.lua", "%s v%s, schema v%s, profile '%s'",
      "the debug console's session header, which is copied INTO bug reports and is "
      .. "read by whoever receives them"},
+    {"core/DebugLogSetup.lua", ", rejected events: ",
+     "the same session header's tail naming event names the client refused, read by "
+     .. "whoever receives the bug report; the event names themselves are API identifiers"},
     {"core/Util.lua", " (stopped by an error)",
      "debug-console text like every NS.Debug argument, held in one constant so the "
      .. "four bulk-act lines that append it agree; the console translates nothing"},

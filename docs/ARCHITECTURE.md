@@ -136,11 +136,13 @@ Every row write from `/pc set`, `/pc reset <path>` and the panel widgets goes th
 
 ## Message Bus
 
-**There is none, because this addon publishes no named message.** A whole-repo sweep of `core/ defaults/ modules/ settings/ locales/` returns zero `SendMessage`, zero `RegisterMessage` and zero `AceEvent` — AceEvent-3.0 is deliberately not vendored (`library-stack-§1` makes it mandatory only when used; the retired row's note is under `## Documented deviations`), so there is no bus to publish on and no sender/payload/consumer triple to tabulate.
+**There is none, because the addon sits below `architecture-§4`'s threshold** (Standard v2.65.0): the closed-bus MUST binds two or more feature modules, or a feature module whose game events a second feature module must react to. PrettyChat has **one** feature module, `modules/Override.lua`, and no second feature module reacts to its events — the combat watcher's two edges are heard only by the module that registers them. The AceAddon shell's `OnInitialize` / `OnEnable` handlers in `core/PrettyChat.lua` are not a feature module, and the watcher is a private frame that module owns (`events-frames-taint-§1`'s boundary-watcher carve-out), both of which the rule names as below the threshold.
+
+The addon also publishes no named message. A whole-repo sweep of `core/ defaults/ modules/ settings/ locales/` returns zero `SendMessage`, zero `RegisterMessage` and zero `AceEvent` — AceEvent-3.0 is deliberately not vendored (`library-stack-§1` makes it mandatory only when used; the retired row's note is under `## Documented deviations`), so there is no bus to publish on and no sender/payload/consumer triple to tabulate.
 
 What stands in its place is a **direct, synchronous fan-out inside the single write path**. `Schema.Set` (the runtime's `announce`, after the store and the `[Set]` line) and, once per batch, `Schema.ResetRows` call `Schema.NotifyPanelChange()`, which drives **both** refresher registries: `LibKa0s-Options-1.0`'s per-page `ctx.refreshers`, and this addon's own `Schema.RegisterRefresher(category, fn)` list — the one the bespoke per-string blocks in `settings/Panel.lua` sign up to, because a hand-built block is invisible to the library's registry. Each refresher runs under `pcall`, so a page whose AceGUI widgets have been released cannot take a `/pc set` down with it. Sender, payload and consumers are a function call and its closure rather than a message name; detail in [schema.md](./schema.md).
 
-**Re-check trigger:** the first `LibStub("AceEvent-3.0")` in this addon. Vendoring AceEvent means there are named messages, and they belong in a table here.
+**Re-check trigger:** a second feature module, or one that must react to the watcher's events. Either crosses `architecture-§4`'s threshold and the bus MUST exist from that change on. The first `LibStub("AceEvent-3.0")` in this addon is a trigger too: it means there are named messages, which belong in a table here, and it ends the watcher's carve-out (`## Event Subscriptions`).
 
 ## Slash Commands
 
@@ -156,6 +158,10 @@ What stands in its place is a **direct, synchronous fan-out inside the single wr
 | `PLAYER_REGEN_ENABLED` | the same frame | the same condition | the same |
 
 The watcher frame is **created lazily on the first combat-scoped write** and its events are dropped again the moment either condition stops holding (`PrettyChat:SyncCombatWatch`), so a default install — `visibility = "always"` — creates no frame and registers nothing at all, and a **disabled** install registers nothing whatever the visibility says. That gating is what keeps the `performance-§12` exemption below intact, and it is pinned by `tests/test_override.lua` and `tests/test_disabled.lua`. Adding an unconditional event subscription or a chat filter would change the addon's compatibility contract. (What the addon has instead of a bus is under `## Message Bus` above.)
+
+**Registration goes through `NS.Util.SafeRegisterEvents`** (LibKa0s-Core's helper, bound in `core/CoreSetup.lua`): the `C_EventUtils.IsEventValid` front gate, then a `pcall`, so a name a future client retires costs only itself instead of raising through `SyncCombatWatch` and leaving the watcher deaf. A refused name is recorded once in `NS.RejectedEvents`, logged as one `[Events] rejected …` line, and appended to the `[Init]` session summary as `, rejected events: <names>` (`core/DebugLogSetup.lua`); on a current client the list stays empty and the summary is unchanged (`events-frames-taint-§1`, PRETTYCHAT-A-09).
+
+**The watcher is `events-frames-taint-§1`'s boundary-watcher carve-out** (Standard v2.65.0), not a deviation, so it has **no** `## Documented deviations` row: PrettyChat embeds no AceEvent-3.0 anywhere, and this is its one private frame, carrying only the non-unit combat edges, created lazily, and fully unregistered (`UnregisterAllEvents`) on stand-down from the latch's disable path (PRETTYCHAT-A-08).
 
 ## The disabled state is total
 

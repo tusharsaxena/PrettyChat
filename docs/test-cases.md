@@ -260,7 +260,7 @@ badge and any count quoted in the docs must agree with it.
 - ResetString clears both the custom format and the per-string disable
 - the Tradeskill format is the one that reaches _G for LOOT_ITEM_CREATED_SELF
 
-### test_override.lua (40)
+### test_override.lua (44)
 
 - GetStringValue falls back to the defaults table until overridden
 - IsAddonEnabled treats an absent flag as default-true
@@ -274,6 +274,10 @@ badge and any count quoted in the docs must agree with it.
 - the combat watcher is armed only while a combat mode is stored
 - the combat boundary re-applies the strings
 - a stored visibility arms the watcher at login, not only on a write
+- a rejected combat event is recorded and the other still registers
+- IsEventValid rejects a name without calling RegisterEvent
+- toggling visibility twice does not duplicate a rejected name
+- the [Init] summary names a rejected event
 - ResetCategory drops the whole category table
 - ResetCategory('General') clears only the addon-wide keys
 - ResetAll clears the master flag and every category at once
@@ -575,7 +579,7 @@ badge and any count quoted in the docs must agree with it.
 | test_schema.lua | 45 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
-| test_override.lua | 40 |
+| test_override.lua | 44 |
 | test_database.lua | 26 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
@@ -586,4 +590,4 @@ badge and any count quoted in the docs must agree with it.
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **468** |
+| **Total** | **472** |
