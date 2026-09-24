@@ -136,7 +136,7 @@ dates for you. It does not make the addon non-compliant, and it is never a commi
 ## 3. Release / assets — regenerating committed data
 
 **None of this is needed to build, run or test the addon.** Skip this whole section unless you are
-regenerating the GlobalStrings chunks. A contributor fixing a typo installs nothing from here.
+regenerating the GlobalStrings chunks or the 128 launcher logo. A contributor fixing a typo installs nothing from here.
 
 ### Python 3 — one generator script, standard library only
 
@@ -155,13 +155,18 @@ generator lives"): the program moved there, its input and output did not. Since 
 reference data that `tests/test_defaults.lua` reads to check every override against Blizzard's real
 signature, dev-only in the same sense as `docs/` and `tests/`.
 
-### Image tooling — none, and none is claimed
+### Pillow — regenerating the 128 launcher logo, by hand
 
-The repo ships `media/logos/*.png`, `*.jpg` and the runtime `*.tga`, plus `media/screenshots/`. There
-is **no committed script, Makefile target or documented command that regenerates any of them**, so
-there is no image dependency to install. The `.tga` was produced out-of-band; converting a new one
-would need some `.tga`-capable image tool, but naming a specific one here would be inventing a
-requirement this repo has never recorded. **Plausible, not evidenced — left out deliberately.**
+| | |
+|---|---|
+| **Version** | Any recent Pillow. Verified here with 10.2.0 (Ubuntu 24.04's `python3-pil`). |
+| **Why** | `layout-§4`'s recipe regenerates `media/logos/prettychat.logo.128.tga` (128x128, uncompressed 32-bit TGA, image type 2) from the 2000x2000 `media/logos/prettychat.logo.png` beside it, as `core/LauncherSetup.lua:96-97` records. The `.tga` is committed, so the recipe is run **by hand when the source art changes**; nothing in the build, the TOC, the tests or the packager invokes it. The other logo files (`prettychat.logo.tga`, `.jpg`) and `media/screenshots/` have no regeneration recipe and are not covered by this entry. |
+| **Packages** | `PIL` (Pillow), imported by the recipe's `from PIL import Image`. |
+| **Install** | `sudo apt install -y python3-pil` |
+| **Verify** | `python3 -c 'import PIL; print(PIL.__version__)'` |
+| **Run** | `python3 -c 'from PIL import Image; Image.open("media/logos/prettychat.logo.png").convert("RGBA").resize((128, 128), Image.LANCZOS).save("media/logos/prettychat.logo.128.tga", format="TGA")'` from the repo root |
+
+**Not needed to build, run or test the addon.** It matters only on the day the logo art changes.
 
 ### Packaging
 
