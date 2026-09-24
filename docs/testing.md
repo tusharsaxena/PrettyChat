@@ -236,7 +236,8 @@ than a stop. **A missing tool is a skip recorded with its reason**, never a pass
 (`automated-tests-§3`, *The release gate*), evaluated by `/wow-addon:bump-version` from the
 `manifest.json` the release run writes — not by the runner, whose exit code is unchanged. A `skip` is
 **NOT EVALUATED** there rather than passed: install the tool and re-run. The one narrow exception is
-`perf` skipped because this addon ships no `tests/perf.lua`, which the release notes state out loud.
+`perf`, skipped under the ratified `performance-§12` no-combat-path exemption (register row in
+`docs/ARCHITECTURE.md`), which the release notes name.
 
 The runner is **vendored** from `LibKa0s`'s `testkit/`; never edit `tests/_kit/`. A kit fix goes
 upstream and is re-vendored.
