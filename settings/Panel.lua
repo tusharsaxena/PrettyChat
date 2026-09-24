@@ -446,11 +446,9 @@ local function buildCategoryBody(ctx, scroll, category, catData)
     H.RenderField(ctx, Schema.FindByPath(category .. ".enabled"), scroll, nil)
     H.AddSpacer(scroll, H.ROW_VSPACER * 2)
 
-    local sortedNames = {}
-    for globalName in pairs(catData.strings) do
-        sortedNames[#sortedNames + 1] = globalName
-    end
-    table.sort(sortedNames)
+    -- The shared cached order (modules/Override.lua). READ-ONLY: nothing below
+    -- writes it; activeString and stringTree only read it.
+    local sortedNames = NS.SortedStringNames(category)
 
     local selected = activeString(ctx, category, catData, sortedNames)
 

@@ -113,6 +113,16 @@ test("a global this client does not define is restored to nil, not left overridd
     local ABSENT = "PRETTYCHAT_ABSENT_FROM_THIS_CLIENT"
     fresh.NS.Defaults.Loot.strings[ABSENT] =
         { label = "Absent from this client", default = "a format with no conversions" }
+    -- NS.Defaults is static in the game, so NS.SortedStringNames caches each
+    -- category's order at file load (PRETTYCHAT-R-09). This case adds a string
+    -- AFTER load, which the game never does, so it hands the fresh instance an
+    -- uncached order that sees the addition.
+    fresh.NS.SortedStringNames = function(category)
+        local names = {}
+        for name in pairs(fresh.NS.Defaults[category].strings) do names[#names + 1] = name end
+        table.sort(names)
+        return names
+    end
     t.nilv(fresh.env[ABSENT], "this client defines no such global")
 
     -- Re-snapshot through the addon's own pass rather than hand-writing the

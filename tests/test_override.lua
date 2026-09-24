@@ -720,3 +720,52 @@ test("every Test line routes through the [PC] printer", function()
         t.truthy(line:sub(1, #NS.PREFIX) == NS.PREFIX, "line carries the [PC] prefix")
     end
 end)
+
+-- ---- the memoized sorted name list (PRETTYCHAT-R-09) -------------
+
+local function sortedKeys(category)
+    local keys = {}
+    local catData = NS.Defaults[category]
+    for name in pairs((catData and catData.strings) or {}) do keys[#keys + 1] = name end
+    table.sort(keys)
+    return keys
+end
+
+test("the /pc test report lists each category's strings in sorted order", function()
+    addon:ResetAll()
+    local sunk = {}
+    addon:Test(nil, function(line) sunk[#sunk + 1] = line end)
+    local seen = {}
+    for _, line in ipairs(sunk) do
+        if line:find("Name: ", 1, true) then seen[#seen + 1] = line:match("|r([%w_]+)$") end
+    end
+    local want = {}
+    for _, category in ipairs(Schema.CATEGORY_ORDER) do
+        for _, name in ipairs(sortedKeys(category)) do want[#want + 1] = name end
+    end
+    t.eq(#seen, #want, "one Name: line per shipped string")
+    for i, name in ipairs(want) do
+        t.eq(seen[i], name, ("Name: line %d is the sorted key"):format(i))
+    end
+end)
+
+test("SortedStringNames answers the same sorted table on every call", function()
+    t.eq(type(NS.SortedStringNames), "function", "NS.SortedStringNames is published")
+    for _, category in ipairs(Schema.CATEGORY_ORDER) do
+        local first = NS.SortedStringNames(category)
+        t.truthy(first == NS.SortedStringNames(category),
+            category .. ": the second call answers the cached table")
+        local want = sortedKeys(category)
+        t.eq(#first, #want, category .. ": every shipped name is listed")
+        for i, name in ipairs(want) do
+            t.eq(first[i], name, ("%s: entry %d is in sorted order"):format(category, i))
+        end
+    end
+end)
+
+test("a formatstring-filtered report does not shrink the cached list", function()
+    local full = #NS.SortedStringNames(cat)
+    t.truthy(full > 1, "the category has more than the one filtered string")
+    addon:Test({ kind = "formatstring", value = g }, function() end)
+    t.eq(#NS.SortedStringNames(cat), full, "the filter built a new table, not a shrunk cache")
+end)

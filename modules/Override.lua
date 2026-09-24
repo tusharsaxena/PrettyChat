@@ -19,6 +19,30 @@ local LABEL = {
     formatted = Color.green .. "Formatted: " .. Color.reset,
 }
 
+-- One sorted global-name array per category, built on first ask and kept. Sorted
+-- rather than pairs() order so every walk -- ApplyStrings, the `/pc test` report,
+-- the schema build and the panel's string list -- is byte-stable across /reload
+-- (PC-16) and cannot drift from the others: this is the ONE place that order is
+-- decided (PRETTYCHAT-R-09). Memoizing is safe because NS.Defaults is static after
+-- load; nothing writes it at runtime. The saving is unmeasured (there is no
+-- tests/perf.lua, by exemption) -- the point is one ordering rule, not speed.
+local sortedNames = {}
+
+-- READ-ONLY: callers must not mutate the returned array. It is the shared cache;
+-- a caller that needs a subset (collectNames) filters into a NEW table.
+function NS.SortedStringNames(category)
+    local names = sortedNames[category]
+    if names then return names end
+    names = {}
+    local catData = NS.Defaults[category]
+    for globalName in pairs((catData and catData.strings) or {}) do
+        names[#names + 1] = globalName
+    end
+    table.sort(names)
+    sortedNames[category] = names
+    return names
+end
+
 function PrettyChat:GetStringValue(category, globalName)
     local catDB = self.db.profile.categories[category]
     if catDB and catDB.strings and catDB.strings[globalName] ~= nil then
@@ -277,14 +301,8 @@ function PrettyChat:ApplyStrings()
     for _, category in ipairs(NS.Schema.CATEGORY_ORDER) do
         local catData = NS.Defaults[category]
         if catData and catData.strings then
-            local names = {}
-            for globalName in pairs(catData.strings) do
-                names[#names + 1] = globalName
-            end
-            table.sort(names)
-
             local catEnabled = addonEnabled and self:IsCategoryEnabled(category)
-            for _, globalName in ipairs(names) do
+            for _, globalName in ipairs(NS.SortedStringNames(category)) do
                 if catEnabled and self:IsStringEnabled(category, globalName) then
                     _G[globalName] = self:GetStringValue(category, globalName)
                     applied = applied + 1
@@ -582,17 +600,16 @@ local function categoryMatches(filter, category)
     return not filter or filter.kind ~= "category" or filter.value == category
 end
 
--- The sorted, filter-surviving global names of one category. Sorted rather than
--- pairs() order so the report is byte-stable across /reload (PC-16).
-local function collectNames(catData, filter)
+-- The sorted, filter-surviving global names of one category, in the shared order
+-- NS.SortedStringNames decides (PC-16). Always a NEW table: the cached array is
+-- read-only, and filtering it in place would shrink every later walk.
+local function collectNames(category, filter)
     local names = {}
-    if not (catData and catData.strings) then return names end
-    for globalName in pairs(catData.strings) do
+    for _, globalName in ipairs(NS.SortedStringNames(category)) do
         if not filter or filter.kind ~= "formatstring" or filter.value == globalName then
             names[#names + 1] = globalName
         end
     end
-    table.sort(names)
     return names
 end
 
@@ -708,7 +725,7 @@ function PrettyChat:Test(filter, sink)
     local emittedAny = false
     for _, category in ipairs(NS.Schema.CATEGORY_ORDER) do
         if categoryMatches(filter, category) then
-            local names = collectNames(NS.Defaults[category], filter)
+            local names = collectNames(category, filter)
             if #names > 0 then
                 emittedAny = true
                 local p, e = printCategoryBlock(emit, self, category, names)

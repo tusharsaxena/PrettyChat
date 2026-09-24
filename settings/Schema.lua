@@ -432,13 +432,7 @@ for _, category in ipairs(CATEGORY_ORDER) do
     if catData then
         buildCategoryRow(category)
 
-        local sortedNames = {}
-        for globalName in pairs(catData.strings) do
-            sortedNames[#sortedNames + 1] = globalName
-        end
-        table.sort(sortedNames)
-
-        for _, globalName in ipairs(sortedNames) do
+        for _, globalName in ipairs(NS.SortedStringNames(category)) do
             buildStringRows(category, globalName, catData.strings[globalName])
         end
     end

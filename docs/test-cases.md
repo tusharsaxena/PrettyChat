@@ -260,7 +260,7 @@ badge and any count quoted in the docs must agree with it.
 - ResetString clears both the custom format and the per-string disable
 - the Tradeskill format is the one that reaches _G for LOOT_ITEM_CREATED_SELF
 
-### test_override.lua (37)
+### test_override.lua (40)
 
 - GetStringValue falls back to the defaults table until overridden
 - IsAddonEnabled treats an absent flag as default-true
@@ -299,6 +299,9 @@ badge and any count quoted in the docs must agree with it.
 - Test warns when the addon is disabled but still previews
 - an unrenderable override is reported as an error line, not a crash
 - every Test line routes through the [PC] printer
+- the /pc test report lists each category's strings in sorted order
+- SortedStringNames answers the same sorted table on every call
+- a formatstring-filtered report does not shrink the cached list
 
 ### test_database.lua (26)
 
@@ -572,7 +575,7 @@ badge and any count quoted in the docs must agree with it.
 | test_schema.lua | 45 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
-| test_override.lua | 37 |
+| test_override.lua | 40 |
 | test_database.lua | 26 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
@@ -583,4 +586,4 @@ badge and any count quoted in the docs must agree with it.
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **465** |
+| **Total** | **468** |

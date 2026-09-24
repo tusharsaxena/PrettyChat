@@ -807,6 +807,16 @@ test("the read-only Original row shows this client's snapshot, or degrades witho
     local LATE = "PRETTYCHAT_REGISTERED_AFTER_SNAPSHOT"
     fresh.NS.Defaults.Loot.strings[LATE] =
         { label = "Registered after the snapshot", default = "a format with no conversions" }
+    -- NS.Defaults is static in the game, so NS.SortedStringNames caches each
+    -- category's order at file load (PRETTYCHAT-R-09). This case adds a string
+    -- AFTER load, which the game never does, so it hands the fresh instance an
+    -- uncached order that sees the addition.
+    fresh.NS.SortedStringNames = function(category)
+        local names = {}
+        for name in pairs(fresh.NS.Defaults[category].strings) do names[#names + 1] = name end
+        table.sort(names)
+        return names
+    end
     t.nilv(fresh.addon.originalStrings[LATE], "the snapshot never saw it")
     t.nilv(fresh.env[LATE], "and no live global carries it either")
 
