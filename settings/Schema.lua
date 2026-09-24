@@ -938,12 +938,12 @@ end
 -- checkbox and a slash `set` take, so the debug line, the re-apply and the panel
 -- refresh are identical on all three paths.
 --
--- Deliberately NOT the implementation behind the per-category Defaults button or
--- `/pc resetall`. Both of those are bulk: driving them row by row through it
+-- Deliberately NOT the implementation behind the Categories page's Defaults button
+-- or `/pc resetall`. Both of those are bulk: driving them row by row through it
 -- would run ApplyStrings once per row (170 passes over 79 globals) and emit one
 -- [Set] line per row into a 1500-line console buffer, where debug-logging-§10 asks
--- a bulk reset for ONE [Set] line. The per-category and per-string resets take
--- Schema.ResetRows below; `/pc resetall` is the profile reset (options-ui-§12).
+-- a bulk reset for ONE [Set] line. The page-wide, per-category and per-string
+-- resets take Schema.ResetRows below; `/pc resetall` is the profile reset (options-ui-§12).
 
 -- Schema.CountChangedRows (the runtime's CountOffDefault, bound above) counts every
 -- stored row that currently differs from its default. Session-only rows are
@@ -963,8 +963,9 @@ end
 -- defaults through the same write step Schema.Set takes, then pay the two side
 -- effects ONCE: one ApplyStrings pass, one panel refresh, and ONE
 -- `[Set] reset <label>: N rows` line in place of a [Set] line per row
--- (debug-logging-§10). PrettyChat:ResetCategory and PrettyChat:ResetString are
--- its callers.
+-- (debug-logging-§10). PrettyChat:ResetCategoriesPage (the Categories page's
+-- Defaults button), PrettyChat:ResetCategory and PrettyChat:ResetString are its
+-- callers.
 --
 -- The act is the schema runtime's own (issue #18): one S.BulkRun('reset', label)
 -- bracket, whose close writes the line, with S.BulkAdd(1) per row that reads back
