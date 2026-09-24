@@ -545,7 +545,7 @@ badge and any count quoted in the docs must agree with it.
 - the landing logo is hidden when its group goes back to AceGUI's pool
 - the parent page shows the TOC tagline
 
-### test_doc_structure.lua (10)
+### test_doc_structure.lua (11)
 
 - docs/ARCHITECTURE.md carries the ten sections documentation-§3 names
 - every mandated hub section that has a topic doc has spilled into it
@@ -557,6 +557,7 @@ badge and any count quoted in the docs must agree with it.
 - docs/smoke-tests.md carries a non-English-client section
 - every TOC-loaded authored file names its own path in its first comment
 - no module publishes NS.<X> with a bare table constructor
+- ARCHITECTURE's load-order line names every TOC-loaded authored file in TOC order
 
 ### test_register.lua (1)
 
@@ -595,7 +596,7 @@ badge and any count quoted in the docs must agree with it.
 | test_slash.lua | 52 |
 | test_disabled.lua | 13 |
 | test_panel.lua | 48 |
-| test_doc_structure.lua | 10 |
+| test_doc_structure.lua | 11 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **480** |
+| **Total** | **481** |

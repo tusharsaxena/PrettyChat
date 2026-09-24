@@ -30,7 +30,7 @@ OnEnable snapshot ─▶ addon.originalStrings ─▶ NS.OriginalFormat(addon, G
 
 ## Module Map
 
-Modular layout (`core/`, `defaults/`, `locales/`, `modules/`, `settings/`) — the single Ka0s layout (`layout-§1`). Load order is `PrettyChat.toc` (dependency, not alphabetical): libraries first — **including `libs\LibKa0s\LibKa0s.xml`, after Ace3** — then `locales/enUS → core/EnvSetup → core/MediaSetup → core/Constants → core/Namespace → core/State → core/Util → core/Database → core/PrettyChat → core/CoreSetup → core/DebugLogSetup → core/LauncherSetup → defaults/Profile → defaults/Defaults → modules/Override → settings/Schema → settings/OptionsSetup → settings/Slash → settings/Panel`.
+Modular layout (`core/`, `defaults/`, `locales/`, `modules/`, `settings/`) — the single Ka0s layout (`layout-§1`). Load order is `PrettyChat.toc` (dependency, not alphabetical): libraries first — **including `libs\LibKa0s\LibKa0s.xml`, after Ace3** — then `locales/enUS → core/EnvSetup → core/MediaSetup → core/Constants → core/Namespace → core/State → core/Util → core/Database → core/PrettyChat → core/CoreSetup → core/DebugLogSetup → core/LifecycleSetup → core/LauncherSetup → defaults/Profile → defaults/Defaults → modules/Override → settings/Schema → settings/OptionsSetup → settings/Slash → settings/Panel`.
 
 **Six positions in that order are load-bearing and are pinned by tests, not by convention:**
 

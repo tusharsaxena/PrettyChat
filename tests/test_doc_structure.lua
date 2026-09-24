@@ -411,3 +411,37 @@ test("no module publishes NS.<X> with a bare table constructor", function()
     assertTrue(#bad == 0, "architecture-§3 publishes a module as `NS.<X> = NS.<X> or {}`; a bare "
         .. "constructor replaces whatever an earlier file seeded: " .. table.concat(bad, "; "))
 end)
+
+-- ── The hub's load-order line against the TOC ──────────────────────────────────────────────────
+
+-- WHAT IT PROVES. docs/ARCHITECTURE.md's Module Map carries ONE load-order line, the `a → b → c`
+-- chain inside backticks, and that chain names every authored file PrettyChat.toc loads (libs/
+-- excluded), in TOC order, with `.lua` dropped. The TOC is the source of truth and the line is its
+-- prose copy; a file added to the TOC without the line following -- core/LifecycleSetup did exactly
+-- that (PRETTYCHAT-A-03) -- leaves the hub describing a load order the client never runs.
+--
+-- WHAT IT DOES NOT DO. It does not read docs/module-map.md's numbered list, whose entries carry
+-- prose per step, and it does not check the libraries' order, which the line summarizes in words.
+test("ARCHITECTURE's load-order line names every TOC-loaded authored file in TOC order", function()
+    local want = {}
+    for _, rel in ipairs(authoredSources()) do want[#want + 1] = (rel:gsub("%.lua$", "")) end
+
+    local chain
+    for _, line in ipairs(lines(ARCHITECTURE)) do
+        if line:find("Load order is `PrettyChat.toc`", 1, true) then
+            for span in line:gmatch("`([^`]+)`") do
+                if span:find("→", 1, true) then chain = span end
+            end
+        end
+    end
+    assertTrue(chain ~= nil, "docs/ARCHITECTURE.md has no `Load order is `PrettyChat.toc`` line "
+        .. "carrying a backticked `a → b` chain -- the gate cannot look, so it fails")
+
+    local got = {}
+    for step in (chain .. " → "):gmatch("(.-)%s*→%s*") do
+        got[#got + 1] = step:match("^%s*(.-)%s*$")
+    end
+    assertTrue(table.concat(got, " → ") == table.concat(want, " → "),
+        "docs/ARCHITECTURE.md's load-order line does not match PrettyChat.toc.\n  TOC:  "
+        .. table.concat(want, " → ") .. "\n  line: " .. table.concat(got, " → "))
+end)
