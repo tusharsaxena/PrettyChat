@@ -500,6 +500,61 @@ test("both resets write through the helper's batched entry, Schema.ResetRows", f
         "a string reset covers exactly that string's two rows")
 end)
 
+-- issue #18: Schema.ResetRows is the schema runtime's own bulk act, a BulkRun
+-- bracket whose tally is BulkAdd'd per changed row, not a hand-rolled line.
+
+test("ResetRows runs inside the runtime's bracket", function()
+    addon:ResetAll()
+    local S = NS.SchemaRuntime
+    local orig = S.BulkRun
+    local calls = {}
+    S.BulkRun = function(act, scope, walk)
+        calls[#calls + 1] = { act = act, scope = scope }
+        return orig(act, scope, walk)
+    end
+    local ok, err = pcall(function() addon:ResetCategory("Loot") end)
+    S.BulkRun = orig
+    if not ok then error(err, 0) end
+    t.eq(#calls, 1, "one bracket for the whole reset")
+    t.eq(calls[1] and calls[1].act, "reset", "the act is 'reset'")
+    t.eq(calls[1] and calls[1].scope, "Loot", "and the scope is the reset's label")
+end)
+
+test("an all-already-default reset still logs `[Set] reset Loot: 0 rows`", function()
+    addon:ResetAll()
+    local _, sets, _, log = probeReset(function() addon:ResetCategory("Loot") end)
+    t.eq(sets, 1, "one [Set] line")
+    t.truthy(log:find("[Set] reset Loot: 0 rows", 1, true), "counting nothing")
+end)
+
+test("a reset list with no eligible row logs nothing and returns 0", function()
+    addon:ResetAll()
+    -- Carries a real path, but is not the row the runtime indexes under it.
+    local foreign = { path = cat .. "." .. g .. ".format", default = "X",
+                      get = function() return "Y" end, set = function() end }
+    local n
+    local passes, sets, _, _, notifies = probeReset(function()
+        n = Schema.ResetRows({ foreign }, "Nothing")
+    end)
+    t.eq(n, 0, "returns 0")
+    t.eq(sets, 0, "logs no [Set] line")
+    t.eq(passes, 0, "runs no pass")
+    t.eq(notifies, 0, "and refreshes nothing")
+end)
+
+test("a reset counts a row by read-back: General.enabled stored false counts 1", function()
+    addon:ResetAll()
+    Schema.Set("General.enabled", false)
+    local n
+    local _, _, _, log = probeReset(function()
+        n = Schema.ResetRows({ Schema.FindByPath("General.enabled") }, "General")
+    end)
+    t.nilv(addon.db.profile.enabled, "its set stores nil")
+    t.eq(n, 1, "yet the row reads back changed, so it counts")
+    t.truthy(log:find("[Set] reset General: 1 rows", 1, true), "and the line says so")
+    addon:ResetAll()
+end)
+
 test("a visibility equal to the default stores nothing at all", function()
     addon:ResetAll()
     Schema.Set("General.visibility", "never")

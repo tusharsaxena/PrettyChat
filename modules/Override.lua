@@ -179,8 +179,8 @@ local batching = 0
 --- the arm walked 79 globals and refreshed every page, and then the write seam did
 --- it again (debug-logging-§10 counts that as one pass, one refresh, one line).
 ---
---- The depth is unwound on a raise, through the same xpcall-based helper the reset
---- paths use, so an error inside a write cannot strand the suppression on and leave
+--- The depth is unwound on a raise, through the same xpcall-based helper the profile
+--- events use, so an error inside a write cannot strand the suppression on and leave
 --- every later stand-down silently skipping its pass.
 function PrettyChat.Batch(fn)
     batching = batching + 1

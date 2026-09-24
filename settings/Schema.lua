@@ -54,8 +54,9 @@ end
 -- Row `set` closures are pure DB writes — they do NOT call
 -- PrettyChat:ApplyStrings() or Schema.NotifyPanelChange(). Both side
 -- effects are the write seam's `announce` (Schema.Set), and its batched sibling
--- Schema.ResetRows pays them once per batch instead of once per row. Callers
--- must go through one of the two; never invoke row.set(value) directly.
+-- Schema.ResetRows, the runtime's own BulkRun bracket, pays them once per batch
+-- instead of once per row. Callers must go through one of the two; never invoke
+-- row.set(value) directly.
 --
 -- Each one is BATCHED where it is built, because the seam calls the row's `set`
 -- itself and there is no host step left around the call to batch it from.
@@ -944,14 +945,6 @@ end
 -- a bulk reset for ONE [Set] line. The per-category and per-string resets take
 -- Schema.ResetRows below; `/pc resetall` is the profile reset (options-ui-§12).
 
--- Would writing this row's default change what is stored? Every getter reads its
--- own stored key and falls back to the default (none cascades through a parent
--- enable), and every setter clears the key on a default, so "reads differently
--- from its default" is exactly "has a stored value the reset would remove".
-local function differsFromDefault(row)
-    return row.get() ~= row.default
-end
-
 -- Schema.CountChangedRows (the runtime's CountOffDefault, bound above) counts every
 -- stored row that currently differs from its default. Session-only rows are
 -- skipped, because AceDB's profile reset never touches them.
@@ -973,56 +966,65 @@ end
 -- (debug-logging-§10). PrettyChat:ResetCategory and PrettyChat:ResetString are
 -- its callers.
 --
--- N is the rows the reset actually changed: a row already at its default is still
--- written (a no-op) but not counted. A reset with nothing to change still runs its
--- one pass and logs its one line, as `: 0 rows`.
+-- The act is the schema runtime's own (issue #18): one S.BulkRun('reset', label)
+-- bracket, whose close writes the line, with S.BulkAdd(1) per row that reads back
+-- changed after its write. That read-back is the runtime's own meaning of N: a row
+-- already at its default is still written (a no-op) but not counted, and a reset
+-- with nothing to change still runs its one pass and logs its one line, as
+-- `: 0 rows`.
 --
--- The gates are Set's: a row this schema does not own is skipped, the
--- conversion-signature gate is asked (a shipped default always passes it), and a
--- batch made only of session-only rows skips the re-apply. The refresh targets
--- the rows' category when they share one, and every page when they do not. A list
--- with no row past the gates is not an act and logs nothing. Returns N.
+-- The gates are Set's, asked up front: a row this schema does not own is skipped,
+-- and the conversion-signature gate is asked (a shipped default always passes it).
+-- A list with no row past them is not an act: no bracket, no line, and 0 back.
+-- A batch made only of session-only rows skips the re-apply. The refresh targets
+-- the rows' category when they share one, and every page when they do not.
+-- Returns N.
 --
--- A raise partway (a row's set(), the pass or the refresh) still logs the one
--- line, counting the rows changed before it and ending in Util.STOPPED, and then
--- raises again (NS.Util.RunAct). So the body tallies into `tally` as each write
--- lands rather than into locals the raise would lose.
-local function resetRowsBody(list, tally)
-    local reapply, category = false, nil
+-- A raise partway (a row's set(), the pass or the refresh) happens INSIDE the
+-- bracket, so its close still writes the one line, counting the rows changed
+-- before the raise and ending in the library's ` (stopped by an error)` (the same
+-- text as NS.Util.STOPPED), and BulkRun then raises the error again, unchanged.
+local function eligibleRows(list)
+    local out = {}
     for _, row in ipairs(list or {}) do
         if S.FindRow(row.path) == row and not refusedBySignature(row, row.default) then
-            local differs = differsFromDefault(row)
-            -- Batched for the same reason Schema.Set's single write is: resetting
-            -- `General.enabled` fires a latch arm, and the batch's one pass below
-            -- is that arm's pass too. It has to be per ROW rather than around the
-            -- whole loop, so the registration work of an arm fired by row N is done
-            -- before row N+1 reads the state it left.
-            PrettyChat.Batch(function() row.set(row.default) end)
-            tally.wrote = tally.wrote + 1
-            if differs then tally.changed = tally.changed + 1 end
-            reapply = reapply or not row.sessionOnly
-            if category == nil then
-                category = row.category
-            elseif category ~= row.category then
-                category = false
-            end
+            out[#out + 1] = row
         end
     end
-    if tally.wrote == 0 then return end
+    return out
+end
+
+local function resetWalk(eligible, counter)
+    local reapply, category = false, nil
+    for _, row in ipairs(eligible) do
+        local before = row.get()
+        -- Batched for the same reason Schema.Set's single write is: resetting
+        -- `General.enabled` fires a latch arm, and the batch's one pass below
+        -- is that arm's pass too. It has to be per ROW rather than around the
+        -- whole loop, so the registration work of an arm fired by row N is done
+        -- before row N+1 reads the state it left.
+        PrettyChat.Batch(function() row.set(row.default) end)
+        if row.get() ~= before then
+            S.BulkAdd(1)
+            counter.n = counter.n + 1
+        end
+        reapply = reapply or not row.sessionOnly
+        if category == nil then
+            category = row.category
+        elseif category ~= row.category then
+            category = false
+        end
+    end
     if reapply then PrettyChat:ApplyStrings() end
     Schema.NotifyPanelChange(category or nil)
 end
 
 function Schema.ResetRows(list, label)
-    local tally = { wrote = 0, changed = 0 }
-    local function line(suffix)
-        NS.Debug("Set", "reset %s: %d rows%s", tostring(label), tally.changed, suffix)
-    end
-    NS.Util.RunAct(function() resetRowsBody(list, tally) end,
-                   function() line(NS.Util.STOPPED) end)
-    if tally.wrote == 0 then return 0 end
-    line("")
-    return tally.changed
+    local eligible = eligibleRows(list)
+    if #eligible == 0 then return 0 end
+    local counter = { n = 0 }
+    S.BulkRun("reset", label, function() resetWalk(eligible, counter) end)
+    return counter.n
 end
 
 function Schema.RowsByCategory(category)

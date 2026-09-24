@@ -90,19 +90,21 @@ Row `set()` closures are pure DB writes — they do **not** run `ApplyStrings` o
 
 ```lua
 function Schema.ResetRows(list, label)
-    -- for each row: skip it unless the runtime's index owns it and the signature gate passes,
-    -- then row.set(row.default)
-    -- once:  ApplyStrings (unless every row was session-only),
-    --        NotifyPanelChange(the rows' shared category, or nil for every page),
-    --        NS.Debug("Set", "reset <label>: N rows")   -- N = rows it changed
-    -- a raise anywhere above: the same one line, N the rows changed before it,
-    --        ending " (stopped by an error)"; then the error is raised again
+    -- first: keep only the rows the runtime's index owns that pass the signature gate;
+    --        none left -> return 0, no bracket, no line
+    -- then, inside NS.SchemaRuntime.BulkRun("reset", label, walk):
+    --   for each kept row: before = row.get(); row.set(row.default)
+    --                      if row.get() ~= before then S.BulkAdd(1) end   -- N by read-back
+    --   once: ApplyStrings (unless every row was session-only),
+    --         NotifyPanelChange(the rows' shared category, or nil for every page)
+    -- the bracket's close logs "[Set] reset <label>: N rows"; a raise anywhere in walk
+    --        still gets that one line, ending " (stopped by an error)", then is raised again
 end
 ```
 
 It restores a list of rows to their defaults through the same `set()` step and the same gates `Schema.Set` uses, then pays the side effects once: one `ApplyStrings` pass, one panel refresh and one `[Set] reset <label>: N rows` line in place of a `[Set]` line per row (debug-logging-§10: a bulk reset is one `[Set]` line). N is the rows the reset actually changed. A row already at its default is still written, a no-op, but is not counted, and a reset with nothing to change still logs its one line as `: 0 rows`. Driving 170 rows through `Set` one at a time would cost 170 passes over 79 globals and 170 console lines. Returns N.
 
-A reset that raises partway (a row's `set()`, the pass or the refresh) still writes its one line, counting the rows changed before the raise and ending in ` (stopped by an error)`, for example `[Set] reset Loot: 2 rows (stopped by an error)`. The error is then raised again. `NS.Util.RunAct` (`core/Util.lua`) does both, through `xpcall`, so the re-raised error carries the stack of the original raise rather than only its message.
+A reset that raises partway (a row's `set()`, the pass or the refresh) still writes its one line, counting the rows changed before the raise and ending in ` (stopped by an error)`, for example `[Set] reset Loot: 2 rows (stopped by an error)`. The error is then raised again. Both are the schema runtime's bulk bracket (`LibKa0s-Schema-1.0`'s `BulkRun` / `BulkAdd`, issue #18): the walk runs under a plain `pcall`, the bracket's close writes the marked line, and `BulkRun` re-raises the same error value unchanged. With LibKa0s absent the host's stub brackets and re-raises the same way and logs nothing, as the degraded `NS.Debug` does.
 
 `Schema.NotifyPanelChange(category)` dispatches to a refresher closure that `settings/Panel.lua` registers for the category tab it has just drawn, via `Schema.RegisterRefresher(category, fn)`. The closure re-syncs every visible widget on that tab from the DB. Master-toggle changes (category `"General"` or `nil`) cascade to every registered refresher since per-string disabled state depends on the master. This keeps the panel and the slash UI from ever drifting — a `/pc set` while the panel is open updates both surfaces in the same frame. At most one category has an entry at a time: the visible tab. A tab that is not on screen has none, and that is correct — it is rebuilt from the live DB the moment it is selected, so it cannot show stale state.
 

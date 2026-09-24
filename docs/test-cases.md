@@ -258,7 +258,7 @@ badge and any count quoted in the docs must agree with it.
 - ResetString clears both the custom format and the per-string disable
 - the Tradeskill format is the one that reaches _G for LOOT_ITEM_CREATED_SELF
 
-### test_override.lua (31)
+### test_override.lua (35)
 
 - GetStringValue falls back to the defaults table until overridden
 - IsAddonEnabled treats an absent flag as default-true
@@ -282,6 +282,10 @@ badge and any count quoted in the docs must agree with it.
 - a reset that raises between its writes logs one marked line, then raises
 - a reset whose re-apply raises logs one marked line counting every row written
 - both resets write through the helper's batched entry, Schema.ResetRows
+- ResetRows runs inside the runtime's bracket
+- an all-already-default reset still logs `[Set] reset Loot: 0 rows`
+- a reset list with no eligible row logs nothing and returns 0
+- a reset counts a row by read-back: General.enabled stored false counts 1
 - a visibility equal to the default stores nothing at all
 - Test prints a header, a per-category block, and a counted footer
 - Test writes every line to the sink it is given, and nothing to chat
@@ -560,7 +564,7 @@ badge and any count quoted in the docs must agree with it.
 | test_schema.lua | 45 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
-| test_override.lua | 31 |
+| test_override.lua | 35 |
 | test_database.lua | 26 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
@@ -571,4 +575,4 @@ badge and any count quoted in the docs must agree with it.
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **453** |
+| **Total** | **457** |
