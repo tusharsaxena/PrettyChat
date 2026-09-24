@@ -1,0 +1,483 @@
+  PASS  the runner fed the loader exactly the TOC's files, in the TOC's order
+  PASS  every derived path exists on disk and no libs/ path leaked in
+  PASS  the vendored load list is every file of LibKa0s.xml, in XML order
+  PASS  every LibKa0s major actually registered in the loaded environment
+  PASS  libs/LibKa0s is the LibKa0s release CLAUDE.md says this addon bundles
+  PASS  tests/_kit is the test kit that shipped with that release
+  PASS  the automated-test runner is recorded executable (100755)
+  PASS  layoutcap: every authored file over the 1500-line cap is named in the census
+  PASS  layoutcap: no census row outlives the breach it records
+  PASS  layoutcap: every over-cap census row carries one of layout-§1's three terminal states
+  PASS  layoutcap: the census and the exempt set agree about which paths were exempted
+  PASS  layoutcap: an empty census is written as a result rather than left standing empty
+  PASS  layoutcap self-test: the parser reads the census nested under the register, and stops there
+  PASS  layoutcap self-test: a census outside its register, or at the wrong level, is not read
+  PASS  layoutcap self-test: an over-cap file missing from the census is reported, and an exempt one is not
+  PASS  layoutcap self-test: a census row that outlives its breach is reported
+  PASS  layoutcap self-test: an over-cap row that names no terminal state is reported
+  PASS  layoutcap self-test: the census and the exempt set are held to naming the same paths
+  PASS  layoutcap self-test: a census that states nothing is told apart from one that states none
+  PASS  layoutcap self-test: the exempt set takes folders as well as paths
+  PASS  lintconfig: .luacheckrc sets no top-level ignore
+  PASS  lintconfig: .luacheckrc switches no warning class off wholesale
+  PASS  lintconfig: every files[...] ignore is narrowed to a file or a name
+  PASS  lintconfig: no source file carries a bare inline luacheck ignore
+  PASS  prose: no authored file carries a British spelling from localization-§5's published list
+  PASS  prose: the gate carries localization-§5's two lists whole, and nothing of its own
+  PASS  prose self-test: the carve-out suppresses the named generated folder, and only it
+  PASS  prose self-test: a path the carve-out does not name is not covered by one that looks like it
+  PASS  prose self-test: a carve-out that is not a set of path strings is a failure, not a silence
+  PASS  prose self-test: a TOC's file lines are read as paths, and its directives and comments are not
+  PASS  prose self-test: a .pkgmeta's ignore block is read, and the keys around it are not
+  PASS  prose self-test: an ignore entry covers a path exactly, by folder, and by wildcard
+  PASS  prose self-test: the carve-out admits a generated dump and refuses a file the TOC loads
+  PASS  prose self-test: a waiver-file exclusion meets the same two refusals as the carve-out
+  PASS  prose self-test: each list is refused on the matching rule its own scan uses
+  PASS  prose self-test: the scan and the refusals read the added exclusions through one reader
+  PASS  prose self-test: a narrowing is refused by what it suppresses, not by how it is written
+  PASS  prose self-test: the disclosure names what each entry suppressed, and says when it is bounded
+  PASS  prose self-test: a malformed waived is a failure, not a silence
+  PASS  the locale-table matcher catches both offending spellings and clears the legal one
+  PASS  no seam file hands a LibKa0s descriptor the addon-wide locale table
+  PASS  Core cannot express the L trap — the tripwire that stands in for a rendered case
+  PASS  the secret-safe pair on NS.Util IS Core's, not a host copy beside it
+  PASS  the [PC] printer renders the same bytes it did before Core owned it
+  PASS  the printer is reclaimed from AceConsole's embed, not merely defined
+  PASS  the console descriptor seeds the frame globals and the title we mean
+  PASS  the console renders prose, not its own SCREAMING_SNAKE keys
+  PASS  the console's two formatters still render the bytes the copy buffer expects
+  PASS  the console's print and safeToString are call-time forwarders, not captures
+  PASS  NS.Debug is the instance's bare sink, bound not wrapped
+  PASS  the close button is the library's, told which addon folder is asking
+  PASS  the console descriptor passes the FOLDER name, not just the frame name
+  PASS  with DebugLog absent the console degrades but the flag and the ack survive
+  PASS  Options cannot express the L trap either — its own, different tripwire
+  PASS  NS.Helpers IS the library instance, decorated in place
+  PASS  every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh trio
+  PASS  a settings page shown in combat is covered, not drawn and not closed
+  PASS  with Options absent the schema still loads whole — the measured stub set
+  PASS  the dispatcher renders prose, not its own SCREAMING_SNAKE keys
+  PASS  the COMMANDS table is the positional shape the library reads
+  PASS  the format hook doubles pipes without re-implementing the value formatter
+  PASS  the parse hook keeps a whole free-text value, spaces and all
+  PASS  both convergences are adopted, in bytes
+  PASS  with Slash absent the host verbs survive and the schema CLI says why
+  PASS  with LibKa0s absent the addon still loads and still prints, saying so once
+  PASS  the shared cause clause names the addon and where the library should be
+  PASS  the degraded secret guard still neutralizes a protected value
+  PASS  degraded SetMany is all-or-nothing
+  PASS  degraded SafeRegisterEvents records a rejected name and registers the rest
+  PASS  degraded Get forwards the instance id
+  PASS  degraded: /pc test category Loot prints the report to chat every time
+  PASS  the Core stub carries the whole live surface
+  PASS  the DebugLog stub carries the whole live surface
+  PASS  the Options stub carries the whole live surface
+  PASS  the Lifecycle stub carries the whole live surface
+  PASS  the Schema stub carries the whole live surface, library and instance
+  PASS  the Slash stub carries the whole live surface
+  PASS  the degraded DisabledLine is the library's line, byte for byte
+  PASS  EnvSetup: NS.Meta reads THIS addon's TOC
+  PASS  EnvSetup: NS.Meta asks about the addon FOLDER, not its title or its slash prefix
+  PASS  EnvSetup: NS.Version prefers the TOC over this addon's own constant
+  PASS  EnvSetup: NS.Version answers a string, never nil — it goes straight into a banner
+  PASS  EnvSetup: every file-scope read resolved through the seam
+  PASS  EnvSetup degraded: an install with no LibKa0s still reads its own TOC
+  PASS  EnvSetup degraded: the fallback reads C_AddOns and never the legacy global
+  PASS  EnvSetup degraded: NS.Version falls back to this addon's own constant
+  PASS  EnvSetup: the deleted shim is gone from Compat
+  PASS  every color escape is a well-formed |cRRGGBB code
+  PASS  the slash-commands-§5 mandated palette is exact
+  PASS  the brand colors are distinct from the mandated palette
+  PASS  the [PC] chat tag is cyan-wrapped and trailing-spaced
+  PASS  the host's own layout constants are positive numbers
+  PASS  no host copy of a library layout constant has grown back
+  PASS  the library publishes the layout constants a host page needs
+  PASS  FONT_MONO is whatever the media seam answers, never a literal path
+  PASS  MediaSetup: NS.Icon answers the vendored path, EXTENSIONLESS
+  PASS  MediaSetup: an icon the library does not ship answers nil
+  PASS  MediaSetup: NS.MediaFont answers the vendored face, and only for a face it ships
+  PASS  MediaSetup: the font this addon names is one the library carries
+  PASS  MediaSetup: every mark the console title bar reaches for is one the library ships
+  PASS  MediaSetup: every name the library ships has a file in the vendored copy
+  PASS  MediaSetup: the vendored face is on disk where the seam says it is
+  PASS  MediaSetup: with no library there is no art and no face, and that is not an error
+  PASS  SafeToString renders scalars and nil verbatim
+  PASS  SafeToString substitutes <secret> for a value table.concat rejects
+  PASS  IsConcatSafe probes concatenability via table.concat, not ..
+  PASS  IsConcatSafe never raises on the value it is probing
+  PASS  trim strips surrounding whitespace and is nil-safe
+  PASS  trim keeps interior whitespace intact
+  PASS  note and cmd wrap text in the documented slash colors
+  PASS  RunAct calls onRaise once, then re-raises with the original stack
+  PASS  NS.L is published as a table
+  PASS  an unknown key falls back to itself verbatim
+  PASS  every seeded manifest entry is an identity mapping
+  PASS  the scan found the L call sites it is meant to guard
+  PASS  every localized call site is in the enUS manifest
+  PASS  the manifest carries no entry that nothing references
+  PASS  every slash-command description is localized
+  PASS  no locale string tells a player /pc test prints to chat
+  PASS  the literal scan sees the sources it is meant to guard
+  PASS  every user-facing literal is routed through L or recorded as residue
+  PASS  every recorded residue literal is still unrouted in the file that names it
+  PASS  the excluded data table holds only row labels and default format strings
+  PASS  the defaults table is non-empty and carries real entries
+  PASS  every defaults category appears in CATEGORY_ORDER
+  PASS  every ordered category except the virtual General has backing data
+  PASS  CATEGORY_ORDER lists General first and has no duplicates
+  PASS  every category declares a boolean enabled flag and a strings table
+  PASS  every key is a Blizzard-style UPPERCASE global name
+  PASS  every entry carries a non-empty label and default
+  PASS  labels are unique within their category
+  PASS  every default format string renders with sample arguments
+  PASS  every default's conversion sequence is a positional prefix of Blizzard's
+  PASS  no default carries a raw newline or tab
+  PASS  no Blizzard global is registered under two categories
+  PASS  the schema builds exactly the rows the defaults imply
+  PASS  every string registration has both of its schema rows
+  PASS  each format row's schema default is the defaults-table default
+  PASS  defaults are declared only in defaults/Profile.lua
+  PASS  resolves known setting paths and returns nil for unknown ones
+  PASS  resolves categories case-insensitively and by prefix
+  PASS  master toggle round-trips through the single write path
+  PASS  Set on a format pushes the override to _G via ApplyStrings
+  PASS  re-setting a format to its default auto-clears the stored override
+  PASS  a format write with a surplus conversion is refused
+  PASS  a format whose conversions prefix the default's is stored
+  PASS  Set on an unknown path is a no-op returning false
+  PASS  load-time schema path validation resolved every path
+  PASS  the four row kinds are built with their documented shape
+  PASS  exactly one addon-wide row exists, under the virtual General category
+  PASS  the Master controls block is the composed one, in canonical order
+  PASS  every schema row on every page carries a group
+  PASS  no color row exists, and none may appear without its class-color companion
+  PASS  the visibility row is the canonical four-mode dropdown, not a boolean
+  PASS  the debug console row is session-only and re-applies nothing
+  PASS  RowsByCategory returns only that category, in registration order
+  PASS  the load-time duplicate check finds no global registered twice
+  PASS  an exact category name beats any prefix interpretation
+  PASS  an ambiguous prefix resolves to nothing rather than guessing
+  PASS  a non-string or empty category name resolves to nothing
+  PASS  FormatValue renders nil, bools, strings and numbers
+  PASS  Set returns true and coerces bool rows to real booleans
+  PASS  row.set closures are pure DB writes with no side effects
+  PASS  NotifyPanelChange calls only the affected category's refresher
+  PASS  a General or unscoped change refreshes every registered page
+  PASS  a refresher that errors cannot break the write path
+  PASS  an unregistered category is a silent no-op, not an error
+  PASS  every page's tabs hold the designed number of rows
+  PASS  the partition is total and disjoint — every row on exactly one tab
+  PASS  the Categories tabs are CATEGORY_ORDER minus the virtual General
+  PASS  seam: one write stores, re-applies once, refreshes once, logs one [Set] line, answers true
+  PASS  seam: a format write renders its [Set] value through the shared formatter
+  PASS  seam: a session-only write refreshes the panel but re-applies nothing
+  PASS  seam: a raising row store propagates, and nothing after it runs
+  PASS  seam: /pc set of a surplus-conversion format is refused once and stores nothing
+  PASS  seam: /pc reset of a format row restores the shipped default
+  PASS  seam: resetting the console row through ApplyDefault or /pc reset closes the console
+  PASS  seam: CountChangedRows counts stored rows off their default, never the console
+  PASS  seam: FindByPath, Get and AllRows answer the one schema
+  PASS  seam: the host's names ARE the library instance's members
+  PASS  seam: the schema passes the library's shape check with nothing to report (JC-13)
+  PASS  seam: the [Set] line is written before the re-apply (JC-4)
+  PASS  seam, library absent: /pc disable and /pc enable still write the master switch
+  PASS  seam, library absent: a category reset and the format gate still work
+  PASS  renders basic %s + %d and collapses %% escapes
+  PASS  positional %n$s formats degrade gracefully under stock Lua
+  PASS  empty or nil format returns nil
+  PASS  malformed conversion surfaces as nil + error string
+  PASS  each conversion class gets a correctly typed sample argument
+  PASS  upper-case conversions are typed from their lower-case form
+  PASS  flags, width and precision are parsed, not mistaken for arguments
+  PASS  multiple conversions are filled in order
+  PASS  a format with no conversions renders as itself
+  PASS  %% is not mistaken for a conversion next to a real one
+  PASS  a non-string format is rejected like an empty one
+  PASS  a real Blizzard-style default renders without error
+  PASS  override is applied by default when all three layers are on
+  PASS  master toggle off restores original, back on reapplies
+  PASS  category toggle off restores original, back on reapplies
+  PASS  per-string toggle off restores original, back on reapplies
+  PASS  the cascade is a conjunction — every layer must be on to apply
+  PASS  a disabled category leaves other categories applied
+  PASS  a string with no snapshot is left alone rather than blanked
+  PASS  a global this client does not define is restored to nil, not left overridden
+  PASS  repeated applies are idempotent across the whole surface
+  PASS  ResetString clears both the custom format and the per-string disable
+  PASS  the Tradeskill format is the one that reaches _G for LOOT_ITEM_CREATED_SELF
+  PASS  GetStringValue falls back to the defaults table until overridden
+  PASS  IsAddonEnabled treats an absent flag as default-true
+  PASS  IsAddonEnabled answers true with no stored key
+  PASS  GetVisibility answers always with no stored key
+  PASS  IsCategoryEnabled falls back to the category's shipped default
+  PASS  IsStringEnabled is true unless the string is explicitly disabled
+  PASS  EnsureCategoryDB creates the sub-table once and reuses it
+  PASS  ApplyStrings returns applied/restored counts that sum to the surface
+  PASS  a disabled category shifts its own strings from applied to restored
+  PASS  visibility `never` restores every original, exactly as Enable off does
+  PASS  the two combat modes read the player's combat state, in both directions
+  PASS  the combat watcher is armed only while a combat mode is stored
+  PASS  the combat boundary re-applies the strings
+  PASS  a stored visibility arms the watcher at login, not only on a write
+  PASS  a rejected combat event is recorded and the other still registers
+  PASS  IsEventValid rejects a name without calling RegisterEvent
+  PASS  toggling visibility twice does not duplicate a rejected name
+  PASS  the [Init] summary names a rejected event
+  PASS  ResetCategory drops the whole category table
+  PASS  ResetCategory('General') clears only the addon-wide keys
+  PASS  ResetAll clears the master flag and every category at once
+  PASS  ResetCategory: one pass, one [Set] reset line counting the rows written
+  PASS  ResetCategory('General'): one pass, one [Set] reset line, the watcher disarmed
+  PASS  ResetString: one pass, one [Set] reset line, both of the string's rows cleared
+  PASS  a reset counts only the rows it changed, and still logs once when none
+  PASS  a reset that raises between its writes logs one marked line, then raises
+  PASS  a reset whose re-apply raises logs one marked line counting every row written
+  PASS  both resets write through the helper's batched entry, Schema.ResetRows
+  PASS  ResetRows runs inside the runtime's bracket
+  PASS  an all-already-default reset still logs `[Set] reset Loot: 0 rows`
+  PASS  a reset list with no eligible row logs nothing and returns 0
+  PASS  a reset counts a row by read-back: General.enabled stored false counts 1
+  PASS  a visibility equal to the default stores nothing at all
+  PASS  Test prints a header, a per-category block, and a counted footer
+  PASS  Test writes every line to the sink it is given, and nothing to chat
+  PASS  Test previews the Blizzard original from the OnEnable snapshot
+  PASS  OriginalFormat answers nil for a global the client never defined, even after ApplyStrings
+  PASS  /pc test's Original line for that global reads (original not available)
+  PASS  a formatstring filter narrows the report to one string
+  PASS  a filter that matches nothing says so instead of printing an empty report
+  PASS  Test warns when the addon is disabled but still previews
+  PASS  an unrenderable override is reported as an error line, not a crash
+  PASS  every Test line routes through the [PC] printer
+  PASS  the /pc test report lists each category's strings in sorted order
+  PASS  SortedStringNames answers the same sorted table on every call
+  PASS  a formatstring-filtered report does not shrink the cached list
+  PASS  NS.Database and the db.global namespace exist
+  PASS  a fresh DB is stamped at the current schema version
+  PASS  re-running migrations is idempotent
+  PASS  RunMigrations tolerates a db without a .global namespace
+  PASS  an older DB is upgraded to the current version
+  PASS  the schema version is a positive integer the defaults start below
+  PASS  a DB with no recorded version is treated as version 0
+  PASS  RunMigrations tolerates nil and a db without .global
+  PASS  the runner stamps the current version even with no steps to run
+  PASS  the load pass drops strings/disabledStrings keys that have no schema row
+  PASS  the load pass prunes the tables its repair empties
+  PASS  a category reset after the load pass leaves no category table
+  PASS  a profile switch runs the repair on the incoming profile
+  PASS  the repair traces once when it drops keys, and stays silent otherwise
+  PASS  the repair tolerates a db with no profile or no categories
+  PASS  migrating emits no debug noise when nothing ran
+  PASS  a profile-scoped step lifts every stored profile, not only the active one
+  PASS  a raising step leaves the stamp where it was
+  PASS  a step after a failed one does not run
+  PASS  a profile step runs again safely on an already-lifted profile
+  PASS  migration v2 moves a Loot-only override onto Tradeskill
+  PASS  migration v2 keeps an existing Tradeskill override and drops Loot's copy
+  PASS  migration v2 does not lift a value equal to Tradeskill's default
+  PASS  migration v2 drops Loot's disabledStrings and prunes what empties
+  PASS  migration v2 run a second time changes nothing
+  PASS  migration v2 lifts an inactive stored profile too
+  PASS  the addon object and the bootstrap namespace are one table
+  PASS  OnInitialize provisions both AceDB namespaces
+  PASS  OnInitialize merges into a fresh table, never into NS.ProfileDefaults
+  PASS  OnInitialize registers /pc and its /prettychat alias
+  PASS  OnEnable snapshots a Blizzard original for every registered global
+  PASS  OnEnable applies the overrides so live chat is rewritten at load
+  PASS  NS.Print prepends the cyan [PC] tag to every line
+  PASS  NS.Print neutralizes a value the concat probe rejects
+  PASS  OpenConfig refuses during combat without touching the Settings API
+  PASS  OpenConfig opens the registered category out of combat
+  PASS  OpenConfig is silent on the paths the library does not report
+  PASS  OpenConfig is a silent no-op when the Settings API is unavailable
+  PASS  FONT_MONO points at the vendored JetBrainsMono TTF
+  PASS  pure line formatters render plain and colored lines
+  PASS  /pc debug on|off drives the session flag through the SetEnabled seam
+  PASS  color-coded chat ack: ON green, OFF red, via [PC]
+  PASS  enable emits the [Init] session summary after the bracket
+  PASS  bare /pc debug toggles the window without changing the flag
+  PASS  header toggle click flips state through the same seam
+  PASS  NS.Debug is a no-op when off and appends one line when on
+  PASS  Schema.Set emits one [Set] line with no separate [Apply] echo
+  PASS  the console line and the copy buffer describe the same event
+  PASS  the plain buffer never carries color escapes of its own
+  PASS  NS.Debug neutralizes a protected value inside its format args
+  PASS  NS.Debug passes a bare message through without formatting it
+  PASS  NS.Debug keeps argument types so numeric conversions still work
+  PASS  the buffer is capped and drops its oldest lines first
+  PASS  Clear empties both the buffer and the console view
+  PASS  the line counter reports buffered lines against the cap
+  PASS  the Copy window is filled with the plain-text buffer
+  PASS  both console windows register for Esc-to-close
+  PASS  Show, Hide and Toggle drive the window's visibility
+  PASS  IsShown is false before the console has ever been built
+  PASS  the header label tracks the session flag in the debug-logging-§5 state colors
+  PASS  SessionSummary self-identifies the build, schema and profile
+  PASS  disabling logging still writes its closing bracket line
+  PASS  ResetAll logs one [Set] reset profile line counting the rows it rewrote
+  PASS  /pc resetall is one debug line in total
+  PASS  a profile reset AceDB starts on its own is one line, without a count
+  PASS  a profile copy logs one [Set] copied line and nothing else
+  PASS  the copy line names AceDB's source profile and the active one
+  PASS  a profile switch keeps its one [Profile] line
+  PASS  a profile reset that raises logs its one line marked, exactly once
+  PASS  a profile copy that raises logs its one line marked
+  PASS  Launcher: the broker object's icon IS the file the TOC's IconTexture names
+  PASS  Launcher: that file is on disk, 128x128 uncompressed 32-bit TGA
+  PASS  Launcher: the broker label is the BRAND NAME in plain text, not the Title
+  PASS  Launcher: OnEnable registers the one object, under the FOLDER name
+  PASS  Launcher: LibDBIcon is handed db.global.minimap ITSELF, not a copy
+  PASS  Launcher: Register is idempotent — a second call builds no second button
+  PASS  Launcher: RUNG (c) — left-click opens the settings panel, through the gated path
+  PASS  Launcher: RIGHT-click opens the settings panel too, as it does on every rung
+  PASS  Launcher: no toggle hides behind the left button — there is no state to flip
+  PASS  Launcher: the Minimap button row is composed, stored, and defaults to SHOWN
+  PASS  Launcher: the row's get/set INVERT onto LibDBIcon's hide key
+  PASS  Launcher: /pc get global.minimap.shown answers true on a fresh install, and /pc set global.minimap.shown false stores hide = true
+  PASS  Launcher: global.minimap.hide is no longer a settings path
+  PASS  Launcher: a LEGACY store keeps its choice under the renamed path
+  PASS  Launcher: the write moves the BUTTON, not just the store
+  PASS  Launcher: the write is a LEAF write — minimapPos survives a toggle
+  PASS  Launcher: the row is the FOURTH of the composed block, after the console
+  PASS  Launcher: `Reset all settings` does not un-hide the button
+  PASS  Launcher: `/pc resetall` counts the rows it rewrote, and not the minimap row
+  PASS  Launcher: a hidden minimap button survives the General page's real Defaults button
+  PASS  Launcher: no per-category reset reaches the row either
+  PASS  Launcher: a reset does not RE-HIDE a shown button either
+  PASS  Launcher: /pc enable and /pc disable write the Enable row's own stored path
+  PASS  Launcher: the verbs hold NO state of their own — the long form is the same write
+  PASS  Launcher: the verbs drive the OVERRIDES, because they take the one write seam
+  PASS  Launcher: THE SWITCH IS NOT ONE-WAY — the dispatcher answers while disabled
+  PASS  Launcher: the launcher is registered while disabled, for the same reason
+  PASS  Launcher: DEGRADED — no LibDataBroker and no LibDBIcon, and nothing raises
+  PASS  Launcher: DEGRADED — the row still reads and writes, so the choice is kept
+  PASS  Launcher: DEGRADED — LibDataBroker present, LibDBIcon absent: the plugin, no button
+  PASS  Launcher: DEGRADED — no LibKa0s at all: no launcher, and the row survives
+  PASS  Schema.FormatValue formats bools and doubles pipes in strings
+  PASS  NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
+  PASS  a bare /pc opens the settings panel through config
+  PASS  a whitespace-only /pc is bare too
+  PASS  /pc help prints the help index
+  PASS  /pc help lists every command with its description
+  PASS  the resetall help row says it resets every setting
+  PASS  an unknown verb says so and then prints the help index
+  PASS  the verb is lower-cased but the argument keeps its case
+  PASS  extra whitespace around the verb is tolerated
+  PASS  /pc version prints the tagged version line
+  PASS  /pc config routes to the combat-gated panel opener
+  PASS  /pc get echoes the gold-key/white-value FormatKV line
+  PASS  /pc get with no path prints usage
+  PASS  /pc get on an unknown path reports it as not found
+  PASS  /pc get doubles the pipes in a format string so escapes read as text
+  PASS  /pc set accepts every documented truthy bool spelling
+  PASS  /pc set accepts every documented falsy bool spelling
+  PASS  /pc set rejects an unparseable bool without touching the value
+  PASS  /pc set stores a format string and echoes the stored value
+  PASS  /pc set echoes the value the DB actually kept, not the input
+  PASS  /pc set with no path prints usage, and with no value refuses by path
+  PASS  /pc set refuses a format the game cannot fill, and names why
+  PASS  /pc set on an unknown path reports it as not found
+  PASS  /pc set keeps the whole remainder, spaces and all
+  PASS  /pc set and /pc get round-trip a pipe through the || escape
+  PASS  /pc set keeps a multi-word value's interior spacing and unescapes ||, trimming only the edges
+  PASS  /pc list prints the green header and azure category groups
+  PASS  /pc list emits every schema row exactly once
+  PASS  /pc list category lists the category names alphabetically
+  PASS  /pc list formatstring lists every Category.GLOBALNAME pair
+  PASS  /pc list <Category> narrows to that category's rows
+  PASS  /pc list resolves a category case-insensitively and by prefix
+  PASS  /pc list on an unknown category lists the valid ones
+  PASS  /pc reset takes a schema PATH and resets exactly that setting
+  PASS  /pc reset <Category> answers with the deprecation and both replacements
+  PASS  /pc reset with no argument prints the library's usage line
+  PASS  /pc reset on a name that is neither path nor category reports not found
+  PASS  /pc resetall clears every override and confirms
+  PASS  /pc test writes to the debug console and leaves the chat frame alone
+  PASS  /pc test and /pc test all preview the whole surface
+  PASS  /pc test category resolves the name and narrows the report
+  PASS  /pc test formatstring upper-cases the name before matching
+  PASS  /pc test surfaces usage for each malformed filter
+  PASS  /pc test rejects unknown filter values by name
+  PASS  /pc debug rejects an argument that is neither on, off, nor a toggle
+  PASS  every slash line carries the cyan [PC] tag
+  PASS  disabled: a feature verb refuses on ONE line naming /pc enable, and does not act
+  PASS  disabled: only the feature verbs refuse -- every verb is driven to find out
+  PASS  disabled: the schema CLI still reads and REPAIRS, and the panel still opens
+  PASS  disabled: the gate LIFTS the moment the addon is enabled again
+  PASS  disabled: the panel's Test button is NOT gated -- the refusal is the dispatcher's
+  PASS  disabled/1: the enabled baseline registers something for the stand-down to remove
+  PASS  disabled/3: every registration is UNREGISTERED, not gated
+  PASS  disabled/4: no timer, ticker or OnUpdate is left armed
+  PASS  disabled/5: nothing is drawn — and for THIS addon that is the globals
+  PASS  disabled/6: firing the baseline events anyway writes nothing and says nothing
+  PASS  disabled/7: every reserved verb answers normally, and the bare /pc opens the panel
+  PASS  disabled/7: the addon's own FEATURE verb refuses on one line and reaches no write seam
+  PASS  disabled/8: the rung-(c) launcher opens the panel on BOTH buttons and writes nothing
+  PASS  disabled/9: re-enabling rebuilds the same registration set
+  PASS  disabled/9: the rebuild reads the settings as they are NOW, not as they were
+  PASS  disabled/10: releasing one hold does not resurrect an addon the other holds down
+  PASS  disabled/10: and the same with the holds taken in the other order
+  PASS  disabled/10: the perf hold is session-only and the disabled hold is stored
+  PASS  registration builds the parent category and two sub-pages
+  PASS  the strip carries one tab per message category, in CATEGORY_ORDER
+  PASS  the panel registry holds one ctx per page, reachable by page key
+  PASS  sub-page frames start hidden and unbuilt
+  PASS  registration is a no-op on a client without the canvas Settings API
+  PASS  a second CreateOptionsPanel is a no-op, not a second Blizzard category
+  PASS  the General page builds its controls on first show
+  PASS  the General page closes with [Test] [Reset all settings] on ONE row
+  PASS  the General page draws a strip whose first tab is Master controls
+  PASS  the Debug console toggle is a schema row, not a bespoke session checkbox
+  PASS  a second show does not rebuild the page
+  PASS  the master checkbox is seeded from the schema, not assumed true
+  PASS  toggling the master checkbox writes through the single Schema path
+  PASS  the Debug console checkbox drives the window, never the logging flag
+  PASS  the checkbox re-syncs when the console is opened another way
+  PASS  the Test button writes the report to the console, never into chat
+  PASS  /pc test writes the same report to the same place the button does
+  PASS  Reset all asks for confirmation instead of resetting immediately
+  PASS  the Defaults button is deferred to first show, not built at registration
+  PASS  the General page declares a Defaults button whose click opens the reset-all popup
+  PASS  the Categories Defaults button resets every category, not only the selected tab
+  PASS  the footer OnDefault forwards to the same page-wide body
+  PASS  a category tab builds a toggle, a secondary strip, and ONE string block
+  PASS  the category Enable stays ABOVE the tree
+  PASS  the list offers the strings in sorted global-name order
+  PASS  the tree is handed one row per string, keyed by GLOBALNAME
+  PASS  the tree grows to fill the page when the canvas reports its height
+  PASS  the tree is told to stop managing its own height
+  PASS  the render schedules a fit for the frame after the layout
+  PASS  selecting a row swaps the editor beside it
+  PASS  the string you were on is remembered per category, and heals when stale
+  PASS  the editor pane is Enable+name, then Original / New / Preview, then Reset
+  PASS  the read-only Original row shows this client's snapshot, or degrades without it
+  PASS  the per-string checkbox writes the string's enable path
+  PASS  the New edit box unescapes || to | before storing
+  PASS  the New box hands Schema.Set exactly (path, value)
+  PASS  the Preview box renders the live format with sample arguments
+  PASS  the Preview box surfaces an unrenderable format instead of blanking
+  PASS  the per-string Reset button restores both dimensions
+  PASS  disabling the category grays the per-string controls
+  PASS  a master-toggle change refreshes every built page, not just its own
+  PASS  a slash-command write re-syncs the open panel
+  PASS  no per-string enable tooltip carries a second-category note
+  PASS  the page says its controls are read only while the master switch is on
+  PASS  clicking a tab swaps the body and drops the tab it left
+  PASS  the parent page lists every slash command through the one row formatter
+  PASS  the landing logo is hidden when its group goes back to AceGUI's pool
+  PASS  the parent page shows the TOC tagline
+  PASS  docs/ARCHITECTURE.md carries the ten sections documentation-§3 names
+  PASS  every mandated hub section that has a topic doc has spilled into it
+  PASS  every anchor pointing into docs/ARCHITECTURE.md resolves to a heading
+  PASS  the player-facing history has the ONE home documentation-§1 allows, and no second
+  PASS  README.md's top-level sections are the ones documentation-§1 names, in its order
+  PASS  root CLAUDE.md carries the adherence line documentation-§2 puts second
+  PASS  the README's settings table is page-granular, not per-tab
+  PASS  docs/smoke-tests.md carries a non-English-client section
+  PASS  every TOC-loaded authored file names its own path in its first comment
+  PASS  no module publishes NS.<X> with a bare table constructor
+  PASS  ARCHITECTURE's load-order line names every TOC-loaded authored file in TOC order
+  PASS  every deviation id the register cites is assigned by a bundle in docs/audits/
+  PASS  eol: every tracked file carries the terminator .gitattributes declares for it
+  PASS  eol: .gitattributes is line-endings-§5's canonical body for this repo kind
+
+481 passed, 0 failed, 0 skipped, 481 total

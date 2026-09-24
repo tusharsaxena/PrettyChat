@@ -111,9 +111,10 @@ Run **both** of each pair and read the difference between them:
 
 ## The 1500-line cap gate
 
-`tests/_kit/test_layout_cap.lua` — the kit's gate since LibKa0s v1.55.0 (kit revision 25), declared
-in `tests/run.lua` as `{ name = "test_layout_cap", dir = "tests/_kit/" }` — compares two things:
-every authored `.lua` git tracks, and the census under *Files over the 1500-line cap* in
+`tests/_kit/test_layout_cap.lua` — the kit's gate since LibKa0s v1.55.0 (kit revision 25), and still
+the gate in the vendored LibKa0s v1.56.0 (kit revision 26), declared in `tests/run.lua` as
+`{ name = "test_layout_cap", dir = "tests/_kit/" }` — compares two things: every authored
+`.lua` git tracks, and the census under *Files over the 1500-line cap* in
 [ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both directions, so a file that crosses the
 cap unremarked and a row left behind for a file that has stopped breaching are each a red.
 
@@ -133,7 +134,7 @@ No path betrays those facts, so `tests/run.lua` sets `Kit.layoutCap = { exempt =
 before `Kit.run`, and the census marks the dump's row `exempt`. The gate checks only that the two
 agree; whether the three conditions still hold is the auditor's. This repository used to carry a
 hand-written `tests/test_layout_cap.lua` that re-derived them on every run; revision 25's pair-keyed
-inventory reports a local file beside the kit's as a collision (`testing-§9`), so it was retired.
+inventory, unchanged at revision 26, reports a local file beside the kit's as a collision (`testing-§9`), so it was retired.
 
 The line figures in the census are dated measurements and nothing asserts them, so an ordinary edit
 to a large file does not redden this gate. Membership is the invariant, not the numbers.

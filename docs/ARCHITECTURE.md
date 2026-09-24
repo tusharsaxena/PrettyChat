@@ -340,13 +340,13 @@ What the rule does not allow is a fourth — a file over the cap that nothing an
 "the count sitting in a bundle manifest that no document reads". This table is the remark, and it
 is why an audit **MUST NOT** re-file `layout-§1` against the file in it.
 
-Measured 2026-09-08, re-measured 2026-09-23 (unchanged for the dump) with
+Measured 2026-09-08, re-measured 2026-09-23 and 2026-09-24 (unchanged for the dump) with
 
 ```sh
 git ls-files '*.lua' | grep -v '^libs/' | grep -v '^tests/_kit/' | xargs wc -l | sort -rn
 ```
 
-| File | Lines (2026-09-23) | Disposition |
+| File | Lines (2026-09-24) | Disposition |
 |---|---|---|
 | `GlobalStrings/GlobalStrings.lua` | 23,842 | `exempt` — `layout-§1`'s generated-data carve-out, handed to the gate as `Kit.layoutCap = { exempt = { "GlobalStrings/" } }` in `tests/run.lua`. Not a breach, so it carries none of the three terminal states; the three conditions below are the auditor's to re-check |
 
@@ -395,14 +395,16 @@ or the `.pkgmeta` entry tidied away would reach an audit before it reached a red
 turns the suite red, and so does a row for a file that has fallen back under the cap or been
 deleted. The figure in that column is a measurement, not a claim about today.
 
-**The 1000-1500 band is on notice, not in breach**: `tests/test_panel.lua` (1053 on 2026-09-23) is the only file
-in it, and the 26 generated chunks are deliberately cut by entry count to stay under 1000 (PC-49)
-so a regeneration cannot walk them into the band. The band is named here so a later reader can tell
-it was looked at rather than missed; nothing in it needs a disposition until it crosses.
+**The 1000-1500 band is on notice, not in breach**: two files are in it on 2026-09-24,
+`tests/test_panel.lua` (1125; 1053 on 2026-09-23) and `settings/Schema.lua` (1070, new to the
+band: 998 at the v1.56.0 re-vendor, grown by the remediation items that followed it). The 26
+generated chunks are deliberately cut by entry count to stay under 1000 (PC-49) so a regeneration
+cannot walk them into the band. The band is named here so a later reader can tell it was looked at
+rather than missed; nothing in it needs a disposition until it crosses.
 
 ## External dependencies
 
-Vendored under `libs/` (the BigWigs packager pulls nothing — no `externals`): LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, **LibDataBroker-1.1** and **LibDBIcon-1.0** (the launcher's pair, `launcher-§1` — neither is LibKa0s's dependency; it resolves both with `LibStub(…, true)` at `Register` time and degrades by name), and **[LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.55.0** (`libs/LibKa0s/`, listed in the TOC as `libs\LibKa0s\LibKa0s.xml` after Ace3). (`AceConfig-3.0` was removed — no live consumer.)
+Vendored under `libs/` (the BigWigs packager pulls nothing — no `externals`): LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, **LibDataBroker-1.1** and **LibDBIcon-1.0** (the launcher's pair, `launcher-§1` — neither is LibKa0s's dependency; it resolves both with `LibStub(…, true)` at `Register` time and degrades by name), and **[LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.56.0** (`libs/LibKa0s/`, listed in the TOC as `libs\LibKa0s\LibKa0s.xml` after Ace3). (`AceConfig-3.0` was removed — no live consumer.)
 
 Nine of LibKa0s's fifteen majors are adopted: **Core**, **Env**, **Media**, **DebugLog**, **Slash**, **Options**, **Launcher**, **Lifecycle** (`core/LifecycleSetup.lua`, the stand-down latch of `slash-commands-§7`) and **Schema** (`settings/Schema.lua`, the settings schema's runtime, since v1.55.0). **Compat** and **Bus** are declined as structural misfits: the addon reads no spell, specialization or secret value, and it publishes no message (`## Message Bus`). Each decline is a `state:will-not-do` issue, recorded in `docs/revendor/2026-09-23-v1.55.0/`. **Perf is declined** under a recorded `performance-§12` no-combat-path exemption — the register row above, with its sweep in [performance-sweep.md](./performance-sweep.md) and its reasoning at [LIBKA0S-12](https://github.com/tusharsaxena/PrettyChat/issues/10). **Item**, **Pool** and **Widgets** are not consumed here at all — nothing in this addon, and no other vendored LibKa0s file, `LibStub`s any of the three. `Item.lua`, `Pool.lua`, `Widgets.lua`, `Perf.lua` and `PerfPanel.lua` are still vendored, because the folder is copied whole and never file by file.
 

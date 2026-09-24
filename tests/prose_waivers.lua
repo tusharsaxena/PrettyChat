@@ -16,8 +16,9 @@
 -- localization-§5 until the standard takes the amendment layout-§1 already took. It is not ratified
 -- in docs/ARCHITECTURE.md's register, so it is not used here.
 --
--- Measured 2026-09-23 against LibKa0s v1.55.0's gate (kit revision 25): 34 lines across these ten
--- files, and nothing outside `GlobalStrings/`.
+-- Measured 2026-09-23 against LibKa0s v1.55.0's gate (kit revision 25), re-measured 2026-09-24
+-- against LibKa0s v1.56.0's (kit revision 26), unchanged: 34 lines across these ten files, and
+-- nothing outside `GlobalStrings/`.
 return {
     waived = {
         ["GlobalStrings/GlobalStrings.lua"] = {
