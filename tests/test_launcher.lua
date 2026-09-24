@@ -253,7 +253,7 @@ function()
         "Ka0s Pretty Chat  v" .. version,
         "Enabled: Yes",
         "Left-click: Open settings",
-        "Right-click: Open settings",
+        "Right-click: Options menu",
     }), "exactly four lines: no Locked, no Test mode, no line of the addon's own")
 end)
 
@@ -280,7 +280,7 @@ function()
         "Ka0s Pretty Chat  v" .. tocVersion(),
         "Enabled: No",
         "Left-click: Open settings",
-        "Right-click: Open settings",
+        "Right-click: Options menu",
     }), "the tooltip is still drawn while disabled, and says so")
     t.neq(rawOff[2]:match("|c%x%x%x%x%x%x%x%x"), raw[2]:match("|c%x%x%x%x%x%x%x%x"),
         "and No wears a different color from Yes")
