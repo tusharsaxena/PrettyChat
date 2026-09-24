@@ -856,6 +856,26 @@ test("the New edit box unescapes || to | before storing", function()
         "and the refresh re-doubles them for display")
 end)
 
+-- red under: the unparenthesized gsub, which passes 3 arguments
+test("the New box hands Schema.Set exactly (path, value)", function()
+    -- gsub returns (string, count); left bare as the last argument, the count
+    -- rides into Schema.Set's third slot, which is instanceId (PC-R-10 class).
+    -- The spy records without forwarding, so the write gate never sees the
+    -- value and the case asserts only what the box passes.
+    local realSet = NS.Schema.Set
+    local argc, gotPath, gotValue
+    NS.Schema.Set = function(...)
+        argc = select("#", ...)
+        gotPath, gotValue = ...
+    end
+    local ok, err = pcall(lootBlock.new.Fire, lootBlock.new, "OnEnterPressed", "A||B %s")
+    NS.Schema.Set = realSet
+    assert(ok, err)
+    t.eq(argc, 2, "Schema.Set receives exactly two arguments")
+    t.eq(gotPath, "Loot." .. sortedNames("Loot")[1] .. ".format", "the string's format path")
+    t.eq(gotValue, "A|B %s", "and the unescaped value")
+end)
+
 test("the Preview box renders the live format with sample arguments", function()
     -- Driven on a string whose SHIPPED DEFAULT carries the two conversions this
     -- case types in, rather than on whatever sorts first: the write gate

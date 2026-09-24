@@ -272,7 +272,8 @@ local function buildStringRow(pane, category, globalName, refreshers)
     newInput:SetLabel(L["New"])
     newInput:SetFullWidth(true)
     newInput:SetCallback("OnEnterPressed", function(_, _, value)
-        NS.Schema.Set(formatPath, (value or ""):gsub("||", "|"))
+        -- Parenthesized so gsub's count never reaches Set as instanceId (PC-R-10).
+        NS.Schema.Set(formatPath, ((value or ""):gsub("||", "|")))
     end)
     H.AttachTooltip(newInput, L["New Format String"],
         L["Your replacement. Type `||` for a literal `|` (color codes use this)."])

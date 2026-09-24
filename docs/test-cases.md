@@ -479,7 +479,7 @@ badge and any count quoted in the docs must agree with it.
 - disabled/10: and the same with the holds taken in the other order
 - disabled/10: the perf hold is session-only and the disabled hold is stored
 
-### test_panel.lua (47)
+### test_panel.lua (48)
 
 - registration builds the parent category and two sub-pages
 - the strip carries one tab per message category, in CATEGORY_ORDER
@@ -516,6 +516,7 @@ badge and any count quoted in the docs must agree with it.
 - the read-only Original row shows this client's snapshot, or degrades without it
 - the per-string checkbox writes the string's enable path
 - the New edit box unescapes || to | before storing
+- the New box hands Schema.Set exactly (path, value)
 - the Preview box renders the live format with sample arguments
 - the Preview box surfaces an unrenderable format instead of blanking
 - the per-string Reset button restores both dimensions
@@ -576,8 +577,8 @@ badge and any count quoted in the docs must agree with it.
 | test_launcher.lua | 28 |
 | test_slash.lua | 51 |
 | test_disabled.lua | 13 |
-| test_panel.lua | 47 |
+| test_panel.lua | 48 |
 | test_doc_structure.lua | 8 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **462** |
+| **Total** | **463** |
