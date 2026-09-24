@@ -12,9 +12,9 @@
 --     the file on disk;
 --   * an INVERSION. The row says SHOWN and LibDBIcon's key says HIDDEN, so exactly
 --     one negation stands between a checkbox and the opposite of what it promises;
---   * a RUNG, which for this addon is an ABSENCE. `onClick` not being passed is
---     what makes left-click open the settings panel, and an absence is the one
---     thing a reader cannot tell from a typo;
+--   * a MENU ENTRY that must BE the slash verb. The right-click menu's Enabled
+--     checkbox calls the same handler `/pc enable|disable` calls; a second path
+--     would agree today and drift on the next change to either;
 --   * a ONE-WAY SWITCH. `/pc disable` must not be able to take `/pc enable` away
 --     with it.
 --
@@ -167,45 +167,138 @@ test("Launcher: Register is idempotent — a second call builds no second button
     t.eq(#inst.mocks.__icons.registrations, 1, "and still one registration")
 end)
 
--- ── the rung ────────────────────────────────────────────────────────────────
+-- ── the two buttons (Launcher minor 4, launcher-§2 as of v2.67.0) ───────────
+--
+-- LEFT opens the settings panel, on every addon, in either state. RIGHT opens the
+-- client's context menu, one checkbox per toggle the descriptor supplies. This
+-- addon is frameless, so the standard's ADDONS.md row for it reads `Enabled` and
+-- nothing else: no lock, no test-mode switch (`/pc test` is a verb), no primary
+-- window. The one entry calls `NS.SetAddonEnabled`, the very function `/pc enable`
+-- and `/pc disable` call, so what is pinned below is that the menu and the verbs
+-- are the same write with the same echo, not two paths that happen to agree.
+--
+-- The menu is driven through tests/mock_menu.lua, installed before any source
+-- loads. Without it the harness has no `MenuUtil`, and the library's right click
+-- degrades to the settings panel, which is itself a case below.
 
-test("Launcher: RUNG (c) — left-click opens the settings panel, through the gated path",
+local makeMenu = dofile(ctx.root .. "/tests/mock_menu.lua")
+
+local function block(lines) return table.concat(lines, "\n") end
+
+--- A wired instance with the fake context-menu API installed; answers the
+--- instance and the fake.
+local function withMenu()
+    local menu
+    local inst = ctx.loadAddon({ mock = function(mocks)
+        withBroker(mocks)
+        menu = makeMenu(mocks)
+    end })
+    inst.NS.Helpers.OpenOptionsPanel = function() inst.opened = (inst.opened or 0) + 1 end
+    return inst, menu
+end
+
+--- Open the menu with a right click on the one object both surfaces share.
+local function rightClick(inst, menu)
+    inst.NS.Launcher:Object().OnClick({}, "RightButton")
+    return menu.last
+end
+
+test("Launcher: LEFT-click opens the settings panel, through the gated path", function()
+    -- What is pinned is that the click reaches NS.Helpers.OpenOptionsPanel —
+    -- LibKa0s-Options-1.0's own open, where options-ui-§2 puts the combat gate —
+    -- through PrettyChat:OpenConfig, rather than some second open path beside it.
+    local inst, menu = withMenu()
+    inst.NS.Launcher:Object().OnClick({}, "LeftButton")
+    t.eq(inst.opened, 1, "left-click opened the panel")
+    t.eq(menu.opens, 0, "and opened no menu")
+    inst.NS.Launcher:Object().OnClick({}, "MiddleButton")
+    t.eq(inst.opened, 2, "any button that is not RIGHT opens the panel too")
+end)
+
+test("Launcher: RIGHT-click opens the options menu, titled with the brand, entry `Enabled` only",
 function()
-    -- The standard's ADDONS.md puts Ka0s Pretty Chat on rung (c), and the rung is
-    -- expressed by the ABSENCE of `onClick`: this addon has no primary window and,
-    -- being frameless, no preview switch either. What is pinned is that the click
-    -- reaches NS.Helpers.OpenOptionsPanel — LibKa0s-Options-1.0's own open, where
-    -- options-ui-§2 puts the combat gate — rather than some second open path built
-    -- beside it.
-    local inst = wired()
-    local opened = 0
-    inst.NS.Helpers.OpenOptionsPanel = function() opened = opened + 1 end
-
-    local object = inst.NS.Launcher:Object()
-    object.OnClick({}, "LeftButton")
-    t.eq(opened, 1, "left-click opened the panel")
+    local inst, menu = withMenu()
+    local m = rightClick(inst, menu)
+    t.truthy(m, "right-click opened the client's context menu")
+    t.eq(inst.opened, nil, "and did not open the settings panel")
+    t.eq(table.concat(m.titles, "|"), "Ka0s Pretty Chat", "titled with the plain-text label")
+    -- The standard's ADDONS.md row for Ka0s Pretty Chat: `Enabled`. A frameless
+    -- addon has no Locked, no Test mode and no Show window to offer, so an entry
+    -- for any of them would be a checkbox for a state this addon does not have.
+    t.eq(table.concat(m:Texts(), "|"), "Enabled", "exactly one entry")
+    t.eq(m:Checked("Enabled"), true, "checked on a fresh install")
 end)
 
-test("Launcher: RIGHT-click opens the settings panel too, as it does on every rung", function()
-    local inst = wired()
-    local opened = 0
-    inst.NS.Helpers.OpenOptionsPanel = function() opened = opened + 1 end
+test("Launcher: the menu's Enabled entry IS `/pc disable` — same write, same echo", function()
+    -- Two instances, one per surface, so each echo is read from a clean chat log.
+    local viaMenu, menu = withMenu()
+    viaMenu.env.__resetPrinted()
+    rightClick(viaMenu, menu):Click("Enabled")
+    t.eq(viaMenu.addon:IsAddonEnabled(), false, "the entry turned the addon off")
+    t.eq(viaMenu.NS.Schema.Get(ENABLED_PATH), false, "by writing the Enable row's own path")
+    local menuLines = viaMenu.env.__printed()
 
-    local object = inst.NS.Launcher:Object()
-    object.OnClick({}, "RightButton")
-    t.eq(opened, 1, "right-click opened the panel")
-    object.OnClick({}, "MiddleButton")
-    t.eq(opened, 2, "and so does any other button — only LEFT is the rung's to spend")
+    local viaVerb = withMenu()
+    viaVerb.env.__resetPrinted()
+    viaVerb.addon:OnSlashCommand("disable")
+    t.eq(block(menuLines), block(viaVerb.env.__printed()),
+        "and printed byte for byte what /pc disable prints")
+    t.eq(#menuLines, 1, "one confirmation line, the slash `set` shape")
 end)
 
-test("Launcher: no toggle hides behind the left button — there is no state to flip", function()
-    -- The rung is an absence, and an absence is the one thing a reader cannot tell
-    -- from a typo. If a later change hands the descriptor an `onClick`, this case
-    -- is what says so: nothing about the addon's stored state may move on a click.
-    local inst = wired()
-    inst.NS.Helpers.OpenOptionsPanel = function() end
+test("Launcher: the entry routes through NS.SetAddonEnabled, handed the state it moves TO",
+function()
+    local inst, menu = withMenu()
+    local calls = {}
+    local real = inst.NS.SetAddonEnabled
+    t.eq(type(real), "function", "settings/Slash.lua publishes the verbs' own handler")
+    inst.NS.SetAddonEnabled = function(on) calls[#calls + 1] = on; return real(on) end
+
+    rightClick(inst, menu):Click("Enabled")
+    t.eq(#calls, 1, "called once")
+    t.eq(calls[1], false, "with false: the state the addon moves TO")
+    rightClick(inst, menu):Click("Enabled")
+    t.eq(#calls, 2, "and once more on the next open")
+    t.eq(calls[2], true, "with true, since the menu read the switch afresh")
+    t.eq(inst.addon:IsAddonEnabled(), true, "and the addon is back on")
+end)
+
+test("Launcher: DISABLED — the menu still opens, Enabled is live and turns the addon back on",
+function()
+    -- slash-commands-§7: the launcher is setup and survives the disabled state, and
+    -- the menu's Enabled entry is the one the library never grays.
+    local inst, menu = withMenu()
+    inst.addon:OnSlashCommand("disable")
+    local m = rightClick(inst, menu)
+    t.truthy(m, "the menu opens while disabled")
+    t.eq(m:Checked("Enabled"), false, "and shows the addon off")
+    t.eq(m:Find("Enabled").enabled, true, "with the entry clickable")
+
+    local viaVerb = withMenu()
+    viaVerb.addon:OnSlashCommand("disable")
+    viaVerb.env.__resetPrinted()
+    viaVerb.addon:OnSlashCommand("enable")
+
+    inst.env.__resetPrinted()
+    m:Click("Enabled")
+    t.eq(inst.addon:IsAddonEnabled(), true, "one click re-enabled it")
+    t.eq(block(inst.env.__printed()), block(viaVerb.env.__printed()),
+        "with the same line /pc enable prints")
+end)
+
+test("Launcher: a client with no context-menu API degrades RIGHT-click to the panel", function()
+    local inst, menu = withMenu()
+    menu.remove()
+    inst.NS.Launcher:Object().OnClick({}, "RightButton")
+    t.eq(inst.opened, 1, "right-click opened the settings panel instead")
+    t.eq(menu.opens, 0, "and no menu")
+end)
+
+test("Launcher: no toggle hides behind the left button — the menu holds the only one", function()
+    -- If a later change routes a toggle through the LEFT button, this case is what
+    -- says so: nothing about the addon's stored state may move on a left click.
+    local inst = withMenu()
     local before = inst.addon:IsAddonEnabled()
-
     inst.NS.Launcher:Object().OnClick({}, "LeftButton")
     t.eq(inst.addon:IsAddonEnabled(), before, "the master switch did not move")
     t.eq(inst.NS.Launcher:IsShown(), true, "and neither did the button's own visibility")
@@ -216,9 +309,8 @@ end)
 -- The library draws the whole tooltip; this addon only answers its questions. So
 -- what is pinned here is the DESCRIPTOR, read back through the one place a player
 -- sees it: `version` answers the TOC's own `## Version`, `isEnabled` answers the
--- master switch on every show, and `isLocked` / `isTestMode` / `leftClickLabel` /
--- `onTooltipShow` are ABSENT. A frameless rung-(c) addon has no lock, no test mode
--- and no line of its own to add, and a label on rung (c) is one the library ignores.
+-- master switch on every show, and `isLocked` / `isTestMode` / `onTooltipShow` are
+-- ABSENT. A frameless addon has no lock, no test mode and no line of its own to add.
 -- An absent field is pinned by the line it would have drawn not being there.
 
 --- A fake GameTooltip: records AddLine and nothing else, which is all the library
@@ -242,9 +334,7 @@ local function tocVersion()
     return toc:match("##%s*Version:%s*([^\r\n]+)")
 end
 
-local function block(lines) return table.concat(lines, "\n") end
-
-test("Launcher tooltip: the library draws it — brand, TOC version, status, the rung-(c) hints",
+test("Launcher tooltip: the library draws it — brand, TOC version, status, the two fixed hints",
 function()
     local inst = wired()
     local version = tocVersion()
@@ -285,7 +375,7 @@ function()
     t.neq(rawOff[2]:match("|c%x%x%x%x%x%x%x%x"), raw[2]:match("|c%x%x%x%x%x%x%x%x"),
         "and No wears a different color from Yes")
     t.falsy(lines[3]:find("disabled", 1, true),
-        "rung (c) is never gated, so its hint does not become the refusal pointer")
+        "no click is gated, so the hint never becomes a refusal pointer")
 end)
 
 test("Launcher tooltip: the status is read on every show, never cached", function()
@@ -297,10 +387,10 @@ test("Launcher tooltip: the status is read on every show, never cached", functio
     t.eq(hover(inst)[2], "Enabled: Yes", "and reads it back the moment it flips again")
 end)
 
-test("Launcher tooltip: passing isEnabled does NOT gate the rung-(c) left click", function()
-    -- isEnabled is on the descriptor for the tooltip's sake. The library gates the
-    -- left click only where `onClick` is present, so this addon's left click keeps
-    -- opening the panel while disabled (launcher-§2's rung-(c) carve-out).
+test("Launcher tooltip: isEnabled does NOT gate the left click, and nothing prints a refusal",
+function()
+    -- Since Launcher minor 4 the left click opens the panel in either state
+    -- (launcher-§2): the panel is setup, and where a disabled addon is re-enabled.
     local inst = wired()
     local opened = 0
     inst.NS.Helpers.OpenOptionsPanel = function() opened = opened + 1 end

@@ -40,6 +40,7 @@ interview), matching the standard's `ADDONS.md` row for this addon, `Enabled`:
 
 | Suite | After the copy | After adoption |
 |---|---|---|
-| `ka0s-bounded luacheck .` | 0 / 0 in 48 files | see the adoption commit |
-| `ka0s-bounded lua5.1 tests/run.lua` | 486 / 486 (two hints re-pinned) | see the adoption commit |
+| `ka0s-bounded luacheck .` | 0 / 0 in 48 files | 0 / 0 in 49 files (`tests/mock_menu.lua` added) |
+| `ka0s-bounded lua5.1 tests/run.lua` | 486 / 486 (two hints re-pinned) | 490 / 490 (menu cases in `tests/test_launcher.lua`, `disabled/8` rewritten) |
+| `ka0s-bounded lizard … -C 15 -w .` | — | no function over CCN 15 |
 | `diff -r` of both payloads against the tag | empty | — |

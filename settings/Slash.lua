@@ -453,6 +453,13 @@ function setEnabled(on)
              .. NS.Schema.FormatValue(row, NS.Schema.Get(ENABLED_PATH)))
 end
 
+-- Published for the launcher's options menu (core/LauncherSetup.lua, `setEnabled`),
+-- whose Enabled entry MUST call the verbs' own handler (launcher-§2): the SAME
+-- function, so the menu, `/pc enable|disable` and the General page's row are one
+-- write with one echo. The launcher resolves it at click time, because this file
+-- loads after LauncherSetup.lua.
+NS.SetAddonEnabled = setEnabled
+
 -- Kept host-owned rather than delegated to CliResetAll, for the same reason the
 -- Categories page's Defaults button is: PrettyChat:ResetAll wipes the profile and
 -- re-applies in ONE pass, and its OnProfileReset handler logs the ONE

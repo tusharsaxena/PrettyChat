@@ -389,7 +389,7 @@ badge and any count quoted in the docs must agree with it.
 - a profile reset that raises logs its one line marked, exactly once
 - a profile copy that raises logs its one line marked
 
-### test_launcher.lua (36)
+### test_launcher.lua (40)
 
 - Launcher: the broker object's icon IS the file the TOC's IconTexture names
 - Launcher: that file is on disk, 128x128 uncompressed 32-bit TGA
@@ -397,14 +397,18 @@ badge and any count quoted in the docs must agree with it.
 - Launcher: OnEnable registers the one object, under the FOLDER name
 - Launcher: LibDBIcon is handed db.global.minimap ITSELF, not a copy
 - Launcher: Register is idempotent — a second call builds no second button
-- Launcher: RUNG (c) — left-click opens the settings panel, through the gated path
-- Launcher: RIGHT-click opens the settings panel too, as it does on every rung
-- Launcher: no toggle hides behind the left button — there is no state to flip
-- Launcher tooltip: the library draws it — brand, TOC version, status, the rung-(c) hints
+- Launcher: LEFT-click opens the settings panel, through the gated path
+- Launcher: RIGHT-click opens the options menu, titled with the brand, entry `Enabled` only
+- Launcher: the menu's Enabled entry IS `/pc disable` — same write, same echo
+- Launcher: the entry routes through NS.SetAddonEnabled, handed the state it moves TO
+- Launcher: DISABLED — the menu still opens, Enabled is live and turns the addon back on
+- Launcher: a client with no context-menu API degrades RIGHT-click to the panel
+- Launcher: no toggle hides behind the left button — the menu holds the only one
+- Launcher tooltip: the library draws it — brand, TOC version, status, the two fixed hints
 - Launcher tooltip: the version is the TOC's metadata, never a hand-typed copy
 - Launcher tooltip: Enabled is green Yes, and red No while disabled — shown either way
 - Launcher tooltip: the status is read on every show, never cached
-- Launcher tooltip: passing isEnabled does NOT gate the rung-(c) left click
+- Launcher tooltip: isEnabled does NOT gate the left click, and nothing prints a refusal
 - Launcher: the Minimap button row is composed, stored, and defaults to SHOWN
 - Launcher: the row's get/set INVERT onto LibDBIcon's hide key
 - Launcher: /pc get global.minimap.shown answers true on a fresh install, and /pc set global.minimap.shown false stores hide = true
@@ -492,7 +496,7 @@ badge and any count quoted in the docs must agree with it.
 - disabled/6: firing the baseline events anyway writes nothing and says nothing
 - disabled/7: every reserved verb answers normally, and the bare /pc opens the panel
 - disabled/7: the addon's own FEATURE verb refuses on one line and reaches no write seam
-- disabled/8: the rung-(c) launcher opens the panel on BOTH buttons and writes nothing
+- disabled/8: the launcher works while disabled — panel on LEFT, menu on RIGHT, no writes
 - disabled/9: re-enabling rebuilds the same registration set
 - disabled/9: the rebuild reads the settings as they are NOW, not as they were
 - disabled/10: releasing one hold does not resurrect an addon the other holds down
@@ -597,11 +601,11 @@ badge and any count quoted in the docs must agree with it.
 | test_database.lua | 26 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
-| test_launcher.lua | 36 |
+| test_launcher.lua | 40 |
 | test_slash.lua | 52 |
 | test_disabled.lua | 13 |
 | test_panel.lua | 48 |
 | test_doc_structure.lua | 11 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **486** |
+| **Total** | **490** |

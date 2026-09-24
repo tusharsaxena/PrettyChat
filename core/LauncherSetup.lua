@@ -8,58 +8,50 @@ local addonName, NS = ...
 -- display the player runs — Titan Panel, ElvUI's data texts, Bazooka — draws its
 -- own row from it too. One OnClick, one icon, one label, one identity. What is
 -- ours is the half a vendored library cannot know: this addon's folder name, its
--- logo, how its settings panel opens, and which rung its left click sits on.
+-- logo, how its settings panel opens, and which of its toggles the menu offers.
 --
--- ── THE RUNG, AND WHY THERE IS NO `onClick` BELOW ───────────────────────────
+-- ── THE TWO BUTTONS ARE THE LIBRARY'S (launcher-§2, Launcher minor 4) ──────
 --
--- launcher-§2's three rungs are first-match-wins, and the standard's ADDONS.md
--- roster records Ka0s Pretty Chat on rung **(c)**: it has no primary window —
--- `grep -rn CreateFrame core/ modules/ settings/` finds one combat watcher and
--- nothing a player ever sees — and no preview switch either, because it is
--- FRAMELESS (settings/Schema.lua's MASTER_SPEC says so, and there is no Test
--- mode row and no Lock frame row on the composed tab). Its display IS the chat
--- text it rewrites, which cannot be previewed by toggling a frame.
+-- Since standard v2.67.0 the buttons mean the same thing on every Ka0s addon, and
+-- the library owns both: LEFT-click opens the settings panel, in either state, and
+-- RIGHT-click opens the client's own context menu with one checkbox per toggle the
+-- descriptor supplies, in the fixed order Enabled, Locked, Test mode, Show window.
+-- The three left-click rungs, and the `onClick` / `leftClickLabel` that expressed
+-- them, are retired; this file passes neither, and building a menu or routing a
+-- click here would be anti-pattern #81.
 --
--- ── THE CLICK WHILE THE ADDON IS DISABLED, AND WHY NOTHING CHANGES HERE ─────
+-- WHAT THIS ADDON HAS TO OFFER THE MENU is one toggle, and the standard's ADDONS.md
+-- row for Ka0s Pretty Chat reads exactly that: `Enabled`. It is FRAMELESS
+-- (settings/Schema.lua's MASTER_SPEC says so): `grep -rn CreateFrame core/ modules/
+-- settings/` finds one combat watcher and nothing a player ever sees, so there is
+-- no frame to lock and no primary window to show, and `/pc test` is a VERB that
+-- prints samples, not a switch with a state a checkbox could show. Its display IS
+-- the chat text it rewrites.
 --
--- slash-commands-§7 refuses the LEFT click of a disabled addon on rungs (a) and
--- (b): those drive a primary window and a preview switch, and both are features.
--- **Rung (c) is carved out, in launcher-§2's own words, and this addon is the
--- rostered rung-(c) addon the clause was written for.** A rung-(c) left click
--- opens the settings panel — which §7 itself lists among the things that SURVIVE
--- the disabled state, because the panel is SETUP and not a feature — and refusing
--- it would decline one button for doing exactly what the other button beside it is
--- required to keep doing. Right-click opens that same panel in either state on
--- every addon in the collection.
+-- THE ENTRY CALLS THE VERBS' OWN HANDLER. `setEnabled` hands the library
+-- NS.SetAddonEnabled, which settings/Slash.lua publishes as the very function
+-- `/pc enable` and `/pc disable` call. So the menu writes `General.enabled` through
+-- the same seam the General page's Enable row writes, runs the same ApplyStrings
+-- pass and prints the same confirmation line byte for byte; tests/test_launcher.lua
+-- pins that against `/pc disable`. The library hands it the state the addon moves
+-- TO, read at the click, and never writes anything itself.
 --
--- So BOTH buttons open the panel, in both states. The descriptor DOES carry
--- `isEnabled` (and the `disabledLine` the library requires beside it) since
--- Launcher minor 3, but for the TOOLTIP's `Enabled: Yes|No` line and nothing
--- else: the library gates the left click only where `onClick` is present, so on
--- rung (c) the pair gates nothing and the refusal line is never printed. The
--- other half of §7's launcher rule holds for the same reason: a click here writes
--- NO SavedVariables, because all it does is open a panel. tests/test_disabled.lua
--- drives both buttons while the addon is off and asserts exactly that, and
--- tests/test_launcher.lua pins that isEnabled did not start gating.
+-- WHILE DISABLED the menu still opens and Enabled stays live (the library grays
+-- only Locked / Test mode / Show window, none of which this addon has), and the
+-- left click still opens the panel: both are SETUP, which slash-commands-§7 lists
+-- among the things that survive the disabled state. A left click writes NO
+-- SavedVariables; tests/test_disabled.lua drives both buttons while the addon is
+-- off and asserts that.
 --
 -- ── THE TOOLTIP IS THE LIBRARY'S (launcher-§1, Launcher minor 3) ────────────
 --
 -- LibKa0s-Launcher draws the same status tooltip in all eleven addons, enabled or
--- disabled: `<label>  v<version>`, `Enabled: Yes|No`, the rung's click hints. This
--- file only answers its questions, and answers only the ones this addon has:
--- `version` (the TOC's `## Version`, through NS.Version()) and `isEnabled`. There
--- is no `isLocked` and no `isTestMode` because a frameless addon has no frame to
--- lock and no preview switch (the rung paragraph above); no `leftClickLabel`
--- because on rung (c) the library draws `Open settings` and ignores the field;
--- and no `onTooltipShow`, because this addon has no line of its own to add.
---
--- So left-click opens the settings panel, and the way that is expressed is by
--- passing NO `onClick` AT ALL. The rung is the ABSENCE, deliberately: the
--- library dispatches both buttons into `openSettings` when `onClick` is nil, and
--- passing `openSettings` a second time under `onClick` would make a rung that
--- was decided look like a rule that was skipped. `/pc test` is the closest thing
--- this addon has to a preview and it is a VERB, not a switch — there is no state
--- for a left click to toggle.
+-- disabled: `<label>  v<version>`, `Enabled: Yes|No`, then `Left-click: Open
+-- settings` and `Right-click: Options menu`. This file only answers its questions,
+-- and answers only the ones this addon has: `version` (the TOC's `## Version`,
+-- through NS.Version()) and `isEnabled`. There is no `isLocked` and no `isTestMode`
+-- because a frameless addon has neither state, and no `onTooltipShow`, because this
+-- addon has no line of its own to add.
 --
 -- ── WHY REGISTER HAPPENS IN OnEnable, NOT HERE ──────────────────────────────
 --
@@ -164,12 +156,12 @@ if Launcher then
             return NS.db and NS.db.global and NS.db.global.minimap
         end,
 
-        -- RIGHT-click always, and LEFT-click too, because no `onClick` is passed
-        -- (rung (c)). PrettyChat:OpenConfig is the one combat-gated open path
-        -- this addon has — options-ui-§2 forbids a second one — so the launcher
-        -- takes it rather than reaching for the library's OpenOptionsPanel
-        -- directly. NS IS the AceAddon object (architecture-§2), so this is the
-        -- same method `/pc config` calls.
+        -- LEFT-click, always, in either state (launcher-§2); and RIGHT-click on a
+        -- client with no context-menu API. PrettyChat:OpenConfig is the one
+        -- combat-gated open path this addon has — options-ui-§2 forbids a second
+        -- one — so the launcher takes it rather than reaching for the library's
+        -- OpenOptionsPanel directly. NS IS the AceAddon object (architecture-§2), so
+        -- this is the same method `/pc config` calls.
         openSettings = function() NS:OpenConfig() end,
 
         print = function(line) NS.Print(line) end,
@@ -180,36 +172,39 @@ if Launcher then
         -- bump that edits the TOC moves both. A function: asked on every show.
         version = function() return NS.Version() end,
 
-        -- The tooltip's `Enabled: Yes|No`, asked on every show and never cached.
-        -- The master switch the General page's Enable row reads (settings/Schema.lua)
-        -- and the Slash dispatcher gates on (settings/Slash.lua). It gates NOTHING
-        -- here: there is no `onClick`, and the library gates only a left click that
-        -- has one (see the header).
+        -- The tooltip's `Enabled: Yes|No` and the menu's Enabled checkmark, asked
+        -- on every show and every menu open, never cached. The master switch the
+        -- General page's Enable row reads (settings/Schema.lua) and the Slash
+        -- dispatcher gates on (settings/Slash.lua). Since Launcher minor 4 it
+        -- gates no click.
         isEnabled = function() return NS:IsAddonEnabled() end,
 
-        -- Required by the library beside `isEnabled`. The dispatcher's own line,
-        -- resolved at CALL time because settings/Slash.lua loads after this file.
-        -- On rung (c) nothing prints it; it is here so the pair is whole.
-        disabledLine = function()
-            return NS.SlashCommands and NS.SlashCommands:DisabledLine() or nil
+        -- The menu's Enabled entry: the SAME function `/pc enable` and
+        -- `/pc disable` call (see the header), handed the state to move TO.
+        -- Resolved at CALL time because settings/Slash.lua loads after this file.
+        setEnabled = function(on)
+            if NS.SetAddonEnabled then NS.SetAddonEnabled(on) end
         end,
 
         -- Deliberately NOT passed:
         --
-        --   onClick        the rung, and it is an absence — see the header.
-        --   isLocked       no lock: the addon is frameless (no Lock frame row).
-        --   isTestMode     no test mode: `/pc test` is a verb, not a switch.
-        --   leftClickLabel rung (c): the library draws `Open settings` itself and
-        --                  ignores the field, so passing one would be dead config.
+        --   isLocked / toggleLock          no lock: the addon is frameless.
+        --   isTestMode / toggleTestMode    no test mode: `/pc test` is a verb.
+        --   isWindowShown / toggleWindow   no primary window.
+        --   onClick, leftClickLabel,
+        --   disabledLine, slash            retired at Launcher minor 4 (the
+        --                                  library ignores them); the left
+        --                                  button has one meaning now.
         --   onTooltipShow  this addon has no line of its own to append; the title,
         --                  status and click hints are the library's (drawing any
         --                  of them here is anti-pattern #89).
         --   L              NS.L answers EVERY key with the key itself, so a
         --                  descriptor holding it renders raw SCREAMING_SNAKE at
         --                  the player (anti-pattern #2). This addon translates
-        --                  none of the library's four reports or its fourteen
-        --                  tooltip strings (it ships enUS only), so it passes
-        --                  none — the same call settings/Slash.lua makes. A
-        --                  translator passes a PLAIN table of TOOLTIP_* keys.
+        --                  none of the library's four reports, its twelve
+        --                  tooltip strings or its seven menu strings (it ships
+        --                  enUS only), so it passes none — the same call
+        --                  settings/Slash.lua makes. A translator passes a
+        --                  PLAIN table of TOOLTIP_* / MENU_* keys.
     })
 end

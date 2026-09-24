@@ -546,15 +546,25 @@ that draws nothing raises nothing, and a `.tga` in the wrong format loads as sil
 - Failure mode: a blank or checkerboard button means `media/logos/prettychat.logo.128.tga` is
   missing from the package or is not TGA type 2 / 32 bpp. Regenerate it with layout-§4's recipe.
 
-#### T-65 — Both buttons open the settings panel (rung (c))
+#### T-65 — Left-click opens settings, right-click opens the options menu
 
-> Why: `launcher-§2`. PrettyChat has no primary window and no preview switch, so left-click opens
-> the panel exactly as right-click does. Nothing else may happen on either button.
+> Why: `launcher-§2` as of the standard's v2.67.0 (LibKa0s-Launcher minor 4). Left always opens
+> the settings panel; right opens the client's context menu with one checkbox per toggle the addon
+> has. PrettyChat is frameless, so its menu has exactly one: **Enabled**.
 
-- Steps: left-click the minimap button. Close the panel. Right-click it.
-- Expected: both open PrettyChat's settings on its landing page — the same page `/pc config` opens.
-  Nothing toggles, nothing is stored, and no chat line is printed.
-- In combat: both refuse with the same gray notice `/pc config` gives (options-ui-§2).
+- Steps: left-click the minimap button. Close the panel. Right-click it and look at the menu.
+  Untick **Enabled**. Right-click again and tick it.
+- Expected: left-click opens PrettyChat's settings on its landing page — the same page `/pc config`
+  opens — and nothing is toggled or printed. Right-click opens a small menu titled
+  **Ka0s Pretty Chat** with one ticked checkbox, **Enabled**, and nothing else (no Locked, Test
+  mode or Show window). Unticking it prints `General.enabled = false` exactly as `/pc disable`
+  does, chat goes back to Blizzard's wording, and the General page's **Enable PrettyChat** box is
+  unticked. The next right-click shows **Enabled** unticked and still clickable; ticking it prints
+  what `/pc enable` prints and turns everything back on.
+- In combat: left-click refuses with the same gray notice `/pc config` gives (options-ui-§2).
+- Failure mode: a right-click that opens the settings panel instead of the menu (the menu is
+  missing its entry), a grayed **Enabled** while disabled (the switch would be one-way from here),
+  or a different echo line from `/pc disable`'s (a second write path).
 
 #### T-65a — Hovering the button shows the status tooltip, enabled and disabled
 
@@ -563,9 +573,9 @@ that draws nothing raises nothing, and a `.tga` in the wrong format loads as sil
 
 - Steps: hover the minimap button. Then `/pc disable`, hover it again. `/pc enable`.
 - Expected, enabled: `Ka0s Pretty Chat  v<the TOC version>`, `Enabled: Yes` (green),
-  `Left-click: Open settings`, `Right-click: Open settings`, and nothing else.
-- Expected, disabled: the same four lines with `Enabled: No` (red). The left-click hint does not
-  change (rung (c) is never refused), and there is no `Locked` or `Test mode` line either way.
+  `Left-click: Open settings`, `Right-click: Options menu`, and nothing else.
+- Expected, disabled: the same four lines with `Enabled: No` (red). Neither hint changes (no
+  click is refused), and there is no `Locked` or `Test mode` line either way.
 - Failure mode: no tooltip, a second title or second set of click hints (anti-pattern #89), or an
   `Enabled` line that lags the switch until `/reload`.
 
@@ -639,10 +649,12 @@ that draws nothing raises nothing, and a `.tga` in the wrong format loads as sil
 > Why: one object, registered twice. Skip this one if you run no broker display.
 
 - Setup: install Titan Panel, Bazooka, or use ElvUI's data texts.
-- Steps: add **PrettyChat** from the display's plugin list, then click the row it draws.
+- Steps: add **PrettyChat** from the display's plugin list, then left-click and right-click the
+  row it draws.
 - Expected: the row wears the same logo and the label **Ka0s Pretty Chat**, with no empty value
-  cell beside it (the object is typed `launcher`, not `data source`). Clicking it opens the
-  settings panel, exactly as the minimap button does — there is one click implementation.
+  cell beside it (the object is typed `launcher`, not `data source`). Left-click opens the settings
+  panel and right-click the same **Enabled** menu, exactly as the minimap button does — there is
+  one click implementation.
 
 ## When to run what
 
