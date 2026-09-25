@@ -8,35 +8,35 @@
 
 It used to be loaded eagerly at addon startup, to serve one reader: the settings panel's "Original Format String" box. That box now reads **this client's `OnEnable` snapshot** through `NS.OriginalFormat`, the same source `/pc test` uses (PC-R-04) — which is not merely cheaper but more correct, since the snapshot is what the running client loaded while the dump is a build artifact of whichever patch it was cut from. With its last reader gone, the eager load was 1.89 MB and 22,879 entries parsed at every login to answer zero lookups, and `performance-§9` is unambiguous about that.
 
-Measured on the repo's own toolchain (`lua5.1`, mean of five cold runs): **24.3 ms to compile the 26 chunks, 2.1 ms to execute them, 26.4 ms total, plus ~1.25 MB resident.** The client's Lua is the same 5.1, so treat that as the order of magnitude rather than the exact figure. What the addon's own files cost the parser at login fell from 2.01 MB across 43 files to 123 KB across 17. The full table is in [performance.md](./performance.md).
+Measured on the repo's own toolchain (`lua5.1`, mean of five cold runs): **24.3 ms to compile the 26 chunks, 2.1 ms to execute them, 26.4 ms total, plus ~1.25 MB resident.** The client's Lua is the same 5.1, so treat that as the order of magnitude rather than the exact figure. What the addon's own files cost the parser at login fell from 2.01 MB across 43 files to 123 KB across 17. The full table is in [performance-sweep.md](./performance-sweep.md).
 
 What remains is **repo-local reference data**. `tests/test_defaults.lua` loads the chunks directly, with `loadfile`, to assert that every override's conversion sequence is a positional prefix of Blizzard's — the check that catches a default asking for an argument the game does not pass. That is the only consumer, and it is a test.
 
 Historically there was a third path: `GlobalStrings/GlobalStrings.toc`, a `LoadOnDemand: 1` sub-addon (`PrettyChat - GlobalStrings`). Nothing ever called `C_AddOns.LoadAddOn("GlobalStrings")`, and it was broken as written — after PC-14 the chunks key off `...`, so under the sub-addon they would have populated **that sub-addon's** private table rather than PrettyChat's. It was removed rather than left as a fallback that could not work.
 
-**Do not re-add the TOC block.** `split_globalstrings.py` used to rewrite it and now asserts its absence instead, exiting non-zero if a `# GlobalStrings` section or a `GlobalStrings\…` line reappears. If a real runtime consumer ever comes back, change that check and this section together.
+**Do not re-add the TOC block.** `tools/split_globalstrings.py` used to rewrite it and now asserts its absence instead, exiting non-zero if a `# GlobalStrings` section or a `GlobalStrings\…` line reappears. If a real runtime consumer ever comes back, change that check and this section together.
 
 ## Files
 
 | Path | Purpose |
 |------|---------|
-| `GlobalStrings/GlobalStrings.lua` | Full Blizzard reference (~1.6 MB, source file). Input to `split_globalstrings.py`. |
+| `GlobalStrings/GlobalStrings.lua` | Full Blizzard reference (~1.6 MB, source file). Input to `tools/split_globalstrings.py`. |
 | `GlobalStrings/GlobalStrings_001.lua` … `_026.lua` | Chunk files, each a contiguous alphabetical range of keys. Each emits `NS.GlobalStrings["KEY"] = "value"` assignments. **Not in the TOC, not in the shipped zip** — read only by `tests/test_defaults.lua`. |
-| `GlobalStrings/split_globalstrings.py` | Splitter script — re-run after a WoW patch. |
+| `tools/split_globalstrings.py` | Splitter script — re-run after a WoW patch. It lives under `tools/` (`layout-§1`, "Where an authored generator lives") and reads and writes `GlobalStrings/` by repo-root path. |
 | `GlobalStrings/README.md` | Splitter usage instructions. |
 
 ## The `NS.GlobalStrings` table
 
 Keyed by Blizzard's `GLOBALNAME` constants, valued with the Blizzard-default format string as of the client patch the dump was cut from. **It is not built at runtime any more** — only inside `tests/test_defaults.lua`, which loads the chunks into a local table of its own.
 
-At runtime the equivalent data is `addon.originalStrings`, snapshotted from `_G` at `OnEnable`. It covers only the ~81 keys `NS.Defaults` mentions, which is every key any surface draws: the panel builds one block per `NS.Defaults` entry and `/pc test` prints one row per entry. The old argument for the full 22,879 was that a key added to `defaults/Defaults.lua` since the last ship would still resolve — but a key can only reach `NS.Defaults` by editing a file, which needs a `/reload`, after which the snapshot covers it too. The load-time nature of the snapshot is recorded under Known Limitations in [ARCHITECTURE.md](./ARCHITECTURE.md).
+At runtime the equivalent data is `addon.originalStrings`, snapshotted from `_G` at `OnEnable`. It covers only the 79 keys `NS.Defaults` mentions, which is every key any surface draws: the panel builds one block per `NS.Defaults` entry and `/pc test` prints one row per entry. The old argument for the full 22,879 was that a key added to `defaults/Defaults.lua` since the last ship would still resolve — but a key can only reach `NS.Defaults` by editing a file, which needs a `/reload`, after which the snapshot covers it too. The load-time nature of the snapshot is recorded under Known Limitations in [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Regenerating chunks after a WoW patch
 
 When Blizzard ships a new client (TWW patch, Midnight feature drop, etc.) the `GlobalStrings.lua` reference may add / rename / remove entries. To resync:
 
 1. Drop the new `GlobalStrings.lua` into `GlobalStrings/`. Source: [townlong-yak.com](https://www.townlong-yak.com/framexml/live/Helix/GlobalStrings.lua).
-2. From the project root: `python3 GlobalStrings/split_globalstrings.py`.
+2. From the project root: `python3 tools/split_globalstrings.py`.
 
 The script:
 

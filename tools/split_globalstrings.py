@@ -16,7 +16,7 @@ Nothing depends on which chunk a key lands in: each chunk only assigns into the
 shared NS.GlobalStrings table, so the split point is free to move.
 
 Usage:
-    python GlobalStrings/split_globalstrings.py
+    python3 tools/split_globalstrings.py   (from the repo root, or from anywhere)
 """
 
 import collections
@@ -115,9 +115,12 @@ def assert_toc_does_not_load_chunks(toc_path):
 
 
 def main():
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    input_path = os.path.join(script_dir, "GlobalStrings.lua")
-    output_dir = script_dir
+    # The generator lives in tools/ (layout-§1, "Where an authored generator
+    # lives"); its input and its output stay in GlobalStrings/, where
+    # tests/test_defaults.lua reads the chunks. Every path is repo-root relative.
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    input_path = os.path.join(repo_root, "GlobalStrings", "GlobalStrings.lua")
+    output_dir = os.path.join(repo_root, "GlobalStrings")
 
     if not os.path.exists(input_path):
         print(f"Error: {input_path} not found", file=sys.stderr)
@@ -191,7 +194,7 @@ def main():
 
     # The chunks are repo-local reference data; the TOC must not load them.
     print()
-    assert_toc_does_not_load_chunks(os.path.join(os.path.dirname(script_dir), TOC_NAME))
+    assert_toc_does_not_load_chunks(os.path.join(repo_root, TOC_NAME))
 
     print(f"\nWrote {len(chunk_filenames)} chunk files, all under the 1500-LOC cap")
     print(f"Total entries written: {total_written}")

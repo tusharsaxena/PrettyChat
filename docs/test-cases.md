@@ -23,7 +23,7 @@ badge and any count quoted in the docs must agree with it.
 
 - layoutcap: every authored file over the 1500-line cap is named in the census
 - layoutcap: no census row outlives the breach it records
-- layoutcap: every over-cap census row carries one of layout-1's three terminal states
+- layoutcap: every over-cap census row carries one of layout-§1's three terminal states
 - layoutcap: the census and the exempt set agree about which paths were exempted
 - layoutcap: an empty census is written as a result rather than left standing empty
 - layoutcap self-test: the parser reads the census nested under the register, and stops there
@@ -44,8 +44,8 @@ badge and any count quoted in the docs must agree with it.
 
 ### test_prose.lua (15)
 
-- prose: no authored file carries a British spelling from localization-5's published list
-- prose: the gate carries localization-5's two lists whole, and nothing of its own
+- prose: no authored file carries a British spelling from localization-§5's published list
+- prose: the gate carries localization-§5's two lists whole, and nothing of its own
 - prose self-test: the carve-out suppresses the named generated folder, and only it
 - prose self-test: a path the carve-out does not name is not covered by one that looks like it
 - prose self-test: a carve-out that is not a set of path strings is a failure, not a silence
@@ -60,7 +60,7 @@ badge and any count quoted in the docs must agree with it.
 - prose self-test: the disclosure names what each entry suppressed, and says when it is bounded
 - prose self-test: a malformed waived is a failure, not a silence
 
-### test_libka0s.lua (28)
+### test_libka0s.lua (32)
 
 - the locale-table matcher catches both offending spellings and clears the legal one
 - no seam file hands a LibKa0s descriptor the addon-wide locale table
@@ -90,8 +90,12 @@ badge and any count quoted in the docs must agree with it.
 - with LibKa0s absent the addon still loads and still prints, saying so once
 - the shared cause clause names the addon and where the library should be
 - the degraded secret guard still neutralizes a protected value
+- degraded SetMany is all-or-nothing
+- degraded SafeRegisterEvents records a rejected name and registers the rest
+- degraded Get forwards the instance id
+- degraded: /pc test category Loot prints the report to chat every time
 
-### test_surface_parity.lua (6)
+### test_surface_parity.lua (7)
 
 - the Core stub carries the whole live surface
 - the DebugLog stub carries the whole live surface
@@ -99,6 +103,7 @@ badge and any count quoted in the docs must agree with it.
 - the Lifecycle stub carries the whole live surface
 - the Schema stub carries the whole live surface, library and instance
 - the Slash stub carries the whole live surface
+- the degraded DisabledLine is the library's line, byte for byte
 
 ### test_envsetup.lua (9)
 
@@ -108,7 +113,7 @@ badge and any count quoted in the docs must agree with it.
 - EnvSetup: NS.Version answers a string, never nil — it goes straight into a banner
 - EnvSetup: every file-scope read resolved through the seam
 - EnvSetup degraded: an install with no LibKa0s still reads its own TOC
-- EnvSetup degraded: the fallback prefers C_AddOns and falls back to the legacy global
+- EnvSetup degraded: the fallback reads C_AddOns and never the legacy global
 - EnvSetup degraded: NS.Version falls back to this addon's own constant
 - EnvSetup: the deleted shim is gone from Compat
 
@@ -145,7 +150,7 @@ badge and any count quoted in the docs must agree with it.
 - note and cmd wrap text in the documented slash colors
 - RunAct calls onRaise once, then re-raises with the original stack
 
-### test_locale.lua (11)
+### test_locale.lua (12)
 
 - NS.L is published as a table
 - an unknown key falls back to itself verbatim
@@ -154,12 +159,13 @@ badge and any count quoted in the docs must agree with it.
 - every localized call site is in the enUS manifest
 - the manifest carries no entry that nothing references
 - every slash-command description is localized
+- no locale string tells a player /pc test prints to chat
 - the literal scan sees the sources it is meant to guard
 - every user-facing literal is routed through L or recorded as residue
 - every recorded residue literal is still unrouted in the file that names it
 - the excluded data table holds only row labels and default format strings
 
-### test_defaults.lua (15)
+### test_defaults.lua (16)
 
 - the defaults table is non-empty and carries real entries
 - every defaults category appears in CATEGORY_ORDER
@@ -172,10 +178,11 @@ badge and any count quoted in the docs must agree with it.
 - every default format string renders with sample arguments
 - every default's conversion sequence is a positional prefix of Blizzard's
 - no default carries a raw newline or tab
-- cross-registered globals are identified with their real categories
+- no Blizzard global is registered under two categories
 - the schema builds exactly the rows the defaults imply
 - every string registration has both of its schema rows
 - each format row's schema default is the defaults-table default
+- defaults are declared only in defaults/Profile.lua
 
 ### test_schema.lua (45)
 
@@ -196,7 +203,7 @@ badge and any count quoted in the docs must agree with it.
 - the visibility row is the canonical four-mode dropdown, not a boolean
 - the debug console row is session-only and re-applies nothing
 - RowsByCategory returns only that category, in registration order
-- a cross-registered global carries one format row per category
+- the load-time duplicate check finds no global registered twice
 - an exact category name beats any prefix interpretation
 - an ambiguous prefix resolves to nothing rather than guessing
 - a non-string or empty category name resolves to nothing
@@ -252,12 +259,14 @@ badge and any count quoted in the docs must agree with it.
 - a global this client does not define is restored to nil, not left overridden
 - repeated applies are idempotent across the whole surface
 - ResetString clears both the custom format and the per-string disable
-- cross-registered global resolves to the last CATEGORY_ORDER registrant, stably
+- the Tradeskill format is the one that reaches _G for LOOT_ITEM_CREATED_SELF
 
-### test_override.lua (31)
+### test_override.lua (46)
 
 - GetStringValue falls back to the defaults table until overridden
 - IsAddonEnabled treats an absent flag as default-true
+- IsAddonEnabled answers true with no stored key
+- GetVisibility answers always with no stored key
 - IsCategoryEnabled falls back to the category's shipped default
 - IsStringEnabled is true unless the string is explicitly disabled
 - EnsureCategoryDB creates the sub-table once and reuses it
@@ -268,6 +277,10 @@ badge and any count quoted in the docs must agree with it.
 - the combat watcher is armed only while a combat mode is stored
 - the combat boundary re-applies the strings
 - a stored visibility arms the watcher at login, not only on a write
+- a rejected combat event is recorded and the other still registers
+- IsEventValid rejects a name without calling RegisterEvent
+- toggling visibility twice does not duplicate a rejected name
+- the [Init] summary names a rejected event
 - ResetCategory drops the whole category table
 - ResetCategory('General') clears only the addon-wide keys
 - ResetAll clears the master flag and every category at once
@@ -278,17 +291,26 @@ badge and any count quoted in the docs must agree with it.
 - a reset that raises between its writes logs one marked line, then raises
 - a reset whose re-apply raises logs one marked line counting every row written
 - both resets write through the helper's batched entry, Schema.ResetRows
+- ResetRows runs inside the runtime's bracket
+- an all-already-default reset still logs `[Set] reset Loot: 0 rows`
+- a reset list with no eligible row logs nothing and returns 0
+- a reset counts a row by read-back: General.enabled stored false counts 1
 - a visibility equal to the default stores nothing at all
 - Test prints a header, a per-category block, and a counted footer
 - Test writes every line to the sink it is given, and nothing to chat
 - Test previews the Blizzard original from the OnEnable snapshot
+- OriginalFormat answers nil for a global the client never defined, even after ApplyStrings
+- /pc test's Original line for that global reads (original not available)
 - a formatstring filter narrows the report to one string
 - a filter that matches nothing says so instead of printing an empty report
 - Test warns when the addon is disabled but still previews
 - an unrenderable override is reported as an error line, not a crash
 - every Test line routes through the [PC] printer
+- the /pc test report lists each category's strings in sorted order
+- SortedStringNames answers the same sorted table on every call
+- a formatstring-filtered report does not shrink the cached list
 
-### test_database.lua (16)
+### test_database.lua (26)
 
 - NS.Database and the db.global namespace exist
 - a fresh DB is stamped at the current schema version
@@ -306,6 +328,16 @@ badge and any count quoted in the docs must agree with it.
 - the repair traces once when it drops keys, and stays silent otherwise
 - the repair tolerates a db with no profile or no categories
 - migrating emits no debug noise when nothing ran
+- a profile-scoped step lifts every stored profile, not only the active one
+- a raising step leaves the stamp where it was
+- a step after a failed one does not run
+- a profile step runs again safely on an already-lifted profile
+- migration v2 moves a Loot-only override onto Tradeskill
+- migration v2 keeps an existing Tradeskill override and drops Loot's copy
+- migration v2 does not lift a value equal to Tradeskill's default
+- migration v2 drops Loot's disabledStrings and prunes what empties
+- migration v2 run a second time changes nothing
+- migration v2 lifts an inactive stored profile too
 
 ### test_lifecycle.lua (12)
 
@@ -357,7 +389,7 @@ badge and any count quoted in the docs must agree with it.
 - a profile reset that raises logs its one line marked, exactly once
 - a profile copy that raises logs its one line marked
 
-### test_launcher.lua (27)
+### test_launcher.lua (40)
 
 - Launcher: the broker object's icon IS the file the TOC's IconTexture names
 - Launcher: that file is on disk, 128x128 uncompressed 32-bit TGA
@@ -365,17 +397,30 @@ badge and any count quoted in the docs must agree with it.
 - Launcher: OnEnable registers the one object, under the FOLDER name
 - Launcher: LibDBIcon is handed db.global.minimap ITSELF, not a copy
 - Launcher: Register is idempotent — a second call builds no second button
-- Launcher: RUNG (c) — left-click opens the settings panel, through the gated path
-- Launcher: RIGHT-click opens the settings panel too, as it does on every rung
-- Launcher: no toggle hides behind the left button — there is no state to flip
+- Launcher: LEFT-click opens the settings panel, through the gated path
+- Launcher: RIGHT-click opens the options menu, titled with the brand, entry `Enabled` only
+- Launcher: the menu's Enabled entry IS `/pc disable` — same write, same echo
+- Launcher: the entry routes through NS.SetAddonEnabled, handed the state it moves TO
+- Launcher: DISABLED — the menu still opens, Enabled is live and turns the addon back on
+- Launcher: a client with no context-menu API degrades RIGHT-click to the panel
+- Launcher: no toggle hides behind the left button — the menu holds the only one
+- Launcher tooltip: the library draws it — brand, TOC version, status, the two fixed hints
+- Launcher tooltip: the version is the TOC's metadata, never a hand-typed copy
+- Launcher tooltip: Enabled is green Yes, and red No while disabled — shown either way
+- Launcher tooltip: the status is read on every show, never cached
+- Launcher tooltip: isEnabled does NOT gate the left click, and nothing prints a refusal
 - Launcher: the Minimap button row is composed, stored, and defaults to SHOWN
 - Launcher: the row's get/set INVERT onto LibDBIcon's hide key
+- Launcher: /pc get global.minimap.shown answers true on a fresh install, and /pc set global.minimap.shown false stores hide = true
+- Launcher: global.minimap.hide is no longer a settings path
+- Launcher: a LEGACY store keeps its choice under the renamed path
 - Launcher: the write moves the BUTTON, not just the store
 - Launcher: the write is a LEAF write — minimapPos survives a toggle
 - Launcher: the row is the FOURTH of the composed block, after the console
 - Launcher: `Reset all settings` does not un-hide the button
 - Launcher: `/pc resetall` counts the rows it rewrote, and not the minimap row
-- Launcher: no page-scoped Defaults button reaches the row either
+- Launcher: a hidden minimap button survives the General page's real Defaults button
+- Launcher: no per-category reset reaches the row either
 - Launcher: a reset does not RE-HIDE a shown button either
 - Launcher: /pc enable and /pc disable write the Enable row's own stored path
 - Launcher: the verbs hold NO state of their own — the long form is the same write
@@ -387,7 +432,7 @@ badge and any count quoted in the docs must agree with it.
 - Launcher: DEGRADED — LibDataBroker present, LibDBIcon absent: the plugin, no button
 - Launcher: DEGRADED — no LibKa0s at all: no launcher, and the row survives
 
-### test_slash.lua (50)
+### test_slash.lua (52)
 
 - Schema.FormatValue formats bools and doubles pipes in strings
 - NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
@@ -395,6 +440,7 @@ badge and any count quoted in the docs must agree with it.
 - a whitespace-only /pc is bare too
 - /pc help prints the help index
 - /pc help lists every command with its description
+- the resetall help row says it resets every setting
 - an unknown verb says so and then prints the help index
 - the verb is lower-cased but the argument keeps its case
 - extra whitespace around the verb is tolerated
@@ -410,6 +456,7 @@ badge and any count quoted in the docs must agree with it.
 - /pc set stores a format string and echoes the stored value
 - /pc set echoes the value the DB actually kept, not the input
 - /pc set with no path prints usage, and with no value refuses by path
+- /pc set refuses a format the game cannot fill, and names why
 - /pc set on an unknown path reports it as not found
 - /pc set keeps the whole remainder, spaces and all
 - /pc set and /pc get round-trip a pipe through the || escape
@@ -449,14 +496,14 @@ badge and any count quoted in the docs must agree with it.
 - disabled/6: firing the baseline events anyway writes nothing and says nothing
 - disabled/7: every reserved verb answers normally, and the bare /pc opens the panel
 - disabled/7: the addon's own FEATURE verb refuses on one line and reaches no write seam
-- disabled/8: the rung-(c) launcher opens the panel on BOTH buttons and writes nothing
+- disabled/8: the launcher works while disabled — panel on LEFT, menu on RIGHT, no writes
 - disabled/9: re-enabling rebuilds the same registration set
 - disabled/9: the rebuild reads the settings as they are NOW, not as they were
 - disabled/10: releasing one hold does not resurrect an addon the other holds down
 - disabled/10: and the same with the holds taken in the other order
 - disabled/10: the perf hold is session-only and the disabled hold is stored
 
-### test_panel.lua (46)
+### test_panel.lua (48)
 
 - registration builds the parent category and two sub-pages
 - the strip carries one tab per message category, in CATEGORY_ORDER
@@ -477,8 +524,9 @@ badge and any count quoted in the docs must agree with it.
 - /pc test writes the same report to the same place the button does
 - Reset all asks for confirmation instead of resetting immediately
 - the Defaults button is deferred to first show, not built at registration
-- the General page has no Defaults button
-- the Defaults button resets the visible tab's category only
+- the General page declares a Defaults button whose click opens the reset-all popup
+- the Categories Defaults button resets every category, not only the selected tab
+- the footer OnDefault forwards to the same page-wide body
 - a category tab builds a toggle, a secondary strip, and ONE string block
 - the category Enable stays ABOVE the tree
 - the list offers the strings in sorted global-name order
@@ -492,20 +540,21 @@ badge and any count quoted in the docs must agree with it.
 - the read-only Original row shows this client's snapshot, or degrades without it
 - the per-string checkbox writes the string's enable path
 - the New edit box unescapes || to | before storing
+- the New box hands Schema.Set exactly (path, value)
 - the Preview box renders the live format with sample arguments
 - the Preview box surfaces an unrenderable format instead of blanking
 - the per-string Reset button restores both dimensions
 - disabling the category grays the per-string controls
 - a master-toggle change refreshes every built page, not just its own
 - a slash-command write re-syncs the open panel
-- a cross-registered string warns about the shared Blizzard global
+- no per-string enable tooltip carries a second-category note
 - the page says its controls are read only while the master switch is on
 - clicking a tab swaps the body and drops the tab it left
 - the parent page lists every slash command through the one row formatter
 - the landing logo is hidden when its group goes back to AceGUI's pool
 - the parent page shows the TOC tagline
 
-### test_doc_structure.lua (8)
+### test_doc_structure.lua (11)
 
 - docs/ARCHITECTURE.md carries the ten sections documentation-§3 names
 - every mandated hub section that has a topic doc has spilled into it
@@ -515,6 +564,9 @@ badge and any count quoted in the docs must agree with it.
 - root CLAUDE.md carries the adherence line documentation-§2 puts second
 - the README's settings table is page-granular, not per-tab
 - docs/smoke-tests.md carries a non-English-client section
+- every TOC-loaded authored file names its own path in its first comment
+- no module publishes NS.<X> with a bare table constructor
+- ARCHITECTURE's load-order line names every TOC-loaded authored file in TOC order
 
 ### test_register.lua (1)
 
@@ -523,7 +575,7 @@ badge and any count quoted in the docs must agree with it.
 ### test_eol.lua (2)
 
 - eol: every tracked file carries the terminator .gitattributes declares for it
-- eol: .gitattributes is line-endings-5's canonical body for this repo kind
+- eol: .gitattributes is line-endings-§5's canonical body for this repo kind
 
 ## Totals
 
@@ -534,26 +586,26 @@ badge and any count quoted in the docs must agree with it.
 | test_layout_cap.lua | 13 |
 | test_lintconfig.lua | 4 |
 | test_prose.lua | 15 |
-| test_libka0s.lua | 28 |
-| test_surface_parity.lua | 6 |
+| test_libka0s.lua | 32 |
+| test_surface_parity.lua | 7 |
 | test_envsetup.lua | 9 |
 | test_constants.lua | 8 |
 | test_mediasetup.lua | 8 |
 | test_util.lua | 8 |
-| test_locale.lua | 11 |
-| test_defaults.lua | 15 |
+| test_locale.lua | 12 |
+| test_defaults.lua | 16 |
 | test_schema.lua | 45 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
-| test_override.lua | 31 |
-| test_database.lua | 16 |
+| test_override.lua | 46 |
+| test_database.lua | 26 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
-| test_launcher.lua | 27 |
-| test_slash.lua | 50 |
+| test_launcher.lua | 40 |
+| test_slash.lua | 52 |
 | test_disabled.lua | 13 |
-| test_panel.lua | 46 |
-| test_doc_structure.lua | 8 |
+| test_panel.lua | 48 |
+| test_doc_structure.lua | 11 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **438** |
+| **Total** | **490** |

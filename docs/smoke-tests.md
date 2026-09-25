@@ -144,14 +144,23 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 - Expected: button stays visible; nothing changes (no error, no panel re-render visible to the user).
 - Note: this covers only the always-visible / no-op-at-default behavior. For the per-string Reset *restoring both format and enable state*, see **T-56** (which supersedes the reset-effect coverage this test used to imply).
 
-#### T-26 — Defaults button acts on the visible tab (header)
+#### T-26 — Defaults button resets every category tab (header)
 
-> Why: the page parks `ctx.panel.defaultsOnClick = function() PrettyChat:ResetCategory(activeCategory(ctx)) end`, the library wires it onto the button it builds on first `OnShow`, and the canvas's `OnDefault` forwards to the same body — no popup. It resolves the tab at **click** time, because the button is wired once and the strip moves underneath it.
+> Why: options-ui-§13 keeps a page's Defaults page-wide. The page parks `ctx.panel.defaultsOnClick = function() PrettyChat:ResetCategoriesPage() end`, the library wires it onto the button it builds on first `OnShow`, and the canvas's `OnDefault` forwards to the same body — no popup.
 
 - Setup: edit one Loot format and disable one Loot string via the panel. Edit one Money format too.
-- Steps: on Categories > Loot, click **Defaults** in the page header. Then click the **Money** tab and click **Defaults** again.
-- Expected: each click reverts only the tab you were looking at; no popup confirmation appears. `/pc list Loot` and `/pc list Money` show everything at default, and no other category moved. Hovering **Defaults** reads "Reset the strings on the selected category tab to their defaults."
-- Failure mode to watch for: the button resets **Loot** no matter which tab is showing. That is the handler having closed over one category instead of reading the active tab.
+- Steps: on Categories > Loot, click **Defaults** in the page header. Set the same edits up again and use the Blizzard Settings window's footer defaults control instead.
+- Expected: each reverts **both** Loot and Money, not only the tab you were looking at; no popup confirmation appears. `/pc list Loot` and `/pc list Money` show everything at default. Hovering **Defaults** reads "Reset the strings on every category tab to their defaults." With the debug console logging, each press writes exactly one `[Set] reset Categories: N rows` line.
+- Failure mode to watch for: Money keeps its edit. That is the handler having narrowed to the active tab.
+
+#### T-26b — The General page's Defaults button is the reset-all path
+
+> Why: options-ui-§5 gives the General page a header Defaults button and §12 puts it behind the same implementation as **Reset all settings** and `/pc resetall`.
+
+- Setup: edit one Loot format, set **General visibility** to *Never*, and untick **Minimap button**.
+- Steps: on the General page, click **Defaults** in the page header. Click **Yes** on the popup.
+- Expected: the click shows the same reset-all confirmation as **Reset all settings**, and nothing changes until you accept. After **Yes**, the profile is back to defaults (Loot at default, visibility *Always*), and the minimap button **stays hidden** (launcher-§3). Hovering **Defaults** reads "Reset every setting to its default."
+- Failure mode to watch for: no popup, or the minimap button reappears.
 
 #### T-26a — The tab strip itself
 
@@ -263,7 +272,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 - Steps:
   1. `/pc list category` — should print `Categories (9):` followed by every category name in alphabetical order (Currency, Experience, General, Honor, Loot, Misc, Money, Reputation, Tradeskill).
-  2. `/pc list formatstring` — should print `Format strings (81):` followed by every `Category.GLOBALNAME` pair sorted by category then by global name (e.g. `Currency.CURRENCY_GAINED`, `Currency.CURRENCY_GAINED_MULTIPLE`, …, `Tradeskill.TRADESKILL_LOG_THIRDPERSON`).
+  2. `/pc list formatstring` — should print `Format strings (79):` followed by every `Category.GLOBALNAME` pair sorted by category then by global name (e.g. `Currency.CURRENCY_GAINED`, `Currency.CURRENCY_GAINED_MULTIPLE`, …, `Tradeskill.TRADESKILL_LOG_THIRDPERSON`).
 - Expected: both forms succeed without falling through to the unknown-category error path. Counts in headers match the actual list lengths.
 
 #### T-32 — `/pc get` for each row kind
@@ -308,7 +317,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
   4. `/pc set Loot.LOOT_ITEM_SELF.format Loot happened` (no conversion at all), then loot an item.
   5. Open `/pc`, pick any Loot string, and type a format with an extra conversion into **New**.
   6. `/pc reset Loot.LOOT_ITEM_SELF.format`.
-- Expected: step 1 prints `Not saved — Loot.LOOT_ITEM_SELF.format asks for [string,string]; LOOT_ITEM_SELF supplies [string]. …` and the echo that follows still shows the OLD value, unchanged. Step 2 confirms nothing was stored. Step 3 saves and the loot line renders. Step 4 saves too — dropping trailing conversions is safe and must stay allowed. Step 5 refuses the same way *and* the New box snaps back to the stored format rather than keeping the rejected text.
+- Expected: step 1 prints `Not saved — Loot.LOOT_ITEM_SELF.format asks for [string,string]; LOOT_ITEM_SELF supplies [string]. …` and then the library's refusal, `Invalid value for Loot.LOOT_ITEM_SELF.format` with `conversion signature` indented under it, in place of the old value's echo (Slash minor 15). Step 2 confirms nothing was stored. Step 3 saves and the loot line renders. Step 4 saves too — dropping trailing conversions is safe and must stay allowed. Step 5 refuses the same way *and* the New box snaps back to the stored format rather than keeping the rejected text.
 - Failure mode: a surplus conversion that saves ⇒ the gate is not on the write path the surface used (`Schema.Set` is the only one; a widget writing `row.set` directly bypasses it). A refusal on step 4 ⇒ the check is testing equality rather than a positional prefix.
 
 #### T-35 — `/pc reset <path>`
@@ -402,23 +411,27 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 - Steps:
   1. `/pc test all` — same output as bare `/pc test`.
-  2. `/pc test category Loot` — only the Loot block prints. Footer count matches Loot's string count (19).
+  2. `/pc test category Loot` — only the Loot block prints. Footer count matches Loot's string count (17), and neither `LOOT_ITEM_CREATED_SELF` global is among them.
   3. `/pc test category loo` — same output as case 2 (case-insensitive prefix match via `Schema.ResolveCategory`).
   4. `/pc test category General` — emits `(no matching strings)` and skips the footer (General is virtual, no strings).
   5. `/pc test category nope` — chat prints `unknown category 'nope'. Valid: General, Loot, ...`. No test output.
   6. `/pc test formatstring CURRENCY_GAINED` — only the Currency category header prints, and only the `CURRENCY_GAINED` 3-line block under it. Footer count is `1`.
   7. `/pc test formatstring currency_gained` — same as case 6 (input is uppercased).
-  8. `/pc test formatstring LOOT_ITEM_CREATED_SELF` — both Loot and Tradeskill headers print, each with a single block for that global. Footer count is `2` (one per registration).
+  8. `/pc test formatstring LOOT_ITEM_CREATED_SELF` — only the Tradeskill header prints, with a single block for that global. Footer count is `1`.
   9. `/pc test formatstring NOPE_NOPE` — chat prints `unknown format string 'NOPE_NOPE' — try /pc list formatstring`. No test output.
   10. `/pc test bogus` — chat prints the four-line usage (no-arg, all, category, formatstring forms).
 - Expected: all ten cases run without Lua errors; subset, no-match, and error cases each behave as listed.
 
-#### T-53 — Cross-category shared global (`LOOT_ITEM_CREATED_SELF`)
+#### T-53 — Single registration of `LOOT_ITEM_CREATED_SELF` (Tradeskill only)
 
-> Why: this key is registered under both `Loot` and `Tradeskill`. `ApplyStrings` iterates `CATEGORY_ORDER` in fixed order (sorted names within each), so the last category wins **deterministically** (PC-16) — `Tradeskill` comes after `Loot`, so the Tradeskill format wins.
+> Why: this key and its `_MULTIPLE` twin were registered under both `Loot` and `Tradeskill`, and the Loot copy was a dead setting — Tradeskill applies after Loot and always won (PRETTYCHAT-R-02). Schema v2 dropped the Loot registration and migrates a Loot-only override onto Tradeskill. See [data-flow.md](./data-flow.md#one-global-one-category).
 
-- Setup: edit `Loot.LOOT_ITEM_CREATED_SELF.format` and `Tradeskill.LOOT_ITEM_CREATED_SELF.format` to visibly different strings. `/reload` a few times and trigger creation events.
-- Expected: live chat shows the **Tradeskill** format on *every* load (stable across reloads, not a coin-flip). Documented behavior — see [data-flow.md](./data-flow.md#known-quirk-globals-shared-across-categories). Do not "fix" without a triggering complaint.
+- Setup: set a visibly custom `Tradeskill.LOOT_ITEM_CREATED_SELF.format` on the Tradeskill tab, then create or loot-create an item.
+- Expected:
+  1. The chat line uses the custom Tradeskill format.
+  2. `/pc test category Tradeskill` shows `LOOT_ITEM_CREATED_SELF` once; `/pc test category Loot` no longer lists it, and the Loot tab has no row for it.
+  3. The Enable tooltip on the Tradeskill row is the one-line tooltip, with no note naming another category.
+  4. Migration: with a pre-v2 SavedVariables whose Loot tab held an override for `LOOT_ITEM_CREATED_SELF` (and nothing under Tradeskill), `/reload` — the override now shows on the Tradeskill tab, and `/pc get Tradeskill.LOOT_ITEM_CREATED_SELF.format` returns it.
 
 #### T-54 — Disabled state propagates to UI inputs
 
@@ -436,7 +449,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 ### R — Reset standardization
 
-The four reset entry points — per-string **Reset** button, per-category **Defaults** button, `/pc reset <cat>`, `/pc resetall` — share one semantic: each wipes every dimension it owns (custom format *and* enable/disable flag), re-applies via `ApplyStrings`, re-syncs the panel via `NotifyPanelChange`, and emits one `[Set]` line counting the rows it changed (debug-logging-§10).
+The four reset entry points — per-string **Reset** button, the Categories page's **Defaults** button, `/pc reset <path>`, `/pc resetall` — share one semantic: each wipes every dimension it owns (custom format *and* enable/disable flag), re-applies via `ApplyStrings`, re-syncs the panel via `NotifyPanelChange`, and emits one `[Set]` line counting the rows it changed (debug-logging-§10).
 
 #### T-56 — Per-string Reset restores format AND enable state
 
@@ -449,19 +462,19 @@ The four reset entry points — per-string **Reset** button, per-category **Defa
 
 #### T-57 — Reset paths are semantically identical across all four entry points
 
-> Why: per-string Reset, per-category **Defaults**, `/pc reset <cat>`, and `/pc resetall` should all wipe every dimension they own — no path may leave a stale disable flag or override.
+> Why: per-string Reset, the Categories page's **Defaults**, `/pc reset <path>`, and `/pc resetall` should all wipe every dimension they own — no path may leave a stale disable flag or override.
 
 - Setup: disable one Loot string via its toggle **and** edit its format.
-- Steps: repeat the same setup four times, clearing it once each way: (1) row **Reset** button, (2) Loot header **Defaults** button, (3) `/pc reset loot`, (4) `/pc resetall`.
+- Steps: repeat the same setup four times, clearing it once each way: (1) row **Reset** button, (2) the Categories page's header **Defaults** button, (3) `/pc reset loot`, (4) `/pc resetall`.
 - Expected: all four leave `/pc list Loot` fully at default — no lingering `disabledStrings` entry, no lingering override. Confirm after a `/reload` too: `PrettyChatDB.profiles.Default.categories.Loot` is absent (or empty).
 
 #### T-58 — Every reset emits a consistent debug summary
 
-> Why: a reset is a bulk act, so it logs ONE `[Set]` line counting the rows it changed, instead of a `[Set]` line per row (debug-logging-§10). The per-string and per-category resets emit it from `Schema.ResetRows`, the write helper's batched entry. `/pc resetall` is a profile reset, logged once by the `OnProfileReset` handler in `core/PrettyChat.lua`.
+> Why: a reset is a bulk act, so it logs ONE `[Set]` line counting the rows it changed, instead of a `[Set]` line per row (debug-logging-§10). The per-string and Categories-page resets emit it from `Schema.ResetRows`, the write helper's batched entry. `/pc resetall` is a profile reset, logged once by the `OnProfileReset` handler in `core/PrettyChat.lua`.
 
 - Setup: `/pc debug` to open the console and enable logging (toggle green).
-- Steps: trigger each reset once — a row Reset, a category **Defaults**, `/pc resetall`.
-- Expected: exactly one `[Set]` line per reset and no other line, formatted respectively `[Set] reset Loot.LOOT_ITEM_SELF: N rows`, `[Set] reset Loot: N rows`, `[Set] reset profile 'Default' to defaults (N rows)`. N counts only rows that differed from their default, so a reset of an untouched category reads `: 0 rows`. No `[Reset]` line appears, and no line ends in ` (stopped by an error)`: that marker means the reset raised partway, and the error it names is a bug.
+- Steps: trigger each reset once — a row Reset, the Categories page's **Defaults**, `/pc resetall`.
+- Expected: exactly one `[Set]` line per reset and no other line, formatted respectively `[Set] reset Loot.LOOT_ITEM_SELF: N rows`, `[Set] reset Categories: N rows`, `[Set] reset profile 'Default' to defaults (N rows)`. N counts only rows that differed from their default, so a reset of untouched categories reads `: 0 rows`. No `[Reset]` line appears, and no line ends in ` (stopped by an error)`: that marker means the reset raised partway, and the error it names is a bug.
 
 #### T-59 — Reset reflects live in an open panel
 
@@ -533,15 +546,38 @@ that draws nothing raises nothing, and a `.tga` in the wrong format loads as sil
 - Failure mode: a blank or checkerboard button means `media/logos/prettychat.logo.128.tga` is
   missing from the package or is not TGA type 2 / 32 bpp. Regenerate it with layout-§4's recipe.
 
-#### T-65 — Both buttons open the settings panel (rung (c))
+#### T-65 — Left-click opens settings, right-click opens the options menu
 
-> Why: `launcher-§2`. PrettyChat has no primary window and no preview switch, so left-click opens
-> the panel exactly as right-click does. Nothing else may happen on either button.
+> Why: `launcher-§2` as of the standard's v2.67.0 (LibKa0s-Launcher minor 4). Left always opens
+> the settings panel; right opens the client's context menu with one checkbox per toggle the addon
+> has. PrettyChat is frameless, so its menu has exactly one: **Enabled**.
 
-- Steps: left-click the minimap button. Close the panel. Right-click it.
-- Expected: both open PrettyChat's settings on its landing page — the same page `/pc config` opens.
-  Nothing toggles, nothing is stored, and no chat line is printed.
-- In combat: both refuse with the same gray notice `/pc config` gives (options-ui-§2).
+- Steps: left-click the minimap button. Close the panel. Right-click it and look at the menu.
+  Untick **Enabled**. Right-click again and tick it.
+- Expected: left-click opens PrettyChat's settings on its landing page — the same page `/pc config`
+  opens — and nothing is toggled or printed. Right-click opens a small menu titled
+  **Ka0s Pretty Chat** with one ticked checkbox, **Enabled**, and nothing else (no Locked, Test
+  mode or Show window). Unticking it prints `General.enabled = false` exactly as `/pc disable`
+  does, chat goes back to Blizzard's wording, and the General page's **Enable PrettyChat** box is
+  unticked. The next right-click shows **Enabled** unticked and still clickable; ticking it prints
+  what `/pc enable` prints and turns everything back on.
+- In combat: left-click refuses with the same gray notice `/pc config` gives (options-ui-§2).
+- Failure mode: a right-click that opens the settings panel instead of the menu (the menu is
+  missing its entry), a grayed **Enabled** while disabled (the switch would be one-way from here),
+  or a different echo line from `/pc disable`'s (a second write path).
+
+#### T-65a — Hovering the button shows the status tooltip, enabled and disabled
+
+> Why: `launcher-§1` as of the standard's v2.66.0. LibKa0s-Launcher (minor 3) draws one tooltip
+> shape in all eleven addons; PrettyChat has no lock and no test mode, so it gets the short form.
+
+- Steps: hover the minimap button. Then `/pc disable`, hover it again. `/pc enable`.
+- Expected, enabled: `Ka0s Pretty Chat  v<the TOC version>`, `Enabled: Yes` (green),
+  `Left-click: Open settings`, `Right-click: Options menu`, and nothing else.
+- Expected, disabled: the same four lines with `Enabled: No` (red). Neither hint changes (no
+  click is refused), and there is no `Locked` or `Test mode` line either way.
+- Failure mode: no tooltip, a second title or second set of click hints (anti-pattern #89), or an
+  `Enabled` line that lags the switch until `/reload`.
 
 #### T-66 — The Minimap button checkbox hides it NOW, and remembers
 
@@ -613,10 +649,12 @@ that draws nothing raises nothing, and a `.tga` in the wrong format loads as sil
 > Why: one object, registered twice. Skip this one if you run no broker display.
 
 - Setup: install Titan Panel, Bazooka, or use ElvUI's data texts.
-- Steps: add **PrettyChat** from the display's plugin list, then click the row it draws.
+- Steps: add **PrettyChat** from the display's plugin list, then left-click and right-click the
+  row it draws.
 - Expected: the row wears the same logo and the label **Ka0s Pretty Chat**, with no empty value
-  cell beside it (the object is typed `launcher`, not `data source`). Clicking it opens the
-  settings panel, exactly as the minimap button does — there is one click implementation.
+  cell beside it (the object is typed `launcher`, not `data source`). Left-click opens the settings
+  panel and right-click the same **Enabled** menu, exactly as the minimap button does — there is
+  one click implementation.
 
 ## When to run what
 
@@ -630,6 +668,7 @@ that draws nothing raises nothing, and a `.tga` in the wrong format loads as sil
 | Touched `core/DebugLogSetup.lua`, `media/`, or panel chrome (fonts/textures/borders) | Quick recipe + M + K groups |
 | Touched `core/LauncherSetup.lua`, the minimap row, `media/logos/`, or the TOC's `## IconTexture` | Quick recipe + **G group** |
 | Re-vendored `libs/LibKa0s/`, or touched any of the seven seam files | Quick recipe + **K group** |
+| Touched `ApplyStrings`, the combat watcher or `General.visibility`, or a sibling addon that parses loot/currency chat changed | Quick recipe + **F group** |
 | Pre-release / pre-tag | Full suite |
 | Post WoW client patch | Full suite + regenerate `GlobalStrings/` per [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patch) |
 
@@ -733,8 +772,8 @@ single-line border only looks wrong beside a window that has both lines.
 **Expected:**
 - (2) resets **only** that row and echoes `Loot.enabled = true`.
 - (3) resets **nothing**, and prints three lines: that `reset` now takes a PATH not a category, the
-  `/pc reset <path>` replacement with a pointer to `/pc list Loot`, and the **Defaults** button plus
-  `/pc resetall` as the category- and global-scoped replacements.
+  `/pc reset <path>` replacement with a pointer to `/pc list Loot`, and the Categories page's **Defaults**
+  button (every category at once) plus `/pc resetall` as the wider replacements.
 - (4) behaves the same for both spellings — the deprecation resolves the category name the way
   `/pc list` does.
 - (5) is a plain `Setting not found: zzz`; it is neither a path nor a category, so there is nothing
@@ -753,7 +792,7 @@ the other one.
    than the header button.
 3. Repeat once more, and use `/pc resetall`.
 
-**Expected:** all three restore Loot to defaults. (2) is the one that regressed silently before the
+**Expected:** all three restore Loot to defaults (the first two restore every other category tab as well). (2) is the one that regressed silently before the
 adoption — this addon shipped without `OnDefault` on its canvas frames, so the footer control did
 nothing while the header button beside it worked.
 
@@ -820,8 +859,8 @@ disagrees with the `.toc`, means a file-scope read did not reach the seam.
 
 #### T-98 — A degraded install with no LibKa0s still knows its own version
 
-**Why:** `core/EnvSetup.lua` writes its fallback ladder out in full so an install missing the
-vendored payload reads its own TOC exactly as it did before the library existed. That arm is
+**Why:** `core/EnvSetup.lua` writes its fallback out in full so an install missing the vendored
+payload still reads its own TOC through `C_AddOns.GetAddOnMetadata`. That arm is
 covered headlessly, but only the client proves the addon still boots with the payload absent.
 
 **Setup:** rename `Interface/AddOns/PrettyChat/libs/LibKa0s` to `libs/LibKa0s.off`. Restore it
@@ -895,7 +934,7 @@ Categories page's eight. Below it, in this order and two to a line:
 composer's `leadButton` now (LibKa0s v1.25.0), which puts it in the pair's empty right half — the
 cell §15 leaves a frameless addon, which has no *Reset position*.
 
-The explainer line sits above them. **Failure mode:** no strip (the page went back to `RenderRows`);
+Nothing but the strip sits above them. **Failure mode:** no strip (the page went back to `RenderRows`);
 a strip with a tab named `General` (the group was renamed, which also detaches the closing button's
 `afterGroup` hook silently); the Test or Reset button missing (the hook detached); the two on
 separate rows again (the `leadButton` was dropped from `MASTER_SPEC`, or the addon went back to
@@ -979,6 +1018,43 @@ open the console.
 **Failure mode:** the button prints into chat (the sink was dropped); `/pc test` stops printing to
 chat (the sink was made the default rather than the caller's choice); the console opens empty (the
 report was written before the window existed).
+
+## F — The chat text other addons read
+
+PrettyChat's output is not private to the chat frame: overriding `_G[GLOBALNAME]` changes the
+payload of the chat event itself, so every addon that parses it reads PrettyChat's wording. No
+headless suite can see a sibling addon's pattern cache, so this group is in-client only. Background:
+`## Known Limitations` in [ARCHITECTURE.md](./ARCHITECTURE.md), handoff H-1 (PRETTYCHAT-R-01).
+
+#### SMK-F001 — The chat text contract with LootHistory (H-1)
+
+**Why:** under `General.visibility` `inCombat` or `outOfCombat` the loot globals change at every
+combat boundary. A consumer that compiled its patterns once (LootHistory, `core/Util.lua:118/147/187/210`)
+matches only the wording it first saw and silently records nothing in the other state.
+
+**Setup:** PrettyChat defaults, then `/pc set General.visibility inCombat`. LootHistory installed and
+enabled, its browser open on the current session. A mob to kill and a target dummy (or any way into
+combat) nearby.
+
+**Steps:**
+1. `/etrace`, filtered to `CHAT_MSG_LOOT`.
+2. Out of combat, kill a mob and loot one item. In `/etrace`, read arg1 of `CHAT_MSG_LOOT`.
+3. Enter combat (pull the target dummy) and loot one item, for example by opening a container from
+   your bags. Read arg1 again.
+4. Leave combat and loot one more item.
+5. Check LootHistory's browser for all three items.
+6. `/pc set General.visibility always` to put the setting back.
+
+**Expected:**
+- Out of combat, arg1 is Blizzard's wording ("You receive loot: …").
+- In combat, arg1 is PrettyChat's format (`Loot | You | + …`).
+- **Before LootHistory's H-1 fix:** LootHistory records only the items looted in the state its first
+  loot happened in. That is the known limitation, not a PrettyChat regression.
+- **After LootHistory's H-1 fix:** LootHistory records all three.
+
+**Failure mode:** arg1 does not change with combat state (the combat watcher is not re-applying the
+globals); or, once H-1 has shipped in LootHistory, any of the three items is missing from its
+browser.
 
 ## N — Non-English client
 

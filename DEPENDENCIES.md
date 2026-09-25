@@ -136,31 +136,37 @@ dates for you. It does not make the addon non-compliant, and it is never a commi
 ## 3. Release / assets — regenerating committed data
 
 **None of this is needed to build, run or test the addon.** Skip this whole section unless you are
-regenerating the GlobalStrings chunks. A contributor fixing a typo installs nothing from here.
+regenerating the GlobalStrings chunks or the 128 launcher logo. A contributor fixing a typo installs nothing from here.
 
 ### Python 3 — one generator script, standard library only
 
 | | |
 |---|---|
 | **Version** | **Python 3.6 or newer** (the script uses f-strings). Verified here with 3.12.3. |
-| **Why** | `GlobalStrings/split_globalstrings.py` regenerates the twenty-six committed `GlobalStrings/GlobalStrings_0NN.lua` chunks from Blizzard's `GlobalStrings.lua` dump. It is run **by hand after a WoW patch** — see `docs/common-tasks.md`, "Regenerate `GlobalStrings_*.lua` after a WoW patch" — and its output is committed. Nothing in the build, the TOC, the tests or the packager invokes it. It used to rewrite `PrettyChat.toc`'s `# GlobalStrings` block; since PC-R-05 dropped that block it **asserts the block's absence instead**, exiting 1 if a `# GlobalStrings` header or a `GlobalStrings\…` line returns, so a post-patch re-split cannot quietly restore the load cost. |
-| **Packages** | **None.** Its imports are `collections`, `glob`, `os`, `re`, `sys` (`GlobalStrings/split_globalstrings.py:22-26`) — all standard library. There is no `requirements.txt`, no virtualenv, and no `pip install` step. |
+| **Why** | `tools/split_globalstrings.py` regenerates the twenty-six committed `GlobalStrings/GlobalStrings_0NN.lua` chunks from Blizzard's `GlobalStrings.lua` dump. It is run **by hand after a WoW patch** — see `docs/common-tasks.md`, "Regenerate `GlobalStrings_*.lua` after a WoW patch" — and its output is committed. Nothing in the build, the TOC, the tests or the packager invokes it. It used to rewrite `PrettyChat.toc`'s `# GlobalStrings` block; since PC-R-05 dropped that block it **asserts the block's absence instead**, exiting 1 if a `# GlobalStrings` header or a `GlobalStrings\…` line returns, so a post-patch re-split cannot quietly restore the load cost. |
+| **Packages** | **None.** Its imports are `collections`, `glob`, `os`, `re`, `sys` (`tools/split_globalstrings.py:22-26`) — all standard library. There is no `requirements.txt`, no virtualenv, and no `pip install` step. |
 | **Install** | `sudo apt install -y python3` (present by default on Ubuntu 24.04) |
 | **Verify** | `python3 --version` |
-| **Run** | `python3 GlobalStrings/split_globalstrings.py`, from the repo root |
+| **Run** | `python3 tools/split_globalstrings.py` — every path it touches is resolved from the repo root, so it runs from any working directory |
 
-`.pkgmeta` ignores `GlobalStrings` **whole** — the ~1.6 MB source dump, the twenty-six chunks and the
-splitter alike. Since PC-R-05 nothing in the addon loads any of it; what is left is repo-only
+`.pkgmeta` ignores `GlobalStrings` **whole** — the ~1.6 MB source dump and the twenty-six chunks —
+and ignores `tools` whole too, which is where the splitter lives (`layout-§1`, "Where an authored
+generator lives"): the program moved there, its input and output did not. Since PC-R-05 nothing in the addon loads any of it; what is left is repo-only
 reference data that `tests/test_defaults.lua` reads to check every override against Blizzard's real
 signature, dev-only in the same sense as `docs/` and `tests/`.
 
-### Image tooling — none, and none is claimed
+### Pillow — regenerating the 128 launcher logo, by hand
 
-The repo ships `media/logos/*.png`, `*.jpg` and the runtime `*.tga`, plus `media/screenshots/`. There
-is **no committed script, Makefile target or documented command that regenerates any of them**, so
-there is no image dependency to install. The `.tga` was produced out-of-band; converting a new one
-would need some `.tga`-capable image tool, but naming a specific one here would be inventing a
-requirement this repo has never recorded. **Plausible, not evidenced — left out deliberately.**
+| | |
+|---|---|
+| **Version** | Any recent Pillow. Verified here with 10.2.0 (Ubuntu 24.04's `python3-pil`). |
+| **Why** | `layout-§4`'s recipe regenerates `media/logos/prettychat.logo.128.tga` (128x128, uncompressed 32-bit TGA, image type 2) from the 2000x2000 `media/logos/prettychat.logo.png` beside it, as `core/LauncherSetup.lua:96-97` records. The `.tga` is committed, so the recipe is run **by hand when the source art changes**; nothing in the build, the TOC, the tests or the packager invokes it. The other logo files (`prettychat.logo.tga`, `.jpg`) and `media/screenshots/` have no regeneration recipe and are not covered by this entry. |
+| **Packages** | `PIL` (Pillow), imported by the recipe's `from PIL import Image`. |
+| **Install** | `sudo apt install -y python3-pil` |
+| **Verify** | `python3 -c 'import PIL; print(PIL.__version__)'` |
+| **Run** | `python3 -c 'from PIL import Image; Image.open("media/logos/prettychat.logo.png").convert("RGBA").resize((128, 128), Image.LANCZOS).save("media/logos/prettychat.logo.128.tga", format="TGA")'` from the repo root |
+
+**Not needed to build, run or test the addon.** It matters only on the day the logo art changes.
 
 ### Packaging
 

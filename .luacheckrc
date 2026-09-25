@@ -51,8 +51,6 @@ exclude_files = {
 globals = {
     "PrettyChatDB",
     "StaticPopupDialogs",
-    -- The debug console appends its window names to this Blizzard table.
-    "UISpecialFrames",
 }
 
 -- Blizzard / WoW API surface the addon reads.
@@ -61,29 +59,16 @@ read_globals = {
     "C_AddOns",
     "C_Timer",
     "CreateFrame",
-    "date",
-    "wipe",
     "Settings",
-    "SettingsPanel",
     "StaticPopup_Show",
     "DEFAULT_CHAT_FRAME",
-    "GameTooltip",
-    "InCombatLockdown",
     -- The General visibility modes: read at every ApplyStrings pass, and the
     -- transition the combat watcher's two events answer.
     "UnitAffectingCombat",
     -- core/Util.lua's RunAct appends the original stack to a re-raised error.
     "debugstack",
-    "GetAddOnMetadata",
-    "UIParent",
     "YES",
     "NO",
-    -- Font objects referenced by name.
-    "GameFontNormal",
-    "GameFontNormalLarge",
-    "GameFontNormalHuge",
-    "GameFontHighlight",
-    "GameFontDisable",
 }
 
 -- The harness publishes its exposed table at tests/run.lua:42 and every suite

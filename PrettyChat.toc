@@ -31,7 +31,8 @@ libs\LibKa0s\LibKa0s.xml
 # Locales (locale table — no earlier-load dependency; toc-file-§5 section order)
 locales\enUS.lua
 
-# Core (the LibKa0s seams load first)
+# Core (the LibKa0s seams load first). Constants, Namespace, State, Database and PrettyChat are
+# in conventional order, and each load-bearing line carries its own note directly above it.
 # core\EnvSetup.lua loads BEFORE core\Namespace.lua and the position is load-bearing:
 # Namespace, settings\Panel.lua and settings\Slash.lua ALL read the TOC at FILE SCOPE, so the
 # seam has to exist before them. Each of those reads resolves once, at load, and keeps the
@@ -50,7 +51,14 @@ core\State.lua
 core\Util.lua
 core\Database.lua
 core\PrettyChat.lua
+# core\CoreSetup.lua loads AFTER core\PrettyChat.lua and the position is load-bearing: NewAddon's
+# AceConsole embed overwrites NS.Print, and CoreSetup's file-scope `NS.Print = printer.Print`
+# reclaims it (anti-pattern #36). Moved earlier, nothing errors, but every chat line turns
+# AceConsole-green.
 core\CoreSetup.lua
+# core\DebugLogSetup.lua loads AFTER core\Constants.lua and the position is load-bearing: its
+# file-scope lib:New descriptor reads NS.Const.FONT_MONO. NS.State and NS.Print are read at call
+# time, so they do not pin it.
 core\DebugLogSetup.lua
 # core\LifecycleSetup.lua loads AFTER core\DebugLogSetup.lua (the NS.Debug seam the two
 # stand-down arms trace through) and BEFORE core\LauncherSetup.lua. It publishes NS.Lifecycle,
@@ -70,12 +78,20 @@ core\LauncherSetup.lua
 defaults\Profile.lua
 defaults\Defaults.lua
 
-# Modules (the override pipeline)
+# Modules (the override pipeline). Conventional: modules\Override.lua reads NS.Defaults, NS.Util
+# and the AceAddon object, all published above.
 modules\Override.lua
 
-# Settings (last — depend on everything else being initialized)
+# Settings. The annotated lines (OptionsSetup, Slash, Panel) are load-bearing; the rest of the
+# order is conventional.
 settings\Schema.lua
+# settings\OptionsSetup.lua loads AFTER settings\Schema.lua and the position is load-bearing: its
+# file-scope descriptor takes NS.SchemaRuntime.Get/Set/ApplyDefault/AllRows as values, and it calls
+# NS.Schema.InstallMasterControls at file scope.
 settings\OptionsSetup.lua
+# settings\Slash.lua loads AFTER settings\Schema.lua and the position is load-bearing: the
+# library-path descriptor takes NS.SchemaRuntime.Get/Set/FindRow/AllRows/ApplyDefault as values at
+# file load.
 settings\Slash.lua
 # settings\Panel.lua loads AFTER settings\OptionsSetup.lua and settings\Schema.lua, and the
 # position is load-bearing: Panel takes NS.Helpers — which settings\OptionsSetup.lua publishes

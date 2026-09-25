@@ -1,5 +1,8 @@
 local _, NS = ...
 
+-- core/Constants.lua — NS.Const: the chat colors, the [PC] prefix, the string row spacing
+-- and the monospace font every other file reads instead of retyping a literal.
+
 NS.Const = NS.Const or {}
 local Const = NS.Const
 
@@ -22,7 +25,8 @@ local Const = NS.Const
 
 -- Per-string entry — vertical gap that bottoms each string entry and
 -- keeps adjacent strings from butting against each other. Specific to the
--- bespoke 40/60 editor in settings/Panel.lua; the library has no equivalent.
+-- per-string editor in the content pane of settings/Panel.lua's TreeGroup; the
+-- library has no equivalent.
 Const.STRING_VSPACER = 14
 
 -- Single source for the chat-color escapes used across PrettyChat.lua

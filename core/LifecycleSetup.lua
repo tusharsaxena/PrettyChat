@@ -25,7 +25,7 @@ local addonName, NS = ...
 -- The library's key space is `disabled` (taken from the stored enable path) and
 -- `perf` (taken by LibKa0s-Perf-1.0 for a capture's suspended arm). PrettyChat holds
 -- a recorded `performance-§12` no-combat-path exemption — the register row is in
--- docs/ARCHITECTURE.md and the sweep in docs/performance.md — so it builds no Perf
+-- docs/ARCHITECTURE.md and the sweep in docs/performance-sweep.md — so it builds no Perf
 -- instance and NOTHING in this addon ever takes the `perf` hold. That is not a
 -- reason to skip the latch: the whole point of the latch is that the two holds are
 -- independent, and an addon that wired a bare boolean because it happens to have one

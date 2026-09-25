@@ -1,6 +1,6 @@
 local _, NS = ...
 
--- The override pipeline — PrettyChat's one feature module. Owns the enable-cascade
+-- modules/Override.lua — the override pipeline, PrettyChat's one feature module. Owns the enable-cascade
 -- predicates, the ApplyStrings engine that rewrites _G[GLOBALNAME], the reset paths, and
 -- the sample-render / Test engine. Methods hang off the shared PrettyChat AceAddon object
 -- created in core/PrettyChat.lua; NS.RenderSample is published for the panel's Preview row.
@@ -19,6 +19,30 @@ local LABEL = {
     formatted = Color.green .. "Formatted: " .. Color.reset,
 }
 
+-- One sorted global-name array per category, built on first ask and kept. Sorted
+-- rather than pairs() order so every walk -- ApplyStrings, the `/pc test` report,
+-- the schema build and the panel's string list -- is byte-stable across /reload
+-- (PC-16) and cannot drift from the others: this is the ONE place that order is
+-- decided (PRETTYCHAT-R-09). Memoizing is safe because NS.Defaults is static after
+-- load; nothing writes it at runtime. The saving is unmeasured (there is no
+-- tests/perf.lua, by exemption) -- the point is one ordering rule, not speed.
+local sortedNames = {}
+
+-- READ-ONLY: callers must not mutate the returned array. It is the shared cache;
+-- a caller that needs a subset (collectNames) filters into a NEW table.
+function NS.SortedStringNames(category)
+    local names = sortedNames[category]
+    if names then return names end
+    names = {}
+    local catData = NS.Defaults[category]
+    for globalName in pairs((catData and catData.strings) or {}) do
+        names[#names + 1] = globalName
+    end
+    table.sort(names)
+    sortedNames[category] = names
+    return names
+end
+
 function PrettyChat:GetStringValue(category, globalName)
     local catDB = self.db.profile.categories[category]
     if catDB and catDB.strings and catDB.strings[globalName] ~= nil then
@@ -34,8 +58,8 @@ end
 -- `enabled = true`, and a ladder that consulted this one would come back up
 -- mid-capture. IsStoodDown below is the question the feature path asks.
 function PrettyChat:IsAddonEnabled()
-    if not (self.db and self.db.profile) then return true end
-    if self.db.profile.enabled == nil then return true end
+    if not (self.db and self.db.profile) then return NS.GeneralDefaults.enabled end
+    if self.db.profile.enabled == nil then return NS.GeneralDefaults.enabled end
     return self.db.profile.enabled
 end
 
@@ -68,8 +92,8 @@ end
 -- ---------------------------------------------------------------------
 
 function PrettyChat:GetVisibility()
-    if not (self.db and self.db.profile) then return "always" end
-    return self.db.profile.visibility or "always"
+    if not (self.db and self.db.profile) then return NS.GeneralDefaults.visibility end
+    return self.db.profile.visibility or NS.GeneralDefaults.visibility
 end
 
 function PrettyChat:IsVisible()
@@ -89,13 +113,25 @@ end
 -- the moment the mode leaves that set: a default install registers nothing, runs
 -- nothing in combat, and the exemption stands unchanged.
 --
--- A plain event frame rather than AceEvent-3.0: this addon does not embed it and
--- adding a library for two events would be a dependency the DEPENDENCIES.md
--- ledger has to carry forever. It is not a display frame and never becomes one —
--- no size, no anchor, no SetMovable — so the composed Master controls tab stays
--- correctly `frameless`.
+-- A plain event frame rather than AceEvent-3.0, and that is the standard's own
+-- carve-out rather than a deviation: events-frames-taint-§1 (Standard v2.65.0)
+-- admits ONE lazily created private watcher for non-unit boundary events,
+-- provided it is fully unregistered on stand-down, and such a watcher is listed
+-- in docs/ARCHITECTURE.md ## Event Subscriptions with no Documented deviations
+-- row. This one is exactly that: created on the first combat-scoped write, and
+-- UnregisterAllEvents below takes both events down with the mode or the latch.
+-- It is not a display frame and never becomes one — no size, no anchor, no
+-- SetMovable — so the composed Master controls tab stays correctly `frameless`.
+--
+-- Registration goes through LibKa0s-Core's SafeRegisterEvents (bound as
+-- NS.Util.SafeRegisterEvents by core/CoreSetup.lua): the C_EventUtils.IsEventValid
+-- front gate, then a pcall, so a name the client has retired costs only itself.
+-- Refused names land, once each, in NS.RejectedEvents, which the [Init] session
+-- summary (core/DebugLogSetup.lua) surfaces.
 local COMBAT_SCOPED = { inCombat = true, outOfCombat = true }
+local WATCH_EVENTS  = { "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }
 local combatWatcher
+NS.RejectedEvents = NS.RejectedEvents or {}
 
 --- Arm or disarm the combat watcher from the state as it is NOW.
 ---
@@ -135,8 +171,9 @@ function PrettyChat:SyncCombatWatch()
         combatWatcher:UnregisterAllEvents()
         return
     end
-    for _, event in ipairs({ "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }) do
-        combatWatcher:RegisterEvent(event)
+    local n = NS.Util.SafeRegisterEvents(combatWatcher, WATCH_EVENTS, nil, NS.RejectedEvents)
+    if n < #WATCH_EVENTS then
+        NS.Debug("Events", "rejected %s", table.concat(NS.RejectedEvents, ", "))
     end
 end
 
@@ -179,8 +216,8 @@ local batching = 0
 --- the arm walked 79 globals and refreshed every page, and then the write seam did
 --- it again (debug-logging-§10 counts that as one pass, one refresh, one line).
 ---
---- The depth is unwound on a raise, through the same xpcall-based helper the reset
---- paths use, so an error inside a write cannot strand the suppression on and leave
+--- The depth is unwound on a raise, through the same xpcall-based helper the profile
+--- events use, so an error inside a write cannot strand the suppression on and leave
 --- every later stand-down silently skipping its pass.
 function PrettyChat.Batch(fn)
     batching = batching + 1
@@ -258,13 +295,10 @@ function PrettyChat:ApplyStrings()
     -- restored regardless of per-category / per-string state.
     --
     -- Iterate CATEGORY_ORDER (fixed order) and, within each category, a
-    -- SORTED name list rather than pairs(NS.Defaults) (PC-16). A handful
-    -- of globals are registered under more than one category (e.g.
-    -- LOOT_ITEM_CREATED_SELF under Loot + Tradeskill); both write the same
-    -- _G key, so the last category to run wins. Deterministic iteration
-    -- makes that winner stable across /reload (documented last-writer:
-    -- the later entry in CATEGORY_ORDER), instead of depending on
-    -- non-deterministic hash order.
+    -- SORTED name list rather than pairs(NS.Defaults) (PC-16), so the order
+    -- globals are written in is stable across /reload. No global is registered
+    -- under two categories (PRETTYCHAT-R-02; settings/Schema.lua reports one at
+    -- load if it ever is), so each _G key has exactly one writer here.
     -- The visibility mode rides the same gate as the master toggle: `never`, or a
     -- combat mode whose condition is not met, restores every original exactly as
     -- `Enable` off does. One gate rather than two, so there is one answer to
@@ -280,14 +314,8 @@ function PrettyChat:ApplyStrings()
     for _, category in ipairs(NS.Schema.CATEGORY_ORDER) do
         local catData = NS.Defaults[category]
         if catData and catData.strings then
-            local names = {}
-            for globalName in pairs(catData.strings) do
-                names[#names + 1] = globalName
-            end
-            table.sort(names)
-
             local catEnabled = addonEnabled and self:IsCategoryEnabled(category)
-            for _, globalName in ipairs(names) do
+            for _, globalName in ipairs(NS.SortedStringNames(category)) do
                 if catEnabled and self:IsStringEnabled(category, globalName) then
                     _G[globalName] = self:GetStringValue(category, globalName)
                     applied = applied + 1
@@ -316,8 +344,8 @@ end
 --
 --   * the session-only `state.debugConsole` row is in that category too, and a
 --     Defaults press must not close the player's debug console;
---   * `global.minimap.hide` is in it as well — settings/Schema.lua wires the
---     composed Master-controls rows onto the virtual General category, so the
+--   * `global.minimap.shown` (stored as db.global.minimap.hide) is in it as
+--     well — settings/Schema.lua wires the composed Master-controls rows onto the virtual General category, so the
 --     minimap row carries `category = "General"` AND a `default`, which is
 --     exactly the shape a page walk rewrites. launcher-§3 (Standard v2.54.0)
 --     states as a PROPERTY that a player's minimap-button choice survives both
@@ -329,13 +357,20 @@ end
 -- Widening this back to the category walk would un-hide a hidden button, and
 -- nothing else in the file would look wrong. tests/test_launcher.lua drives the
 -- reset and asserts the stored value survived it.
+--
+-- NO PANEL BUTTON REACHES THIS ANY MORE, and `/pc` never did. The General page's
+-- header Defaults button is the options-ui-§12 profile reset (ConfirmResetAll ->
+-- ResetAll), and the Categories page's is ResetCategoriesPage below. The allow-list
+-- stays because ResetCategory stays public, and its General arm is the one call
+-- that could still walk the minimap row.
 local GENERAL_RESET_PATHS = { "General.enabled", "General.visibility" }
 
 -- Restore one category to its defaults, every row of it through the write
 -- helper's batched entry (architecture-§5): one ApplyStrings pass, one panel
 -- refresh and one `[Set] reset <cat>: N rows` line, never a pass or a [Set] line
 -- per row (debug-logging-§10). For General the visibility row's own set()
--- re-syncs the combat watcher.
+-- re-syncs the combat watcher. The public per-category method: no panel button
+-- calls it (see GENERAL_RESET_PATHS above).
 --
 -- Dot-defined with a `_` receiver: callers still use the colon form, and the body
 -- reads the schema through NS rather than through the addon table.
@@ -351,6 +386,23 @@ function PrettyChat.ResetCategory(_, category)
         list = Schema.RowsByCategory(category)
     end
     Schema.ResetRows(list, category)
+end
+
+-- The Categories page's Defaults button, and the Settings window's footer control
+-- that forwards to it. options-ui-§13: a page's Defaults stays PAGE-WIDE, and its
+-- blast radius MUST NOT narrow to the visible tab, so this is every message
+-- category's rows (CATEGORY_ORDER minus the virtual General, which is its own
+-- page) in ONE batch: one ApplyStrings pass, one panel refresh and one
+-- `[Set] reset Categories: N rows` line (debug-logging-§10).
+function PrettyChat.ResetCategoriesPage()
+    local Schema = NS.Schema
+    local list = {}
+    for _, category in ipairs(Schema.CATEGORY_ORDER) do
+        if category ~= "General" then
+            for _, row in ipairs(Schema.RowsByCategory(category)) do list[#list + 1] = row end
+        end
+    end
+    return Schema.ResetRows(list, Schema.CATEGORY_PAGE)
 end
 
 --- The global reset, and it is a PROFILE reset (options-ui-§12).
@@ -369,8 +421,8 @@ end
 ---
 --- IT DOES NOT REACH THE MINIMAP BUTTON, AND THAT IS THE POINT OF THE SCOPE.
 --- `db.global.minimap` is LibDBIcon's own table and lives in the GLOBAL store
---- (core/Database.lua), so a profile reset cannot touch it: the player's
---- minimap-button choice, and the angle they dragged the button to, both survive
+--- (NS.GlobalDefaults, defaults/Profile.lua), so a profile reset cannot touch
+--- it: the player's minimap-button choice, and the angle they dragged the button to, both survive
 --- this. launcher-§3 makes that a PROPERTY of the setting rather than a
 --- consequence of the storage, and this addon satisfies it here because it has a
 --- real `profile` section for the reset to empty — an addon that stores
@@ -561,23 +613,27 @@ local function categoryMatches(filter, category)
     return not filter or filter.kind ~= "category" or filter.value == category
 end
 
--- The sorted, filter-surviving global names of one category. Sorted rather than
--- pairs() order so the report is byte-stable across /reload (PC-16).
-local function collectNames(catData, filter)
+-- The sorted, filter-surviving global names of one category, in the shared order
+-- NS.SortedStringNames decides (PC-16). Always a NEW table: the cached array is
+-- read-only, and filtering it in place would shrink every later walk.
+local function collectNames(category, filter)
     local names = {}
-    if not (catData and catData.strings) then return names end
-    for globalName in pairs(catData.strings) do
+    for _, globalName in ipairs(NS.SortedStringNames(category)) do
         if not filter or filter.kind ~= "formatstring" or filter.value == globalName then
             names[#names + 1] = globalName
         end
     end
-    table.sort(names)
     return names
 end
 
--- Blizzard's pristine format for one global: the OnEnable snapshot first,
--- falling back to the live global for a key registered since the last /reload
--- (the snapshot is load-time — see ARCHITECTURE's Known Limitations).
+-- Blizzard's pristine format for one global. The snapshot's KEY SET is the
+-- authority, the same one ApplyStrings restores by (PC-R-07): a key the OnEnable
+-- pass looked at answers its snapshotted value, and a snapshotted nil is a real
+-- answer — this client never defined the global. Falling through to _G there
+-- would answer PrettyChat's own override, which ApplyStrings has written into
+-- that global (PRETTYCHAT-R-05). The live global is consulted only for a key
+-- registered since the last /reload, which the snapshot never saw (it is
+-- load-time — see ARCHITECTURE's Known Limitations).
 --
 -- ONE READER, TWO SURFACES. `/pc test`'s Original line and the settings panel's
 -- read-only Original box are answers to the same question and used to consult
@@ -587,8 +643,10 @@ end
 -- any patch that reworded a string the panel showed a player something the game
 -- no longer says. Both surfaces call this.
 function NS.OriginalFormat(addon, globalName)
-    return (addon and addon.originalStrings and addon.originalStrings[globalName])
-           or _G[globalName]
+    if addon and addon.snapshotKeys and addon.snapshotKeys[globalName] then
+        return addon.originalStrings[globalName]
+    end
+    return _G[globalName]
 end
 
 -- One string's three-line block: name, the rendered Blizzard original, the
@@ -601,8 +659,12 @@ end
 local function printStringRow(emit, addon, category, globalName)
     emit(LABEL.name .. globalName)
 
+    -- A nil original (the client never defined the global) reads as the same
+    -- placeholder the panel's Original box shows, and is not an error: there is
+    -- nothing to render, and RenderSample would call it an empty format.
     local origFmt = NS.OriginalFormat(addon, globalName)
-    local origLine, origErr = renderOrError(origFmt)
+    local origLine, origErr = Color.gray .. L["(original not available)"] .. Color.reset, false
+    if origFmt ~= nil then origLine, origErr = renderOrError(origFmt) end
     emit(LABEL.original .. origLine)
 
     local newFmt = addon:GetStringValue(category, globalName)
@@ -660,10 +722,11 @@ end
 -- to keep readable -- and that was true of the verb as much as of the button, which
 -- is why they no longer disagree. One name, one act.
 --
--- It still DEFAULTS to NS.Print, and the default is still the right one: a caller
--- with no console -- a degraded load where LibKa0s-DebugLog-1.0 never registered --
--- gets chat rather than nothing. NS.Print's own destination is untouched either way;
--- the sink is a parameter, not a redirection.
+-- It still DEFAULTS to NS.Print, and the default is still the right one: on a
+-- degraded load where LibKa0s-DebugLog-1.0 never registered, TestToConsole sees the
+-- library is absent and calls Test with NO sink, so the report goes to chat rather
+-- than into the console stub's no-op Add (PRETTYCHAT-R-06). NS.Print's own
+-- destination is untouched either way; the sink is a parameter, not a redirection.
 function PrettyChat:Test(filter, sink)
     local emit = sink or NS.Print
     emit(note(L["sample of every format string (preview ignores enable toggles):"]))
@@ -675,7 +738,7 @@ function PrettyChat:Test(filter, sink)
     local emittedAny = false
     for _, category in ipairs(NS.Schema.CATEGORY_ORDER) do
         if categoryMatches(filter, category) then
-            local names = collectNames(NS.Defaults[category], filter)
+            local names = collectNames(category, filter)
             if #names > 0 then
                 emittedAny = true
                 local p, e = printCategoryBlock(emit, self, category, names)

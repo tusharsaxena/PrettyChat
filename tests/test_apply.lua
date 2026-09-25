@@ -1,5 +1,5 @@
 -- tests/test_apply.lua — the master -> category -> string enable cascade,
--- and (post-PC-16) deterministic apply for cross-registered globals.
+-- and the single Tradeskill registration of LOOT_ITEM_CREATED_SELF (PRETTYCHAT-R-02).
 
 local function firstFormatRow(Schema, category)
     for _, row in ipairs(Schema.RowsByCategory(category)) do
@@ -113,6 +113,16 @@ test("a global this client does not define is restored to nil, not left overridd
     local ABSENT = "PRETTYCHAT_ABSENT_FROM_THIS_CLIENT"
     fresh.NS.Defaults.Loot.strings[ABSENT] =
         { label = "Absent from this client", default = "a format with no conversions" }
+    -- NS.Defaults is static in the game, so NS.SortedStringNames caches each
+    -- category's order at file load (PRETTYCHAT-R-09). This case adds a string
+    -- AFTER load, which the game never does, so it hands the fresh instance an
+    -- uncached order that sees the addition.
+    fresh.NS.SortedStringNames = function(category)
+        local names = {}
+        for name in pairs(fresh.NS.Defaults[category].strings) do names[#names + 1] = name end
+        table.sort(names)
+        return names
+    end
     t.nilv(fresh.env[ABSENT], "this client defines no such global")
 
     -- Re-snapshot through the addon's own pass rather than hand-writing the
@@ -159,26 +169,13 @@ test("ResetString clears both the custom format and the per-string disable", fun
     t.eq(env[g], def, "reset re-applies the default override to live chat")
 end)
 
-test("cross-registered global resolves to the last CATEGORY_ORDER registrant, stably", function()
-    -- Deterministic cross-registered apply (PC-16): a global registered
-    -- under more than one category must resolve to the documented winner
-    -- — the LAST category in CATEGORY_ORDER that registers it — stably.
-    -- LOOT_ITEM_CREATED_SELF is shared by Loot + Tradeskill.
-    local shared = Schema.crossRegisteredGlobals or {}
+test("the Tradeskill format is the one that reaches _G for LOOT_ITEM_CREATED_SELF", function()
+    -- PRETTYCHAT-R-02: the Loot copy was a dead setting, since Tradeskill applies
+    -- after Loot and always won. Tradeskill is now the only registration.
     local name = "LOOT_ITEM_CREATED_SELF"
-    if shared[name] then
-        local winner
-        for _, c in ipairs(Schema.CATEGORY_ORDER) do
-            for _, reg in ipairs(shared[name]) do
-                if reg == c then winner = c end
-            end
-        end
-        t.truthy(winner, "resolved a deterministic winner category")
-        inst.addon:ApplyStrings()
-        t.eq(env[name], inst.addon:GetStringValue(winner, name),
-            "cross-registered global resolves to last CATEGORY_ORDER registrant")
-        local first = env[name]
-        for _ = 1, 5 do inst.addon:ApplyStrings() end
-        t.eq(env[name], first, "repeated apply is stable")
-    end
+    t.nilv(Schema.FindByPath("Loot." .. name .. ".format"), "no Loot row exists for it")
+    Schema.Set("Tradeskill." .. name .. ".format", "TRADE %s")
+    t.eq(env[name], "TRADE %s", "the Tradeskill format reaches _G")
+    inst.addon:ResetString("Tradeskill", name)
+    t.eq(env[name], inst.NS.Defaults.Tradeskill.strings[name].default, "and its reset reaches _G too")
 end)

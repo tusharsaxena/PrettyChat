@@ -4,7 +4,7 @@
 -- WHAT IS WAIVED, AND WHY IT IS NOT THIS REPO'S ENGLISH TO CORRECT. Every entry below is inside
 -- `GlobalStrings/`, the dump of Blizzard's own GlobalStrings extracted from the client
 -- (`GlobalStrings/GlobalStrings.lua:1` says so) and cut into chunks by
--- `GlobalStrings/split_globalstrings.py`. The spellings are the game's English arriving whole:
+-- `tools/split_globalstrings.py`. The spellings are the game's English arriving whole:
 -- respelling one is a hand edit the next extraction overwrites, and it would make the fixture
 -- tests/test_defaults.lua reads stop matching the client it was taken from. localization-§5 names
 -- "a generated dump of the client's own strings" as a spelling that MAY be waived, per FILE and per
@@ -16,8 +16,9 @@
 -- localization-§5 until the standard takes the amendment layout-§1 already took. It is not ratified
 -- in docs/ARCHITECTURE.md's register, so it is not used here.
 --
--- Measured 2026-09-23 against LibKa0s v1.55.0's gate (kit revision 25): 34 lines across these ten
--- files, and nothing outside `GlobalStrings/`.
+-- Measured 2026-09-23 against LibKa0s v1.55.0's gate (kit revision 25), re-measured 2026-09-24
+-- against LibKa0s v1.56.0's (kit revision 26), unchanged: 34 lines across these ten files, and
+-- nothing outside `GlobalStrings/`.
 return {
     waived = {
         ["GlobalStrings/GlobalStrings.lua"] = {

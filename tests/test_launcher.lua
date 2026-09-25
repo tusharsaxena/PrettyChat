@@ -12,9 +12,9 @@
 --     the file on disk;
 --   * an INVERSION. The row says SHOWN and LibDBIcon's key says HIDDEN, so exactly
 --     one negation stands between a checkbox and the opposite of what it promises;
---   * a RUNG, which for this addon is an ABSENCE. `onClick` not being passed is
---     what makes left-click open the settings panel, and an absence is the one
---     thing a reader cannot tell from a typo;
+--   * a MENU ENTRY that must BE the slash verb. The right-click menu's Enabled
+--     checkbox calls the same handler `/pc enable|disable` calls; a second path
+--     would agree today and drift on the next change to either;
 --   * a ONE-WAY SWITCH. `/pc disable` must not be able to take `/pc enable` away
 --     with it.
 --
@@ -32,7 +32,7 @@ local t    = ctx.t
 local test = ctx.test
 
 local ICON_PATH = "Interface\\AddOns\\PrettyChat\\media\\logos\\prettychat.logo.128.tga"
-local MINIMAP_PATH = "global.minimap.hide"
+local MINIMAP_PATH = "global.minimap.shown"
 local ENABLED_PATH = "General.enabled"
 
 -- ── the two fakes ───────────────────────────────────────────────────────────
@@ -167,48 +167,241 @@ test("Launcher: Register is idempotent — a second call builds no second button
     t.eq(#inst.mocks.__icons.registrations, 1, "and still one registration")
 end)
 
--- ── the rung ────────────────────────────────────────────────────────────────
+-- ── the two buttons (Launcher minor 4, launcher-§2 as of v2.67.0) ───────────
+--
+-- LEFT opens the settings panel, on every addon, in either state. RIGHT opens the
+-- client's context menu, one checkbox per toggle the descriptor supplies. This
+-- addon is frameless, so the standard's ADDONS.md row for it reads `Enabled` and
+-- nothing else: no lock, no test-mode switch (`/pc test` is a verb), no primary
+-- window. The one entry calls `NS.SetAddonEnabled`, the very function `/pc enable`
+-- and `/pc disable` call, so what is pinned below is that the menu and the verbs
+-- are the same write with the same echo, not two paths that happen to agree.
+--
+-- The menu is driven through tests/mock_menu.lua, installed before any source
+-- loads. Without it the harness has no `MenuUtil`, and the library's right click
+-- degrades to the settings panel, which is itself a case below.
 
-test("Launcher: RUNG (c) — left-click opens the settings panel, through the gated path",
+local makeMenu = dofile(ctx.root .. "/tests/mock_menu.lua")
+
+local function block(lines) return table.concat(lines, "\n") end
+
+--- A wired instance with the fake context-menu API installed; answers the
+--- instance and the fake.
+local function withMenu()
+    local menu
+    local inst = ctx.loadAddon({ mock = function(mocks)
+        withBroker(mocks)
+        menu = makeMenu(mocks)
+    end })
+    inst.NS.Helpers.OpenOptionsPanel = function() inst.opened = (inst.opened or 0) + 1 end
+    return inst, menu
+end
+
+--- Open the menu with a right click on the one object both surfaces share.
+local function rightClick(inst, menu)
+    inst.NS.Launcher:Object().OnClick({}, "RightButton")
+    return menu.last
+end
+
+test("Launcher: LEFT-click opens the settings panel, through the gated path", function()
+    -- What is pinned is that the click reaches NS.Helpers.OpenOptionsPanel —
+    -- LibKa0s-Options-1.0's own open, where options-ui-§2 puts the combat gate —
+    -- through PrettyChat:OpenConfig, rather than some second open path beside it.
+    local inst, menu = withMenu()
+    inst.NS.Launcher:Object().OnClick({}, "LeftButton")
+    t.eq(inst.opened, 1, "left-click opened the panel")
+    t.eq(menu.opens, 0, "and opened no menu")
+    inst.NS.Launcher:Object().OnClick({}, "MiddleButton")
+    t.eq(inst.opened, 2, "any button that is not RIGHT opens the panel too")
+end)
+
+test("Launcher: RIGHT-click opens the options menu, titled with the brand, entry `Enabled` only",
 function()
-    -- The standard's ADDONS.md puts Ka0s Pretty Chat on rung (c), and the rung is
-    -- expressed by the ABSENCE of `onClick`: this addon has no primary window and,
-    -- being frameless, no preview switch either. What is pinned is that the click
-    -- reaches NS.Helpers.OpenOptionsPanel — LibKa0s-Options-1.0's own open, where
-    -- options-ui-§2 puts the combat gate — rather than some second open path built
-    -- beside it.
-    local inst = wired()
-    local opened = 0
-    inst.NS.Helpers.OpenOptionsPanel = function() opened = opened + 1 end
-
-    local object = inst.NS.Launcher:Object()
-    object.OnClick({}, "LeftButton")
-    t.eq(opened, 1, "left-click opened the panel")
+    local inst, menu = withMenu()
+    local m = rightClick(inst, menu)
+    t.truthy(m, "right-click opened the client's context menu")
+    t.eq(inst.opened, nil, "and did not open the settings panel")
+    t.eq(table.concat(m.titles, "|"), "Ka0s Pretty Chat", "titled with the plain-text label")
+    -- The standard's ADDONS.md row for Ka0s Pretty Chat: `Enabled`. A frameless
+    -- addon has no Locked, no Test mode and no Show window to offer, so an entry
+    -- for any of them would be a checkbox for a state this addon does not have.
+    t.eq(table.concat(m:Texts(), "|"), "Enabled", "exactly one entry")
+    t.eq(m:Checked("Enabled"), true, "checked on a fresh install")
 end)
 
-test("Launcher: RIGHT-click opens the settings panel too, as it does on every rung", function()
-    local inst = wired()
-    local opened = 0
-    inst.NS.Helpers.OpenOptionsPanel = function() opened = opened + 1 end
+test("Launcher: the menu's Enabled entry IS `/pc disable` — same write, same echo", function()
+    -- Two instances, one per surface, so each echo is read from a clean chat log.
+    local viaMenu, menu = withMenu()
+    viaMenu.env.__resetPrinted()
+    rightClick(viaMenu, menu):Click("Enabled")
+    t.eq(viaMenu.addon:IsAddonEnabled(), false, "the entry turned the addon off")
+    t.eq(viaMenu.NS.Schema.Get(ENABLED_PATH), false, "by writing the Enable row's own path")
+    local menuLines = viaMenu.env.__printed()
 
-    local object = inst.NS.Launcher:Object()
-    object.OnClick({}, "RightButton")
-    t.eq(opened, 1, "right-click opened the panel")
-    object.OnClick({}, "MiddleButton")
-    t.eq(opened, 2, "and so does any other button — only LEFT is the rung's to spend")
+    local viaVerb = withMenu()
+    viaVerb.env.__resetPrinted()
+    viaVerb.addon:OnSlashCommand("disable")
+    t.eq(block(menuLines), block(viaVerb.env.__printed()),
+        "and printed byte for byte what /pc disable prints")
+    t.eq(#menuLines, 1, "one confirmation line, the slash `set` shape")
 end)
 
-test("Launcher: no toggle hides behind the left button — there is no state to flip", function()
-    -- The rung is an absence, and an absence is the one thing a reader cannot tell
-    -- from a typo. If a later change hands the descriptor an `onClick`, this case
-    -- is what says so: nothing about the addon's stored state may move on a click.
-    local inst = wired()
-    inst.NS.Helpers.OpenOptionsPanel = function() end
+test("Launcher: the entry routes through NS.SetAddonEnabled, handed the state it moves TO",
+function()
+    local inst, menu = withMenu()
+    local calls = {}
+    local real = inst.NS.SetAddonEnabled
+    t.eq(type(real), "function", "settings/Slash.lua publishes the verbs' own handler")
+    inst.NS.SetAddonEnabled = function(on) calls[#calls + 1] = on; return real(on) end
+
+    rightClick(inst, menu):Click("Enabled")
+    t.eq(#calls, 1, "called once")
+    t.eq(calls[1], false, "with false: the state the addon moves TO")
+    rightClick(inst, menu):Click("Enabled")
+    t.eq(#calls, 2, "and once more on the next open")
+    t.eq(calls[2], true, "with true, since the menu read the switch afresh")
+    t.eq(inst.addon:IsAddonEnabled(), true, "and the addon is back on")
+end)
+
+test("Launcher: DISABLED — the menu still opens, Enabled is live and turns the addon back on",
+function()
+    -- slash-commands-§7: the launcher is setup and survives the disabled state, and
+    -- the menu's Enabled entry is the one the library never grays.
+    local inst, menu = withMenu()
+    inst.addon:OnSlashCommand("disable")
+    local m = rightClick(inst, menu)
+    t.truthy(m, "the menu opens while disabled")
+    t.eq(m:Checked("Enabled"), false, "and shows the addon off")
+    t.eq(m:Find("Enabled").enabled, true, "with the entry clickable")
+
+    local viaVerb = withMenu()
+    viaVerb.addon:OnSlashCommand("disable")
+    viaVerb.env.__resetPrinted()
+    viaVerb.addon:OnSlashCommand("enable")
+
+    inst.env.__resetPrinted()
+    m:Click("Enabled")
+    t.eq(inst.addon:IsAddonEnabled(), true, "one click re-enabled it")
+    t.eq(block(inst.env.__printed()), block(viaVerb.env.__printed()),
+        "with the same line /pc enable prints")
+end)
+
+test("Launcher: a client with no context-menu API degrades RIGHT-click to the panel", function()
+    local inst, menu = withMenu()
+    menu.remove()
+    inst.NS.Launcher:Object().OnClick({}, "RightButton")
+    t.eq(inst.opened, 1, "right-click opened the settings panel instead")
+    t.eq(menu.opens, 0, "and no menu")
+end)
+
+test("Launcher: no toggle hides behind the left button — the menu holds the only one", function()
+    -- If a later change routes a toggle through the LEFT button, this case is what
+    -- says so: nothing about the addon's stored state may move on a left click.
+    local inst = withMenu()
     local before = inst.addon:IsAddonEnabled()
-
     inst.NS.Launcher:Object().OnClick({}, "LeftButton")
     t.eq(inst.addon:IsAddonEnabled(), before, "the master switch did not move")
     t.eq(inst.NS.Launcher:IsShown(), true, "and neither did the button's own visibility")
+end)
+
+-- ── the status tooltip (Launcher minor 3, launcher-§1 as of v2.66.0) ────────
+--
+-- The library draws the whole tooltip; this addon only answers its questions. So
+-- what is pinned here is the DESCRIPTOR, read back through the one place a player
+-- sees it: `version` answers the TOC's own `## Version`, `isEnabled` answers the
+-- master switch on every show, and `isLocked` / `isTestMode` / `onTooltipShow` are
+-- ABSENT. A frameless addon has no lock, no test mode and no line of its own to add.
+-- An absent field is pinned by the line it would have drawn not being there.
+
+--- A fake GameTooltip: records AddLine and nothing else, which is all the library
+--- draws with. Color escapes are stripped so a case reads the words a player reads;
+--- the raw lines come back second for the one case that looks at the color.
+local function hover(inst)
+    local tt = { lines = {} }
+    function tt:AddLine(line) self.lines[#self.lines + 1] = line end
+    inst.NS.Launcher:Object().OnTooltipShow(tt)
+    local plain = {}
+    for n, line in ipairs(tt.lines) do
+        plain[n] = (line:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
+    end
+    return plain, tt.lines
+end
+
+local function tocVersion()
+    local fh = io.open(ctx.root .. "/PrettyChat.toc", "r")
+    local toc = fh:read("*a")
+    fh:close()
+    return toc:match("##%s*Version:%s*([^\r\n]+)")
+end
+
+test("Launcher tooltip: the library draws it — brand, TOC version, status, the two fixed hints",
+function()
+    local inst = wired()
+    local version = tocVersion()
+    t.truthy(version and version ~= "", "the TOC declares a version")
+    t.eq(block(hover(inst)), block({
+        "Ka0s Pretty Chat  v" .. version,
+        "Enabled: Yes",
+        "Left-click: Open settings",
+        "Right-click: Options menu",
+    }), "exactly four lines: no Locked, no Test mode, no line of the addon's own")
+end)
+
+test("Launcher tooltip: the version is the TOC's metadata, never a hand-typed copy", function()
+    -- NS.Version() reads `## Version` through LibKa0s-Env; the tooltip must say
+    -- what `/pc version` says, so a bump that edits the TOC moves both.
+    local inst = wired()
+    local title = hover(inst)[1]
+    t.eq(title, "Ka0s Pretty Chat  v" .. inst.NS.Version(),
+        "the title carries the same version /pc version prints")
+    t.falsy(title:find("vv", 1, true), "and a leading v is not doubled")
+end)
+
+test("Launcher tooltip: Enabled is green Yes, and red No while disabled — shown either way",
+function()
+    local inst = wired()
+    local _, raw = hover(inst)
+    t.truthy(raw[2]:find("|cff%x%x%x%x%x%xYes|r") or raw[2]:find("|cFF%x%x%x%x%x%xYes|r"),
+        "Enabled answers a colored Yes on a fresh install: " .. raw[2])
+
+    inst.NS.Schema.Set(ENABLED_PATH, false)
+    local lines, rawOff = hover(inst)
+    t.eq(block(lines), block({
+        "Ka0s Pretty Chat  v" .. tocVersion(),
+        "Enabled: No",
+        "Left-click: Open settings",
+        "Right-click: Options menu",
+    }), "the tooltip is still drawn while disabled, and says so")
+    t.neq(rawOff[2]:match("|c%x%x%x%x%x%x%x%x"), raw[2]:match("|c%x%x%x%x%x%x%x%x"),
+        "and No wears a different color from Yes")
+    t.falsy(lines[3]:find("disabled", 1, true),
+        "no click is gated, so the hint never becomes a refusal pointer")
+end)
+
+test("Launcher tooltip: the status is read on every show, never cached", function()
+    local inst = wired()
+    t.eq(hover(inst)[2], "Enabled: Yes")
+    inst.addon:OnSlashCommand("disable")
+    t.eq(hover(inst)[2], "Enabled: No", "the same object reads the switch the verb just wrote")
+    inst.addon:OnSlashCommand("enable")
+    t.eq(hover(inst)[2], "Enabled: Yes", "and reads it back the moment it flips again")
+end)
+
+test("Launcher tooltip: isEnabled does NOT gate the left click, and nothing prints a refusal",
+function()
+    -- Since Launcher minor 4 the left click opens the panel in either state
+    -- (launcher-§2): the panel is setup, and where a disabled addon is re-enabled.
+    local inst = wired()
+    local opened = 0
+    inst.NS.Helpers.OpenOptionsPanel = function() opened = opened + 1 end
+    inst.NS.Schema.Set(ENABLED_PATH, false)
+    inst.env.__resetPrinted()
+    inst.NS.Launcher:Object().OnClick({}, "LeftButton")
+    t.eq(opened, 1, "a disabled addon's left click still opens the settings panel")
+    local refusal = inst.NS.SlashCommands:DisabledLine()
+    for _, line in ipairs(inst.env.__printed()) do
+        t.falsy(line:find(refusal, 1, true), "and prints no refusal line")
+    end
 end)
 
 -- ── the Minimap button row ──────────────────────────────────────────────────
@@ -243,6 +436,62 @@ test("Launcher: the row's get/set INVERT onto LibDBIcon's hide key", function()
     Schema.Set(MINIMAP_PATH, true)
     t.eq(db.global.minimap.hide, false, "and ticking it again clears hide")
     t.eq(Schema.Get(MINIMAP_PATH), true)
+end)
+
+-- WS-06: the settings PATH names the row's sense, SHOWN; the stored key stays
+-- LibDBIcon's own `hide` (launcher-§3, anti-pattern #81). No SavedVariables change,
+-- no migration: only the CLI name moved.
+local function lastLine(inst)
+    local msgs = inst.env.DEFAULT_CHAT_FRAME.messages
+    return msgs[#msgs] or ""
+end
+
+test("Launcher: /pc get global.minimap.shown answers true on a fresh install, and "
+    .. "/pc set global.minimap.shown false stores hide = true", function()
+    local inst = wired()
+    local addon, db = inst.addon, inst.addon.db
+
+    addon:OnSlashCommand("get " .. MINIMAP_PATH)
+    t.truthy(lastLine(inst):find("global.minimap.shown|r = |cFFFFFFFFtrue", 1, true),
+        "a fresh install reads SHOWN")
+
+    addon:OnSlashCommand("set " .. MINIMAP_PATH .. " false")
+    t.eq(db.global.minimap.hide, true, "the set lands on LibDBIcon's own hide key")
+    t.nilv(db.sv.global.minimap.shown, "and no `shown` key is ever stored")
+end)
+
+test("Launcher: global.minimap.hide is no longer a settings path", function()
+    local inst = wired()
+    t.nilv(inst.NS.Schema.FindByPath("global.minimap.hide"),
+        "the old CLI name answers unknown setting")
+    inst.addon:OnSlashCommand("get global.minimap.hide")
+    t.truthy(lastLine(inst):find("Setting not found: global.minimap.hide", 1, true),
+        "and /pc get says so")
+end)
+
+test("Launcher: a LEGACY store keeps its choice under the renamed path", function()
+    -- A player who hid the button before WS-06: the stored table is exactly what
+    -- LibDBIcon wrote, and nothing migrates it.
+    local inst = wired()
+    local addon, db = inst.addon, inst.addon.db
+    local acts = inst.mocks.__icons.acts
+    local m = db.global.minimap
+    m.hide, m.minimapPos = true, 200
+
+    addon:OnSlashCommand("get " .. MINIMAP_PATH)
+    t.truthy(lastLine(inst):find("global.minimap.shown|r = |cFFFFFFFFfalse", 1, true),
+        "the legacy hide = true reads as shown = false")
+
+    addon:OnSlashCommand("set " .. MINIMAP_PATH .. " false")
+    t.eq(acts[#acts], "Hide:PrettyChat", "the button stays hidden")
+    t.eq(db.global.minimap.hide, true, "hide is still true")
+    t.eq(db.global.minimap.minimapPos, 200, "minimapPos is untouched")
+    t.nilv(db.sv.global.minimap.shown, "and no `shown` key reached the raw SV")
+
+    addon:OnSlashCommand("set " .. MINIMAP_PATH .. " true")
+    t.eq(db.sv.global.minimap.hide, false, "showing it writes hide = false")
+    t.nilv(db.sv.global.minimap.shown, "still no `shown` key")
+    t.eq(db.global.minimap.minimapPos, 200, "and minimapPos still untouched")
 end)
 
 test("Launcher: the write moves the BUTTON, not just the store", function()
@@ -290,11 +539,12 @@ end)
 -- Two shapes of addon are genuinely reached by that and this one is neither, so
 -- what these cases exist to do is keep it that way. PrettyChat has a real
 -- `profile` section, so its global reset -- db:ResetProfile() -- cannot see a
--- table in db.global; and its General page draws no Defaults button at all, while
--- the one Defaults button it does draw resets a MESSAGE category. But the minimap
--- row carries `category = "General"` and a `default`, which is exactly the shape a
--- page walk rewrites, so both of those are one edit away from being false and
--- neither edit would look wrong. These drive the real resets and read the store.
+-- table in db.global; its General page's Defaults button is that same profile
+-- reset behind the same confirmation (options-ui-§12), and the Categories page's
+-- button resets the MESSAGE categories. But the minimap row carries
+-- `category = "General"` and a `default`, which is exactly the shape a page walk
+-- rewrites, so both of those are one edit away from being false and neither edit
+-- would look wrong. These drive the real resets and read the store.
 
 local function hidden(inst)
     inst.NS.Schema.Set(MINIMAP_PATH, false)
@@ -342,13 +592,37 @@ function()
     t.eq(inst.addon.db.global.minimap.hide, true, "and the button is still hidden")
 end)
 
-test("Launcher: no page-scoped Defaults button reaches the row either", function()
-    -- The General page is registered with `defaultsButton = false` and never sets
-    -- `ctx.panel.defaultsOnClick`, so the library's OnDefault forwarder has nothing
-    -- to call; the one Defaults button this addon draws is on the Categories page
-    -- and resets the SELECTED MESSAGE CATEGORY. Every category that button can be
-    -- pointed at is driven here, plus the General body itself, which is the one a
-    -- widening would reach.
+-- The General page's REAL header Defaults button, driven end to end: its click
+-- raises the reset-all popup, and accepting it runs PrettyChat:ResetAll, a profile
+-- reset that cannot reach db.global. red under: a General Defaults button bound to
+-- a page walk over RowsByCategory("General"), which would rewrite the minimap row.
+test("Launcher: a hidden minimap button survives the General page's real Defaults button",
+function()
+    local inst = wired()
+    local Schema, db, env = inst.NS.Schema, inst.addon.db, inst.env
+    local panel
+    for _, sub in ipairs(env._settings.subcategories) do
+        if sub.name == "General" then panel = sub.frame end
+    end
+    t.truthy(panel and panel.defaultsOnClick, "the General page wires a Defaults click")
+    hidden(inst)
+    Schema.Set("General.visibility", "never")
+
+    panel.defaultsOnClick()
+    t.eq(env._popupsShown[#env._popupsShown], "PRETTYCHAT_RESET_ALL",
+        "the click asks first")
+    env.StaticPopupDialogs["PRETTYCHAT_RESET_ALL"].OnAccept()
+
+    t.eq(Schema.Get("General.visibility"), "always", "the accepted reset really ran")
+    t.eq(db.global.minimap.hide, true, "and the button is STILL hidden")
+end)
+
+test("Launcher: no per-category reset reaches the row either", function()
+    -- PrettyChat:ResetCategory is the public per-category method. No panel button
+    -- calls it any more (the Categories page's resets every message category in one
+    -- batch, and General's is the profile reset above), and `/pc` never did, but it
+    -- stays public, so every category is driven here, plus the General body itself,
+    -- which is the one a widening of its allow-list would reach.
     local inst = wired()
     local Schema, db = inst.NS.Schema, inst.addon.db
 

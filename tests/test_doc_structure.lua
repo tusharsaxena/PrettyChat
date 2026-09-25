@@ -351,3 +351,97 @@ test("docs/smoke-tests.md carries a non-English-client section", function()
         .. "heading with a sentence under it records the gap as coverage, which is the failure "
         .. "M5-08 was filed for")
 end)
+
+-- ── Authored source: the self-naming header and the idempotent publish ─────────────────────────
+
+-- WHAT IT PROVES. Two source-shape rules, read off every authored file the TOC loads (libs/ are the
+-- kit loader's to drop, and GlobalStrings/ is loaded by nothing). documentation-§9: directly under
+-- the `local ..., NS = ...` bootstrap, the first comment names the file's own path and one-line
+-- purpose, `-- <path> — <purpose>`, so a reader who lands in the file from a grep knows where they
+-- are. architecture-§3: a module publishes onto NS with `NS.<X> = NS.<X> or {}`, never with a bare
+-- constructor that would replace a table something earlier seeded (PRETTYCHAT-A-20, A-25).
+--
+-- WHAT IT DOES NOT DO. It does not judge the purpose text, and it does not catch a data table
+-- published as a filled literal (`NS.Defaults = { Loot = ... }`) -- that is a declaration, not a
+-- module table, and nothing seeds it earlier.
+local Loader = dofile("tests/_kit/loader.lua")
+
+local function authoredSources()
+    return Loader.tocFiles(ROOT .. "/PrettyChat.toc")
+end
+
+test("every TOC-loaded authored file names its own path in its first comment", function()
+    local files, bad = authoredSources(), {}
+    assertTrue(#files > 0, "PrettyChat.toc lists no authored .lua file")
+    for _, rel in ipairs(files) do
+        local seenVararg, first = false, nil
+        for _, line in ipairs(lines(rel)) do
+            if not seenVararg then
+                seenVararg = line:match("^local [%w_, ]+= %.%.%.%s*$") ~= nil
+            elseif line:match("^%-%-") then
+                first = line
+                break
+            end
+        end
+        local want = "-- " .. rel .. " — "
+        if not (first and first:sub(1, #want) == want) then
+            bad[#bad + 1] = rel .. " (first comment: " .. tostring(first) .. ")"
+        end
+    end
+    assertTrue(#bad == 0, "documentation-§9 wants `-- <path> — <purpose>` as the first comment "
+        .. "under the vararg line; these do not lead with their own path: " .. table.concat(bad, "; "))
+end)
+
+test("no module publishes NS.<X> with a bare table constructor", function()
+    local bad = {}
+    for _, rel in ipairs(authoredSources()) do
+        local bareLocals = {}
+        for n, line in ipairs(lines(rel)) do
+            local ns = line:match("^NS%.(%u[%w_]*)%s*=%s*{}%s*$")
+            if ns then bad[#bad + 1] = ("%s:%d NS.%s = {}"):format(rel, n, ns) end
+            local loc = line:match("^local ([%a_][%w_]*)%s*=%s*{}%s*$")
+            if loc then bareLocals[loc] = n end
+            local key, rhs = line:match("^NS%.(%u[%w_]*)%s*=%s*([%a_][%w_]*)%s*$")
+            if key and bareLocals[rhs] then
+                bad[#bad + 1] = ("%s:%d local %s = {} published as NS.%s at line %d")
+                    :format(rel, bareLocals[rhs], rhs, key, n)
+            end
+        end
+    end
+    assertTrue(#bad == 0, "architecture-§3 publishes a module as `NS.<X> = NS.<X> or {}`; a bare "
+        .. "constructor replaces whatever an earlier file seeded: " .. table.concat(bad, "; "))
+end)
+
+-- ── The hub's load-order line against the TOC ──────────────────────────────────────────────────
+
+-- WHAT IT PROVES. docs/ARCHITECTURE.md's Module Map carries ONE load-order line, the `a → b → c`
+-- chain inside backticks, and that chain names every authored file PrettyChat.toc loads (libs/
+-- excluded), in TOC order, with `.lua` dropped. The TOC is the source of truth and the line is its
+-- prose copy; a file added to the TOC without the line following -- core/LifecycleSetup did exactly
+-- that (PRETTYCHAT-A-03) -- leaves the hub describing a load order the client never runs.
+--
+-- WHAT IT DOES NOT DO. It does not read docs/module-map.md's numbered list, whose entries carry
+-- prose per step, and it does not check the libraries' order, which the line summarizes in words.
+test("ARCHITECTURE's load-order line names every TOC-loaded authored file in TOC order", function()
+    local want = {}
+    for _, rel in ipairs(authoredSources()) do want[#want + 1] = (rel:gsub("%.lua$", "")) end
+
+    local chain
+    for _, line in ipairs(lines(ARCHITECTURE)) do
+        if line:find("Load order is `PrettyChat.toc`", 1, true) then
+            for span in line:gmatch("`([^`]+)`") do
+                if span:find("→", 1, true) then chain = span end
+            end
+        end
+    end
+    assertTrue(chain ~= nil, "docs/ARCHITECTURE.md has no `Load order is `PrettyChat.toc`` line "
+        .. "carrying a backticked `a → b` chain -- the gate cannot look, so it fails")
+
+    local got = {}
+    for step in (chain .. " → "):gmatch("(.-)%s*→%s*") do
+        got[#got + 1] = step:match("^%s*(.-)%s*$")
+    end
+    assertTrue(table.concat(got, " → ") == table.concat(want, " → "),
+        "docs/ARCHITECTURE.md's load-order line does not match PrettyChat.toc.\n  TOC:  "
+        .. table.concat(want, " → ") .. "\n  line: " .. table.concat(got, " → "))
+end)

@@ -125,6 +125,21 @@ test("/pc help lists every command with its description", function()
     t.truthy(text:find("/prettychat", 1, true), "help documents the alias")
 end)
 
+test("the resetall help row says it resets every setting", function()
+    -- `/pc resetall` is PrettyChat:ResetAll, which is db:ResetProfile(): the
+    -- addon-wide enable flag and the visibility choice go with every category's
+    -- overrides. The row used to promise only a per-category reset,
+    -- which undersold it (PRETTYCHAT-R-04).
+    local row
+    for _, entry in ipairs(NS.COMMANDS) do
+        if entry[1] == "resetall" then row = entry end
+    end
+    t.truthy(row, "resetall is in NS.COMMANDS")
+    t.eq(row[2], NS.L["Reset every setting to defaults"], "the row names the whole-profile reset")
+    t.truthy(joined("help"):find("Reset every setting to defaults", 1, true),
+        "and /pc help prints it")
+end)
+
 test("an unknown verb says so and then prints the help index", function()
     local out = slash("nonsense")
     t.truthy(out[1]:find("unknown command 'nonsense'", 1, true), "the verb is echoed back")
@@ -245,6 +260,22 @@ test("/pc set with no path prints usage, and with no value refuses by path", fun
     t.eq(Schema.Get(formatPath), formatRow.default, "and nothing was written")
 end)
 
+test("/pc set refuses a format the game cannot fill, and names why", function()
+    -- red under: Slash minor 14, which echoed the unchanged value
+    -- Since Slash minor 15 CliSet prints the write seam's refusal (INVALID, then the
+    -- reason indented) instead of re-reading the store as though the write landed.
+    -- The format row's `validate` is settings/Schema.lua's formatAccepted gate: four
+    -- `%s` against a default that fills one is a conversion the game cannot fill.
+    Schema.Set(formatPath, formatRow.default)
+    local before = Schema.Get(formatPath)
+    local text = joined("set " .. formatPath .. " %s %s %s %s")
+    t.truthy(text:find("Invalid value for " .. formatPath, 1, true), "the refusal names the path")
+    t.truthy(text:find("\n" .. PREFIX .. "  conversion signature", 1, true)
+             or text:find("\n  conversion signature", 1, true),
+        "and formatAccepted's reason follows on an indented line: " .. text)
+    t.eq(Schema.Get(formatPath), before, "and the stored value is unchanged")
+end)
+
 test("/pc set on an unknown path reports it as not found", function()
     t.truthy(joined("set Nope.nope true"):find("Setting not found: Nope.nope", 1, true),
         "an unknown path is rejected before any write")
@@ -321,7 +352,7 @@ test("/pc list formatstring lists every Category.GLOBALNAME pair", function()
         for _ in pairs(catData.strings) do total = total + 1 end
     end
     t.truthy(out[1]:find(("Format strings (%d)"):format(total), 1, true),
-        "the header counts every registration, including cross-registered ones")
+        "the header counts every registration")
     t.eq(#out, total + 1, "one line per registration under the header")
     t.truthy(out[2]:find("Currency.", 1, true),
         "the listing is sorted by category then global name")
@@ -368,7 +399,9 @@ test("/pc reset <Category> answers with the deprecation and both replacements", 
     t.truthy(text:find("now takes a setting PATH, not a category", 1, true),
         "the change itself is named")
     t.truthy(text:find("/pc reset <path>", 1, true), "the per-setting replacement is offered")
-    t.truthy(text:find("Defaults", 1, true), "so is the per-category one")
+    t.truthy(text:find("Defaults", 1, true), "so is the Categories page's button")
+    t.truthy(text:find("To reset every category", 1, true),
+        "which says it resets every category, not only the one named (options-ui-§13)")
     t.truthy(text:find("/pc resetall", 1, true), "and the global one")
     Schema.Set("Loot.enabled", NS.Defaults.Loot.enabled)
 end)

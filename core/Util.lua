@@ -1,6 +1,6 @@
 local _, NS = ...
 
--- NS.Util — tiny pure string helpers shared by the slash dispatcher (settings/Slash.lua)
+-- core/Util.lua — NS.Util, tiny pure string helpers shared by the slash dispatcher (settings/Slash.lua)
 -- and any other module. Kept here so the color-wrap helpers have a single home instead
 -- of being re-declared per file. Loads after Constants so NS.Const.Color exists.
 --

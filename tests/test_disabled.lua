@@ -347,14 +347,17 @@ end)
 
 -- ── 8. the launcher ─────────────────────────────────────────────────────────
 
-test("disabled/8: the rung-(c) launcher opens the panel on BOTH buttons and writes nothing", function()
-    -- §7 refuses a disabled addon's LEFT click on rungs (a) and (b), which drive a
-    -- primary window and a preview switch. Pretty Chat is the rostered rung-(c)
-    -- addon and launcher-§2 carves it out in its own words: a rung-(c) left click
-    -- opens the settings panel, which §7 itself lists among the things that SURVIVE
-    -- the disabled state. Refusing it would decline one button for doing exactly
-    -- what the other button beside it is required to keep doing.
-    local i = armed({ mock = withBroker })
+test("disabled/8: the launcher works while disabled — panel on LEFT, menu on RIGHT, no writes",
+function()
+    -- slash-commands-§7 lists the launcher among the SETUP surfaces that survive
+    -- the disabled state, and launcher-§2 (v2.67.0) gives both buttons one meaning
+    -- in either state: LEFT opens the settings panel, RIGHT the options menu, whose
+    -- Enabled entry stays live. Opening either writes nothing and refuses nothing.
+    local menu
+    local i = armed({ mock = function(mocks)
+        withBroker(mocks)
+        menu = dofile(ctx.root .. "/tests/mock_menu.lua")(mocks)
+    end })
     disable(i)
     local object = i.NS.Launcher:Object()
     t.truthy(object, "the broker object is still registered while disabled")
@@ -363,13 +366,14 @@ test("disabled/8: the rung-(c) launcher opens the panel on BOTH buttons and writ
     i.env.__resetSvWrites()
     i.env.__resetPrinted()
 
-    for _, button in ipairs({ "LeftButton", "RightButton" }) do
-        local before = i.opened
-        object.OnClick({}, button)
-        t.eq(i.opened, before + 1, button .. " opened the settings panel")
-    end
+    object.OnClick({}, "LeftButton")
+    t.eq(i.opened, 1, "LeftButton opened the settings panel")
+    object.OnClick({}, "RightButton")
+    t.eq(menu.opens, 1, "RightButton opened the options menu")
+    t.eq(menu.last:Find("Enabled").enabled, true, "whose Enabled entry is live")
+    t.eq(i.opened, 1, "and did not open the panel as well")
 
-    t.eq(#i.env.__svWrites(), 0, "a click on a disabled addon writes NO SavedVariables")
+    t.eq(#i.env.__svWrites(), 0, "opening either on a disabled addon writes NO SavedVariables")
     for _, line in ipairs(i.env.__printed()) do
         t.falsy(line:find(refusal, 1, true), "and neither button prints the refusal line")
     end

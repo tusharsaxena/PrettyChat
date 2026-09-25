@@ -1,6 +1,6 @@
 local _, NS = ...
 
--- NS.L — localization table with English-key fallback. Keys ARE the
+-- locales/enUS.lua — NS.L, the localization table with English-key fallback. Keys ARE the
 -- enUS strings, so a missing translation returns the key verbatim: any
 -- unwrapped or untranslated string still renders in English (zero
 -- behavior change on enUS). Translators add locale files that assign
@@ -23,7 +23,7 @@ local _, NS = ...
 -- library ships no locale files, so a translator restores them by passing a
 -- PLAIN table of just those keys as the module's descriptor `L`, in
 -- core/DebugLogSetup.lua and settings/OptionsSetup.lua — never NS.L itself
--- (see LibKa0s's README, "The `L` trap"). Recorded at LIBKA0S-05.
+-- (see LibKa0s's README.md, "The `L` trap").
 
 local L = setmetatable({}, {
     __index = function(_, k) return k end,
@@ -37,14 +37,18 @@ local enUS = {
     -- confirmation's wording. The page's own explainer was removed at the owner's
     -- request -- the tab opened on a paragraph rather than on its controls.
     "Test",
-    "Print a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` prints the same report to chat.",
+    "Write a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` writes the same report there.",
     "Reset this profile to the addon's defaults? Everything you have configured or added in it is discarded — your other profiles are not affected.",
+    -- The General page's header Defaults tooltip. The button is the same reset as
+    -- `Reset all settings` (options-ui-§12), confirmation included.
+    "Reset every setting to its default.",
     -- Categories sub-page (the tab strip). The page name is a heading rather
     -- than a schema path segment, so unlike the category names interpolated
     -- below it is fully translatable.
     "Categories",
     "Strings on these tabs are rewritten only while the master Enable on the General page is on.",
-    "Reset the strings on the selected category tab to their defaults.",
+    -- The page's Defaults tooltip. The button resets every tab (options-ui-§13).
+    "Reset the strings on every category tab to their defaults.",
     -- Category sub-page. `%s` is the category name, which is itself English —
     -- see the `localization-§1` row in docs/ARCHITECTURE.md's deviations
     -- register. The placeholder is what makes the SENTENCE translatable; these
@@ -55,7 +59,6 @@ local enUS = {
     -- tabs cannot name a category (settings/Panel.lua, the Categories page).
     "Enable %s",
     "Enable or disable all %s string overrides.",
-    "Shared with %s — both registrations write the same Blizzard global; the last category to apply wins on /reload.",
     -- Per-string row
     "Enable",
     "Use the rewritten format for this message. When unchecked, Blizzard's original is used.",
@@ -85,7 +88,7 @@ local enUS = {
     "Print a setting's current value — `/pc get <path>`",
     "Set a setting — `/pc set <path> <value>` (try /pc list)",
     "Reset one setting to its default — `/pc reset <path>`",
-    "Reset every category to addon defaults",
+    "Reset every setting to defaults",
     "Print sample chat lines to the debug console — `/pc test [all | category <name> | formatstring <NAME>]`",
     "Debug console — `/pc debug` shows it; `on`/`off` toggle logging",
     "Print the addon version",

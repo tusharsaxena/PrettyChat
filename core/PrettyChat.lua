@@ -1,6 +1,6 @@
 local addonName, NS = ...
 
--- Core AceAddon object + lifecycle. The override engine (snapshot / ApplyStrings / Test)
+-- core/PrettyChat.lua — the core AceAddon object + lifecycle. The override engine (snapshot / ApplyStrings / Test)
 -- lives in modules/Override.lua; the /pc dispatcher in settings/Slash.lua. This file owns
 -- registration, OnInitialize/OnEnable, the shared chat printer, and the combat-gated
 -- panel open. Methods defined in the other files hang off this same PrettyChat object.
@@ -26,13 +26,12 @@ function PrettyChat:OnInitialize()
     -- divergence would sit there until the first reader arrived. The copy is
     -- shallow on purpose: AceDB is handed the same `profile` sub-table either
     -- way, so what is being protected here is the published table's KEY SET.
+    -- `global` is NS.GlobalDefaults (defaults/Profile.lua, the one declaration
+    -- site savedvariables-§2 names); defaults/ loads after core/, which is why it
+    -- is assembled here at OnInitialize rather than at file scope.
     local defaults = {}
     for k, v in pairs(NS.ProfileDefaults) do defaults[k] = v end
-    if NS.Database and NS.Database.defaults then
-        for k, v in pairs(NS.Database.defaults) do
-            if defaults[k] == nil then defaults[k] = v end
-        end
-    end
+    defaults.global = NS.GlobalDefaults
 
     self.db = LibStub("AceDB-3.0"):New("PrettyChatDB", defaults, true)
 
@@ -51,9 +50,12 @@ function PrettyChat:OnInitialize()
     -- profiles -- until options-ui-§12 made the GLOBAL RESET a profile reset,
     -- which fires the same event and needs the same reaction.
     --
-    -- The migrations run first, because a copied profile may have been authored at
-    -- an older schema version, and ApplyStrings must not read a shape that has not
-    -- been brought forward yet.
+    -- The load pass runs first. It is NOT what lifts an incoming profile's shape:
+    -- the OnInitialize run above already lifted EVERY stored profile (a profile step
+    -- walks db.sv.profiles, core/Database.lua), so a switched-to or copied profile is
+    -- already current, and one created since is built from the current defaults.
+    -- Here the migration walk is an idempotent no-op (the stamp is at target); what
+    -- does work is the orphan repair, Database.PruneOrphans, on the incoming profile.
     --
     -- ONE BODY, THREE LINES. The work is identical for all three events (the
     -- shared reloadProfile below); only the one debug line differs, worded by the
@@ -124,9 +126,9 @@ end
 --- MEASURED, NOT PREDICTED, and the difference is the point. The parked count is
 --- taken before the wipe, because nothing can count a change after it has
 --- happened — but it counts every stored row that differed from its default, and
---- a PROFILE reset does not reach every stored row. `global.minimap.hide` is
---- stored outside the profile deliberately (launcher-§3): a player's
---- minimap-button choice is a per-installation display preference, in the same
+--- a PROFILE reset does not reach every stored row. `global.minimap.shown` is
+--- stored (as db.global.minimap.hide) outside the profile deliberately
+--- (launcher-§3): a player's minimap-button choice is a per-installation display preference, in the same
 --- class as the angle they dragged the button to, and it survives this reset. A
 --- line claiming the reset rewrote that row is the ledger saying the opposite of
 --- what the store says, and it read `(2 rows)` for a one-row reset whenever the

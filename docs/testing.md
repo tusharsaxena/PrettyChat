@@ -26,6 +26,7 @@ tests/
   prose_waivers.lua  -- the per-file, per-word waivers the kit's prose gate reads
   loader.lua         -- the instance factory: both load lists derived + per-call isolation
   wow_mock.lua       -- a thin EXTENDER over tests/_kit/mock_base.lua
+  mock_menu.lua      -- a fake MenuUtil for the launcher's right-click menu, modeled on LibKa0s's own
   test_<module>.lua  -- one suite per module; each reads _G.PC_TEST
 ```
 
@@ -111,9 +112,10 @@ Run **both** of each pair and read the difference between them:
 
 ## The 1500-line cap gate
 
-`tests/_kit/test_layout_cap.lua` — the kit's gate since LibKa0s v1.55.0 (kit revision 25), declared
-in `tests/run.lua` as `{ name = "test_layout_cap", dir = "tests/_kit/" }` — compares two things:
-every authored `.lua` git tracks, and the census under *Files over the 1500-line cap* in
+`tests/_kit/test_layout_cap.lua` — the kit's gate since LibKa0s v1.55.0 (kit revision 25), and still
+the gate in the vendored LibKa0s v1.58.0 (kit revision 26), declared in `tests/run.lua` as
+`{ name = "test_layout_cap", dir = "tests/_kit/" }` — compares two things: every authored
+`.lua` git tracks, and the census under *Files over the 1500-line cap* in
 [ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both directions, so a file that crosses the
 cap unremarked and a row left behind for a file that has stopped breaching are each a red.
 
@@ -133,7 +135,7 @@ No path betrays those facts, so `tests/run.lua` sets `Kit.layoutCap = { exempt =
 before `Kit.run`, and the census marks the dump's row `exempt`. The gate checks only that the two
 agree; whether the three conditions still hold is the auditor's. This repository used to carry a
 hand-written `tests/test_layout_cap.lua` that re-derived them on every run; revision 25's pair-keyed
-inventory reports a local file beside the kit's as a collision (`testing-§9`), so it was retired.
+inventory, unchanged at revision 26, reports a local file beside the kit's as a collision (`testing-§9`), so it was retired.
 
 The line figures in the census are dated measurements and nothing asserts them, so an ordinary edit
 to a large file does not redden this gate. Membership is the invariant, not the numbers.
@@ -192,7 +194,7 @@ that earns it — and say in a comment why the code is correct as written.
 
 `slash-commands-§7` requires every addon in the collection to carry one, and it says why: eleven addons implemented *disabled* as a **draw gate**, and a suite written against a handler's early return cannot tell a draw gate from a stand-down, because an early return is what a draw gate does. So every assertion in this suite is made against the **registration set**, through the kit's recording mock, and never against a handler's return value.
 
-Its ten steps follow the section's: a non-vacuous enabled baseline (the addon has to register something for a stand-down to remove — which is why step 1 stores a combat-scoped visibility first); the disable written through the **single write seam**, never by calling a teardown function; the registration set empty by count and by name; nothing left armed; nothing drawn; the baseline events fired at the handler **unconditionally** — the client would not fire them, so `__fireUnconditional` is what proves a survivor would have been caught — with zero SavedVariables writes, zero printed lines and zero frames shown; the slash surface; the rung-(c) launcher; restoration from **current** state; and the latch's two holds in both orders.
+Its ten steps follow the section's: a non-vacuous enabled baseline (the addon has to register something for a stand-down to remove — which is why step 1 stores a combat-scoped visibility first); the disable written through the **single write seam**, never by calling a teardown function; the registration set empty by count and by name; nothing left armed; nothing drawn; the baseline events fired at the handler **unconditionally** — the client would not fire them, so `__fireUnconditional` is what proves a survivor would have been caught — with zero SavedVariables writes, zero printed lines and zero frames shown; the slash surface; the launcher (panel on left, the Enabled menu on right, no writes); restoration from **current** state; and the latch's two holds in both orders.
 
 It was proved red by reverting the latch read out of `SyncCombatWatch` and `ApplyStrings`, which is the shape this repo shipped before: **eight cases fail**, including all three the section asks for a falsification comment on. Step 5 stays green under that revert, which is exactly the point — the draw gate does restore the display, and the drawing axis is the one axis on which it is invisible.
 
@@ -236,7 +238,8 @@ than a stop. **A missing tool is a skip recorded with its reason**, never a pass
 (`automated-tests-§3`, *The release gate*), evaluated by `/wow-addon:bump-version` from the
 `manifest.json` the release run writes — not by the runner, whose exit code is unchanged. A `skip` is
 **NOT EVALUATED** there rather than passed: install the tool and re-run. The one narrow exception is
-`perf` skipped because this addon ships no `tests/perf.lua`, which the release notes state out loud.
+`perf`, skipped under the ratified `performance-§12` no-combat-path exemption (register row in
+`docs/ARCHITECTURE.md`), which the release notes name.
 
 The runner is **vendored** from `LibKa0s`'s `testkit/`; never edit `tests/_kit/`. A kit fix goes
 upstream and is re-vendored.

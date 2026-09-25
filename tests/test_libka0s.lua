@@ -415,9 +415,9 @@ test("every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh t
 
     -- And OnDefault FORWARDS rather than being an assignment taken at build time:
     -- every host parks defaultsOnClick after CreatePanel returns.
-    -- The Categories page's forwarder resolves the ACTIVE TAB at click time, so the
-    -- footer control resets the category the player is looking at. Loot is the first
-    -- tab, hence the one a page nobody has clicked is showing.
+    -- The Categories page's forwarder reaches the page-wide reset, so the footer
+    -- control resets every category tab, the one showing (Loot, on a page nobody
+    -- has clicked) among them.
     local categories = NS.Helpers.__panelFor("Categories")
     NS.Schema.Set("Loot.enabled", false)
     categories.panel.OnDefault()
@@ -434,9 +434,15 @@ test("a settings page shown in combat is covered, not drawn and not closed", fun
     -- the page is COVERED and left open. Closing the window from addon code ran
     -- Blizzard's close-and-commit path tainted (anti-pattern #88), so nothing of
     -- Blizzard's may be touched in combat, and this case pins that it is not.
+    -- LibKa0s Options minor 24 parks a CreateOptionsPanel called under
+    -- InCombatLockdown() until PLAYER_REGEN_ENABLED, so a load taken in combat has
+    -- no page to show yet. The load runs out of combat, and combat starts before
+    -- the page is shown: the sidebar path this case is about.
+    local inCombat = false
     local fresh = ctx.loadAddon({
-        mock = function(m) m.InCombatLockdown = function() return true end end,
+        mock = function(m) m.InCombatLockdown = function() return inCombat end end,
     })
+    inCombat = true
     local touched = {}
     local function spy(name) return function() touched[#touched + 1] = name end end
     fresh.env.HideUIPanel    = spy("HideUIPanel")
@@ -632,7 +638,16 @@ test("with Slash absent the host verbs survive and the schema CLI says why", fun
         "and that line is config's, not the help header")
 
     -- And the stub re-implements none of the library's rendering.
+    -- The ONE exception slash-commands-§1 sanctions is DISABLED_LINE_FORMAT's
+    -- verbatim copy (its `/pc enable` is yellow in the library's own bytes), pinned
+    -- by tests/test_surface_parity.lua. It is cut out of the source first, exactly
+    -- once, so any OTHER copied color code still turns this red.
     local src = readFile("settings/Slash.lua")
+    local sanctioned = 'local STUB_DISABLED_LINE_FORMAT = '
+        .. '"%s is disabled \\226\\128\\148 enable it with |cFFFFFF00%s|r"'
+    local at = src:find(sanctioned, 1, true)
+    t.truthy(at, "the sanctioned DISABLED_LINE_FORMAT copy is where the stub declares it")
+    src = src:sub(1, at - 1) .. src:sub(at + #sanctioned)
     t.falsy(src:find("cFFFFFF00", 1, true), "no copied row/key color codes in the seam")
     t.falsy(src:find("cFFFFFFFF", 1, true), "either of them")
 end)
@@ -691,4 +706,109 @@ test("the degraded secret guard still neutralizes a protected value", function()
     local secret = setmetatable({}, { __concat = function() error("secret") end })
     t.eq(bare.NS.Util.SafeToString(secret), "<secret>", "the fallback answers the same sentinel")
     t.falsy(bare.NS.Util.IsConcatSafe(secret), "and the fallback probe still refuses it")
+end)
+
+test("degraded SetMany is all-or-nothing", function()
+    -- red under: drop S.SetMany from settings/Schema.lua's SchemaStub.New (the call
+    -- raises), or store inside stubSetMany's phase 1 (Loot.enabled moves on a refusal).
+    local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    local BS, RT, FMT = bare.NS.Schema, bare.NS.SchemaRuntime, "Loot.LOOT_ITEM_SELF.format"
+    t.nilv(bare.env.LibStub("LibKa0s-Schema-1.0", true), "the stub is what answers here")
+    local before = BS.Get(FMT)
+    local ok, err, why, at = RT.SetMany({
+        { path = "Loot.enabled", value = false },
+        { path = FMT, value = "%s %s %s %s" },
+        { path = FMT, value = "Loot | %s %s" },
+    })
+    t.falsy(ok, "one refused entry refuses the batch")
+    t.eq(at, 2, "and names the first entry refused")
+    t.truthy(type(err) == "string" and err:find(FMT, 1, true), "the refusal names the path")
+    t.truthy(why ~= nil, "and carries the row's reason")
+    t.eq(BS.Get("Loot.enabled"), bare.NS.Defaults.Loot.enabled, "nothing was stored: not the valid first entry")
+    t.eq(BS.Get(FMT), before, "and not the format")
+
+    t.truthy(RT.SetMany({
+        { path = "Loot.enabled", value = false },
+        { path = FMT, value = "Loot | %s" },
+    }, { act = "test", scope = "Loot" }), "a valid pair answers true")
+    t.eq(BS.Get("Loot.enabled"), false, "and stores the toggle")
+    t.eq(BS.Get(FMT), "Loot | %s", "and the format")
+    t.falsy(RT.InBulk(), "the bracket closed behind it")
+end)
+
+test("degraded SafeRegisterEvents records a rejected name and registers the rest", function()
+    -- red under: drop the SafeRegister* bodies from core/CoreSetup.lua's degraded arm
+    -- (the call raises on nil), call target:RegisterEvent without the pcall (the bad
+    -- name raises and ENABLED is never reached), or append without the dedup check
+    -- (#rejected is 2 after the second call).
+    local bare = ctx.loadAddon({
+        skip = { "libs/LibKa0s/Core.lua" },
+        mock = function(m) m.__badEvents = { PLAYER_REGEN_DISABLED = true } end,
+    })
+    local Util = bare.NS.Util
+    t.nilv(bare.env.LibStub("LibKa0s-Core-1.0", true), "the stub is what answers here")
+    local frame = bare.env.CreateFrame("Frame")
+    local events, rejected = { "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }, {}
+    local ok, n = pcall(Util.SafeRegisterEvents, frame, events, nil, rejected)
+    t.truthy(ok, "an unknown name does not raise out of the helper")
+    t.eq(n, 1, "it answers how many registered")
+    t.eq(#rejected, 1, "one name was refused")
+    t.eq(rejected[1], "PLAYER_REGEN_DISABLED", "and it is the unknown one")
+    local seen = false
+    for _, r in ipairs(bare.env.__registrations()) do
+        if r.target == frame and r.event == "PLAYER_REGEN_ENABLED" then seen = true end
+        t.falsy(r.target == frame and r.event == "PLAYER_REGEN_DISABLED", "the unknown name is not registered")
+    end
+    t.truthy(seen, "the name after the refused one is still registered")
+
+    t.eq(Util.SafeRegisterEvents(frame, events, nil, rejected), 1, "a second walk answers the same")
+    t.eq(#rejected, 1, "and does not record the refused name twice")
+    t.falsy(Util.SafeRegisterEvent(frame, "PLAYER_REGEN_DISABLED"), "one name answers false with no list")
+    t.truthy(Util.SafeRegisterUnitEvent(frame, "UNIT_HEALTH", rejected, "player"), "the unit form registers")
+    t.falsy(Util.SafeRegisterUnitEvent(frame, "PLAYER_REGEN_DISABLED", rejected, "player"),
+        "and refuses the unknown name")
+    t.eq(#rejected, 1, "still without a duplicate")
+end)
+
+test("degraded Get forwards the instance id", function()
+    -- red under: settings/Schema.lua's stub S.Get calling row.get() with no argument,
+    -- or its S.ApplyDefault(row, id) dropping id on the way to S.Set.
+    local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    local RT = bare.NS.SchemaRuntime
+    t.nilv(bare.env.LibStub("LibKa0s-Schema-1.0", true), "the stub is what answers here")
+    local got, changed = "unset", "unset"
+    RT.AddRows({ {
+        path = "Spy.value", type = "string", default = "d",
+        get = function(id) got = id; return "v" end,
+        set = function() end,
+        onChange = function(_, id) changed = id end,
+    } })
+    t.eq(RT.Get("Spy.value", "instance-7"), "v", "the row's getter answers")
+    t.eq(got, "instance-7", "and was handed the instance id")
+    t.truthy(RT.ApplyDefault(RT.FindRow("Spy.value"), "instance-9"), "the reset answers true")
+    t.eq(changed, "instance-9", "and the instance id reaches the write")
+end)
+
+
+test("degraded: /pc test category Loot prints the report to chat every time", function()
+    -- red under: the stub's no-op Add, where the second run prints nothing.
+    -- TestToConsole used to hand Test the console's writer unconditionally, so with
+    -- the library absent the first run printed only the window's "unavailable"
+    -- line and every run after it printed nothing at all. The NS.Print default the
+    -- comments promised was unreachable.
+    local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    t.nilv(bare.env.LibStub("LibKa0s-DebugLog-1.0", true), "the console library is absent")
+    local msgs = bare.env.DEFAULT_CHAT_FRAME.messages
+    local function lootHeaders(from)
+        local n = 0
+        for i = from, #msgs do
+            if msgs[i]:find("Category: Loot", 1, true) then n = n + 1 end
+        end
+        return n
+    end
+    for run = 1, 2 do
+        local before = #msgs
+        bare.NS.SlashCommands:OnSlash("test category Loot")
+        t.eq(lootHeaders(before + 1), 1, "run " .. run .. " puts the Loot header in chat")
+    end
 end)

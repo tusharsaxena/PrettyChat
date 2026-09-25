@@ -1,5 +1,8 @@
 local _, NS = ...
 
+-- defaults/Defaults.lua — NS.Defaults, the per-category reference data: every GLOBALNAME
+-- PrettyChat overrides, with its row label and the PrettyChat format it defaults to.
+
 NS.Defaults = {
     Loot = {
         enabled = true,
@@ -35,14 +38,6 @@ NS.Defaults = {
             LOOT_ITEM_BONUS_ROLL_SELF_MULTIPLE = {
                 label = "Bonus Roll Multiple (Self)",
                 default = "|cffff0000Loot|cffffffff | |cff76a5afBonus|cffffffff | |cff93c47dYou|cffffffff | |cffffffff+ %s x%d|cffffffff",
-            },
-            LOOT_ITEM_CREATED_SELF = {
-                label = "Item Created (Self)",
-                default = "|cffff0000Loot|cffffffff | |cff93c47dCreate|cffffffff | |cff93c47dYou|cffffffff | |cffffffff+ %s|cffffffff",
-            },
-            LOOT_ITEM_CREATED_SELF_MULTIPLE = {
-                label = "Item Created Multiple (Self)",
-                default = "|cffff0000Loot|cffffffff | |cff93c47dCreate|cffffffff | |cff93c47dYou|cffffffff | |cffffffff+ %s x%d|cffffffff",
             },
             LOOT_ITEM_MULTIPLE = {
                 label = "Item Looted Multiple (Other)",

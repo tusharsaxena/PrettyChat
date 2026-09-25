@@ -78,14 +78,26 @@ end
 -- the Categories page rather than as simpler.
 -- ---------------------------------------------------------------------
 
--- The report the Test button writes, and where it writes it.
+-- The console library itself, resolved ONCE at file load: it is what tells a live
+-- console from core/DebugLogSetup.lua's degraded stub, whose Add is a no-op and
+-- whose Show only announces the window's absence the first time it is asked.
+local DebugLogLib = LibStub and LibStub("LibKa0s-DebugLog-1.0", true)
+
+-- The report the Test button and `/pc test` write, and where they write it.
 --
 -- To the DEBUG CONSOLE, not to chat: `PrettyChat:Test()` prints one line per
 -- format string plus a header and a footer — 500+ lines with every category
 -- enabled — into the chat frame this addon exists to keep readable. The console
 -- is a window with a scrollbar and a copy button, which is what a report that
--- long actually needs. `/pc test` is unchanged and still prints to chat, because
--- the sink is a PARAMETER on Test rather than a redirection of NS.Print.
+-- long actually needs. The sink is a PARAMETER on Test rather than a redirection
+-- of NS.Print, so both destinations get the same report.
+--
+-- A DEGRADED INSTALL FALLS BACK TO CHAT. With LibKa0s-DebugLog-1.0 absent there is
+-- no console to write to: the stub's Add swallows every line, so handing Test the
+-- console's writer would print nothing at all after the first run's "unavailable"
+-- notice. Calling Test with NO sink instead lets its NS.Print default serve the
+-- report, every run (PRETTYCHAT-R-06).
+--
 -- A METHOD, not a file-local, because settings/Schema.lua's MASTER_SPEC now names
 -- it: the Test button is the composer's `leadButton` and its click is declared
 -- beside the reset's, late-bound through PrettyChat exactly as
@@ -99,6 +111,7 @@ end
 -- is what the verb's `category` / `formatstring` forms need; the button passes
 -- none, which is the `all` case.
 function PrettyChat:TestToConsole(filter)
+    if not DebugLogLib then return PrettyChat:Test(filter) end
     NS.DebugLog:Show()
     PrettyChat:Test(filter, function(line) NS.DebugLog:Add("Test", line) end)
 end
@@ -225,27 +238,8 @@ local function buildStringRow(pane, category, globalName, refreshers)
         NS.Schema.Set(enabledPath, value and true or false)
     end)
 
-    local enableTooltip =
-        L["Use the rewritten format for this message. When unchecked, Blizzard's original is used."]
-    local sharedCats = Schema.crossRegisteredGlobals
-                       and Schema.crossRegisteredGlobals[globalName]
-    if sharedCats then
-        local others = {}
-        for _, c in ipairs(sharedCats) do
-            if c ~= category then others[#others + 1] = c end
-        end
-        if #others > 0 then
-            -- One localized sentence with a `%s`, not four concatenated
-            -- fragments (localization-§1). The color escapes stay outside it so
-            -- a translator never has to carry `|cff…|r` through.
-            enableTooltip = enableTooltip
-                .. "\n\n" .. Color.gray
-                .. L["Shared with %s — both registrations write the same Blizzard global; the last category to apply wins on /reload."]
-                     :format(table.concat(others, ", "))
-                .. Color.reset
-        end
-    end
-    H.AttachTooltip(enable, L["Enable"], enableTooltip)
+    H.AttachTooltip(enable, L["Enable"],
+        L["Use the rewritten format for this message. When unchecked, Blizzard's original is used."])
     row1:AddChild(enable)
 
     -- The Blizzard GLOBALNAME, beside the tick rather than under it. It is what
@@ -278,7 +272,8 @@ local function buildStringRow(pane, category, globalName, refreshers)
     newInput:SetLabel(L["New"])
     newInput:SetFullWidth(true)
     newInput:SetCallback("OnEnterPressed", function(_, _, value)
-        NS.Schema.Set(formatPath, (value or ""):gsub("||", "|"))
+        -- Parenthesized so gsub's count never reaches Set as instanceId (PC-R-10).
+        NS.Schema.Set(formatPath, ((value or ""):gsub("||", "|")))
     end)
     H.AttachTooltip(newInput, L["New Format String"],
         L["Your replacement. Type `||` for a literal `|` (color codes use this)."])
@@ -451,11 +446,9 @@ local function buildCategoryBody(ctx, scroll, category, catData)
     H.RenderField(ctx, Schema.FindByPath(category .. ".enabled"), scroll, nil)
     H.AddSpacer(scroll, H.ROW_VSPACER * 2)
 
-    local sortedNames = {}
-    for globalName in pairs(catData.strings) do
-        sortedNames[#sortedNames + 1] = globalName
-    end
-    table.sort(sortedNames)
+    -- The shared cached order (modules/Override.lua). READ-ONLY: nothing below
+    -- writes it; activeString and stringTree only read it.
+    local sortedNames = NS.SortedStringNames(category)
 
     local selected = activeString(ctx, category, catData, sortedNames)
 
@@ -549,7 +542,7 @@ end
 
 -- ---------------------------------------------------------------------
 -- Categories sub-page — one PRIMARY tab per message category, and inside each,
--- one SECONDARY tab per format string (options-ui-§13).
+-- a TreeGroup list of its format strings beside the editor (options-ui-§13).
 --
 -- Every category used to be a sub-page of its own: nine rows in the Blizzard
 -- left rail for one addon, eight of which were the same page with a different
@@ -718,9 +711,18 @@ local LANDING_SPEC = {
 -- used to run are one page with eight tabs (buildCategoriesBody above).
 H.RegisterOptionsPage("General", "General", function(mainCategory)
     local ctx = H.CreatePanel(nil, "General", {
-        pageKey        = "General",
-        defaultsButton = false,
+        pageKey         = "General",
+        defaultsButton  = true,
+        defaultsTooltip = L["Reset every setting to its default."],
     })
+
+    -- options-ui-§5 gives every sub-page a header Defaults button, and §12 puts the
+    -- General page's behind the SAME implementation as the composed `Reset all
+    -- settings` and `/pc resetall`: the confirmation popup, then PrettyChat:ResetAll.
+    -- Not ResetCategory("General"), which would be a Defaults button doing less than
+    -- the reset beside it. The minimap choice survives because it lives in the
+    -- global store, which a profile reset does not reach (launcher-§3).
+    ctx.panel.defaultsOnClick = function() PrettyChat:ConfirmResetAll() end
     H.SetRenderer(ctx, buildGeneralBody)
     return Settings.RegisterCanvasLayoutSubcategory(mainCategory, ctx.panel, "General")
 end)
@@ -729,28 +731,23 @@ H.RegisterOptionsPage(CATEGORY_PAGE, CATEGORY_PAGE, function(mainCategory)
     local ctx = H.CreatePanel(nil, L["Categories"], {
         pageKey        = CATEGORY_PAGE,
         defaultsButton = true,
-        -- One button, eight tabs, so the sentence names the SELECTED tab rather
-        -- than a category. It replaces the per-page `Reset all %s strings to
-        -- defaults.` this addon carried while every category was its own page:
-        -- that string is built at CreatePanel time and the button is built once,
-        -- on first show, so a per-category wording here could only ever name the
-        -- tab the page happened to open on.
-        defaultsTooltip = L["Reset the strings on the selected category tab to their defaults."],
+        -- One button over eight tabs, and it resets all eight (options-ui-§13: a
+        -- page's Defaults MUST NOT narrow to the visible tab), so the sentence names
+        -- every tab rather than a category or the selected one.
+        defaultsTooltip = L["Reset the strings on every category tab to their defaults."],
     })
 
-    -- Parked for the library to wire onto the Defaults button on first OnShow,
-    -- and forwarded to by the panel's OnDefault so the Settings window's own
-    -- footer control reaches the same body (options-ui-§1). It reads the ACTIVE
-    -- tab at click time rather than closing over one category, because the button
-    -- is wired once and the strip moves underneath it.
+    -- Parked for the library to wire onto the Defaults button on first OnShow, and
+    -- forwarded to by the panel's OnDefault so the Settings window's own footer
+    -- control reaches the same body (options-ui-§1).
     --
-    -- PrettyChat:ResetCategory rather than the library's row-by-row
-    -- RestoreDefaults: it writes every row of the category through the helper's
+    -- PrettyChat:ResetCategoriesPage rather than the library's row-by-row
+    -- RestoreDefaults: it writes every message category's rows through the helper's
     -- batched entry (Schema.ResetRows) and re-applies in ONE pass with ONE
-    -- `[Set] reset <cat>: N rows` line (debug-logging-§10), where the row-by-row
+    -- `[Set] reset Categories: N rows` line (debug-logging-§10), where the row-by-row
     -- form would run ApplyStrings once per row.
     ctx.panel.defaultsOnClick = function()
-        PrettyChat:ResetCategory(activeCategory(ctx))
+        PrettyChat:ResetCategoriesPage()
     end
 
     H.SetRenderer(ctx, buildCategoriesBody)

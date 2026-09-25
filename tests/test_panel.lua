@@ -358,7 +358,7 @@ test("the Test button writes the report to the console, never into chat", functi
 end)
 
 test("/pc test writes the same report to the same place the button does", function()
-    -- This case read "still prints the same report to chat" and pinned the two callers
+    -- This case used to say the verb still printed the report to chat, and pinned the two callers
     -- DISAGREEING: the button opened the console, the verb put eighty-odd lines into the
     -- chat frame. One name, two acts. The sink is still a PARAMETER on Test rather than a
     -- redirection of NS.Print -- both callers simply pass the console writer now
@@ -411,35 +411,85 @@ test("the Defaults button is deferred to first show, not built at registration",
     t.eq(panel.defaultsBtn.text, L["Defaults"], "labeled Defaults")
 end)
 
-test("the General page has no Defaults button", function()
-    t.falsy(generalPanel.wantsDefaultsButton, "General opts out")
-    t.nilv(generalPanel.defaultsBtn, "and none is built for it")
+-- options-ui-§5 and §12: the General page has a header Defaults button, and it is
+-- the same reset-all path as `Reset all settings` and `/pc resetall`, confirmation
+-- included. A General-only reset would be a Defaults button doing less than the
+-- reset beside it, which §12 forbids.
+test("the General page declares a Defaults button whose click opens the reset-all popup", function()
+    local fresh = ctx.loadAddon()
+    local panel = panelFrame(fresh.env, "General")
+    t.truthy(panel.wantsDefaultsButton, "General asks for a Defaults button")
+    t.eq(panel.defaultsTooltip, fresh.NS.L["Reset every setting to its default."],
+        "with the reset-all tooltip")
+    panel:Show()
+    t.truthy(panel.defaultsBtn, "the first show builds it")
+
+    fresh.NS.Schema.Set("Loot.enabled", false)
+    panel.defaultsBtn:Fire("OnClick")
+    t.eq(fresh.env._popupsShown[#fresh.env._popupsShown], "PRETTYCHAT_RESET_ALL",
+        "the click raises the reset-all confirmation")
+    t.eq(fresh.NS.Schema.Get("Loot.enabled"), false, "and resets nothing until it is accepted")
 end)
 
-test("the Defaults button resets the visible tab's category only", function()
-    -- One button over eight tabs, so it has to resolve the tab at CLICK time. It
-    -- is wired once, on the page's first show, and the strip moves underneath it.
+-- Run fn on a fresh instance's console and hand back its [Set] lines.
+local function setLines(fresh, fn)
+    local D = fresh.NS.DebugLog
+    local wasDebug = fresh.NS.State.debug
+    fresh.NS.State.debug = true
+    fresh.NS.Debug("Test", "warm-up")
+    D:Clear()
+    local ok, err = pcall(fn)
+    fresh.NS.State.debug = wasDebug
+    if not ok then error(err, 0) end
+    local out = {}
+    for _, line in ipairs(D.buffer) do
+        if line:find("[Set]", 1, true) then out[#out + 1] = line end
+    end
+    return out
+end
+
+-- options-ui-§13: the per-page Defaults button stays page-wide, and its blast
+-- radius MUST NOT narrow to the visible tab. One batch over every category's
+-- rows, so one pass and one `[Set] reset Categories: N rows` line.
+--
+-- red under: defaultsOnClick calling ResetCategory(activeCategory(ctx)).
+test("the Categories Defaults button resets every category, not only the selected tab", function()
     local fresh = ctx.loadAddon()
-    fresh.NS.Schema.Set("Loot.enabled", false)
-    fresh.NS.Schema.Set("Money.enabled", false)
+    local S = fresh.NS.Schema
     local panel = panelFrame(fresh.env, "Categories")
     panel:Show()
-    panel.defaultsBtn:Fire("OnClick")
-    t.eq(fresh.NS.Schema.Get("Loot.enabled"), fresh.NS.Defaults.Loot.enabled,
-        "the visible tab's category is reset")
-    t.eq(fresh.NS.Schema.Get("Money.enabled"), false, "other categories are untouched")
+    t.eq(fresh.NS.Helpers.__panelFor("Categories").activeTab, "Loot", "the Loot tab is selected")
+    local lootG = sortedNames("Loot")[1]
+    S.Set("Loot." .. lootG .. ".format", "CUSTOM")
+    S.Set("Money.enabled", false)
 
-    -- Move the strip and the same button follows it.
-    local pageCtx = fresh.NS.Helpers.__panelFor("Categories")
-    for _, b in ipairs(pageCtx.__tabLayout.buttons) do
-        if b.text == "Money" then b:FireScript("OnClick") end
-    end
-    t.eq(pageCtx.activeTab, "Money", "the click moved the strip")
-    fresh.NS.Schema.Set("Loot.enabled", false)
-    panel.defaultsBtn:Fire("OnClick")
-    t.eq(fresh.NS.Schema.Get("Money.enabled"), fresh.NS.Defaults.Money.enabled,
-        "the button now resets the tab the player is looking at")
-    t.eq(fresh.NS.Schema.Get("Loot.enabled"), false, "and leaves the tab they left alone")
+    local lines = setLines(fresh, function() panel.defaultsOnClick() end)
+
+    t.nilv(fresh.addon.db.profile.categories.Loot, "the selected tab's override is cleared")
+    t.nilv(fresh.addon.db.profile.categories.Money, "and so is the other tab's")
+    t.eq(#lines, 1, "exactly one [Set] line for the whole page")
+    t.truthy(lines[1] and lines[1]:find("[Set] reset Categories: 2 rows", 1, true),
+        "naming the page and counting the two changed rows: " .. tostring(lines[1]))
+    t.eq(panel.defaultsBtn.text, fresh.NS.L["Defaults"], "the header button is the one wired")
+    t.eq(panel.defaultsTooltip,
+        fresh.NS.L["Reset the strings on every category tab to their defaults."],
+        "and its tooltip names every tab")
+end)
+
+test("the footer OnDefault forwards to the same page-wide body", function()
+    local fresh = ctx.loadAddon()
+    local S = fresh.NS.Schema
+    local panel = panelFrame(fresh.env, "Categories")
+    panel:Show()
+    S.Set("Loot.enabled", false)
+    S.Set("Misc.enabled", false)
+
+    local lines = setLines(fresh, function() panel.OnDefault() end)
+
+    t.eq(S.Get("Loot.enabled"), fresh.NS.Defaults.Loot.enabled, "the selected tab is reset")
+    t.eq(S.Get("Misc.enabled"), fresh.NS.Defaults.Misc.enabled, "and so is a tab never opened")
+    t.eq(#lines, 1, "through the one batch")
+    t.truthy(lines[1] and lines[1]:find("[Set] reset Categories:", 1, true), tostring(lines[1]))
 end)
 
 -- ---- category sub-page + per-string rows ---------------------------
@@ -757,6 +807,16 @@ test("the read-only Original row shows this client's snapshot, or degrades witho
     local LATE = "PRETTYCHAT_REGISTERED_AFTER_SNAPSHOT"
     fresh.NS.Defaults.Loot.strings[LATE] =
         { label = "Registered after the snapshot", default = "a format with no conversions" }
+    -- NS.Defaults is static in the game, so NS.SortedStringNames caches each
+    -- category's order at file load (PRETTYCHAT-R-09). This case adds a string
+    -- AFTER load, which the game never does, so it hands the fresh instance an
+    -- uncached order that sees the addition.
+    fresh.NS.SortedStringNames = function(category)
+        local names = {}
+        for name in pairs(fresh.NS.Defaults[category].strings) do names[#names + 1] = name end
+        table.sort(names)
+        return names
+    end
     t.nilv(fresh.addon.originalStrings[LATE], "the snapshot never saw it")
     t.nilv(fresh.env[LATE], "and no live global carries it either")
 
@@ -804,6 +864,26 @@ test("the New edit box unescapes || to | before storing", function()
         "doubled pipes collapse to literal pipes on the way in")
     t.eq(newInput.text, "||cffff0000Custom||",
         "and the refresh re-doubles them for display")
+end)
+
+-- red under: the unparenthesized gsub, which passes 3 arguments
+test("the New box hands Schema.Set exactly (path, value)", function()
+    -- gsub returns (string, count); left bare as the last argument, the count
+    -- rides into Schema.Set's third slot, which is instanceId (PC-R-10 class).
+    -- The spy records without forwarding, so the write gate never sees the
+    -- value and the case asserts only what the box passes.
+    local realSet = NS.Schema.Set
+    local argc, gotPath, gotValue
+    NS.Schema.Set = function(...)
+        argc = select("#", ...)
+        gotPath, gotValue = ...
+    end
+    local ok, err = pcall(lootBlock.new.Fire, lootBlock.new, "OnEnterPressed", "A||B %s")
+    NS.Schema.Set = realSet
+    assert(ok, err)
+    t.eq(argc, 2, "Schema.Set receives exactly two arguments")
+    t.eq(gotPath, "Loot." .. sortedNames("Loot")[1] .. ".format", "the string's format path")
+    t.eq(gotValue, "A|B %s", "and the unescaped value")
 end)
 
 test("the Preview box renders the live format with sample arguments", function()
@@ -911,32 +991,24 @@ test("a slash-command write re-syncs the open panel", function()
     addon:ResetAll()
 end)
 
-test("a cross-registered string warns about the shared Blizzard global", function()
-    -- Two categories writing the same _G key is surfaced in-page rather
-    -- than discovered through lost edits.
-    local shared = next(Schema.crossRegisteredGlobals)
-    t.truthy(shared, "the defaults register at least one shared global")
-
+test("no per-string enable tooltip carries a second-category note", function()
+    -- PRETTYCHAT-R-02: no global is registered twice any more, so the in-page
+    -- cross-registration warning (a gray paragraph naming the other category)
+    -- has nothing to warn about and is gone.
     local sorted = {}
     for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
     table.sort(sorted)
-    local index
-    for i, globalName in ipairs(sorted) do
-        if Schema.crossRegisteredGlobals[globalName] then index = i break end
-    end
-    t.truthy(index, "one of them lives on the Loot page")
-
-    -- One editor on screen, so the shared string's row is selected first.
     local pageCtx = NS.Helpers.__panelFor("Categories")
-    selectEntry("Categories", index)
-    local sharedBlock = paneParts(stringSplit(pageCtx.scroll).pane)
-
-    env.GameTooltip.lines = nil
-    sharedBlock.enable:Fire("OnEnter")
-    local joined = table.concat(env.GameTooltip.lines or {}, "\n")
-    t.truthy(joined:find("Shared with", 1, true), "the tooltip names the conflict")
-    t.truthy(joined:find("last category to apply wins", 1, true),
-        "and explains the documented last-writer rule")
+    for index = 1, #sorted do
+        selectEntry("Categories", index)
+        local block = paneParts(stringSplit(pageCtx.scroll).pane)
+        env.GameTooltip.lines = nil
+        block.enable:Fire("OnEnter")
+        local joined = table.concat(env.GameTooltip.lines or {}, "\n")
+        t.truthy(joined:find("rewritten format", 1, true), "the enable tooltip rendered")
+        t.falsy(joined:find("Blizzard global", 1, true), sorted[index] .. " carries no shared-global note")
+        t.falsy(joined:find("Tradeskill", 1, true), sorted[index] .. " names no other category")
+    end
 end)
 
 test("the page says its controls are read only while the master switch is on", function()

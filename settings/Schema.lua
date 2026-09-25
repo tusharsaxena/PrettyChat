@@ -1,9 +1,12 @@
 local _, NS = ...
 
+-- settings/Schema.lua — NS.Schema, the settings schema: the category order, one row per
+-- setting, and the helpers the panel, /pc and the reset paths drive those rows through.
+
 local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 
-local Schema = {}
-NS.Schema = Schema
+NS.Schema = NS.Schema or {}
+local Schema = NS.Schema
 
 -- Display order shared with settings/Panel.lua. Iterating NS.Defaults via
 -- pairs() would give a non-deterministic order; this keeps `/pc list`, `/pc test`
@@ -30,7 +33,8 @@ Schema.CATEGORY_PAGE = CATEGORY_PAGE
 --   General.enabled                     → addon-wide master toggle (bool)
 --   General.visibility                  → addon-wide visibility mode (string enum)
 --   state.debugConsole                  → the console window's own toggle (session only)
---   global.minimap.hide                 → the minimap button, INVERTED (stored, global)
+--   global.minimap.shown                → the minimap button, INVERTED onto LibDBIcon's
+--                                         stored `hide` (stored, global; WS-06)
 --   <Category>.enabled                  → category master toggle (bool)
 --   <Category>.<GLOBALNAME>.enabled     → per-string enable toggle (bool)
 --   <Category>.<GLOBALNAME>.format      → per-string format string
@@ -54,8 +58,9 @@ end
 -- Row `set` closures are pure DB writes — they do NOT call
 -- PrettyChat:ApplyStrings() or Schema.NotifyPanelChange(). Both side
 -- effects are the write seam's `announce` (Schema.Set), and its batched sibling
--- Schema.ResetRows pays them once per batch instead of once per row. Callers
--- must go through one of the two; never invoke row.set(value) directly.
+-- Schema.ResetRows, the runtime's own BulkRun bracket, pays them once per batch
+-- instead of once per row. Callers must go through one of the two; never invoke
+-- row.set(value) directly.
 --
 -- Each one is BATCHED where it is built, because the seam calls the row's `set`
 -- itself and there is no host step left around the call to batch it from.
@@ -116,8 +121,10 @@ local MASTER_SPEC = {
     -- players already have. It is also what lets the degraded stub in
     -- settings/OptionsSetup.lua answer without a copy of the library's defaults.
     defaults  = {
-        enabled    = true,
-        visibility = "always",
+        -- Read from NS.GeneralDefaults (defaults/Profile.lua), the one place these
+        -- two are declared (savedvariables-§2), never retyped here.
+        enabled    = NS.GeneralDefaults.enabled,
+        visibility = NS.GeneralDefaults.visibility,
         -- The console row's reset target. Session state, so nothing stores it; the
         -- default is what `/pc reset state.debugConsole` and a reset through
         -- ApplyDefault write, and LibKa0s-Schema-1.0 reads a nil default as NO
@@ -132,7 +139,7 @@ local MASTER_SPEC = {
     -- VERBATIM and unprefixed for a DIFFERENT reason than the console path's:
     -- this table lives in the GLOBAL store, outside this block's profile prefix
     -- entirely, because a minimap button belongs to the installation rather than
-    -- to a profile (core/Database.lua says why).
+    -- to a profile (NS.GlobalDefaults in defaults/Profile.lua says why).
     --
     -- STORED, not session, and the composer emits it that way: a hidden button is
     -- furniture the player arranged once, not state a reload ends. The row's
@@ -143,7 +150,14 @@ local MASTER_SPEC = {
     -- frameless and its display is the chat text it rewrites, so it has no preview
     -- to put a switch on. The composer renders the Minimap button row alone on its
     -- line, which is exactly what it does for either row without the other.
-    minimapPath = "global.minimap.hide",
+    --
+    -- THE PATH NAMES THE ROW'S SENSE, THE STORE KEEPS THE LIBRARY'S (WS-06,
+    -- launcher-§3, anti-pattern #81). `/pc get|set global.minimap.shown` reads
+    -- the way the checkbox does, while the stored key stays LibDBIcon's own
+    -- db.global.minimap.hide -- no SavedVariables change, no migration, and no
+    -- `shown` key is ever written. The old `global.minimap.hide` path is simply
+    -- an unknown setting now.
+    minimapPath = "global.minimap.shown",
     -- options-ui-§12's global reset, through this addon's confirmation popup —
     -- the destructive path and its guard are one act (settings/Panel.lua).
     onResetAll = function() PrettyChat:ConfirmResetAll() end,
@@ -159,7 +173,7 @@ local MASTER_SPEC = {
     -- lives in settings/Panel.lua, which loads after this file.
     leadButton = {
         text    = NS.L["Test"],
-        tooltip = NS.L["Print a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` prints the same report to chat."],
+        tooltip = NS.L["Write a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` writes the same report there."],
         onClick = function() PrettyChat:TestToConsole() end,
     },
 }
@@ -209,7 +223,8 @@ local MASTER_WIRING = {
         -- format row clears itself: SavedVariables stays empty until a player has
         -- actually chosen something.
         set  = function(v)
-            PrettyChat.db.profile.visibility = (v ~= "always") and v or nil
+            local default = NS.GeneralDefaults.visibility
+            PrettyChat.db.profile.visibility = (v ~= default) and v or nil
             PrettyChat:SyncCombatWatch()
         end,
     },
@@ -226,7 +241,11 @@ local MASTER_WIRING = {
     -- the day the library arrives. NS.Launcher:SetShown is what makes the button
     -- follow the checkbox NOW rather than at the next reload; it writes `hide`
     -- again with the same value, which is the library's documented shape.
-    ["global.minimap.hide"] = {
+    --
+    -- The KEY here is the settings path, and it names the row's SHOWN sense
+    -- (WS-06); the closures are what map it onto the stored `hide` leaf, so the
+    -- path and the store may differ in sense without a second record.
+    ["global.minimap.shown"] = {
         kind = "minimap_button",
         get  = function()
             local mm = PrettyChat.db and PrettyChat.db.global and PrettyChat.db.global.minimap
@@ -333,8 +352,8 @@ end
 
 -- EVERY ROW ON EVERY PAGE CARRIES A `group` (options-ui-§13). These rows are not
 -- rendered through the flow engine — the Categories page hands H.TabStrip its tab
--- list directly, because a category tab is one schema row followed by a bespoke
--- 40/60 editor the engine cannot express — but the declaration is what an audit
+-- list directly, because a category tab is one schema row followed by a TreeGroup
+-- (the string tree beside a per-string editor) the engine cannot express — but the declaration is what an audit
 -- reads and what would partition the page correctly the day that stops being
 -- true. The group IS the category, which is the tab it is drawn under.
 local function buildCategoryRow(category)
@@ -431,38 +450,28 @@ for _, category in ipairs(CATEGORY_ORDER) do
     if catData then
         buildCategoryRow(category)
 
-        local sortedNames = {}
-        for globalName in pairs(catData.strings) do
-            sortedNames[#sortedNames + 1] = globalName
-        end
-        table.sort(sortedNames)
-
-        for _, globalName in ipairs(sortedNames) do
+        for _, globalName in ipairs(NS.SortedStringNames(category)) do
             buildStringRows(category, globalName, catData.strings[globalName])
         end
     end
 end
 
--- Globals that NS.Defaults registers under more than one category
--- (today: LOOT_ITEM_CREATED_SELF and LOOT_ITEM_CREATED_SELF_MULTIPLE
--- under both Loot and Tradeskill). Each registration produces a separate
--- string_format row, both writing the same _G[GLOBALNAME] in
--- ApplyStrings — the last category to iterate wins on /reload, and
--- pairs() order is non-deterministic. The panel reads this map to
--- decorate the per-string enable checkbox tooltip so the user can see
--- the conflict in-page rather than discovering it via lost edits.
-Schema.crossRegisteredGlobals = {}
+-- ONE GLOBAL, ONE REGISTRATION (PRETTYCHAT-R-02). Two categories registering the
+-- same GLOBALNAME build two format rows that write the same _G key, and
+-- ApplyStrings' fixed CATEGORY_ORDER walk makes the later one win on every pass --
+-- the earlier becomes a setting that saves and never applies. That was the Loot
+-- copy of LOOT_ITEM_CREATED_SELF[_MULTIPLE] until migration v2 (core/Database.lua).
+-- Collected here as `globalName -> { firstCategory, secondCategory, ... }` and
+-- reported by runValidation below, loudly at load, without raising.
+Schema.duplicateGlobals = {}
 do
-    local seen = {}
+    local owners = {}
     for _, r in ipairs(rows) do
         if r.kind == "string_format" then
-            seen[r.globalName] = seen[r.globalName] or {}
-            seen[r.globalName][#seen[r.globalName] + 1] = r.category
-        end
-    end
-    for globalName, cats in pairs(seen) do
-        if #cats > 1 then
-            Schema.crossRegisteredGlobals[globalName] = cats
+            owners[r.globalName] = owners[r.globalName] or {}
+            local cats = owners[r.globalName]
+            cats[#cats + 1] = r.category
+            if #cats > 1 then Schema.duplicateGlobals[r.globalName] = cats end
         end
     end
 end
@@ -477,8 +486,8 @@ end
 
 -- The minimap row's backing default, which is the one that is NOT in NS.Defaults
 -- and not carried on the row either: it is LibDBIcon's own table, declared in the
--- GLOBAL half of core/Database.lua's AceDB defaults (launcher-§3). Checked there
--- rather than waved through, so a default deleted from that table surfaces at load
+-- AceDB `global` defaults, NS.GlobalDefaults in defaults/Profile.lua
+-- (launcher-§3). Checked there rather than waved through, so a default deleted from that table surfaces at load
 -- through the same channel every other unresolved path takes, instead of as a nil
 -- index the first time a player ticks the box.
 --
@@ -486,9 +495,8 @@ end
 -- four guards on its own and inlining them put resolveBackingDefault over the
 -- CCN 15 the complexity gate holds every function in this repo to.
 local function minimapDefaultDeclared()
-    local defaults = NS.Database and NS.Database.defaults
-    local global   = defaults and defaults.global
-    local minimap  = global and global.minimap
+    local global  = NS.GlobalDefaults
+    local minimap = global and global.minimap
     return (type(minimap) == "table" and minimap.hide ~= nil) and true or false
 end
 
@@ -536,6 +544,13 @@ local function runValidation()
         Schema.validation.checked = Schema.validation.checked + 1
         miss(path)
     end
+    for globalName, cats in pairs(Schema.duplicateGlobals) do
+        Schema.validation.failed = Schema.validation.failed + 1
+        if NS.Print then
+            NS.Print(("schema: %s is registered under more than one category (%s)")
+                :format(globalName, table.concat(cats, ", ")))
+        end
+    end
 end
 
 runValidation()
@@ -554,6 +569,12 @@ runValidation()
 -- what only feeds the debug console: the [Set] line, the bracket's tally and the
 -- reset count. core/DebugLogSetup.lua's library-less sink discards those lines
 -- anyway.
+--
+-- The instance id a caller passes is forwarded the way Schema minor 2 forwards it:
+-- Get hands it to the row's own `get`, ApplyDefault(row, id) hands it to Set, and
+-- Set hands it to validate, normalize, onChange and announce. This addon keeps one
+-- instance and no row reads the id today, so this is shape, not behavior: a stub that
+-- dropped it would be the one path where a future per-instance row reads nil.
 --
 -- A DELIBERATE, DOCUMENTED DUPLICATION of the library's reference stub
 -- (tests/test_schema.lua upstream, `referenceStub`), kept close to it so the two
@@ -630,7 +651,7 @@ local function stubReads(S, d, resolve)
     function S.Reindex() end
     function S.Get(path, id)
         local row = S.FindRow(path)
-        if row and type(row.get) == "function" then return row.get() end
+        if row and type(row.get) == "function" then return row.get(id) end
         if type(path) ~= "string" or (row and row.sessionOnly) then return nil end
         local parts = SchemaStub.SplitPath(path)
         local root, first = resolve(parts, id)
@@ -639,24 +660,48 @@ local function stubReads(S, d, resolve)
     end
 end
 
--- The write seam's order without its log and tally: refuse, validate, store, react,
--- announce.
+-- Everything the stub checks before it stores, shared by Set and SetMany so a batch
+-- refuses on exactly the rules a single write does: the row's validate, then its
+-- normalize (which answers the value to store, or nil and why). Answers
+-- `true, value` with the value to store, or `false, nil, err, why`.
+local function stubPrepare(row, path, value, rid)
+    if type(row.validate) == "function" then
+        local ok, why = row.validate(value, rid)
+        if not ok then return false, nil, "PrettyChat: invalid value for " .. path, why end
+    end
+    if type(row.normalize) == "function" then
+        local out, why = row.normalize(value, rid)
+        if out == nil then return false, nil, "PrettyChat: invalid value for " .. path, why end
+        value = out
+    end
+    return true, value
+end
+
+-- Where a stored row's write lands: the split path, the root resolveRoot answers (nil
+-- when it answers none) with its first segment, and the instance id resolveRoot may
+-- rewrite. Split from stubSet, with stubStored, to hold every stub function at CCN
+-- 10 or below.
+local function stubStored(row) return type(row.set) ~= "function" and not row.sessionOnly end
+local function stubTarget(path, id, resolve)
+    local parts = SchemaStub.SplitPath(path)
+    local r, f, got = resolve(parts, id)
+    if type(r) ~= "table" then r, f = nil, nil end
+    if got == nil then got = id end
+    return parts, r, f, got
+end
+
+-- The write seam's order without its log and tally: refuse, validate and normalize,
+-- store, react, announce.
 local function stubSet(S, d, resolve)
     return function(path, value, id)
         local row = S.FindRow(path)
         if not row then return false, "PrettyChat: no setting " .. tostring(path) end
-        local stored = type(row.set) ~= "function" and not row.sessionOnly
+        local stored = stubStored(row)
         local parts, root, first, rid = nil, nil, nil, id
-        if stored then
-            parts = SchemaStub.SplitPath(path)
-            local r, f, got = resolve(parts, id)
-            if type(r) == "table" then root, first = r, f end
-            if got ~= nil then rid = got end
-        end
-        if type(row.validate) == "function" then
-            local ok, why = row.validate(value, rid)
-            if not ok then return false, "PrettyChat: invalid value for " .. path, why end
-        end
+        if stored then parts, root, first, rid = stubTarget(path, id, resolve) end
+        local ok, prepared, err, why = stubPrepare(row, path, value, rid)
+        if not ok then return false, err, why end
+        value = prepared
         if stored and not root then return false, "PrettyChat: nowhere to store " .. path end
         if type(row.set) == "function" then
             row.set(value)
@@ -665,6 +710,30 @@ local function stubSet(S, d, resolve)
         end
         if type(row.onChange) == "function" then row.onChange(value, rid) end
         if type(d.announce) == "function" then d.announce(row, path, value, rid) end
+        return true
+    end
+end
+
+-- The all-or-nothing batch, without the library's announceBatch tail: this descriptor
+-- declares none, so each write's own announce runs, as the live fallback does.
+-- Phase 1 checks every entry before anything is stored; phase 2 writes through S.Set,
+-- inside one bracket when opts.act is given.
+local function stubSetMany(S)
+    return function(entries, opts)
+        if type(entries) ~= "table" then entries = {} end
+        if type(opts) ~= "table" then opts = {} end
+        local prepared = {}
+        for i, e in ipairs(entries) do
+            local row = type(e) == "table" and S.FindRow(e.path)
+            if not row then return false, "PrettyChat: no setting " .. tostring(type(e) == "table" and e.path), nil, i end
+            local ok, value, err, why = stubPrepare(row, e.path, e.value, opts.instanceId)
+            if not ok then return false, err, why, i end
+            prepared[i] = value
+        end
+        local function commit()
+            for i, e in ipairs(entries) do S.Set(e.path, prepared[i], opts.instanceId) end
+        end
+        if opts.act ~= nil then S.BulkRun(opts.act, opts.scope, commit) else commit() end
         return true
     end
 end
@@ -679,15 +748,16 @@ function SchemaStub.New(_, d)
     end
     stubReads(S, d, resolve)
     S.Set = stubSet(S, d, resolve)
+    S.SetMany = stubSetMany(S)
     function S.Default(path)
         local row = S.FindRow(path)
         return row and stubCopy(row.default)
     end
-    function S.ApplyDefault(row)
+    function S.ApplyDefault(row, id)
         if type(row) ~= "table" or type(row.path) ~= "string" or row.default == nil then return false end
         local exempt = d.resetExempt
         if depth > 0 and type(exempt) == "table" and exempt[row.path] then return false end
-        return S.Set(row.path, stubCopy(row.default))
+        return S.Set(row.path, stubCopy(row.default), id)
     end
     -- The bracket keeps its depth, because the sweep veto above reads it; it counts nothing.
     function S.BulkBegin() depth = depth + 1 end
@@ -879,29 +949,21 @@ end
 -- checkbox and a slash `set` take, so the debug line, the re-apply and the panel
 -- refresh are identical on all three paths.
 --
--- Deliberately NOT the implementation behind the per-category Defaults button or
--- `/pc resetall`. Both of those are bulk: driving them row by row through it
--- would run ApplyStrings once per row (174 passes over 79 globals) and emit one
+-- Deliberately NOT the implementation behind the Categories page's Defaults button
+-- or `/pc resetall`. Both of those are bulk: driving them row by row through it
+-- would run ApplyStrings once per row (170 passes over 79 globals) and emit one
 -- [Set] line per row into a 1500-line console buffer, where debug-logging-§10 asks
--- a bulk reset for ONE [Set] line. The per-category and per-string resets take
--- Schema.ResetRows below; `/pc resetall` is the profile reset (options-ui-§12).
-
--- Would writing this row's default change what is stored? Every getter reads its
--- own stored key and falls back to the default (none cascades through a parent
--- enable), and every setter clears the key on a default, so "reads differently
--- from its default" is exactly "has a stored value the reset would remove".
-local function differsFromDefault(row)
-    return row.get() ~= row.default
-end
+-- a bulk reset for ONE [Set] line. The page-wide, per-category and per-string
+-- resets take Schema.ResetRows below; `/pc resetall` is the profile reset (options-ui-§12).
 
 -- Schema.CountChangedRows (the runtime's CountOffDefault, bound above) counts every
 -- stored row that currently differs from its default. Session-only rows are
 -- skipped, because AceDB's profile reset never touches them.
 --
 -- NOT, on its own, "the rows a profile reset would rewrite" — it used to be
--- described that way and the description was one row wrong. `global.minimap.hide`
--- is stored, differs whenever the player has hidden the button, and lives in the
--- GLOBAL store, which a profile reset does not reach (launcher-§3). So this is one
+-- described that way and the description was one row wrong. `global.minimap.shown`
+-- (stored as db.global.minimap.hide) is stored, differs whenever the player has
+-- hidden the button, and lives in the GLOBAL store, which a profile reset does not reach (launcher-§3). So this is one
 -- half of a subtraction: PrettyChat:ResetAll takes it before the wipe, because
 -- nothing can count a change after it has happened, and core/PrettyChat.lua's
 -- OnProfileReset takes it again afterwards and reports the difference. A row the
@@ -912,59 +974,69 @@ end
 -- defaults through the same write step Schema.Set takes, then pay the two side
 -- effects ONCE: one ApplyStrings pass, one panel refresh, and ONE
 -- `[Set] reset <label>: N rows` line in place of a [Set] line per row
--- (debug-logging-§10). PrettyChat:ResetCategory and PrettyChat:ResetString are
--- its callers.
+-- (debug-logging-§10). PrettyChat:ResetCategoriesPage (the Categories page's
+-- Defaults button), PrettyChat:ResetCategory and PrettyChat:ResetString are its
+-- callers.
 --
--- N is the rows the reset actually changed: a row already at its default is still
--- written (a no-op) but not counted. A reset with nothing to change still runs its
--- one pass and logs its one line, as `: 0 rows`.
+-- The act is the schema runtime's own (issue #18): one S.BulkRun('reset', label)
+-- bracket, whose close writes the line, with S.BulkAdd(1) per row that reads back
+-- changed after its write. That read-back is the runtime's own meaning of N: a row
+-- already at its default is still written (a no-op) but not counted, and a reset
+-- with nothing to change still runs its one pass and logs its one line, as
+-- `: 0 rows`.
 --
--- The gates are Set's: a row this schema does not own is skipped, the
--- conversion-signature gate is asked (a shipped default always passes it), and a
--- batch made only of session-only rows skips the re-apply. The refresh targets
--- the rows' category when they share one, and every page when they do not. A list
--- with no row past the gates is not an act and logs nothing. Returns N.
+-- The gates are Set's, asked up front: a row this schema does not own is skipped,
+-- and the conversion-signature gate is asked (a shipped default always passes it).
+-- A list with no row past them is not an act: no bracket, no line, and 0 back.
+-- A batch made only of session-only rows skips the re-apply. The refresh targets
+-- the rows' category when they share one, and every page when they do not.
+-- Returns N.
 --
--- A raise partway (a row's set(), the pass or the refresh) still logs the one
--- line, counting the rows changed before it and ending in Util.STOPPED, and then
--- raises again (NS.Util.RunAct). So the body tallies into `tally` as each write
--- lands rather than into locals the raise would lose.
-local function resetRowsBody(list, tally)
-    local reapply, category = false, nil
+-- A raise partway (a row's set(), the pass or the refresh) happens INSIDE the
+-- bracket, so its close still writes the one line, counting the rows changed
+-- before the raise and ending in the library's ` (stopped by an error)` (the same
+-- text as NS.Util.STOPPED), and BulkRun then raises the error again, unchanged.
+local function eligibleRows(list)
+    local out = {}
     for _, row in ipairs(list or {}) do
         if S.FindRow(row.path) == row and not refusedBySignature(row, row.default) then
-            local differs = differsFromDefault(row)
-            -- Batched for the same reason Schema.Set's single write is: resetting
-            -- `General.enabled` fires a latch arm, and the batch's one pass below
-            -- is that arm's pass too. It has to be per ROW rather than around the
-            -- whole loop, so the registration work of an arm fired by row N is done
-            -- before row N+1 reads the state it left.
-            PrettyChat.Batch(function() row.set(row.default) end)
-            tally.wrote = tally.wrote + 1
-            if differs then tally.changed = tally.changed + 1 end
-            reapply = reapply or not row.sessionOnly
-            if category == nil then
-                category = row.category
-            elseif category ~= row.category then
-                category = false
-            end
+            out[#out + 1] = row
         end
     end
-    if tally.wrote == 0 then return end
+    return out
+end
+
+local function resetWalk(eligible, counter)
+    local reapply, category = false, nil
+    for _, row in ipairs(eligible) do
+        local before = row.get()
+        -- Batched for the same reason Schema.Set's single write is: resetting
+        -- `General.enabled` fires a latch arm, and the batch's one pass below
+        -- is that arm's pass too. It has to be per ROW rather than around the
+        -- whole loop, so the registration work of an arm fired by row N is done
+        -- before row N+1 reads the state it left.
+        PrettyChat.Batch(function() row.set(row.default) end)
+        if row.get() ~= before then
+            S.BulkAdd(1)
+            counter.n = counter.n + 1
+        end
+        reapply = reapply or not row.sessionOnly
+        if category == nil then
+            category = row.category
+        elseif category ~= row.category then
+            category = false
+        end
+    end
     if reapply then PrettyChat:ApplyStrings() end
     Schema.NotifyPanelChange(category or nil)
 end
 
 function Schema.ResetRows(list, label)
-    local tally = { wrote = 0, changed = 0 }
-    local function line(suffix)
-        NS.Debug("Set", "reset %s: %d rows%s", tostring(label), tally.changed, suffix)
-    end
-    NS.Util.RunAct(function() resetRowsBody(list, tally) end,
-                   function() line(NS.Util.STOPPED) end)
-    if tally.wrote == 0 then return 0 end
-    line("")
-    return tally.changed
+    local eligible = eligibleRows(list)
+    if #eligible == 0 then return 0 end
+    local counter = { n = 0 }
+    S.BulkRun("reset", label, function() resetWalk(eligible, counter) end)
+    return counter.n
 end
 
 function Schema.RowsByCategory(category)

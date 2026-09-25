@@ -107,6 +107,31 @@ test("every slash-command description is localized", function()
     end
 end)
 
+test("no locale string tells a player /pc test prints to chat", function()
+    -- `/pc test` writes its report to the DEBUG CONSOLE (settings/Slash.lua's
+    -- runTest routes every arm through PrettyChat:TestToConsole). The Test
+    -- button's tooltip went on sending the reader to chat for a week after
+    -- that move (PRETTYCHAT-R-04). The guard is conditional on the
+    -- routing, read from the source: if runTest is ever pointed back at chat,
+    -- this case stops constraining the wording rather than lying about it.
+    -- "chat" alone is not the tell -- the help row's "sample chat lines" names
+    -- the SUBJECT of the report -- so only chat as a DESTINATION is refused.
+    local src = assert(readFile(ctx.root .. "/settings/Slash.lua"), "settings/Slash.lua is unreadable")
+    local body = src:match("\nfunction runTest%(rest%)(.-)\nend%s")
+    t.truthy(body, "runTest is found in settings/Slash.lua")
+    if not (body and body:find("TestToConsole", 1, true)) then return end
+    local destinations = { "to chat", "in chat", "into chat", "to the chat", "in the chat", "into the chat" }
+    for key in pairs(L) do
+        if key:find("/pc test", 1, true) then
+            local lower = key:lower()
+            for _, phrase in ipairs(destinations) do
+                t.falsy(lower:find(phrase, 1, true),
+                    ("manifest entry %q says /pc test writes %s"):format(key, phrase))
+            end
+        end
+    end
+end)
+
 -- ---------------------------------------------------------------------
 -- The other direction: literals that never reached `L` at all.
 --
@@ -121,7 +146,7 @@ end)
 -- next run, which is the whole point of the pass.
 -- ---------------------------------------------------------------------
 
--- `defaults/Defaults.lua` is the addon's DATA table — 81 rows of Blizzard global
+-- `defaults/Defaults.lua` is the addon's DATA table — 79 rows of Blizzard global
 -- name, English display label and replacement format string — and the format
 -- strings are content the player edits, not prose the addon speaks. Scanning it
 -- would report every color-escaped default as an unrouted sentence. It is
@@ -230,11 +255,18 @@ local RESIDUE = {
      .. "field, and that is what makes it safe to drop into a colored line. The "
      .. "sentence around it is the COLLECTION'S and never this addon's, so it is "
      .. "the library's `lib.DISABLED_LINE_FORMAT` and reaches no locale table"},
+    {"settings/Slash.lua", "%s is disabled \\226\\128\\148 enable it with |cFFFFFF00%s|r",
+     "the degraded Slash stub's verbatim copy of LibKa0s-Slash-1.0's "
+     .. "`lib.DISABLED_LINE_FORMAT`, the ONE library string slash-commands-§1 lets a "
+     .. "degradation stub carry. It is the COLLECTION'S sentence, not this addon's: "
+     .. "routing it through L would let a translation make the degraded line differ "
+     .. "from the live one, which is the drift the copy exists to prevent. "
+     .. "tests/test_surface_parity.lua pins it byte for byte against the library"},
     {"core/DebugLogSetup.lua", "Pretty Chat",
      "the same brand name, handed to LibKa0s-DebugLog-1.0 as its window title"},
     {"core/DebugLogSetup.lua", "Debug console",
      "a descriptor field crossing to LibKa0s. NS.L must never be handed to a library "
-     .. "descriptor as its `L` (LIBKA0S-05, 'The L trap'); a translator restores these "
+     .. "descriptor as its `L` (LibKa0s README.md, 'The L trap'); a translator restores these "
      .. "by passing a PLAIN table of just these keys, which locales/enUS.lua records"},
 
     -- Developer diagnostics that happen to print to chat.
@@ -243,6 +275,9 @@ local RESIDUE = {
      .. "reading a bug report"},
     {"settings/Schema.lua", "schema: unresolved path (no backing default): ",
      "the same: it names a schema path, and reaching it at all is a defect"},
+    {"settings/Schema.lua", "schema: %s is registered under more than one category (%s)",
+     "the same: it names a Blizzard global registered twice in defaults/Defaults.lua "
+     .. "(PRETTYCHAT-R-02), and reaching it at all is a defect"},
     {"settings/Schema.lua", "PrettyChat: no setting ",
      "the schema runtime stub's refusal, returned as Set's second value on a load with "
      .. "no LibKa0s. No surface in this addon prints it: both descriptors discard what "
@@ -255,6 +290,9 @@ local RESIDUE = {
     {"core/DebugLogSetup.lua", "%s v%s, schema v%s, profile '%s'",
      "the debug console's session header, which is copied INTO bug reports and is "
      .. "read by whoever receives them"},
+    {"core/DebugLogSetup.lua", ", rejected events: ",
+     "the same session header's tail naming event names the client refused, read by "
+     .. "whoever receives the bug report; the event names themselves are API identifiers"},
     {"core/Util.lua", " (stopped by an error)",
      "debug-console text like every NS.Debug argument, held in one constant so the "
      .. "four bulk-act lines that append it agree; the console translates nothing"},
@@ -281,8 +319,8 @@ local RESIDUE = {
     -- SPLIT COLOR — settings/Slash.lua's `/pc reset <category>` migration notice.
     {"settings/Slash.lua", "` now takes a setting PATH, not a category.", "SPLIT COLOR"},
     {"settings/Slash.lua", "  To reset one setting: ", "SPLIT COLOR"},
-    {"settings/Slash.lua", "  To reset all of ", "SPLIT COLOR"},
-    {"settings/Slash.lua", " button on its settings page, or ", "SPLIT COLOR"},
+    {"settings/Slash.lua", "  To reset every category: the ", "SPLIT COLOR"},
+    {"settings/Slash.lua", " button on the Categories settings page, or ", "SPLIT COLOR"},
     {"settings/Slash.lua", " for everything.", "SPLIT COLOR"},
 
     -- SPLIT COLOR — the four `usage:` lines. Below the prose floor above (none of

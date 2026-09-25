@@ -151,7 +151,7 @@ test("the Master controls block is the composed one, in canonical order", functi
     local paths = {}
     for i, r in ipairs(generalRows) do paths[i] = r.path end
     t.eq(table.concat(paths, ","),
-        "General.enabled,General.visibility,state.debugConsole,global.minimap.hide",
+        "General.enabled,General.visibility,state.debugConsole,global.minimap.shown",
         "enable, visibility, console, minimap — the frameless block, in that order")
 
     for _, path in ipairs({ "General.scale", "General.alpha", "General.locked" }) do
@@ -245,14 +245,9 @@ test("RowsByCategory returns only that category, in registration order", functio
     t.eq(#Schema.RowsByCategory("Nope"), 0, "an unknown category yields no rows")
 end)
 
-test("a cross-registered global carries one format row per category", function()
-    for globalName, cats in pairs(Schema.crossRegisteredGlobals) do
-        for _, c in ipairs(cats) do
-            local r = Schema.FindByPath(c .. "." .. globalName .. ".format")
-            t.truthy(r, ("%s.%s has its own row"):format(c, globalName))
-            t.eq(r.globalName, globalName, "and both rows target the same Blizzard global")
-        end
-    end
+test("the load-time duplicate check finds no global registered twice", function()
+    t.eq(type(Schema.duplicateGlobals), "table", "the duplicate check publishes its result")
+    t.nilv(next(Schema.duplicateGlobals), "no Blizzard global is registered under two categories")
 end)
 
 -- ---- category resolution ---------------------------------------------
@@ -372,7 +367,7 @@ local PARTITION = {
         { tab = "Master controls", category = "General", rows = 4 },
     } },
     { page = "Categories", tabs = {
-        { tab = "Loot",       category = "Loot",       rows = 39 },
+        { tab = "Loot",       category = "Loot",       rows = 35 },
         { tab = "Currency",   category = "Currency",   rows =  9 },
         { tab = "Money",      category = "Money",      rows = 17 },
         { tab = "Reputation", category = "Reputation", rows = 29 },
