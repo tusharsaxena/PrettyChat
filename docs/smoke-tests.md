@@ -44,7 +44,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 > Why: `/pc` and `/prettychat` both dispatch through `OnSlashCommand`.
 
 - Steps: `/pc help` and `/prettychat help`.
-- Expected: identical output from both. Header shows `v<VERSION>` matching the TOC. All twelve commands listed (`help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `test`, `debug`, `enable`, `disable`).
+- Expected: identical output from both. Header shows `v<VERSION>` matching the TOC. All thirteen commands listed (`help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `test`, `debug`, `diagnostics`, `enable`, `disable`).
 
 ### O — Override pipeline (the three enable layers)
 

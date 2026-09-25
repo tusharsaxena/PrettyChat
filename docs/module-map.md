@@ -29,7 +29,7 @@ OnEnable snapshot ──▶ addon.originalStrings ──▶ NS.OriginalFormat(ad
 Every file captures the addon namespace with the same idiom at the top, and takes the folder name beside it only where it reads one:
 
 ```lua
-local _, NS = ...          -- the eleven files that never read the folder name
+local _, NS = ...          -- the twelve files that never read the folder name
 local addonName, NS = ...  -- the nine that do (see ARCHITECTURE.md)
 ```
 
@@ -58,7 +58,8 @@ Public surfaces are exposed on `NS`:
 | `NS.RejectedEvents` | `modules/Override.lua` (published at file load as an empty array; appended by `NS.Util.SafeRegisterEvents` in `SyncCombatWatch`, each refused name once) | `core/DebugLogSetup.lua` (`sessionSummary` appends `, rejected events: <names>` to the `[Init]` line when it is non-empty) and `modules/Override.lua` itself (the one `[Events] rejected …` debug line). The player-reachable record of event names the client refused (`events-frames-taint-§1`, PRETTYCHAT-A-09) |
 | `NS.SortedStringNames(category)` | `modules/Override.lua` | `modules/Override.lua` itself (`ApplyStrings`, and `collectNames` for the `/pc test` report, which filters into a new table), `settings/Schema.lua` (the file-load schema build) and `settings/Panel.lua` (a category page's string tree). The ONE place a category's string order is decided (sorted, PC-16): built on first ask from the static `NS.Defaults` and cached, so the returned array is **read-only** (PRETTYCHAT-R-09) |
 | `NS.Schema` | `settings/Schema.lua` | `settings/Slash.lua` (slash dispatch), `settings/Panel.lua` (every widget get/set; registers a refresh closure per drawn category tab via `Schema.RegisterRefresher`, and drops the previous tab's on every re-render) |
-| `NS.RenderSample(fmt)` | `modules/Override.lua` | `settings/Panel.lua` (per-string Preview EditBox) |
+| `NS.RenderSample(fmt)` | `modules/Override.lua` | `settings/Panel.lua` (per-string Preview EditBox), `modules/Diagnostics.lua` (the report's render check) |
+| `NS.Diagnostics.Sections()` | `modules/Diagnostics.lua` | `core/DebugLogSetup.lua` (the DebugLog descriptor's `diagnostics` field, asked each time a report runs). The report's PrettyChat sections (`debug-logging-§14`), each a read of state and never a write |
 | `NS.ConversionSequence(fmt)` / `NS.DescribeSequence(seq)` / `NS.SequenceIsPrefix(a, b)` | `modules/Override.lua` | `settings/Schema.lua` (the write gate), `modules/Override.lua` itself (the Preview's sample arguments) and `tests/test_defaults.lua` (every shipped default against Blizzard's real signature). ONE walk: it lived in the test suite alone until PC-R-01, so the only code that understood what a format demands was code the game never loads |
 | `NS.COMMANDS` / `NS.SlashCommands` | `settings/Slash.lua` | `settings/Panel.lua` renders `NS.SlashCommands:LandingRows()` on the landing page — the SAME formatter the chat help uses, so the two surfaces cannot drift (`LIBKA0S-11`). The call is a **colon**: the library declares `function Sl:LandingRows()`, and the dot form only worked because today's body ignores `self` (PC-R-08) |
 | `NS.SetAddonEnabled` | `settings/Slash.lua` | `core/LauncherSetup.lua` (the launcher menu's `setEnabled`, at click time). The same function `/pc enable` / `/pc disable` call |
@@ -106,6 +107,7 @@ PrettyChat:ResetString(category, globalName)  -- resets BOTH per-string rows (fo
 PrettyChat:ResetCategory(category)     -- resets every row of one category (General: its two stored rows) through Schema.ResetRows; public, no panel button calls it
 PrettyChat:ResetCategoriesPage()       -- the Categories page's Defaults: every message category's rows in ONE Schema.ResetRows batch ([Set] reset Categories: N rows)
 PrettyChat:ResetAll()                  -- counts the rows it will change (Schema.CountChangedRows), then db:ResetProfile() -- a PROFILE reset (options-ui-§12). OnProfileReset re-runs the migrations, re-applies every string, notifies the panel and logs the one [Set] reset profile line
+PrettyChat.CombatWatchState()         -- the combat watcher frame (nil until a combat-scoped mode is stored), its event list and whether the current state wants it armed; a read for the diagnostics report
 PrettyChat:Test(filter, sink)          -- prints a per-category Original-vs-Formatted block per string (ignores enable toggles); filter is nil | {kind="category", value=…} | {kind="formatstring", value=…}; sink defaults to NS.Print, and the General page's Test button passes the debug console's writer instead
 PrettyChat:ConfirmResetAll()           -- the ONE way into ResetAll: raises the PRETTYCHAT_RESET_ALL StaticPopup (settings/Panel.lua)
 

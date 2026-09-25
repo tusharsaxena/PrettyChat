@@ -488,7 +488,7 @@ badge and any count quoted in the docs must agree with it.
 - disabled: the gate LIFTS the moment the addon is enabled again
 - disabled: the panel's Test button is NOT gated -- the refusal is the dispatcher's
 
-### test_disabled.lua (13)
+### test_disabled.lua (14)
 
 - disabled/1: the enabled baseline registers something for the stand-down to remove
 - disabled/3: every registration is UNREGISTERED, not gated
@@ -497,12 +497,34 @@ badge and any count quoted in the docs must agree with it.
 - disabled/6: firing the baseline events anyway writes nothing and says nothing
 - disabled/7: every reserved verb answers normally, and the bare /pc opens the panel
 - disabled/7: the addon's own FEATURE verb refuses on one line and reaches no write seam
+- disabled/7: both diagnostics forms write the whole report while disabled, and stand nothing up
 - disabled/8: the launcher works while disabled — panel on LEFT, menu on RIGHT, no writes
 - disabled/9: re-enabling rebuilds the same registration set
 - disabled/9: the rebuild reads the settings as they are NOW, not as they were
 - disabled/10: releasing one hold does not resurrect an addon the other holds down
 - disabled/10: and the same with the holds taken in the other order
 - disabled/10: the perf hold is session-only and the disabled hold is stored
+
+### test_diagnostics.lua (18)
+
+- diagnostics: /pc diagnostics is a COMMANDS row and writes the report
+- diagnostics: `debug diagnostics` is tested before the other debug words
+- diagnostics: the debug usage line names diagnostics, and `diag` is an ordinary unknown word
+- diagnostics: the markers carry the plain-text brand and the host sections run
+- diagnostics: General.enabled and General.visibility always print, even at their defaults
+- diagnostics: a format override prints with its escapes doubled, never stripped
+- diagnostics: a disabled category and a disabled string are named
+- diagnostics: the live-global audit names a global that is not what the addon wrote
+- diagnostics: patch drift lists a client original whose conversions no longer match
+- diagnostics: the render check reports a live global string.format cannot render
+- diagnostics: would-apply and would-restore match what ApplyStrings then does
+- diagnostics: stood down, every section still runs and the header says so
+- diagnostics: a known chat-rewriting addon that is loaded is named
+- diagnostics: a pending profile reset is reported
+- diagnostics: a raising section costs exactly one line and the report still ends
+- diagnostics: an over-cap report ends in the truncated line, then the end marker
+- diagnostics: a secret value in the store or in a global does not raise
+- diagnostics: the report writes nothing, anywhere, and clears nothing
 
 ### test_panel.lua (48)
 
@@ -578,9 +600,15 @@ badge and any count quoted in the docs must agree with it.
 - eol: every tracked file carries the terminator .gitattributes declares for it
 - eol: .gitattributes is line-endings-§5's canonical body for this repo kind
 
-### test_diagnostics_contract.lua (1)
+### test_diagnostics_contract.lua (7)
 
-- diagnostics contract: debug-logging-§14 (skipped: Kit.diagnostics is not set in the runner, so this repo's dispatcher is not wired to the shared contract yet. Every Ka0s addon owes debug-logging-§14's report; wire Kit.diagnostics once the report exists)
+- diagnostics contract: both forms run the report
+- diagnostics contract: the debug word is matched in any case
+- diagnostics contract: both markers carry the brand and the end counts the report
+- diagnostics contract: the report appends after what the console already holds
+- diagnostics contract: the report lands with logging off and leaves it off
+- diagnostics contract: both forms run while the addon is disabled
+- diagnostics contract: no other name runs the report
 
 ## Totals
 
@@ -608,10 +636,11 @@ badge and any count quoted in the docs must agree with it.
 | test_debuglog.lua | 32 |
 | test_launcher.lua | 40 |
 | test_slash.lua | 52 |
-| test_disabled.lua | 13 |
+| test_disabled.lua | 14 |
+| test_diagnostics.lua | 18 |
 | test_panel.lua | 48 |
 | test_doc_structure.lua | 11 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| test_diagnostics_contract.lua | 1 |
-| **Total** | **492** |
+| test_diagnostics_contract.lua | 7 |
+| **Total** | **517** |

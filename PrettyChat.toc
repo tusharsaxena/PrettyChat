@@ -81,6 +81,10 @@ defaults\Defaults.lua
 # Modules (the override pipeline). Conventional: modules\Override.lua reads NS.Defaults, NS.Util
 # and the AceAddon object, all published above.
 modules\Override.lua
+# modules\Diagnostics.lua loads AFTER modules\Override.lua and conventionally: every NS member its
+# sections read (NS.Schema, NS.Helpers, NS.Launcher, the Override engine) is read when a report RUNS,
+# and core\DebugLogSetup.lua asks for the sections then too, so nothing here resolves at load.
+modules\Diagnostics.lua
 
 # Settings. The annotated lines (OptionsSetup, Slash, Panel) are load-bearing; the rest of the
 # order is conventional.

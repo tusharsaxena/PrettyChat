@@ -196,7 +196,14 @@ local function scanLiterals(src)
                 -- governs and no translator should ever see. Every such call in
                 -- this addon opens on the line its format string sits on, which
                 -- is what makes the same-line test sufficient.
-                debugArg = src:sub(lineStart, i - 1):find("NS.Debug(", 1, true) ~= nil,
+                --
+                -- The diagnostics report's writer (`out:add`, `out:list`, ...) is the same
+                -- kind of sink: its lines land in the same console, are English diagnostic
+                -- text by rule (debug-logging-§14), and are read by whoever receives the bug
+                -- report. modules/Diagnostics.lua opens every such call on the line its
+                -- literals sit on, for the same reason.
+                debugArg = src:sub(lineStart, i - 1):find("NS.Debug(", 1, true) ~= nil
+                    or src:sub(lineStart, i - 1):find("out:%a+%(") ~= nil,
                 statement = src:sub(lineStart, i - 1),
             }
             i = j + 1
@@ -270,6 +277,10 @@ local RESIDUE = {
      .. "in one sentence; routing it through L would let this one drift"},
     {"core/DebugLogSetup.lua", "Pretty Chat",
      "the same brand name, handed to LibKa0s-DebugLog-1.0 as its window title"},
+    {"core/DebugLogSetup.lua", "Ka0s Pretty Chat",
+     "the plain-text brand again, handed to LibKa0s-DebugLog-1.0 as `brandName`, which "
+     .. "both diagnostics report markers carry (debug-logging-§14). The same string as "
+     .. "Slash's `brandName` and the launcher's `label`, for the same reason"},
     {"core/DebugLogSetup.lua", "Debug console",
      "a descriptor field crossing to LibKa0s. NS.L must never be handed to a library "
      .. "descriptor as its `L` (LibKa0s README.md, 'The L trap'); a translator restores these "

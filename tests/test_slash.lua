@@ -485,7 +485,7 @@ end)
 test("/pc debug rejects an argument that is neither on, off, nor a toggle", function()
     local text = joined("debug sideways")
     t.truthy(text:find("usage: ", 1, true), "usage is printed")
-    t.truthy(text:find("/pc debug [on | off]", 1, true),
+    t.truthy(text:find("/pc debug [on | off | diagnostics]", 1, true),
         "and it names the accepted arguments")
 end)
 
@@ -584,7 +584,7 @@ test("disabled: only the feature verbs refuse -- every verb is driven to find ou
     -- checked by what it PRINTED rather than by whether the sentence appeared.
     local LIVE = {
         help = true, config = true, version = true,
-        enable = true, disable = true, debug = true, perf = true,
+        enable = true, disable = true, debug = true, perf = true, diagnostics = true,
         get = true, set = true, list = true, reset = true, resetall = true,
     }
     local i = offline()

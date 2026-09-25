@@ -180,6 +180,17 @@ NS.DebugLog = lib:New({
 
     initSummary = sessionSummary,
 
+    -- The diagnostics report (debug-logging-§14). `brandName` is the plain-text `Ka0s <Name>`
+    -- both report markers carry: the same string settings/Slash.lua hands LibKa0s-Slash-1.0
+    -- and core/LauncherSetup.lua hands the broker, and NOT `title`, which is the console's
+    -- bare window caption. `diagnostics` answers the host's sections at RUN time, because
+    -- modules/Diagnostics.lua loads after this file; an install where it failed to load
+    -- still writes the library's markers and identity header around no sections.
+    brandName   = "Ka0s Pretty Chat",
+    diagnostics = function()
+        return NS.Diagnostics and NS.Diagnostics.Sections and NS.Diagnostics.Sections() or {}
+    end,
+
     -- The General page's console checkbox mirrors the window's visibility, so a
     -- console closed with Esc or the × has to move a checkbox on a panel that is
     -- already open. Guarded because settings/ loads after core/.
