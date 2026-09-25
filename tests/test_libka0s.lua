@@ -201,7 +201,8 @@ test("the console renders prose, not its own SCREAMING_SNAKE keys", function()
 
     t.truthy(win.lineCount.text, "the line counter renders")
     t.falsy(win.lineCount.text:match("^[A-Z][A-Z0-9_]+$"), "not the LINES key")
-    t.truthy(win.lineCount.text:find("/ 1500 lines", 1, true), "it is the formatted counter")
+    local cap = env.LibStub("LibKa0s-DebugLog-1.0").MAX_BUFFER
+    t.truthy(win.lineCount.text:find("/ " .. cap .. " lines", 1, true), "it is the formatted counter")
 
     local spec = NS.DebugLog:ConsoleCheckbox()
     t.falsy(spec.label:match("^[A-Z][A-Z0-9_]+$"), "the checkbox label is prose")
@@ -333,6 +334,31 @@ test("with DebugLog absent the console degrades but the flag and the ack survive
         t.eq(type(bare.NS.DebugLog[member]), "function", "the stub answers " .. member)
     end
     t.eq(type(bare.NS.DebugLog.buffer), "table", "and carries the raw buffer")
+end)
+
+test("with DebugLog absent the diagnostics report says so and writes nothing", function()
+    -- debug-logging-§14 on the degraded arm: there is no library to write the report,
+    -- so the stub answers the collection's one placeholder sentence, naming the
+    -- command, and reports 0 lines written (LibKa0s DebugLog version-14.1 document,
+    -- Compatibility).
+    local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    local D    = bare.NS.DebugLog
+    local msgs = bare.env.DEFAULT_CHAT_FRAME.messages
+
+    local before = #msgs
+    t.eq(D:RunDiagnostics(), 0, "RunDiagnostics answers 0 lines written")
+    t.eq(#msgs, before + 1, "and prints exactly one line")
+    t.truthy(msgs[#msgs]:find("/pc diagnostics is unavailable: the LibKa0s library did not load.",
+        1, true), "the collection's placeholder sentence, naming the command")
+    t.eq(#D.buffer, 0, "nothing reached the (stub) buffer")
+
+    local report = D:BuildDiagnostics()
+    t.eq(#report.lines, 0, "BuildDiagnostics is the live shape, empty")
+
+    before = #msgs
+    t.truthy(D:DebugVerb("DIAGNOSTICS"), "DebugVerb routes the diagnostics word, in any case")
+    t.eq(#msgs, before + 1, "to the same placeholder line")
+    t.falsy(D:DebugVerb("toggle"), "and leaves any other word to the host")
 end)
 
 -- ── LibKa0s-Options-1.0 ────────────────────────────────────────────────────

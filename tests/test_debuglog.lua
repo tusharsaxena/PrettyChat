@@ -182,19 +182,24 @@ test("NS.Debug keeps argument types so numeric conversions still work", function
 end)
 
 test("the buffer is capped and drops its oldest lines first", function()
+    -- The cap is the library's, read back rather than typed here: LibKa0s DebugLog
+    -- minor 14 moved it (1500 -> 3000), and a literal is exactly the pin that went
+    -- stale when it did. Twenty lines past it evicts the first twenty.
+    local cap = env.LibStub("LibKa0s-DebugLog-1.0").MAX_BUFFER
+    local over = 20
     D:Clear()
-    for i = 1, 1520 do D:Add("Bulk", "line " .. i) end
-    -- LibKa0s DebugLog minor 13 batches the trim: the raw array may run up to 64
-    -- lines past the cap between compactions, so the kept lines are read through
-    -- the public readers (BufferSize, CopyText, FindLine), never #D.buffer.
-    t.eq(D:BufferSize(), 1500, "the buffer holds at most MAX_BUFFER lines")
+    for i = 1, cap + over do D:Add("Bulk", "line " .. i) end
+    -- LibKa0s DebugLog minor 13 batches the trim: the raw array may run up to
+    -- BUFFER_SLACK lines past the cap between compactions, so the kept lines are read
+    -- through the public readers (BufferSize, CopyText, FindLine), never #D.buffer.
+    t.eq(D:BufferSize(), cap, "the buffer holds at most MAX_BUFFER lines")
     local text = D:CopyText()
     local _, lines = text:gsub("\n", "")
-    t.eq(lines + 1, 1500, "and the copy text carries exactly the kept lines")
-    t.truthy(text:match("^[^\n]*"):find("line 21$"),
-        "the oldest kept line is line 21: the oldest lines were dropped")
-    t.falsy(text:find("line 20\n", 1, true), "and no evicted line reaches the copy text")
-    t.truthy(D.buffer[#D.buffer]:find("line 1520", 1, true), "the newest line is kept")
+    t.eq(lines + 1, cap, "and the copy text carries exactly the kept lines")
+    t.truthy(text:match("^[^\n]*"):find("line " .. (over + 1) .. "$"),
+        "the oldest kept line is the first one past the evicted: the oldest lines were dropped")
+    t.falsy(text:find("line " .. over .. "\n", 1, true), "and no evicted line reaches the copy text")
+    t.truthy(D.buffer[#D.buffer]:find("line " .. (cap + over), 1, true), "the newest line is kept")
 end)
 
 test("Clear empties both the buffer and the console view", function()
@@ -208,7 +213,8 @@ end)
 test("the line counter reports buffered lines against the cap", function()
     D:Clear()
     D:Add("Loot", "one")
-    t.eq(env._frames.byName["PrettyChatDebugWindow"].lineCount.text, "1 / 1500 lines",
+    local cap = env.LibStub("LibKa0s-DebugLog-1.0").MAX_BUFFER
+    t.eq(env._frames.byName["PrettyChatDebugWindow"].lineCount.text, "1 / " .. cap .. " lines",
         "the status bar counts lines against MAX_BUFFER")
 end)
 

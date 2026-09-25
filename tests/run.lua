@@ -66,7 +66,7 @@ Kit.run{
     suites = {
         "test_harness",
         "test_vendor_sync",
-        -- The 1500-line cap gate (layout-§1), the kit's since revision 25 (vendored: 26). Beside
+        -- The 1500-line cap gate (layout-§1), the kit's since revision 25 (vendored: 27). Beside
         -- test_vendor_sync because it is the same kind of case: it loads no addon and asserts
         -- nothing about behavior, it reads the repository itself and compares it against what a
         -- document claims about it. Declared by the pair (testing-§9): the bare name would wire a
@@ -120,5 +120,10 @@ Kit.run{
         -- declared with its own `dir`. Kit.assertSuiteInventory fails the run until it is
         -- declared, so it cannot arrive with a re-vendor and then quietly run nothing.
         { name = "test_eol", dir = "tests/_kit/" },
+        -- The kit's diagnostics contract (debug-logging-§14), its own since revision 27: the
+        -- dispatcher half of the report, run against this addon's dispatcher through
+        -- Kit.diagnostics. Until the addon ships the report that table is unset and the suite
+        -- registers one declared skip naming the rule, so the re-vendor is green on its own.
+        { name = "test_diagnostics_contract", dir = "tests/_kit/" },
     },
 }

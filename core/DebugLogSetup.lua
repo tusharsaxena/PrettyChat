@@ -113,6 +113,35 @@ if not lib then
                 set     = function() sayOnWindow() end,
             }
         end,
+        -- The diagnostics report (debug-logging-§14) is the library's, so with no library
+        -- there is no report to write. The stub says so in the collection's one sentence,
+        -- names the command that asked, writes nothing and answers 0 lines, as the
+        -- LibKa0s DebugLog version-14.1 document's Compatibility section prescribes.
+        RunDiagnostics  = function()
+            if NS.Print then
+                NS.Print(("%s is unavailable: the LibKa0s library did not load.")
+                    :format("/pc diagnostics"))
+            end
+            return 0
+        end,
+        -- The report as data, empty: the live shape, with nothing in it.
+        BuildDiagnostics = function()
+            return { lines = {}, dropped = 0, capped = false, capsHit = false }
+        end,
+        -- The live router's words, on the stub's own members: `diagnostics` answers the
+        -- line above, `on` and `off` set the flag, anything else is the host's.
+        DebugVerb       = function(self, rest)
+            local word = (type(rest) == "string" and rest or ""):match("^%s*(%S*)"):lower()
+            if word == "diagnostics" then
+                self:RunDiagnostics()
+                return true
+            end
+            if word == "on" or word == "off" then
+                self:SetEnabled(word == "on")
+                return true
+            end
+            return false
+        end,
     }
     NS.Debug = NS.DebugLog.Debug
     return
