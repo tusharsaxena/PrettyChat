@@ -262,6 +262,12 @@ local RESIDUE = {
      .. "routing it through L would let a translation make the degraded line differ "
      .. "from the live one, which is the drift the copy exists to prevent. "
      .. "tests/test_surface_parity.lua pins it byte for byte against the library"},
+    {"core/DebugLogSetup.lua", "%s is unavailable: the LibKa0s library did not load.",
+     "the degraded DebugLog stub's RunDiagnostics line, the COLLECTION'S placeholder "
+     .. "sentence that the LibKa0s DebugLog version-14.1 document prescribes for every "
+     .. "library-absent stub (debug-logging-§14). Like DISABLED_LINE_FORMAT above it is "
+     .. "the collection's wording, so every Ka0s addon answers a report it cannot write "
+     .. "in one sentence; routing it through L would let this one drift"},
     {"core/DebugLogSetup.lua", "Pretty Chat",
      "the same brand name, handed to LibKa0s-DebugLog-1.0 as its window title"},
     {"core/DebugLogSetup.lua", "Debug console",

@@ -108,10 +108,14 @@ NS.COMMANDS = COMMANDS
 -- so on its second line (modules/Override.lua's PrettyChat:Test).
 --
 -- NO `liveVerbs` IS PASSED, and the omission is the whole decision. That field
--- WIDENS the live set — it is how a host declares that a feature verb of its own
--- should act rather than refuse — and this addon wants its one feature verb
--- refused. It is emphatically not a place to narrow anything: §7 is explicit that
--- what a host MUST NOT do is refuse something on the library's live set.
+-- REPLACES the live set rather than adding to it: a host that passes it answers
+-- for every verb that stays live, and loses whatever `lib.LIVE_VERBS` gains later
+-- unless it builds its array from that list. Omitted, the live set IS
+-- `lib.LIVE_VERBS`, the standard's thirteen reserved verbs (`diagnostics` joined at
+-- Slash minor 16 and reached this addon on the re-vendor with no edit here), and
+-- `test`, the one feature verb, is refused as this addon wants. §7 is explicit that
+-- what a host MUST NOT do is refuse something on the library's live set, so a
+-- literal array here could only ever narrow in the one direction the rule forbids.
 --
 -- THE WORDING IS THE COLLECTION'S. `lib.DISABLED_LINE_FORMAT` is the one shape and
 -- `cli:DisabledLine()` builds it, so a player running six of these addons reads one

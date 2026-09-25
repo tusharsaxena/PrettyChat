@@ -263,7 +263,7 @@ end)
 -- registration are SETUP, not features, so keeping them live costs nothing the
 -- stand-down was trying to reclaim.
 --
--- The surface here is the standard's twelve reserved verbs, ALL ANSWERING, and the
+-- The surface here is the standard's thirteen reserved verbs, ALL ANSWERING, and the
 -- bare `/pc` opening the panel. That was narrowed to `enable` and `help` at standard
 -- v2.56.0 and REVERSED at v2.57.0, on the first thing anyone tried: `/pc` on a
 -- disabled addon answered with a refusal instead of opening the one surface a player
@@ -271,7 +271,7 @@ end)
 
 local LIVE_VERBS = {
     help = true, config = true, version = true, enable = true, disable = true,
-    debug = true, perf = true,
+    debug = true, perf = true, diagnostics = true,
     get = true, set = true, list = true, reset = true, resetall = true,
 }
 

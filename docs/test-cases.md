@@ -60,7 +60,7 @@ badge and any count quoted in the docs must agree with it.
 - prose self-test: the disclosure names what each entry suppressed, and says when it is bounded
 - prose self-test: a malformed waived is a failure, not a silence
 
-### test_libka0s.lua (32)
+### test_libka0s.lua (33)
 
 - the locale-table matcher catches both offending spellings and clears the legal one
 - no seam file hands a LibKa0s descriptor the addon-wide locale table
@@ -76,6 +76,7 @@ badge and any count quoted in the docs must agree with it.
 - the close button is the library's, told which addon folder is asking
 - the console descriptor passes the FOLDER name, not just the frame name
 - with DebugLog absent the console degrades but the flag and the ack survive
+- with DebugLog absent the diagnostics report says so and writes nothing
 - Options cannot express the L trap either — its own, different tripwire
 - NS.Helpers IS the library instance, decorated in place
 - every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh trio
@@ -577,6 +578,10 @@ badge and any count quoted in the docs must agree with it.
 - eol: every tracked file carries the terminator .gitattributes declares for it
 - eol: .gitattributes is line-endings-§5's canonical body for this repo kind
 
+### test_diagnostics_contract.lua (1)
+
+- diagnostics contract: debug-logging-§14 (skipped: Kit.diagnostics is not set in the runner, so this repo's dispatcher is not wired to the shared contract yet. Every Ka0s addon owes debug-logging-§14's report; wire Kit.diagnostics once the report exists)
+
 ## Totals
 
 | Suite | Cases |
@@ -586,7 +591,7 @@ badge and any count quoted in the docs must agree with it.
 | test_layout_cap.lua | 13 |
 | test_lintconfig.lua | 4 |
 | test_prose.lua | 15 |
-| test_libka0s.lua | 32 |
+| test_libka0s.lua | 33 |
 | test_surface_parity.lua | 7 |
 | test_envsetup.lua | 9 |
 | test_constants.lua | 8 |
@@ -608,4 +613,5 @@ badge and any count quoted in the docs must agree with it.
 | test_doc_structure.lua | 11 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| **Total** | **490** |
+| test_diagnostics_contract.lua | 1 |
+| **Total** | **492** |
