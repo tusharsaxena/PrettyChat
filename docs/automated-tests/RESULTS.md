@@ -32,6 +32,7 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 
 | Run | Commit | Tree | Version | Lint w/e | Files | Tests | Perf | NLOC | Funcs | Avg NLOC | Avg CCN | Max CCN | CCN warn | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [`20260926-160432`](20260926-160432/) | `496d2fd` | clean | 1.5.0 | 0/0 | 51 | 518/0/518 | skip | 56453 | 1134 | 6.8 | 1.9 | 14 | 0 | **green** |
 | [`20260924-104049`](20260924-104049/) | `f85e6d1` | clean | 1.5.0 | 0/0 | 48 | 481/0/481 | skip | 55657 | 1038 | 6.8 | 1.9 | 14 | 0 | **green** |
 | [`20260916-184747`](20260916-184747/) | unknown | unknown | 1.5.0 | 0/0 | 46 | 385/0/385 | skip | 54311 | 854 | 6.7 | 2.0 | 14 | 0 | **green** |
 | [`20260916-094245`](20260916-094245/) | unknown | unknown | 1.5.0 | 0/0 | 44 | 353/0/353 | skip | 53773 | 787 | 6.7 | 2.0 | 14 | 0 | **green** |
@@ -47,18 +48,18 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 
 ## Test suite
 
-**481 cases** — 481 passed, 0 failed, 0 skipped. The generated inventory
-[`20260924-104049/test-cases.md`](20260924-104049/test-cases.md) is the authority on which cases existed at this run;
+**518 cases** — 518 passed, 0 failed, 0 skipped. The generated inventory
+[`20260926-160432/test-cases.md`](20260926-160432/test-cases.md) is the authority on which cases existed at this run;
 `docs/test-cases.md` is that same list at HEAD.
 
-Moved **385 → 481** since the previous run.
+Moved **481 → 518** since the previous run.
 
 No case reported a `skip`, so passed and total agree and nothing in this row claims coverage
 that was not exercised.
 
 ## Lint
 
-**0 warnings / 0 errors over 48 files** (`luacheck .`).
+**0 warnings / 0 errors over 51 files** (`luacheck .`).
 
 Read that figure with its scope attached: `.luacheckrc` excludes 6 path(s) from it — `Libs`, `libs`, `GlobalStrings`, `docs/audits`, `docs/reviews`, `tests/_kit/` —
 so nothing under them is in the count above. A `0/0` that never moves is partly a statement about
@@ -75,7 +76,7 @@ combat path for one to measure, not because the question was never asked.
 
 ## Complexity watch list
 
-Current as of [`20260924-104049`](20260924-104049/) — **this run's measurement, not its diff.** Max CCN **14** across 1038
+Current as of [`20260926-160432`](20260926-160432/) — **this run's measurement, not its diff.** Max CCN **14** across 1134
 functions, **0** of them warned on; 2 file(s) in the 1000–1500 band and 1 over the 1500 cap
 (`layout-§1`).
 
@@ -93,8 +94,8 @@ cell is this file saying something crossed and nobody has ruled on it yet.
 
 | Band | File | LOC | Disposition |
 |---|---|---|---|
-| 1000–1500 (on notice) | `settings/Schema.lua` | 1070 | **On notice, new this run.** 998 lines at the LibKa0s v1.56.0 re-vendor (`18b3e2e`), 1070 at `f85e6d1`: the 2026-09-23 remediation items grew it, the largest shares being PC-00 (+41, clearing the re-vendor reds) and PC-01 (+14, the v1.56.0 Core and Schema forwarding). It is the settings schema — every row, its wiring and the runtime instance over them — so it grows with the schema rather than by tangle, and no function in it is warned on. On notice is the compliant state under `layout-§1`, not a breach, and `docs/ARCHITECTURE.md` → *Files over the 1500-line cap* names it. Re-check at 1200. |
-| 1000–1500 (on notice) | `tests/test_panel.lua` | 1125 | **Accepted**, carried forward, with the figure re-read: 1053 → 1125 this run. Fourth consecutive run in the band. The 72 lines are the 2026-09-23 remediation's panel cases: PC-06 (+50, both Defaults buttons page-wide), PC-09 (+20, the New box count) and PC-11 (+10, the memoized name list), less PC-04's retired second-category tooltip cases. Case count, not tangle — the settings panel is the only part of this addon with real branching, so its suite is where the cases live. On notice is the compliant state under `layout-§1`, not a breach, and `docs/ARCHITECTURE.md` → *Files over the 1500-line cap* says the same. Re-check at 1200: 75 lines of headroom, so the next panel feature of this size should peel a suite along a seam (the per-string editor cases are the obvious one) rather than walk it over. |
+| 1000–1500 (on notice) | `settings/Schema.lua` | 1070 | **On notice**, carried forward: unchanged at 1070 at `20260926-160432`, second run in the band (entered at `20260924-104049`). 998 lines at the LibKa0s v1.56.0 re-vendor (`18b3e2e`), 1070 at `f85e6d1`: the 2026-09-23 remediation items grew it, the largest shares being PC-00 (+41, clearing the re-vendor reds) and PC-01 (+14, the v1.56.0 Core and Schema forwarding). It is the settings schema — every row, its wiring and the runtime instance over them — so it grows with the schema rather than by tangle, and no function in it is warned on. On notice is the compliant state under `layout-§1`, not a breach, and `docs/ARCHITECTURE.md` → *Files over the 1500-line cap* names it. Re-check at 1200. |
+| 1000–1500 (on notice) | `tests/test_panel.lua` | 1125 | **Accepted**, carried forward: unchanged at 1125 at `20260926-160432`, fifth consecutive run in the band; one release run (`20260910-234511`, 1.5.0) inside that span, so the three-release shelf life has not been reached. It went 1053 → 1125 at `20260924-104049`. The 72 lines are the 2026-09-23 remediation's panel cases: PC-06 (+50, both Defaults buttons page-wide), PC-09 (+20, the New box count) and PC-11 (+10, the memoized name list), less PC-04's retired second-category tooltip cases. Case count, not tangle — the settings panel is the only part of this addon with real branching, so its suite is where the cases live. On notice is the compliant state under `layout-§1`, not a breach, and `docs/ARCHITECTURE.md` → *Files over the 1500-line cap* says the same. Re-check at 1200: 75 lines of headroom, so the next panel feature of this size should peel a suite along a seam (the per-string editor cases are the obvious one) rather than walk it over. |
 | > 1500 (over cap) | `GlobalStrings/GlobalStrings.lua` | 23842 | exempt — see docs/ARCHITECTURE.md → Files over the 1500-line cap |
 
 `lizard` counts every `and`/`or` short-circuit as a decision, so in Lua a run of
