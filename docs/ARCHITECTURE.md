@@ -232,12 +232,12 @@ never a live requirement, and never a reason to "restore" the file.
 
 | Doc | Status | Trigger |
 |---|---|---|
-| `slash-dispatch.md` | Present | 12 verbs in the command table |
+| `slash-dispatch.md` | Present | 13 verbs in the command table |
 | `midnight-quirks.md` | Not applicable | No client-version workaround of the addon’s own; the GlobalStrings work is data, not a shim |
 | `message-bus.md` | Not applicable | The addon defines no cross-module messages |
 | `compat-layer.md` | Not applicable | Not applicable — compat's applicability condition (Standard v2.65.0): PrettyChat calls no deprecated or version-variant client API outside LibKa0s's majors, so it carries no `core/Compat.lua`. Its one former shim, `Compat.GetAddOnMetadata`, is now `LibKa0s-Env-1.0` behind `core/EnvSetup.lua` |
 | `profiles.md` | Not applicable | No profile control ships in the options UI |
-| `debug.md` | Not applicable | The console is `LibKa0s-DebugLog-1.0`’s, with no debug surface of the addon’s own |
+| `debug.md` | Present | The diagnostics report (`/pc diagnostics`, `debug-logging-§14`) is a debug surface beyond the library console, so this trigger fires in every Ka0s addon. The page documents the report and the tags the console carries |
 | `perf-analysis/README.md` | Not applicable | No performance harness is wired — see `performance.md` |
 
 ### Verification and record
