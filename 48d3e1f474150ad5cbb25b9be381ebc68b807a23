@@ -1,0 +1,1 @@
+clean: docs-only refresh (module-map, ARCHITECTURE, testing) matches the TOC and DebugLogSetup descriptor; AUD-01 1-7 re-verified; gate re-run green (518/0, luacheck 0/0, lizard clean, no authored file >1500)
