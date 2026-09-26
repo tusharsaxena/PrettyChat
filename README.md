@@ -95,3 +95,8 @@ Bugs and feature requests are tracked on GitHub: [https://github.com/tusharsaxen
 | 1.1.0 | 2026-02-14 | - Made the game's message formats editable from the settings panel. |
 | 1.0.0 | 2026-02-14 | - Updated for WoW Midnight. |
 | 0.0.3 | 2023-10-05 | - Initial release. |
+
+## Credits
+
+The debug console uses [JetBrains Mono](https://www.jetbrains.com/lp/mono/), licensed under the SIL
+Open Font License 1.1. It ships inside the bundled LibKa0s payload, with its license text beside it.
