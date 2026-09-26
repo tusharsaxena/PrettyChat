@@ -81,7 +81,7 @@ Kit.run{
     suites = {
         "test_harness",
         "test_vendor_sync",
-        -- The 1500-line cap gate (layout-§1), the kit's since revision 25 (vendored: 27). Beside
+        -- The 1500-line cap gate (layout-§1), the kit's since revision 25 (vendored: 31). Beside
         -- test_vendor_sync because it is the same kind of case: it loads no addon and asserts
         -- nothing about behavior, it reads the repository itself and compares it against what a
         -- document claims about it. Declared by the pair (testing-§9): the bare name would wire a

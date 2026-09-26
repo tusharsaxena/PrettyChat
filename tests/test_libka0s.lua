@@ -375,7 +375,12 @@ test("Options cannot express the L trap either — its own, different tripwire",
     t.truthy(opts, "Options registered")
     t.truthy(type(opts.STRINGS) == "table", "and it DOES ship STRINGS, unlike Core")
 
+    -- LibKa0s v1.62.0 moved the id surface out of OptionsWidgets.lua into OptionsIds.lua and
+    -- OptionsIdList.lua, and the page registry out of Options.lua into OptionsRegistry.lua, so the
+    -- check follows the code it already covered to its new files.
     for _, rel in ipairs({ "libs/LibKa0s/Options.lua", "libs/LibKa0s/OptionsWidgets.lua",
+                           "libs/LibKa0s/OptionsIds.lua", "libs/LibKa0s/OptionsIdList.lua",
+                           "libs/LibKa0s/OptionsRegistry.lua",
                            "libs/LibKa0s/OptionsScroll.lua" }) do
         local src = readFile(rel)
         t.truthy(src, rel .. " is readable")
