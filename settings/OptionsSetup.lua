@@ -134,6 +134,9 @@ if not lib then
         -- already-rendered page. This addon does not adopt tab-scoped refresh, so
         -- the same inert no-op applies.
         SelectTab            = function() end,
+        -- NavRail, new at LibKa0s v1.61.0 (OptionsNav minor 1): drawn only by a page
+        -- render, and no page here draws a rail, so the same inert no-op applies.
+        NavRail              = function() end,
         -- ── the ONE stub member that is reached at LOAD ──────────────────
         --
         -- options-ui-§1's degradation rule is LOAD-COMPLETING, and the measured
