@@ -64,7 +64,7 @@ tests/test_override.lua:250:-- Both names go through NS.Util.SafeRegisterEvents 
 tests/test_override.lua:254:-- A fresh instance whose client refuses `name` at the frame's RegisterEvent and,
 tests/test_override.lua:283:test("IsEventValid rejects a name without calling RegisterEvent", function()
 tests/test_override.lua:295:    t.nilv(live.PLAYER_REGEN_ENABLED, "the gated name never reached RegisterEvent")
-tests/test_panel.lua:673:-- red under: dropping the C_Timer.After, or scheduling it per render without the
+tests/test_panel_categories.lua:272:-- red under: dropping the C_Timer.After, or scheduling it per render without the
 tests/test_surface_parity.lua:111:        SafeRegisterEvent     = instance.NS.Util.SafeRegisterEvent,
 tests/test_surface_parity.lua:112:        SafeRegisterUnitEvent = instance.NS.Util.SafeRegisterUnitEvent,
 tests/test_surface_parity.lua:113:        SafeRegisterEvents    = instance.NS.Util.SafeRegisterEvents,
@@ -78,7 +78,7 @@ Reconciled, so a future drift is visible rather than arguable. One is a lint dec
 (`.luacheckrc:60`). Fourteen are the pattern names appearing **inside comments** — `core/CoreSetup.lua:54`,
 `:55`, `core/LifecycleSetup.lua:40`, `modules/Override.lua:126`, `:127`, `settings/Panel.lua:528`,
 `tests/test_disabled.lua:28`, `tests/test_libka0s.lua:741`, `tests/test_override.lua:250`, `:254`,
-`tests/test_panel.lua:673` and `tests/wow_mock.lua:72`, `:134`, `:135` — which describe the discipline
+`tests/test_panel_categories.lua:272` and `tests/wow_mock.lua:72`, `:134`, `:135` — which describe the discipline
 rather than doing anything; the harness mock no longer defines its own `RegisterEvent`, because the
 frame event methods are the kit's. Nine are `core/CoreSetup.lua`'s `SafeRegisterEvent` /
 `SafeRegisterUnitEvent` / `SafeRegisterEvents` surface (`:114`-`:127`, the degraded arm's one-rung
@@ -145,7 +145,7 @@ which is why the page went on asserting zero. Its disposition:
   deferred layout measurement, not per-frame and not repeating, and it schedules exactly one
   callback per render rather than one per category click.
 
-`tests/test_panel.lua:675` pins it: the render schedules exactly one fit for the following frame, and
+`tests/test_panel_categories.lua:274` pins it: the render schedules exactly one fit for the following frame, and
 the case goes red if the hop is dropped or if the change guard stops holding.
 
 The addon's other lifecycle hooks are the two AceAddon callbacks in [performance.md](./performance.md)'s runtime table. Both run at login, neither

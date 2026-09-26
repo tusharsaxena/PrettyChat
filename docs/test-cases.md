@@ -526,7 +526,7 @@ badge and any count quoted in the docs must agree with it.
 - diagnostics: a secret value in the store or in a global does not raise
 - diagnostics: the report writes nothing, anywhere, and clears nothing
 
-### test_panel.lua (48)
+### test_panel.lua (25)
 
 - registration builds the parent category and two sub-pages
 - the strip carries one tab per message category, in CATEGORY_ORDER
@@ -550,6 +550,12 @@ badge and any count quoted in the docs must agree with it.
 - the General page declares a Defaults button whose click opens the reset-all popup
 - the Categories Defaults button resets every category, not only the selected tab
 - the footer OnDefault forwards to the same page-wide body
+- the parent page lists every slash command through the one row formatter
+- the landing logo is hidden when its group goes back to AceGUI's pool
+- the parent page shows the TOC tagline
+
+### test_panel_categories.lua (23)
+
 - a category tab builds a toggle, a secondary strip, and ONE string block
 - the category Enable stays ABOVE the tree
 - the list offers the strings in sorted global-name order
@@ -573,9 +579,6 @@ badge and any count quoted in the docs must agree with it.
 - no per-string enable tooltip carries a second-category note
 - the page says its controls are read only while the master switch is on
 - clicking a tab swaps the body and drops the tab it left
-- the parent page lists every slash command through the one row formatter
-- the landing logo is hidden when its group goes back to AceGUI's pool
-- the parent page shows the TOC tagline
 
 ### test_doc_structure.lua (12)
 
@@ -639,7 +642,8 @@ badge and any count quoted in the docs must agree with it.
 | test_slash.lua | 52 |
 | test_disabled.lua | 14 |
 | test_diagnostics.lua | 18 |
-| test_panel.lua | 48 |
+| test_panel.lua | 25 |
+| test_panel_categories.lua | 23 |
 | test_doc_structure.lua | 12 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |

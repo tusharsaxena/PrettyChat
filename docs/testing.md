@@ -30,6 +30,7 @@ tests/
   loader.lua         -- the instance factory: both load lists derived + per-call isolation
   wow_mock.lua       -- a thin EXTENDER over tests/_kit/mock_base.lua
   mock_menu.lua      -- a fake MenuUtil for the launcher's right-click menu, modeled on LibKa0s's own
+  panel_fixture.lua  -- the panel helpers test_panel.lua and test_panel_categories.lua both call
   test_<module>.lua  -- one suite per module; each reads _G.PC_TEST
 ```
 
@@ -53,7 +54,7 @@ What the mocks deliberately do *not* model is layout: they answer "which widget,
 
 Both `lua tests/run.lua` and `luacheck .` must be green before any commit. Lint config is `.luacheckrc` (`std=lua51`; excludes `libs/`, `GlobalStrings/`, `tests/_kit/`, `docs/audits`, `docs/reviews`). The suites register named `test(name, fn)` cases; the `Tests` badge in the README badge row shows the pass/total.
 
-**The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 51 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the seven seam files are inside the set that was actually checked:
+**The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 53 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the seven seam files are inside the set that was actually checked:
 
 ```sh
 luacheck . --formatter plain | tail -1     # and read the file count it reports

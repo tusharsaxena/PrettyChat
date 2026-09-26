@@ -131,6 +131,10 @@ Kit.run{
         -- verbs are established first, and this asks what one of them writes.
         "test_diagnostics",
         "test_panel",
+        -- The Categories page's per-string editor cases, split out of test_panel when that file
+        -- reached the 1000-1500 band's third release (anti-pattern #53). Straight after it,
+        -- because it is the same page read one level down.
+        "test_panel_categories",
         "test_doc_structure",
         "test_register",
         -- The kit has shipped one suite of its own since revision 15: the working-tree

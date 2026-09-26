@@ -397,9 +397,12 @@ or the `.pkgmeta` entry tidied away would reach an audit before it reached a red
 turns the suite red, and so does a row for a file that has fallen back under the cap or been
 deleted. The figure in that column is a measurement, not a claim about today.
 
-**The 1000-1500 band is on notice, not in breach**: two files are in it on 2026-09-24,
-`tests/test_panel.lua` (1125; 1053 on 2026-09-23) and `settings/Schema.lua` (1070, new to the
-band: 998 at the v1.56.0 re-vendor, grown by the remediation items that followed it). The 26
+**The 1000-1500 band is on notice, not in breach**: one file is in it on 2026-09-27,
+`settings/Schema.lua` (1070, new to the band: 998 at the v1.56.0 re-vendor, grown by the
+remediation items that followed it). `tests/test_panel.lua` (1125; 1053 on 2026-09-23) left it on
+2026-09-27, one release run short of anti-pattern #53's limit: the Categories page's cases moved to
+`tests/test_panel_categories.lua` (653) and it fell to 480, with the helpers both call in
+`tests/panel_fixture.lua`. The 26
 generated chunks are deliberately cut by entry count to stay under 1000 (PC-49) so a regeneration
 cannot walk them into the band. The band is named here so a later reader can tell it was looked at
 rather than missed; nothing in it needs a disposition until it crosses.
