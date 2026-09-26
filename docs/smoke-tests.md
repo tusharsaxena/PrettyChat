@@ -232,7 +232,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 > Why: a Texture is not an AceGUI child, so `ReleaseChildren` does not take the logo away with the
 > `SimpleGroup` that carries it — and AceGUI **pools that group's frame across every addon in the
 > session**. The library's `BuildLandingPage` hides the texture on `OnRelease`
-> (`libs/LibKa0s/OptionsWidgets.lua:344`); the hand-copied body this addon used to carry set no
+> (`libs/LibKa0s/OptionsWidgets.lua:352`); the hand-copied body this addon used to carry set no
 > `OnRelease` at all, so the next widget handed that frame inherited a 300px logo. The leak lands in
 > *somebody else's* panel, which is why no headless case and no PrettyChat-only pass can see it —
 > `tests/test_panel.lua` pins that the release hook exists and hides the texture, and step 2 below is
