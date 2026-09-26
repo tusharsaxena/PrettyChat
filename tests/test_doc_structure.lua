@@ -1,13 +1,14 @@
 -- tests/test_doc_structure.lua — the shapes documentation-§1 and §3 fix in place for the README
 -- and the architecture hub.
 --
--- WHAT IT PROVES, in five cases:
+-- WHAT IT PROVES, in six cases:
 --   1. docs/ARCHITECTURE.md carries the TEN sections `documentation-§3` names for the hub.
 --   2. Every mandated section that has a canonical topic doc stays inside the spill threshold.
 --   3. Every markdown link pointing INTO one of the hub's headings lands on a heading that exists.
 --   4. README.md carries the two player-facing history surfaces `documentation-§1` allows, and the
 --      tracked markdown carries no third.
 --   5. README.md's top-level sections are the ones §1 names, in the order it names them.
+--   6. README.md's `## Reporting a bug` is §1 item 9's fixed text, with the real slash and no link.
 --
 -- WHY IT EXISTS. `documentation-§3` states the hub rule as two thresholds "because 'keep it short'
 -- demonstrably did not hold": a mandated section past roughly 60 lines MUST spill into its canonical
@@ -78,6 +79,7 @@ local README_ORDER = {
     { pattern = "^How .+ works?$",              required = true,  name = "## How <it> works" },
     { pattern = "^FAQ$",                        required = false, name = "## FAQ" },
     { pattern = "^Troubleshooting$",            required = false, name = "## Troubleshooting" },
+    { pattern = "^Reporting a bug$",            required = true,  name = "## Reporting a bug" },
     { pattern = "^Issues and feature requests$",required = true,  name = "## Issues and feature requests" },
     { pattern = "^Version History$",            required = true,  name = "## Version History" },
     { pattern = "^Credits$",                    required = false, name = "## Credits" },
@@ -268,6 +270,36 @@ test("README.md's top-level sections are the ones documentation-§1 names, in it
         if entry.required and not seen[i] then absent[#absent + 1] = entry.name end
     end
     assertTrue(#absent == 0, README .. " is missing " .. table.concat(absent, ", "))
+end)
+
+-- documentation-§1 item 9 (debug-logging-§14): the body is fixed text, verbatim apart from the real
+-- slash, and names no destination. The owner ruled it carries no GitHub or issues link, because the
+-- report goes to the maintainer privately. Falsified by dropping step 2, by changing "include it with
+-- your bug report" back to an issue destination, or by adding a github.com link: each fails here.
+local REPORTING_A_BUG = {
+    "1. Type `/pc debug on` and reproduce the bug.",
+    "2. Type `/pc diagnostics`.",
+    "3. If the debug window isn't open, open it with `/pc debug`. Press **Copy**, copy the entire "
+        .. "output, and include it with your bug report.",
+    "The report is added after the debug trace in the same window, so one copy carries both.",
+}
+
+test("README.md's Reporting a bug section is documentation-§1 item 9 verbatim, with no link", function()
+    local body, inside, got = read(README), false, {}
+    for line in (body .. "\n"):gmatch("([^\n]*)\n") do
+        if line:match("^## ") then inside = (line == "## Reporting a bug") end
+        if inside and line ~= "" and not line:match("^## ") then got[#got + 1] = line end
+    end
+    assertTrue(#got == #REPORTING_A_BUG, README .. "'s ## Reporting a bug has " .. #got
+        .. " non-blank line(s), item 9 fixes " .. #REPORTING_A_BUG)
+    for i, want in ipairs(REPORTING_A_BUG) do
+        assertTrue(got[i] == want, README .. "'s ## Reporting a bug line " .. i .. " reads `"
+            .. tostring(got[i]) .. "`, item 9 fixes `" .. want .. "`")
+    end
+    for _, line in ipairs(got) do
+        assertTrue(not line:lower():match("github") and not line:match("%]%("),
+            README .. "'s ## Reporting a bug carries a link or a destination: " .. line)
+    end
 end)
 
 test("root CLAUDE.md carries the adherence line documentation-§2 puts second", function()
