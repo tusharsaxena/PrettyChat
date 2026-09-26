@@ -1,0 +1,1 @@
+clean: NR-PC-01 payload == v1.61.0 tag byte for byte, kit untouched, stub NavRail no-op proven (reverted: parity case FAILs naming NavRail), version-now lines only, CRLF OK; gate 518/0/0, luacheck 0/0, lizard clean
