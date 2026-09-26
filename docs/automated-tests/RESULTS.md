@@ -32,6 +32,7 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 
 | Run | Commit | Tree | Version | Lint w/e | Files | Tests | Perf | NLOC | Funcs | Avg NLOC | Avg CCN | Max CCN | CCN warn | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [`20260927-031723`](20260927-031723/) | `a663bc6` | clean | 1.6.0 | 0/0 | 53 | 518/0/518 | skip | 56489 | 1135 | 6.8 | 1.9 | 14 | 0 | **green** |
 | [`20260927-030323`](20260927-030323/) | `c2faa0c` | clean | 1.5.0 → 1.6.0 | 0/0 | 51 | 518/0/518 | skip | 56455 | 1134 | 6.8 | 1.9 | 14 | 0 | **green** |
 | [`20260926-193107`](20260926-193107/) | `d6e8d76` | clean | 1.5.0 | 0/0 | 51 | 518/0/518 | skip | 56455 | 1134 | 6.8 | 1.9 | 14 | 0 | **green** |
 | [`20260926-160432`](20260926-160432/) | `496d2fd` | clean | 1.5.0 | 0/0 | 51 | 518/0/518 | skip | 56453 | 1134 | 6.8 | 1.9 | 14 | 0 | **green** |
@@ -51,10 +52,10 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 ## Test suite
 
 **518 cases** — 518 passed, 0 failed, 0 skipped. The generated inventory
-[`20260927-030323/test-cases.md`](20260927-030323/test-cases.md) is the authority on which cases existed at this run;
+[`20260927-031723/test-cases.md`](20260927-031723/test-cases.md) is the authority on which cases existed at this run;
 `docs/test-cases.md` is that same list at HEAD.
 
-The count has been **flat at 518 across the last 3 runs**. A suite that stopped growing while
+The count has been **flat at 518 across the last 4 runs**. A suite that stopped growing while
 the addon did is a coverage gap, and it is the one thing the table above cannot show.
 
 No case reported a `skip`, so passed and total agree and nothing in this row claims coverage
@@ -62,7 +63,7 @@ that was not exercised.
 
 ## Lint
 
-**0 warnings / 0 errors over 51 files** (`luacheck .`).
+**0 warnings / 0 errors over 53 files** (`luacheck .`).
 
 Read that figure with its scope attached: `.luacheckrc` excludes 6 path(s) from it — `Libs`, `libs`, `GlobalStrings`, `docs/audits`, `docs/reviews`, `tests/_kit/` —
 so nothing under them is in the count above. A `0/0` that never moves is partly a statement about
@@ -79,8 +80,8 @@ combat path for one to measure, not because the question was never asked.
 
 ## Complexity watch list
 
-Current as of [`20260927-030323`](20260927-030323/) — **this run's measurement, not its diff.** Max CCN **14** across 1134
-functions, **0** of them warned on; 2 file(s) in the 1000–1500 band and 0 over the 1500 cap
+Current as of [`20260927-031723`](20260927-031723/) — **this run's measurement, not its diff.** Max CCN **14** across 1135
+functions, **0** of them warned on; 1 file(s) in the 1000–1500 band and 0 over the 1500 cap
 (`layout-§1`).
 
 Every row below is generated from this run's own `lizard` output. **The `Disposition` column is
@@ -99,8 +100,7 @@ None.
 
 | Band | File | LOC | Disposition |
 |---|---|---|---|
-| 1000–1500 (on notice) | `settings/Schema.lua` | 1070 | **On notice**, carried forward: unchanged at 1070 at `20260927-030323` (the 1.6.0 release run), fourth consecutive run in the band (entered at `20260924-104049`), first release run in that span. 998 lines at the LibKa0s v1.56.0 re-vendor (`18b3e2e`), 1070 at `f85e6d1`: the 2026-09-23 remediation items grew it, the largest shares being PC-00 (+41, clearing the re-vendor reds) and PC-01 (+14, the v1.56.0 Core and Schema forwarding). It is the settings schema — every row, its wiring and the runtime instance over them — so it grows with the schema rather than by tangle, and no function in it is warned on. On notice is the compliant state under `layout-§1`, not a breach, and `docs/ARCHITECTURE.md` → *Files over the 1500-line cap* names it. Re-check at 1200. |
-| 1000–1500 (on notice) | `tests/test_panel.lua` | 1125 | **Split in this change**, 2026-09-27, before the third release run in the band (anti-pattern #53): the Categories page's 23 cases moved unchanged to `tests/test_panel_categories.lua` (653 lines), leaving `tests/test_panel.lua` at 480 lines and 25 cases (48 before and after), with the helpers both suites call in `tests/panel_fixture.lua` (53). The 1125 in this row is the `20260927-030323` measurement; the file leaves the band at the next run, and this row with it. |
+| 1000–1500 (on notice) | `settings/Schema.lua` | 1070 | **On notice**, carried forward: unchanged at 1070 at `20260927-031723` (`a663bc6`, the run after the 1.6.0 release run), fifth consecutive run in the band (entered at `20260924-104049`), one release run in that span (`20260927-030323`, 1.6.0). Now the only file in the band, after the `tests/test_panel.lua` split (`a663bc6`) took that file out. 998 lines at the LibKa0s v1.56.0 re-vendor (`18b3e2e`), 1070 at `f85e6d1`: the 2026-09-23 remediation items grew it, the largest shares being PC-00 (+41, clearing the re-vendor reds) and PC-01 (+14, the v1.56.0 Core and Schema forwarding). It is the settings schema — every row, its wiring and the runtime instance over them — so it grows with the schema rather than by tangle, and no function in it is warned on. On notice is the compliant state under `layout-§1`, not a breach, and `docs/ARCHITECTURE.md` → *Files over the 1500-line cap* names it. Re-check at 1200. |
 
 Left out as generated non-shipping data (`layout-§1`'s second carve-out, declared in
 `Kit.layoutCap.exempt` in `tests/run.lua`, the set the cap gate reads): `GlobalStrings/GlobalStrings.lua`.
