@@ -92,6 +92,11 @@ local enUS = {
     "Print sample chat lines to the debug console — `/pc test [all | category <name> | formatstring <NAME>]`",
     "Debug console — `/pc debug` shows it; `on`/`off` toggle logging",
     "Print the addon version",
+    -- The diagnostics report's verb (debug-logging-§14). The report body is English
+    -- diagnostic text like every trace line and is not keyed here; the one chat line
+    -- after it is LibKa0s-DebugLog-1.0's `DIAG_WRITTEN`, overridable through the
+    -- console descriptor's `L` (see the header above).
+    "Write a diagnostics report to the debug console, for a bug report",
     -- The two reserved ALIASES (slash-commands-§2). They write the SAME stored
     -- path the composed `Enable PrettyChat` checkbox writes, so what is
     -- translatable from this folder is the verb's DESCRIPTION; the confirmation

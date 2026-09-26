@@ -60,6 +60,21 @@ _G.PC_TEST = Kit.expose{
 -- tests/prose_waivers.lua instead.
 Kit.layoutCap = { exempt = { "GlobalStrings/" } }
 
+-- The kit's diagnostics contract (debug-logging-§14), wired to THIS addon's dispatcher: the
+-- consumer facts tests/_kit/test_diagnostics_contract.lua reads. `reset` builds a fresh instance
+-- before every case, so no case inherits another's console, flag or latch; the other facts read
+-- that instance at call time. Every form goes through `/pc`'s own handler, and the disabled state
+-- is the one a player reaches, through the single write seam.
+local diagInstance
+Kit.diagnostics = {
+    brand       = "Ka0s Pretty Chat",
+    reset       = function() diagInstance = loadAddon() end,
+    dispatch    = function(line) diagInstance.addon:OnSlashCommand(line) end,
+    console     = function() return diagInstance.NS.DebugLog end,
+    setDebug    = function(on) diagInstance.NS.State.debug = on and true or false end,
+    setDisabled = function(off) diagInstance.NS.Schema.Set("General.enabled", not off) end,
+}
+
 -- Order is load-order-sensitive; keep it stable.
 Kit.run{
     dir    = "tests/",
@@ -111,6 +126,10 @@ Kit.run{
         -- suites establish that the surface works AT ALL, and this one asks what it does
         -- while the addon is switched off.
         "test_disabled",
+        -- The diagnostics report's PrettyChat half: its sections, both forms and the read-only
+        -- guarantee. After test_disabled for the reason test_disabled follows test_slash: the
+        -- verbs are established first, and this asks what one of them writes.
+        "test_diagnostics",
         "test_panel",
         "test_doc_structure",
         "test_register",

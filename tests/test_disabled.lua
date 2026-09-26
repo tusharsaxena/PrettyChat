@@ -345,6 +345,28 @@ test("disabled/7: the addon's own FEATURE verb refuses on one line and reaches n
     t.eq(#regSet(i.env), 0, "and registered nothing on its way through")
 end)
 
+test("disabled/7: both diagnostics forms write the whole report while disabled, and stand nothing up", function()
+    -- red under: pass Slash a `liveVerbs` without `diagnostics`, or gate runDebug's
+    -- diagnostics word on IsAddonEnabled -- either refuses the report on the one install a
+    -- player is most likely to be sending it from (debug-logging-§14, STD-05). The second
+    -- half is red under a report that took or released a Lifecycle hold: the registration
+    -- set would come back.
+    local i = armed()
+    disable(i)
+    local D = i.NS.DebugLog
+    for _, form in ipairs({ "diagnostics", "debug diagnostics" }) do
+        local before = #D.buffer
+        say(i, form)
+        t.truthy(#D.buffer > before, "/pc " .. form .. " wrote the report while disabled")
+        t.truthy(D.buffer[#D.buffer]:find("diagnostics end:", 1, true),
+            "/pc " .. form .. " wrote it whole, to the end marker")
+        t.truthy(D:FindLine("stoodDown=true"), "and the report says the addon is stood down")
+    end
+    t.eq(#regSet(i.env), 0, "the report stood nothing up: still no registration")
+    t.eq(overridesLive(i), 0, "and wrote not one override")
+    t.eq(i.addon:IsAddonEnabled(), false, "and the addon is still disabled")
+end)
+
 -- ── 8. the launcher ─────────────────────────────────────────────────────────
 
 test("disabled/8: the launcher works while disabled — panel on LEFT, menu on RIGHT, no writes",

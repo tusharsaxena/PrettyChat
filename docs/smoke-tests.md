@@ -44,7 +44,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 > Why: `/pc` and `/prettychat` both dispatch through `OnSlashCommand`.
 
 - Steps: `/pc help` and `/prettychat help`.
-- Expected: identical output from both. Header shows `v<VERSION>` matching the TOC. All twelve commands listed (`help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `test`, `debug`, `enable`, `disable`).
+- Expected: identical output from both. Header shows `v<VERSION>` matching the TOC. All thirteen commands listed (`help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `test`, `debug`, `diagnostics`, `enable`, `disable`).
 
 ### O — Override pipeline (the three enable layers)
 
@@ -223,7 +223,8 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
   3. Generate lines until the log overflows — e.g. `/pc test all` a few times, or toggle a handful of settings. Expect: N climbs on **every** append; once past 3000 it pins at **`3000 / 3000 lines`** (the buffer is capped).
   4. With the log overflowing, spin the **mouse wheel** up/down over the log. Expect: the scrollbar **thumb tracks the wheel** — moving up toward the **top = oldest** lines, down toward the **bottom = newest**.
   5. **Drag the thumb** up and down. Expect: the log scrolls to match — thumb top shows the oldest buffered line, thumb bottom the newest. No flicker/jitter loop (the `_syncing` re-entrancy guard holds).
-  6. Click the **clear** mark (the middle of the three title-bar marks). Expect: the log empties, the counter resets to **`0 / 3000 lines`**, and the scrollbar goes **inert** (thumb parked, mouse disabled) but stays **visible** — the right gutter width is unchanged.
+  6. With the counter pinned at **`3000 / 3000 lines`**, click the **copy** mark. Expect: the copy window opens without a noticeable hitch, holds all 3000 lines, and `Ctrl+A`, `Ctrl+C` and scrolling in it stay responsive. (The buffer was raised from 1500 to 3000 in LibKa0s v1.60.0 only after the copy box was measured at this size.)
+  7. Click the **clear** mark (the middle of the three title-bar marks). Expect: the log empties, the counter resets to **`0 / 3000 lines`**, and the scrollbar goes **inert** (thumb parked, mouse disabled) but stays **visible** — the right gutter width is unchanged.
 - Failure mode: `attempt to call a nil value` on first open ⇒ the old C getters are being called (#41). Thumb direction inverted (top = newest) ⇒ flip the `sliderValue ↔ offset` sign (`offset = maxOffset − value`). Counter never updates ⇒ `UpdateStatus` isn't wired into `Add`/`Clear`. Bar hidden when the log fits, or gutter width jumps ⇒ the always-shown/inert rule (`options-ui-§10`) regressed.
 
 #### T-29c — The landing logo does not ride AceGUI's shared frame pool
@@ -349,6 +350,24 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 
 - Steps: `/pc bogus`, then `/pc` (no args), then `/pc` followed by a few spaces, then `/pc help`.
 - Expected: `/pc bogus` prints `unknown command 'bogus'` followed by the help index. `/pc` (no args) and the space-padded `/pc` each open the settings panel on the parent **Ka0s Pretty Chat** page, the same as `/pc config`, and print no help. `/pc help` prints the help index.
+
+#### T-39 — `/pc diagnostics` writes the report after the trace, in both forms
+
+> Why: the diagnostics report (`debug-logging-§14`, [debug.md](./debug.md)) is what a player pastes into a bug report. The headless suite runs it against mocks; only the client proves it appends to a real console, lands with logging off, reads real `_G` globals and survives combat. The README's `## Reporting a bug` steps depend on every part of it.
+
+- Setup: `/reload`, with the debug console closed.
+- Steps:
+  1. `/pc debug on`, then `/pc test category Loot` so the console holds some trace. Then `/pc diagnostics`.
+  2. Read the console from the trace down. Expect: the trace lines are still there, **above** `[Diag] ==== Ka0s Pretty Chat diagnostics begin ====`; the report ends with `[Diag] ==== Ka0s Pretty Chat diagnostics end: N line(s) ====`; one chat line says `Diagnostic report written to the debug console: N lines. Use Copy to share it.` with the same N. The sections run in the order [debug.md](./debug.md) lists, from `[State]` to `[Addons]`, and none reads `section <name> failed`.
+  3. Check the `[Globals]` line. Expect: `mismatch=0` on a clean install. (With another chat addon loaded, any mismatching names it lists should be ones that addon rewrites, and `[Addons]` should name it.)
+  4. `/pc set Loot.LOOT_ITEM_SELF.format` with a colored format (for example `||cff00ff00Loot:||r %s`), then `/pc diagnostics` again. Expect: the `[Set]` row for that path shows the pipes doubled (`||cff00ff00`), not stripped and not rendered as color. Press **Copy**, paste into a text editor. Expect: the trace, both reports, both markers, no `|c` color escapes anywhere except the doubled ones. Paste the doubled value back into `/pc set` and confirm it round-trips. `/pc reset Loot.LOOT_ITEM_SELF.format` afterwards.
+  5. `/pc debug off`, then `/pc diagnostics`. Expect: the whole report lands. Afterwards the console header still reads **`Debug: OFF`**, and toggling a setting writes no new `[Set]` line.
+  6. `/pc debug diagnostics`, then `/prettychat diagnostics` and `/prettychat debug diagnostics`. Expect: each writes the same report.
+  7. `/pc debug diag`, then `/pc diag`. Expect: neither writes a report. The first prints `usage: /pc debug [on | off | diagnostics]`; the second prints `unknown command 'diag'` and the help index.
+  8. `/pc disable`, then `/pc diagnostics` and `/pc debug diagnostics`. Expect: both write a full report, not the disabled line; the `[State]` line reads `enabled(stored)=false stoodDown=true`, and the combat-watcher line says it is stood down. `/pc enable` afterwards.
+  9. Enter combat with a target dummy and run `/pc diagnostics`. Expect: no Lua error, and the identity header reads `InCombatLockdown=true`.
+  10. `/reload`, leave the console closed, and follow the README's `## Reporting a bug` steps word for word. Expect: every step works as written, and the paste holds the trace and the whole report.
+- Failure mode: the trace above the begin marker is gone ⇒ something in the report path cleared the console. The report is missing with logging off, or the header flips to `Debug: ON` ⇒ the report went through the gated sink or touched the flag. `/pc diag` runs the report ⇒ an alias came back. A `[Globals]` mismatch on a clean install with no other chat addon ⇒ `ApplyStrings` and the report disagree about what should be in `_G`.
 
 ### X — Cross-surface sync (panel ↔ slash)
 
@@ -664,6 +683,7 @@ that draws nothing raises nothing, and a `.tga` in the wrong format loads as sil
 | Touched `OnEnable` / `ApplyStrings` / `settings/Schema.lua` | Quick recipe + B + O groups |
 | Touched `settings/Panel.lua` | Quick recipe + S + X + M groups |
 | Touched slash command surface in `settings/Slash.lua` | Quick recipe + L + X groups |
+| Touched `modules/Diagnostics.lua`, or the `diagnostics` row or `debug` word in `settings/Slash.lua` | Quick recipe + **T-39** + T-29b |
 | Touched the reset paths (`ResetString` / `ResetCategory` / `ResetAll` in `modules/Override.lua`, or a Reset/Defaults button) | Quick recipe + R group |
 | Touched `core/DebugLogSetup.lua`, `media/`, or panel chrome (fonts/textures/borders) | Quick recipe + M + K groups |
 | Touched `core/LauncherSetup.lua`, the minimap row, `media/logos/`, or the TOC's `## IconTexture` | Quick recipe + **G group** |
@@ -696,6 +716,7 @@ error, and not the same sentence stapled to every line.
 4. `/pc debug on`, then `/pc debug` .
 5. `/pc config`.
 6. `/pc resetall`.
+7. `/pc diagnostics`.
 
 **Expected:**
 - **Zero** Lua errors at load or on any of the above.
@@ -712,6 +733,8 @@ error, and not the same sentence stapled to every line.
 - **`/pc resetall` still works** — the schema loaded fine, and a user whose panel will not open is
   exactly the user who needs "reset everything" (options-ui-§1).
 - `/pc help`, `/pc version` and `/pc test` all still work: those verbs never went to the library.
+- `/pc diagnostics` prints exactly `[PC] /pc diagnostics is unavailable: the LibKa0s library did not load.`
+  and writes nothing: there is no console to write the report into.
 
 **Then rename the folder back and `/reload` before continuing.**
 
@@ -724,7 +747,7 @@ and no headless assertion can tell the difference. Current vendored copies resol
 
 **Steps:** walk every surface and read every label:
 1. `/pc config` — the landing page, both sub-pages and all eight tabs on Categories, including the page's **Defaults** button and the Categories footnote.
-2. `/pc debug` — the console: the title bar, the `Debug: ON`/`Debug: OFF` toggle, the `N / 1500 lines`
+2. `/pc debug` — the console: the title bar, the `Debug: ON`/`Debug: OFF` toggle, the `N / 3000 lines`
    counter, and the copy window's own title. (The Copy and Clear controls are marks now and carry no
    text — if you can read a word on either of them, the folder name is not reaching the library and
    T-60a is the failing check, not this one.)

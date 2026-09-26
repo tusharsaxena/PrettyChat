@@ -28,7 +28,7 @@ local note    = NS.Util.note
 local trim    = NS.Util.trim
 
 local Sl                    -- forward-declared: the handlers below reach it at call time
-local listSettings, runReset, runResetAll, runTest, runDebug, setEnabled
+local listSettings, runReset, runResetAll, runTest, runDebug, runDiagnostics, setEnabled
 local formatValue           -- the `||` display codec; nil when the library is absent
 
 local function schemaReady()
@@ -63,6 +63,11 @@ local COMMANDS = {
         function(rest) runTest(rest) end},
     {"debug",    L["Debug console — `/pc debug` shows it; `on`/`off` toggle logging"],
         function(rest) runDebug(rest) end},
+    -- The diagnostics report (debug-logging-§14), a reserved verb on the live set, so it
+    -- answers while the addon is disabled. Its one other spelling is `/pc debug
+    -- diagnostics`, below; no shorter alias exists or may (slash-commands-§2).
+    {"diagnostics", L["Write a diagnostics report to the debug console, for a bug report"],
+        function() runDiagnostics() end},
     -- The two reserved ALIASES (slash-commands-§2). They are the LAST entries
     -- rather than sorted in beside `config`, because `/pc help` and the landing
     -- page both render this table in declaration order and the schema verbs are
@@ -474,13 +479,27 @@ function runResetAll()
     NS.Print(note(L["all settings reset to defaults"]))
 end
 
--- /pc debug        toggles the on-screen debug console window (logging state unchanged).
--- /pc debug on|off enables / disables session logging via the DebugLog:SetEnabled seam,
---                  which owns the chat ack + the header label + the console bracket line
---                  (debug-logging-§5). Bare-toggle and on/off are deliberately separate:
---                  capture can run with the window closed and be opened after the fact.
+-- `/pc diagnostics` and `/pc debug diagnostics`: the library writes the report, appended
+-- after the trace and never gated on the logging flag, and the stub on a library-less
+-- install says it cannot. The sections are modules/Diagnostics.lua's.
+function runDiagnostics()
+    NS.DebugLog:RunDiagnostics()
+end
+
+-- /pc debug             toggles the on-screen debug console window (logging state unchanged).
+-- /pc debug diagnostics writes the diagnostics report. Tested FIRST, in any case, before
+--                       on/off and before the toggle (debug-logging-§14); `diag` and any other
+--                       short spelling is an ordinary unknown word and gets the usage line.
+-- /pc debug on|off      enables / disables session logging via the DebugLog:SetEnabled seam,
+--                       which owns the chat ack + the header label + the console bracket line
+--                       (debug-logging-§5). Bare-toggle and on/off are deliberately separate:
+--                       capture can run with the window closed and be opened after the fact.
 function runDebug(rest)
     local arg = trim(rest):lower()
+    if arg:match("^(%S*)") == "diagnostics" then
+        runDiagnostics()
+        return
+    end
     if arg == "on" or arg == "off" then
         if NS.DebugLog and NS.DebugLog.SetEnabled then
             NS.DebugLog:SetEnabled(arg == "on")
@@ -497,7 +516,7 @@ function runDebug(rest)
         end
         return
     end
-    NS.Print("usage: " .. cmd("/pc debug [on | off]"))
+    NS.Print("usage: " .. cmd("/pc debug [on | off | diagnostics]"))
 end
 
 local function formatStringExists(globalName)

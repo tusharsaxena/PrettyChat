@@ -952,7 +952,7 @@ end
 -- Deliberately NOT the implementation behind the Categories page's Defaults button
 -- or `/pc resetall`. Both of those are bulk: driving them row by row through it
 -- would run ApplyStrings once per row (170 passes over 79 globals) and emit one
--- [Set] line per row into a 1500-line console buffer, where debug-logging-§10 asks
+-- [Set] line per row into a 3000-line console buffer, where debug-logging-§10 asks
 -- a bulk reset for ONE [Set] line. The page-wide, per-category and per-string
 -- resets take Schema.ResetRows below; `/pc resetall` is the profile reset (options-ui-§12).
 

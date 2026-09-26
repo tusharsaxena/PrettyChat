@@ -133,6 +133,16 @@ local WATCH_EVENTS  = { "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }
 local combatWatcher
 NS.RejectedEvents = NS.RejectedEvents or {}
 
+--- The watcher as a diagnostics report reads it (debug-logging-§14): the frame, or nil
+--- when no combat-scoped mode has been stored this session, the events it takes, and
+--- whether the current state wants it armed. A READ: it builds nothing and registers
+--- nothing, so the report can ask it while the addon is stood down.
+function PrettyChat.CombatWatchState()
+    local wanted = (not PrettyChat:IsStoodDown())
+                   and COMBAT_SCOPED[PrettyChat:GetVisibility()] and true or false
+    return combatWatcher, WATCH_EVENTS, wanted
+end
+
 --- Arm or disarm the combat watcher from the state as it is NOW.
 ---
 --- THE LATCH IS THE FIRST TERM, and that placement is the stand-down (§7's
