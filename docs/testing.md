@@ -18,9 +18,12 @@ luacheck .                 # static analysis (config in .luacheckrc)
 
 ```
 tests/
-  _kit/              -- VENDORED, never edited: framework.lua, loader.lua, mock_base.lua,
-                     --                          mock_record.lua, mock_ids.lua, vendor_sync.lua,
-                     --                          test_eol.lua, test_prose.lua, test_layout_cap.lua,
+  _kit/              -- VENDORED, never edited: framework.lua, asserts.lua, inventory.lua,
+                     --                          loader.lua, mock_base.lua, mock_record.lua,
+                     --                          mock_events.lua, mock_ids.lua, vendor_sync.lua,
+                     --                          test_eol.lua, test_prose.lua, prose_lists.lua,
+                     --                          prose_coverage.lua, prose_selftests.lua,
+                     --                          test_layout_cap.lua, test_diagnostics_contract.lua,
                      --                          run-automated-tests.sh, README.md
   run.lua            -- the suite list, the assertion aliases, Kit.layoutCap, and Kit.run
   prose_waivers.lua  -- the per-file, per-word waivers the kit's prose gate reads
@@ -38,7 +41,7 @@ tests/
   - **distinct `CreateFontString` / `CreateTexture` objects.** The base aliases them onto the frame itself — a divergence its own README documents as deliberate — and the debug console hangs three FontStrings off one title bar, so an aliased one would make `frame.debugToggle.text` read back the window *title*;
   - `Show()`/`Hide()` **fire** the OnShow/OnHide scripts and hooks; the base tracks visibility only, and every settings page builds its body on first show;
   - a **recording** `DEFAULT_CHAT_FRAME`; the base's stub frame answers `AddMessage` from its metatable and keeps nothing, which would silence every chat assertion in the suite;
-  - `AceAddon:NewAddon`, wrapped rather than replaced. Since kit revision 17 the wrapper calls the kit's own `NewAddon` with the name and the mixin list, so the kit names the object, registers it for the `GetAddon` five PrettyChat files call (`modules/Override.lua:8`, `settings/Schema.lua:3`, `settings/Panel.lua:19`, `settings/Slash.lua:15`, and `settings/OptionsSetup.lua:181` through the addon object), and embeds AceConsole, whose `RegisterChatCommand` records into `AceConsole.commands` and runs through `AceConsole:__slash`. The wrapper keeps one thing of its own: AceConsole's `Print` shape landing in this environment's chat frame, because the kit's mixin writes to the harness process's never-set `DEFAULT_CHAT_FRAME`, and a failed reclaim that printed nothing would let the reclaim cases read a stale `[PC]` line and pass;
+  - `AceAddon:NewAddon`, wrapped rather than replaced. Since kit revision 17 the wrapper calls the kit's own `NewAddon` with the name and the mixin list, so the kit names the object, registers it for the `GetAddon` six PrettyChat files call (`modules/Override.lua:8`, `modules/Diagnostics.lua:30`, `settings/Schema.lua:6`, `settings/Panel.lua:19`, `settings/Slash.lua:15`, and `settings/OptionsSetup.lua:220` through the addon object), and embeds AceConsole, whose `RegisterChatCommand` records into `AceConsole.commands` and runs through `AceConsole:__slash`. The wrapper keeps one thing of its own: AceConsole's `Print` shape landing in this environment's chat frame, because the kit's mixin writes to the harness process's never-set `DEFAULT_CHAT_FRAME`, and a failed reclaim that printed nothing would let the reclaim cases read a stale `[PC]` line and pass;
   - `SettingsPanel = nil`, so the private category-tree walk takes its guarded fallback rather than "succeeding" against a stub that answers every method;
   - `C_AddOns` / `GetAddOnMetadata`, deliberately absent from the base so the `core/EnvSetup.lua` seam's library-absent fallback branch stays drivable.
 
@@ -50,7 +53,7 @@ What the mocks deliberately do *not* model is layout: they answer "which widget,
 
 Both `lua tests/run.lua` and `luacheck .` must be green before any commit. Lint config is `.luacheckrc` (`std=lua51`; excludes `libs/`, `GlobalStrings/`, `tests/_kit/`, `docs/audits`, `docs/reviews`). The suites register named `test(name, fn)` cases; the `Tests` badge in the README badge row shows the pass/total.
 
-**The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 48 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the seven seam files are inside the set that was actually checked:
+**The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 51 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the seven seam files are inside the set that was actually checked:
 
 ```sh
 luacheck . --formatter plain | tail -1     # and read the file count it reports
