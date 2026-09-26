@@ -1,0 +1,1 @@
+clean: DR-PC-04 README ## Reporting a bug matches documentation-§1 item 9 / STD-17 verbatim with /pc (no link, 'include it with your bug report'), STD-18 row + Usage/FAQ/Troubleshooting pointers; both new test failures reproduced against the old README (514/2); gate re-run 518/0, luacheck 0/0 in 51 files, lizard -C 15 clean, cap OK
