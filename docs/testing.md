@@ -6,7 +6,7 @@ Contributor-facing verification guide. (Player-facing docs live in the root [REA
 
 PrettyChat runs on the **shared LibKa0s test kit** (testing-§1), vendored whole to `tests/_kit/` and never edited there. The kit owns the case registry, the assertions, the runner, the `--list` renderer, the sandboxed source loader and the TOC reader; what stays in this repo is the instance factory, the mock extender and the suite list.
 
-It runs under stock Lua 5.1 with no WoW client, loading the vendored library files and then the addon's own sources into a mock WoW environment, and exercises constants, string helpers, locale manifest, defaults data, schema, sample renderer, apply pipeline and override engine, migration runner, addon lifecycle, debug console, slash dispatcher, settings panel — and the six LibKa0s seams.
+It runs under stock Lua 5.1 with no WoW client, loading the vendored library files and then the addon's own sources into a mock WoW environment, and exercises constants, string helpers, locale manifest, defaults data, schema, sample renderer, apply pipeline and override engine, migration runner, addon lifecycle, debug console, diagnostics report, slash dispatcher, settings panel — and the six LibKa0s seams.
 
 ```sh
 lua tests/run.lua          # run every suite (exits non-zero on failure)
