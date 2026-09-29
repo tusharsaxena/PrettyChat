@@ -1,0 +1,1 @@
+OK SP-PC-03 no defect inside the S4 review bar: every old check mapped once, expected strings verified against the dispatcher (live and library-absent) and code, Pending list matches the clarified policy (115 pending, 13 exempt with recorded passes), references resolve, shape conforms; gate 538/0 and luacheck 0/0
