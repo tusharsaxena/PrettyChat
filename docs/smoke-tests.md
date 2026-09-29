@@ -106,9 +106,10 @@ Find the cause before changing anything; a fix that only makes the check pass is
 - **SLASH-2. Bare `/pc` and an unknown verb.** `/pc`, then `/pc` followed by a few spaces → each opens
   the settings panel on the Ka0s Pretty Chat landing page, as `/pc config` does, and prints no help.
   `/pc bogus` → `unknown command 'bogus'` and then the help index. Result:
-- **SLASH-3. `/pc list`.** → about 170 lines under `Available settings`: `[General]` first, then
-  `[Loot]` and the rest in category order, each category its `.enabled` row and then an `.enabled` and
-  a `.format` row per string. Result:
+- **SLASH-3. `/pc list`.** → `Available settings`, then nine bracketed group headings and 170 setting
+  rows, 180 lines in all: `[General]` first with its four Master controls rows, then `[Loot]` and the
+  rest in category order, each category its `.enabled` row and then an `.enabled` and a `.format` row
+  per string. Result:
 - **SLASH-4. `/pc list <Category>`.** `/pc list loot`, `/pc list LOOT`, `/pc list Loot` → three
   identical Loot listings. `/pc list nope` → `unknown category 'nope'. Valid: General, Loot, Currency, …`.
   Result:
@@ -119,8 +120,10 @@ Find the cause before changing anything; a fix that only makes the check pass is
   `Tradeskill.TRADESKILL_LOG_THIRDPERSON`. Neither falls through to the unknown-category line, and each
   header's count matches its list. Result:
 - **SLASH-6. `/pc get` for every row kind.** `/pc get General.enabled`, `/pc get Loot.enabled`,
-  `/pc get Loot.LOOT_ITEM_SELF.enabled` → `true` each. `/pc get Loot.LOOT_ITEM_SELF.format` → the
-  quoted format with single pipes. `/pc get Nope.bogus.path` → `Setting not found: Nope.bogus.path`.
+  `/pc get Loot.LOOT_ITEM_SELF.enabled` → `General.enabled = true`, `Loot.enabled = true` and
+  `Loot.LOOT_ITEM_SELF.enabled = true`. `/pc get Loot.LOOT_ITEM_SELF.format` →
+  `Loot.LOOT_ITEM_SELF.format = ` and then the format, unquoted, with single pipes
+  (`|cffff0000Loot|cffffffff | …`). `/pc get Nope.bogus.path` → `Setting not found: Nope.bogus.path`.
   No Lua error. Result:
 - **SLASH-7. `/pc set` boolean spellings.** `/pc set Loot.enabled` with each of `true`, `false`, `on`,
   `off`, `1`, `0`, `yes`, `no` → each lands and echoes `Loot.enabled = …`. `/pc set Loot.enabled bogus`
@@ -424,9 +427,10 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   use the Blizzard Settings window's own footer defaults control → the same result as RESET-3. **Fail:**
   nothing happens (the canvas lost its `OnDefault`). Result:
 - **RESET-5. `/pc reset <path>` resets one row.** Edit two Loot formats and untick one Loot string.
-  `/pc reset Loot.LOOT_ITEM_SELF.format` → `Loot.LOOT_ITEM_SELF.format = <the default, pipes doubled>`,
-  and `/pc list Loot` shows that row at default and the others still changed. `/pc set Loot.enabled
-  false`, `/pc reset Loot.enabled` → only that row resets, echoing `Loot.enabled = true`. Result:
+  `/pc reset Loot.LOOT_ITEM_SELF.format` → `Loot.LOOT_ITEM_SELF.format = ` and then the default, with
+  single pipes as `/pc get` shows it, and `/pc list Loot` shows that row at default and the others
+  still changed. `/pc set Loot.enabled false`, `/pc reset Loot.enabled` → only that row resets,
+  echoing `Loot.enabled = true`. Result:
 - **RESET-6. A category name explains the change.** `/pc set Loot.enabled false`, then `/pc reset Loot` →
   nothing resets, and three lines print: that `reset` now takes a setting path, not a category; the
   `/pc reset <path>` replacement with a pointer to `/pc list Loot`; and the Categories page's Defaults
@@ -661,10 +665,60 @@ Until the pass runs, record this section as unrun, not as coverage.
 
 ## Pending sign-off
 
-Checks carried over from the pre-2026-09-29 document that the owner has not yet run in a client, with
-the old ID (`T-NN`) each came from.
+A check is listed here until a client run records a pass for it in its current form: every check new
+in the 2026-09-29 rework, every check whose expectation the rework corrected against the code, and
+every check carried over from the old numbering (`T-NN`, the quick recipe, `SMK-F001`) with no
+recorded pass. The old document had no Result lines, so most checks are here. Sign one off on its own
+`Result:` line, then remove its ID from this table.
+
+Not listed, because a recorded pass covers them and the rework did not change what they expect:
+DIAG-1, DIAG-3 – 8, DIAG-14, COMBAT-4 and DEGRADED-8 (T-39 steps 1–2 and 4–10, T-29b step 6 and T-90
+step 7, passed in the owner's run of 2026-09-26 as rows PC-S1 – PC-S11 and PC-X1 of the diagnostics
+rollout's report), and LAUNCH-2 – 4 (T-65 and T-65a, passed in the owner's minimap re-check of
+2026-09-25 on the launcher-menu builds, step X1.4 of the 2026-09-23 remediation's checklist). Both
+records are in the Ka0sAddonsCommonTasks repository.
 
 | ID | Origin | Why it is owed |
 |---|---|---|
+| PROFILE-1 – 10 | New: the Profiles page (`SP-PC-01`) and the `/pc profile` verb (`SP-PC-02`) | New in this rework; never run |
+| DEGRADED-9 | New: `/pc profile` on the library-absent stub (`SP-PC-02`) | New in this rework; never run |
+| SLASH-1 | T-03, T-38 | Corrected: the help header ends with the `/prettychat` alias note |
+| SLASH-3 | T-30 | Corrected: 170 setting rows and 180 lines, not "about 170 lines" |
+| SLASH-5 | T-31a | Corrected: neither header ends in a colon |
+| SLASH-6 | T-32 | Corrected: the library's `Setting not found` wording, and `get` echoes `<path> = <value>` with the format unquoted |
+| SLASH-7 | T-33 | Corrected: the library's refusal wording |
+| SLASH-10 | T-34a steps 3–4 and 6, T-51 | Corrected: a format with fewer conversions saves and renders |
+| INSTALL-6 | T-43 | Corrected: the SavedVariables key is `profiles.Default` |
+| PANEL-7 | T-29a step 1, T-100 | Corrected: the layout gained the Minimap button row |
+| PANEL-11 | T-102 | Corrected: Loot lists 17 strings, not nineteen |
+| PANEL-16 | T-28, quick recipe step 4 | Corrected: the row's Enable toggle half was added |
+| STATE-2 | T-68 | Corrected: the checkbox prints nothing; only the verbs echo |
+| TEST-1 | Quick recipe step 2, T-52, T-103 (2) | Corrected: the report goes to the debug console, not chat |
+| RESET-5 | T-35, T-93 (1)–(2) | Corrected: the reset echo shows single pipes, as `/pc get` does |
+| RESET-7 | T-55, T-93 (5) | Corrected: `/pc reset Bogus` answers `Setting not found: Bogus` |
+| RESET-11 | T-57 | Corrected: the third arm resets by path |
+| RESET-12 | T-58, T-26 | Corrected: the footer control writes its own line |
+| RESET-13 | T-59 | Corrected: resets by path and `/pc resetall` |
+| LAUNCH-6 | T-67, T-26b (first) | Corrected: the profile switch uses the Profiles page and `/pc profile` |
+| DEGRADED-3 | T-90 step 4 | Corrected: the missing window is reported once per entry point |
+| DEGRADED-6 | T-90, T-52 | Corrected: the `/pc test` chat form lives here now |
+| DEGRADED-7 | T-90, T-98 | Corrected: the tagline and console halves went; T-98 was also listed as recorded but not run (the 2026-08-24 LibKa0s modules execution record) |
+| LOC-4 | T-106 | Corrected: fails on `(original not available)`; also never run (below) |
+| LOC-1 – 3, LOC-5 | T-104, T-105, T-107 | Marked NOT YET RUN since the 2026-09-07 remediation (session 6, `M5-08`); needs a deDE or frFR client |
 | PANEL-9 | T-99 | Marked NOT YET RUN since the LibKa0s v1.27.0 re-vendor (session 3, `M4-01`) |
-| LOC-1 – 5 | T-104 – T-107 | Marked NOT YET RUN since the 2026-09-07 remediation (session 6, `M5-08`); needs a deDE or frFR client |
+| INSTALL-2 | Quick recipe step 1, T-97 steps 1–3 | T-97 listed as recorded but not run (the 2026-08-24 LibKa0s modules execution record); no later pass |
+| PANEL-1 | T-20, T-62, T-95, T-97 step 4 | As INSTALL-2 for T-97; no pass recorded for the rest |
+| PANEL-6 | T-29c | On the 2026-09-07 cycle's owed checklist; no result recorded |
+| OVR-9 | SMK-F001 | Session Q.12 of the 2026-09-23 checklist, whose sign-off table is empty |
+| DIAG-2 | T-39 step 3 | The 2026-09-26 diagnostics run recorded the other T-39 steps, not this one |
+| INSTALL-1, INSTALL-3 – 5, INSTALL-7 | T-01, T-02, T-14, T-50, T-53 (expected 4) | No recorded result |
+| SLASH-2, SLASH-4, SLASH-8, SLASH-9 | T-38, T-31, T-34, T-34a steps 1–2 and 5 | No recorded result |
+| PANEL-2 – 5, PANEL-8, PANEL-10, PANEL-12 – 15, PANEL-17 – 21 | T-21, T-22, T-23, T-24, T-26a, T-26b (second), T-29, T-40 – T-42, T-54, T-61, T-95, T-102 | No recorded result |
+| STATE-1, STATE-3 – 6 | T-10, T-68, T-68a | No recorded result |
+| COMBAT-1 – 3 | T-37, T-96, T-65 (the in-combat line) | No recorded result |
+| OVR-1 – 8, OVR-10 | T-11 – T-13, T-53 (expected 1–3), T-63, T-101, quick recipe step 3 | No recorded result |
+| TEST-2 – 6 | Quick recipe step 2, T-52a, T-103 (1) | No recorded result |
+| RESET-1 – 4, RESET-6, RESET-8 – 10 | T-25 – T-27, T-26b (first), T-36, T-56, T-93 (3)–(4), T-94 | No recorded result |
+| LAUNCH-1, LAUNCH-5, LAUNCH-7 | T-64, T-66, T-69 | No recorded result |
+| DIAG-9 – 13, DIAG-15 – 19 | T-29a steps 2–5, T-29b steps 1–5 and 7, T-60, T-60a, T-91, T-92 | No recorded result |
+| DEGRADED-1, DEGRADED-2, DEGRADED-4, DEGRADED-5, DEGRADED-10 | T-90 steps 1–3, 5 and 6, and its restore | No recorded result |
