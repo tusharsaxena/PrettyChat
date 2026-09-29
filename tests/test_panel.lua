@@ -453,7 +453,7 @@ end)
 -- hides the texture, the next widget to acquire that frame inherits a 300px logo,
 -- and the pool is shared with every other addon in the session, so the widget that
 -- inherits it is very often not ours. The cross-addon half is docs/smoke-tests.md
--- § S3; what a case can pin is that the release hook exists and does hide it.
+-- PANEL-6; what a case can pin is that the release hook exists and does hide it.
 test("the landing logo is hidden when its group goes back to AceGUI's pool", function()
     parentPanel:Show()
 

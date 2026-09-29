@@ -263,4 +263,4 @@ output. Bundles are never edited and never pruned.
 
 ## In-game validation
 
-For behavior stock Lua can't cover (panel rendering, live chat overrides, positional `%n$s` formats), follow the manual [smoke-test suite](./smoke-tests.md) — it lists which invariant each test guards, so a failure can be tied back to a specific area of the addon.
+For behavior stock Lua can't cover (panel rendering, live chat overrides, positional `%n$s` formats), follow the manual [smoke-test suite](./smoke-tests.md) — its checks are grouped by theme and each says what must happen, so a failure can be tied back to a specific area of the addon.

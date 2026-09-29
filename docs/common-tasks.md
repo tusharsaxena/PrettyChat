@@ -119,7 +119,7 @@ When you add or remove a widget, also update the block's `refresh()` closure so 
 
 Two layers, in order. **Headless first:** `lua tests/run.lua` + `luacheck .` must both be green before any commit ([testing.md](./testing.md)). The suites are data-driven — a new format string or a new category is picked up and asserted automatically (`test_defaults` cross-checks the defaults table against the schema built on top of it), so most additions need no test edit. **Then in-game**, for what stock Lua can't reach:
 
-See [smoke-tests.md](./smoke-tests.md). The quick recipe at the top handles routine work; the full suite groups (Boot / Override pipeline / Settings panel / Slash / Cross-surface sync / Persistence) catch the rest. If you touched `OnEnable` / `ApplyStrings` / `settings/Schema.lua` / `settings/Panel.lua` / slash dispatch, that doc lists which test groups to run.
+See [smoke-tests.md](./smoke-tests.md). Its checks are grouped by theme (INSTALL, SLASH, PANEL, PROFILE, STATE, COMBAT, OVR, TEST, RESET, LAUNCH, DIAG, DEGRADED, LOC), and its "Which checks to run" table under `## Before you start` maps a change, from a routine format-string edit to `OnEnable` / `ApplyStrings` / `settings/Schema.lua` / `settings/Panel.lua` / slash dispatch, to the checks it needs.
 
 If you can only reason about a change from code and cannot test it in WoW, say so explicitly — don't claim it works.
 
