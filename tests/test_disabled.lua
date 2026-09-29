@@ -298,6 +298,9 @@ test("disabled/7: every reserved verb answers normally, and the bare /pc opens t
         local verb = entry[1]
         if LIVE_VERBS[verb] then
             seen = seen + 1
+            -- Each verb must really be dispatched while DISABLED, or this pin cannot
+            -- fail: a verb run with the addon back up answers whether it is live or not.
+            t.eq(i.addon:IsAddonEnabled(), false, "/pc " .. verb .. " is sent while disabled")
             local lines = say(i, verb)
             if verb == "help" then
                 -- The one live verb that carries the line, and it is not a refusal OF
@@ -311,9 +314,10 @@ test("disabled/7: every reserved verb answers normally, and the bare /pc opens t
                         "/pc " .. verb .. " must answer normally while disabled, not refuse")
                 end
             end
-            -- `enable` and `disable` are live and they WRITE, so put the addon back
-            -- where this loop found it before the next verb runs.
-            if verb == "enable" then disable(i) end
+            -- `enable`, `disable` and `resetall` are live and they WRITE (`resetall` puts
+            -- General.enabled back to its default of true), so put the addon back where
+            -- this loop found it before the next verb runs.
+            if verb == "enable" or verb == "resetall" then disable(i) end
         end
     end
     t.truthy(seen >= 10, "the loop actually reached the reserved verbs: " .. tostring(seen))
