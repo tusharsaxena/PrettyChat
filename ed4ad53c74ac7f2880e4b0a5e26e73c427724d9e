@@ -1,0 +1,1 @@
+OK SP-PC-03 coverage verified: 87 old checks all mapped (0 dropped), 128 new checks in 13 themes matching the Index, PROFILE-1..10 match CliProfile/OnProfile* code, inbound refs updated, CRLF, gate 538/0 + luacheck 0/0
