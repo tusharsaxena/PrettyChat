@@ -474,7 +474,7 @@ end)
 
 -- red under: a descriptor that passes no liveVerbs (the library's thirteen do not include
 -- `profile`, so the verb would answer the refusal line), or one that passes `profile` alone
--- (every reserved verb but it would then refuse).
+-- (the reserved `get` sent while disabled would then answer the refusal line).
 test("/pc profile answers while the addon is disabled, and can bring it back up", function()
     local inst = ctx.loadAddon()
     local NS, db, addon = inst.NS, inst.addon.db, inst.addon
@@ -484,6 +484,7 @@ test("/pc profile answers while the addon is disabled, and can bring it back up"
     t.eq(addon:IsAddonEnabled(), false, "Default is off")
     local refusal = NS.SlashCommands:DisabledLine()
 
+    t.falsy(anyLine(say(inst, "get General.enabled"), refusal), "a reserved verb still answers")
     t.falsy(anyLine(say(inst, "profile"), refusal), "the bare verb lists rather than refusing")
     local lines = say(inst, "profile On")
     t.falsy(anyLine(lines, refusal), "the switch is not refused")
