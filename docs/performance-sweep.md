@@ -70,15 +70,15 @@ tests/test_surface_parity.lua:112:        SafeRegisterUnitEvent = instance.NS.Ut
 tests/test_surface_parity.lua:113:        SafeRegisterEvents    = instance.NS.Util.SafeRegisterEvents,
 tests/test_surface_parity.lua:121:                          "SafeRegisterEvent", "SafeRegisterUnitEvent", "SafeRegisterEvents" }) do
 tests/wow_mock.lua:72:--  15.  frame RegisterEvent / UnregisterEvent
-tests/wow_mock.lua:134:-- The EVENT methods are therefore the kit's, not this file's: `RegisterEvent`,
-tests/wow_mock.lua:135:-- `UnregisterEvent`, `IsEventRegistered`, `RegisterUnitEvent` and
+tests/wow_mock.lua:141:-- The EVENT methods are therefore the kit's, not this file's: `RegisterEvent`,
+tests/wow_mock.lua:142:-- `UnregisterEvent`, `IsEventRegistered`, `RegisterUnitEvent` and
 ```
 
 Reconciled, so a future drift is visible rather than arguable. One is a lint declaration
 (`.luacheckrc:60`). Fourteen are the pattern names appearing **inside comments** — `core/CoreSetup.lua:54`,
 `:55`, `core/LifecycleSetup.lua:40`, `modules/Override.lua:126`, `:127`, `settings/Panel.lua:528`,
 `tests/test_disabled.lua:28`, `tests/test_libka0s.lua:741`, `tests/test_override.lua:250`, `:254`,
-`tests/test_panel_categories.lua:272` and `tests/wow_mock.lua:72`, `:134`, `:135` — which describe the discipline
+`tests/test_panel_categories.lua:272` and `tests/wow_mock.lua:72`, `:141`, `:142` — which describe the discipline
 rather than doing anything; the harness mock no longer defines its own `RegisterEvent`, because the
 frame event methods are the kit's. Nine are `core/CoreSetup.lua`'s `SafeRegisterEvent` /
 `SafeRegisterUnitEvent` / `SafeRegisterEvents` surface (`:114`-`:127`, the degraded arm's one-rung

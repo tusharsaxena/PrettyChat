@@ -179,9 +179,11 @@ test("Profiles: the global reset empties the active profile and nothing else", f
     t.eq(NS.Schema.Get("General.visibility"), "never", "and the other profile kept its value")
 end)
 
--- red under: dropping `skipRestoreAll`, which lets the library's row walk write profile rows
--- one by one, or a veto that forgets the Profiles page (options-ui-§3).
-test("Profiles: the global reset's veto names the page and every profile-backed row", function()
+-- red under: dropping `skipRestoreAll`, or a veto that forgets the Profiles page
+-- (options-ui-§3); or dropping `resetProfile`, which leaves the library's own
+-- RestoreAllDefaults a walk of the session rows alone rather than the profile reset
+-- options-ui-§12 makes every global reset.
+test("Profiles: the global reset's veto names the page, and the library's reset is ResetAll", function()
     local inst = ctx.loadAddon()
     local Schema = inst.NS.Schema
     t.truthy(Schema.VetoedFromResetAll({ page = Schema.PROFILES_PAGE, sessionOnly = true }),
@@ -190,10 +192,52 @@ test("Profiles: the global reset's veto names the page and every profile-backed 
         "a profile-backed row is vetoed")
     t.falsy(Schema.VetoedFromResetAll({ page = "General", sessionOnly = true }),
         "a session-only row is not")
+    local db, resets = inst.addon.db, 0
+    local real = inst.addon.ResetAll
+    inst.addon.ResetAll = function(self) resets = resets + 1; return real(self) end
     Schema.Set("General.visibility", "never")
-    inst.NS.Helpers.RestoreAllDefaults()
-    t.eq(Schema.Get("General.visibility"), "never",
-        "the library's row walk leaves profile rows to the profile reset")
+    local ok, err = pcall(inst.NS.Helpers.RestoreAllDefaults)
+    inst.addon.ResetAll = real
+    t.truthy(ok, tostring(err))
+    t.eq(resets, 1, "the library's global reset is the host's one profile reset, once")
+    t.eq(Schema.Get("General.visibility"), inst.NS.GeneralDefaults.visibility,
+        "and it leaves the active profile at its defaults")
+    t.eq(db:GetCurrentProfile(), "Default", "on the profile it was on")
+end)
+
+-- options-ui-§12: the reset control's tooltip SHOULD name the equivalence with Profiles ->
+-- Reset Profile. The composer is the only writer of that text and picks it from the
+-- descriptor (LibKa0s-Options-1.0 minor 18), so what is pinned is the descriptor, read back
+-- the way a player sees it: the real button's OnEnter, into the mock GameTooltip.
+--
+-- red under: dropping `profilesPage = true` or `resetProfile` from settings/OptionsSetup.lua
+-- (the tooltip falls back to "Restore every setting in this addon to its default", which
+-- overstates a reset that leaves the other profiles alone).
+local RESET_ALL_TIP = "Reset the current profile to its defaults \226\128\148 the same thing "
+    .. "Profiles -> Reset Profile does. Your other profiles are not affected."
+
+test("Profiles: Reset all settings' tooltip says it is the same act as Profiles -> Reset Profile",
+function()
+    local inst = ctx.loadAddon()
+    local env = inst.env
+    local general
+    for _, sub in ipairs(env._settings.subcategories) do
+        if sub.name == "General" then general = sub.frame end
+    end
+    t.truthy(general, "the General page is registered")
+    local mark = #env._widgets
+    general:Show()
+    local btn
+    for i = mark + 1, #env._widgets do
+        local w = env._widgets[i]
+        if w.type == "Button" and w.text == "Reset all settings" then btn = w end
+    end
+    t.truthy(btn, "the Master controls tab draws a Reset all settings button")
+    env.GameTooltip.lines = {}
+    btn:Fire("OnEnter")
+    local lines = env.GameTooltip.lines
+    t.eq(#lines, 1, "one tooltip body line")
+    t.eq(lines[1], RESET_ALL_TIP)
 end)
 
 -- ---------------------------------------------------------------------------

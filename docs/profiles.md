@@ -105,10 +105,15 @@ profile or the profile list, and the player stays on the profile they were on. I
 the collection's one wording: *"Reset this profile to the addon's defaults? Everything you have
 configured or added in it is discarded — your other profiles are not affected."*
 
-The library's row-by-row `RestoreAllDefaults` is not on that path. Its descriptor still carries the
-veto, `skipRestoreAll = Schema.VetoedFromResetAll` (`settings/Schema.lua`, named once): the Profiles
-page and every row whose value lives in the profile. A row walk reached from anywhere therefore
-touches only session-only rows, and never the Profiles page (`options-ui-§3`).
+The library's `RestoreAllDefaults` is not on that path, but the Options descriptor tells it what the
+reset is. `resetProfile` is `PrettyChat:ResetAll` itself, so a library reset reached from anywhere
+sweeps the session-only rows and then runs the same profile reset. `profilesPage = true` says this
+page exists, which picks the **Reset all settings** tooltip that names the equivalence (`options-ui-§12`):
+*"Reset the current profile to its defaults — the same thing Profiles -> Reset Profile does. Your
+other profiles are not affected."* The descriptor also carries the veto,
+`skipRestoreAll = Schema.VetoedFromResetAll` (`settings/Schema.lua`, named once): the Profiles page and
+every row whose value lives in the profile, so a row walk never writes profile rows one by one and
+never reaches the Profiles page (`options-ui-§3`).
 
 ## Slash commands
 
