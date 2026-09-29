@@ -51,15 +51,21 @@ test("Profiles: the page is the last in the rail, and its file is the last the T
 end)
 
 -- red under: building the options table over anything but the live db, or giving the page a
--- Defaults action ("restore defaults" here would mean deleting profiles, options-ui-§3).
-test("Profiles: the page hosts AceDBOptions' table over the live db, with no Defaults action", function()
+-- Defaults button ("restore defaults" here would mean deleting profiles, options-ui-§3):
+-- `defaultsButton = true` in settings/Profiles.lua turns each Defaults assertion red on its own. They read
+-- the LIBRARY's own state -- the intent CreatePanel records, and the button EnsureDefaultsButton
+-- builds on first show -- because `defaultsOnClick` is set only by a host that wires a click, so
+-- a nil there proves nothing about the button.
+test("Profiles: the page hosts AceDBOptions' table over the live db, with no Defaults button", function()
     local inst = ctx.loadAddon()
     local reg = lib(inst, "AceConfig-3.0").__registered[APP]
     t.truthy(reg, "the AceDBOptions table is registered under the page's app name")
     t.eq(reg and reg.__db, inst.addon.db, "built over the live db")
     local pageCtx = inst.NS.Helpers.__panelFor(inst.NS.Schema.PROFILES_PAGE)
     t.truthy(pageCtx, "the page has a ctx under its key")
-    t.nilv(pageCtx.panel.defaultsOnClick, "and no Defaults action")
+    t.eq(pageCtx.panel.wantsDefaultsButton, false, "the page did not ask for a Defaults button")
+    profilesFrame(inst):Show()
+    t.nilv(pageCtx.panel.defaultsBtn, "and the first show built none")
     t.eq(pageCtx.panel.titleText,
         "Ka0s Pretty Chat |A:common-icon-forwardarrow:16:16|a " .. inst.NS.L["Profiles"],
         "it carries the shared breadcrumb header")
@@ -179,13 +185,25 @@ test("Profiles: the global reset empties the active profile and nothing else", f
     t.eq(NS.Schema.Get("General.visibility"), "never", "and the other profile kept its value")
 end)
 
--- red under: dropping `skipRestoreAll`, or a veto that forgets the Profiles page
--- (options-ui-§3); or dropping `resetProfile`, which leaves the library's own
--- RestoreAllDefaults a walk of the session rows alone rather than the profile reset
--- options-ui-§12 makes every global reset.
+-- red under: dropping `skipRestoreAll` from settings/OptionsSetup.lua (the wiring assertion, read
+-- off the source); a veto that forgets the Profiles page (options-ui-§3); or dropping
+-- `resetProfile`, which leaves the library's own RestoreAllDefaults a walk of the session rows
+-- alone rather than the profile reset options-ui-§12 makes every global reset.
+--
+-- The wiring is read off the SOURCE, comments stripped, because a descriptor field is not
+-- observable after the library's New returns, and because with `resetProfile` supplied the
+-- library already narrows its row walk to the sessionOnly rows -- no reset behavior can tell
+-- whether the veto was passed.
 test("Profiles: the global reset's veto names the page, and the library's reset is ResetAll", function()
     local inst = ctx.loadAddon()
     local Schema = inst.NS.Schema
+    local fh = io.open(ctx.root .. "/settings/OptionsSetup.lua", "r")
+    t.truthy(fh, "settings/OptionsSetup.lua is readable")
+    local src = fh and fh:read("*a") or ""
+    if fh then fh:close() end
+    local code = src:gsub("%-%-[^\r\n]*", "")
+    t.truthy(code:match("skipRestoreAll%s*=%s*NS%.Schema%.VetoedFromResetAll") ~= nil,
+        "the options descriptor passes the veto as skipRestoreAll")
     t.truthy(Schema.VetoedFromResetAll({ page = Schema.PROFILES_PAGE, sessionOnly = true }),
         "the Profiles page is vetoed, whatever its rows")
     t.truthy(Schema.VetoedFromResetAll(Schema.FindByPath("General.visibility")),

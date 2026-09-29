@@ -215,7 +215,7 @@ end
 
 A `Schema.Set` from a panel widget or from `/pc set` reaches `Schema.NotifyPanelChange(row.category)`, which re-syncs both. `General` (or `nil`) fans out to every host refresher, because per-string disabled state depends on the master switch.
 
-Master-toggle (`General.enabled`) changes cascade to both sub-pages because per-string disabled state depends on the master. Only the visible tab has a host refresher registered; the tabs behind it are rebuilt from the live DB the moment they are clicked, so there is nothing stale for them to show.
+Master-toggle (`General.enabled`) changes cascade to the General and Categories pages because per-string disabled state depends on the master. Only the visible tab has a host refresher registered; the tabs behind it are rebuilt from the live DB the moment they are clicked, so there is nothing stale for them to show.
 
 A tab that has never been drawn has no entry in `Schema.refreshers`. That's correct: it is built from the live DB the moment it is selected, so it cannot show stale state — there is nothing to refresh until it is on screen.
 

@@ -102,7 +102,7 @@ Tests are grouped by subsystem. Each test has an ID (`T-NN`), a one-line **Why**
 > Why: the library's own `expandMainCategory` walks `SettingsPanel:GetCategoryList():GetCategoryEntry(cat):SetExpanded(true)` inside `pcall`. It reports nothing when the private API moves ([`LIBKA0S-04`](https://github.com/tusharsaxena/PrettyChat/issues/9)), so this test is the only thing that would notice.
 
 - Steps: starting from the closed addon list, `/pc config`.
-- Expected: the left rail shows both sub-pages (`General`, `Categories`) without the user clicking the disclosure arrow. The eight message categories are **tabs on the Categories page** and must not appear in the rail at all.
+- Expected: the left rail shows all three sub-pages (`General`, `Categories`, then `Profiles` last) without the user clicking the disclosure arrow. The eight message categories are **tabs on the Categories page** and must not appear in the rail at all.
 - Failure mode: tree stays collapsed. Cause: a future patch renamed `GetCategoryList` / `GetCategoryEntry` / `SetExpanded`. The `pcall` wrapper prevents an error, but the auto-expand silently no-ops. Falls back to manual click.
 
 #### T-22 — Sub-page header breadcrumb
@@ -746,7 +746,7 @@ and no headless assertion can tell the difference. Current vendored copies resol
 `rawget` and are safe, but this is the check that would have caught a shipped one.
 
 **Steps:** walk every surface and read every label:
-1. `/pc config` — the landing page, both sub-pages and all eight tabs on Categories, including the page's **Defaults** button and the Categories footnote.
+1. `/pc config` — the landing page, all three sub-pages (`General`, `Categories`, `Profiles`) and all eight tabs on Categories, including the page's **Defaults** button and the Categories footnote.
 2. `/pc debug` — the console: the title bar, the `Debug: ON`/`Debug: OFF` toggle, the `N / 3000 lines`
    counter, and the copy window's own title. (The Copy and Clear controls are marks now and carry no
    text — if you can read a word on either of them, the folder name is not reaching the library and

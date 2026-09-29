@@ -5,7 +5,7 @@ summarizes and the `performance-§12` row of
 [`## Documented deviations`](./ARCHITECTURE.md#documented-deviations) ratifies: the committed
 whole-repo sweep that proves criterion (a), and the one load-time cost that was measured and removed.
 Moved here from `performance.md` so that page fits one screen (`documentation-§3`); the prose moved
-verbatim, and the result block below was re-taken on the LibKa0s v1.56.0 tree at the same commit.
+verbatim. The result block below was last re-taken on the LibKa0s v1.62.0 tree.
 
 ## The sweep — criterion (a), proven rather than asserted
 
@@ -47,19 +47,19 @@ core/CoreSetup.lua:142:Util.SafeRegisterEvents    = lib.SafeRegisterEvents
 core/LifecycleSetup.lua:40:-- no AceTimer, no C_Timer ticker and no OnUpdate, it registers no message and no
 modules/Override.lua:126:-- Registration goes through LibKa0s-Core's SafeRegisterEvents (bound as
 modules/Override.lua:127:-- NS.Util.SafeRegisterEvents by core/CoreSetup.lua): the C_EventUtils.IsEventValid
-modules/Override.lua:157:        combatWatcher:SetScript("OnEvent", function()
-modules/Override.lua:174:    local n = NS.Util.SafeRegisterEvents(combatWatcher, WATCH_EVENTS, nil, NS.RejectedEvents)
+modules/Override.lua:167:        combatWatcher:SetScript("OnEvent", function()
+modules/Override.lua:184:    local n = NS.Util.SafeRegisterEvents(combatWatcher, WATCH_EVENTS, nil, NS.RejectedEvents)
 settings/Panel.lua:528:    -- A frame later, both are true. C_Timer.After(0, ...) is the client's own way
 settings/Panel.lua:531:    if C_Timer and C_Timer.After then
 settings/Panel.lua:532:        C_Timer.After(0, function() fitTree(ctx) end)
 tests/test_disabled.lua:28:-- arms no AceTimer, no C_Timer ticker and no OnUpdate, registers no message and no
-tests/test_libka0s.lua:739:test("degraded SafeRegisterEvents records a rejected name and registers the rest", function()
-tests/test_libka0s.lua:741:    -- (the call raises on nil), call target:RegisterEvent without the pcall (the bad
-tests/test_libka0s.lua:752:    local ok, n = pcall(Util.SafeRegisterEvents, frame, events, nil, rejected)
-tests/test_libka0s.lua:764:    t.eq(Util.SafeRegisterEvents(frame, events, nil, rejected), 1, "a second walk answers the same")
-tests/test_libka0s.lua:766:    t.falsy(Util.SafeRegisterEvent(frame, "PLAYER_REGEN_DISABLED"), "one name answers false with no list")
-tests/test_libka0s.lua:767:    t.truthy(Util.SafeRegisterUnitEvent(frame, "UNIT_HEALTH", rejected, "player"), "the unit form registers")
-tests/test_libka0s.lua:768:    t.falsy(Util.SafeRegisterUnitEvent(frame, "PLAYER_REGEN_DISABLED", rejected, "player"),
+tests/test_libka0s.lua:771:test("degraded SafeRegisterEvents records a rejected name and registers the rest", function()
+tests/test_libka0s.lua:773:    -- (the call raises on nil), call target:RegisterEvent without the pcall (the bad
+tests/test_libka0s.lua:784:    local ok, n = pcall(Util.SafeRegisterEvents, frame, events, nil, rejected)
+tests/test_libka0s.lua:796:    t.eq(Util.SafeRegisterEvents(frame, events, nil, rejected), 1, "a second walk answers the same")
+tests/test_libka0s.lua:798:    t.falsy(Util.SafeRegisterEvent(frame, "PLAYER_REGEN_DISABLED"), "one name answers false with no list")
+tests/test_libka0s.lua:799:    t.truthy(Util.SafeRegisterUnitEvent(frame, "UNIT_HEALTH", rejected, "player"), "the unit form registers")
+tests/test_libka0s.lua:800:    t.falsy(Util.SafeRegisterUnitEvent(frame, "PLAYER_REGEN_DISABLED", rejected, "player"),
 tests/test_override.lua:250:-- Both names go through NS.Util.SafeRegisterEvents (LibKa0s-Core), so a name the
 tests/test_override.lua:254:-- A fresh instance whose client refuses `name` at the frame's RegisterEvent and,
 tests/test_override.lua:283:test("IsEventValid rejects a name without calling RegisterEvent", function()
@@ -77,7 +77,7 @@ tests/wow_mock.lua:142:-- `UnregisterEvent`, `IsEventRegistered`, `RegisterUnitE
 Reconciled, so a future drift is visible rather than arguable. One is a lint declaration
 (`.luacheckrc:60`). Fourteen are the pattern names appearing **inside comments** — `core/CoreSetup.lua:54`,
 `:55`, `core/LifecycleSetup.lua:40`, `modules/Override.lua:126`, `:127`, `settings/Panel.lua:528`,
-`tests/test_disabled.lua:28`, `tests/test_libka0s.lua:741`, `tests/test_override.lua:250`, `:254`,
+`tests/test_disabled.lua:28`, `tests/test_libka0s.lua:773`, `tests/test_override.lua:250`, `:254`,
 `tests/test_panel_categories.lua:272` and `tests/wow_mock.lua:72`, `:141`, `:142` — which describe the discipline
 rather than doing anything; the harness mock no longer defines its own `RegisterEvent`, because the
 frame event methods are the kit's. Nine are `core/CoreSetup.lua`'s `SafeRegisterEvent` /
@@ -89,7 +89,7 @@ drives those wrappers or pins the watcher (`tests/test_libka0s.lua`, `tests/test
 the two sections below: the combat watcher, and one next-frame layout fit in the settings panel.
 
 One thing the grep does *not* return, said out loud so nobody re-adds it: `combatWatcher:UnregisterAllEvents`
-at `modules/Override.lua:171` **does not match**, because the pattern spells `RegisterAllEvents` with a
+at `modules/Override.lua:181` **does not match**, because the pattern spells `RegisterAllEvents` with a
 capital R and `UnregisterAllEvents` spells it lowercase. An earlier revision of this page printed that
 line inside its result block; the command above cannot produce it, and a result block holding a line
 its own command cannot return is worse than no result block at all.
@@ -99,14 +99,14 @@ its own command cannot return is worse than no result block at all.
 What does not survive is *"zero `C_Timer` call"*: `.luacheckrc:60` declares `C_Timer` in
 `read_globals`, and since 2026-09-03 that declaration has a real consumer.
 
-### The combat watcher — `modules/Override.lua:157`, `:174`
+### The combat watcher — `modules/Override.lua:167`, `:184`
 
 Both hits are `PrettyChat:SyncCombatWatch`, and what matters about them is *when they are reached*:
 
 - the frame is **created lazily**, on the first write that stores `General.visibility` as `inCombat`
   or `outOfCombat`. A default install (`always`) creates no frame and registers no event, so on the
   shipped configuration this half of the sweep's runtime answer is still zero;
-- both events are **unregistered** the moment the mode leaves that pair (`modules/Override.lua:171`),
+- both events are **unregistered** the moment the mode leaves that pair (`modules/Override.lua:181`),
   so the subscription tracks the setting rather than outliving it;
 - the handler fires at the combat **boundary** — `PLAYER_REGEN_DISABLED` on entry,
   `PLAYER_REGEN_ENABLED` on exit — at most twice per fight, and never *during* one. Its whole body is
