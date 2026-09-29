@@ -165,7 +165,7 @@ signature, dev-only in the same sense as `docs/` and `tests/`.
 | | |
 |---|---|
 | **Version** | Any recent Pillow. Verified here with 10.2.0 (Ubuntu 24.04's `python3-pil`). |
-| **Why** | `layout-§4`'s recipe regenerates `media/logos/prettychat.logo.128.tga` (128x128, uncompressed 32-bit TGA, image type 2) from the 2000x2000 `media/logos/prettychat.logo.png` beside it, as `core/LauncherSetup.lua:96-97` records. The `.tga` is committed, so the recipe is run **by hand when the source art changes**; nothing in the build, the TOC, the tests or the packager invokes it. The other logo files (`prettychat.logo.tga`, `.jpg`) and `media/screenshots/` have no regeneration recipe and are not covered by this entry. |
+| **Why** | `layout-§4`'s recipe regenerates `media/logos/prettychat.logo.128.tga` (128x128, uncompressed 32-bit TGA, image type 2) from the 2000x2000 `media/logos/prettychat.logo.png` beside it, as `core/LauncherSetup.lua:102-103` records. The `.tga` is committed, so the recipe is run **by hand when the source art changes**; nothing in the build, the TOC, the tests or the packager invokes it. The other logo files (`prettychat.logo.tga`, `.jpg`) and `media/screenshots/` have no regeneration recipe and are not covered by this entry. |
 | **Packages** | `PIL` (Pillow), imported by the recipe's `from PIL import Image`. |
 | **Install** | `sudo apt install -y python3-pil` |
 | **Verify** | `python3 -c 'import PIL; print(PIL.__version__)'` |
