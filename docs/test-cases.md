@@ -583,7 +583,7 @@ badge and any count quoted in the docs must agree with it.
 ### test_profiles.lua (12)
 
 - Profiles: the page is the last in the rail, and its file is the last the TOC loads
-- Profiles: the page hosts AceDBOptions' table over the live db, with no Defaults action
+- Profiles: the page hosts AceDBOptions' table over the live db, with no Defaults button
 - Profiles: nothing is drawn until the page is shown, then it is drawn once
 - Profiles: a pooled, hidden SimpleGroup is shown before the page fills it
 - Profiles: a switch made elsewhere redraws the open page, and a plain refresh does not
