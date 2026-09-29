@@ -22,7 +22,7 @@ works.
 | PROFILE-1 – 10 | Profiles | The Profiles page, per-profile settings, the `/pc profile` verb |
 | STATE-1 – 6 | Enable and stand-down | `/pc enable` / `/pc disable`, what answers while disabled, the combat watcher standing down |
 | COMBAT-1 – 4 | Combat | The panel's combat refusal and cover, the launcher in combat, diagnostics in combat |
-| OVR-1 – 9 | Override pipeline | The three enable layers, General visibility, one-category registration, the chat text other addons read |
+| OVR-1 – 10 | Override pipeline | The three enable layers, General visibility, one-category registration, the chat text other addons read, a real line for a changed string |
 | TEST-1 – 6 | Test preview | `/pc test` and the Test button, the filters |
 | RESET-1 – 13 | Resets | Row Reset, the Defaults buttons, `/pc reset <path>`, reset all, the one log line |
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
@@ -46,20 +46,20 @@ works.
 - For DEGRADED, quit the game and rename `Interface/AddOns/PrettyChat/libs/LibKa0s` to
   `libs/LibKa0s.off`; DEGRADED-10 renames it back.
 
-Which checks to run:
+Which checks to run. Every row after the first also runs the routine row's four checks.
 
 | What changed | Run |
 |---|---|
-| Routine (one format string, a doc edit, a small panel tweak) | INSTALL-1, TEST-1, one real chat line for the changed string, PANEL-16 on its row |
-| `OnEnable`, `ApplyStrings` or `settings/Schema.lua` | INSTALL, STATE, OVR |
-| `settings/Panel.lua`, or panel chrome (fonts, textures, borders) | PANEL, RESET, DIAG-16 – 18 |
-| The slash surface in `settings/Slash.lua` | SLASH, STATE-3 – 4, PANEL-19 – 21 |
-| `modules/Diagnostics.lua`, the `diagnostics` row or the `debug` word | DIAG-1 – 8, DIAG-11 – 15 |
+| Routine (one format string, a doc edit, a small panel tweak) | INSTALL-2, TEST-1, OVR-10 for the changed string, PANEL-16 on its row |
+| `OnEnable`, `ApplyStrings` or `settings/Schema.lua` | INSTALL, STATE, OVR, SLASH-1 |
+| `settings/Panel.lua` | PANEL, RESET, DIAG-9 – 18, INSTALL-6, LAUNCH-6, OVR-8 |
+| The slash surface in `settings/Slash.lua` | SLASH, STATE-3 – 4, PANEL-19 – 21, INSTALL-6, RESET-5, RESET-10, COMBAT-1, COMBAT-4, DIAG-1 – 8 |
+| `modules/Diagnostics.lua`, the `diagnostics` row or the `debug` word | DIAG-1 – 8, DIAG-11 – 15, COMBAT-4 |
 | A reset path (`ResetString` / `ResetCategory` / `ResetAll`) or a Reset / Defaults button | RESET |
-| `core/DebugLogSetup.lua` or `media/` | DIAG-9 – 19 |
-| `core/LauncherSetup.lua`, the minimap row, `media/logos/` or the TOC's `## IconTexture` | LAUNCH, COMBAT-3 |
+| `core/DebugLogSetup.lua`, `media/`, or panel chrome (fonts, textures, borders) | DEGRADED, DIAG-9 – 19, PANEL-1 – 9, PANEL-14, RESET-3 – 7, RESET-10, COMBAT-1 – 2, INSTALL-2, OVR-8 |
+| `core/LauncherSetup.lua`, the minimap row, `media/logos/` or the TOC's `## IconTexture` | LAUNCH, STATE, COMBAT-3 |
 | The Profiles page or `/pc profile` | PROFILE, LAUNCH-6 |
-| A re-vendor of `libs/LibKa0s/`, or a `core/*Setup.lua` seam file | DEGRADED, DIAG-16 – 19, PANEL-1 – 9, INSTALL-2 |
+| A re-vendor of `libs/LibKa0s/`, or a `core/*Setup.lua` seam file | DEGRADED, DIAG-16 – 19, PANEL-1 – 9, PANEL-14, RESET-3 – 7, RESET-10, COMBAT-1 – 2, INSTALL-2 |
 | `ApplyStrings`, the combat watcher or `General.visibility`, or a sibling addon that parses loot or currency chat | OVR-4 – 6, OVR-9, STATE-5 – 6 |
 | Before a tag, or after a client patch | Everything; after a patch also regenerate `GlobalStrings/` per [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patch) |
 
@@ -73,9 +73,10 @@ Find the cause before changing anything; a fix that only makes the check pass is
 - **INSTALL-1. Clean first load.** Quit, delete `PrettyChatDB.lua` (backed up), log in → no Lua error
   and no `[PC] schema not ready yet` line. `/pc test` fills the debug console with a block for every
   category. Result:
-- **INSTALL-2. The version comes from the TOC.** `/reload`, then `/pc version` and `/pc help` → both
-  print the version on the TOC's `## Version:` line and agree with each other. **Fail:** a stale
-  version rather than an error, which means a file-scope read ran before `core/EnvSetup.lua`. Result:
+- **INSTALL-2. The version comes from the TOC.** `/reload` → no Lua error. Then `/pc version` and
+  `/pc help` → both print the version on the TOC's `## Version:` line and agree with each other.
+  **Fail:** a stale version rather than an error, which means a file-scope read ran before
+  `core/EnvSetup.lua`. Result:
 - **INSTALL-3. Overrides survive a reload.** Edit one Loot format on the panel and untick one Loot
   string's Enable, `/reload`, `/pc list Loot` → both changes are still there; the edited string's chat
   line uses the override and the unticked one uses Blizzard's wording. Result:
@@ -99,9 +100,9 @@ Find the cause before changing anything; a fix that only makes the check pass is
 ## SLASH
 
 - **SLASH-1. Both prefixes and the help index.** `/pc help`, then `/prettychat help` → identical
-  output; the header reads `v<version> — slash commands`; fourteen commands in this order: `help`,
-  `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`, `profile`, `test`, `debug`,
-  `diagnostics`, `enable`, `disable`. Result:
+  output; the header reads `v<version> — slash commands (/prettychat is an alias for /pc)`; fourteen
+  commands in this order: `help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`,
+  `profile`, `test`, `debug`, `diagnostics`, `enable`, `disable`. Result:
 - **SLASH-2. Bare `/pc` and an unknown verb.** `/pc`, then `/pc` followed by a few spaces → each opens
   the settings panel on the Ka0s Pretty Chat landing page, as `/pc config` does, and prints no help.
   `/pc bogus` → `unknown command 'bogus'` and then the help index. Result:
@@ -287,7 +288,9 @@ Find the cause before changing anything; a fix that only makes the check pass is
   `General.enabled = false`, in the shape `/pc set` uses. Loot an item and gain XP → both lines are
   Blizzard's wording. `/pc enable` → formatting returns and the custom format is still there. Result:
 - **STATE-2. The verbs are the checkbox.** After `/pc disable`, open General → *Enable PrettyChat* is
-  unticked. Tick it → the same echo and effect as `/pc enable`. Result:
+  unticked. Tick it → formatting returns at once, as after `/pc enable`, and nothing prints to chat
+  (the `General.enabled = true` echo belongs to the verbs; the panel writes through the schema).
+  Result:
 - **STATE-3. Settings verbs answer while disabled.** `/pc disable`, then `/pc`, `/pc help`,
   `/pc version`, `/pc get General.visibility`, `/pc list Loot`, `/pc set Loot.enabled true`,
   `/pc reset Loot.enabled` → each answers as it does when enabled (bare `/pc` opens the panel), and the
@@ -362,6 +365,10 @@ Find the cause before changing anything; a fix that only makes the check pass is
   looted in the state its first loot happened in, which is the known limitation and not a PrettyChat
   regression; after the fix it records all three. **Fail:** arg1 that does not change with combat
   state (the watcher is not re-applying the globals). `/pc set General.visibility always`. Result:
+- **OVR-10. A real line for the string you changed.** Trigger the chat event the changed string
+  formats (loot an item, gain XP, take money, and so on) and read the line in chat → PrettyChat's
+  layout with the real values filled in, the shape the Preview and `/pc test` show, with no literal
+  `%s` or `%d` and no Lua error. Result:
 
 ## TEST
 
@@ -436,12 +443,17 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
 - **RESET-10. `/pc resetall`.** Scatter changes across categories and `/pc disable`, then
   `/pc resetall` → `all settings reset to defaults`, `/pc get General.enabled` → `true`, and
   `/pc list` reads all defaults. Result:
-- **RESET-11. Nothing lingers after a reset.** Untick a Loot string and edit its format, clear it with
-  the row Reset, and `/reload`. Repeat with the Categories Defaults button and with `/pc resetall` →
-  each time `profiles.Default.categories.Loot` in `PrettyChatDB.lua` is absent or empty. Result:
+- **RESET-11. Nothing lingers after a reset.** Untick `LOOT_ITEM_SELF` and edit its format, clear both
+  with the row Reset, and `/reload`. Repeat three times, clearing them with the Categories Defaults
+  button, with `/pc reset Loot.LOOT_ITEM_SELF.enabled` followed by
+  `/pc reset Loot.LOOT_ITEM_SELF.format`, and with `/pc resetall` → each time, before the `/reload`,
+  `/pc list Loot` reads all defaults, and after it `profiles.Default.categories.Loot` in
+  `PrettyChatDB.lua` is absent or empty. **Fail:** a leftover `disabledStrings` entry or override
+  after any one of the four. Result:
 - **RESET-12. One log line per reset.** `/pc debug on`, open the console, then a row Reset, the
-  Categories Defaults button and `/pc resetall` → exactly one line each and nothing else:
-  `[Set] reset Loot.LOOT_ITEM_SELF: N rows`, `[Set] reset Categories: N rows`,
+  Categories Defaults button, the Settings window's footer defaults control and `/pc resetall` →
+  exactly one line each and nothing else: `[Set] reset Loot.LOOT_ITEM_SELF: N rows`,
+  `[Set] reset Categories: N rows` (for the button and again for the footer control), and
   `[Set] reset profile 'Default' to defaults (N rows)`. N counts only rows that differed, so a reset of
   untouched rows reads `0 rows`. No `[Reset]` line. **Fail:** a line ending ` (stopped by an error)`;
   the reset raised partway, and the error it names is a bug. Result:
@@ -571,8 +583,10 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   state apart from the name. Result:
 - **DEGRADED-2. `/pc list`.** → one line ending `…(expected in libs/LibKa0s), so the settings CLI is
   unavailable.`, not a half-rendered listing. Result:
-- **DEGRADED-3. `/pc debug`.** `/pc debug on` → the color-coded `debug logging ON` ack, and the flag
-  flips. `/pc debug` → `…, so the debug console window is unavailable.`, reported once. Result:
+- **DEGRADED-3. `/pc debug`.** `/pc debug on` → the color-coded `debug logging ON` ack, the flag
+  flips, and one `…, so the debug console window is unavailable.` line. `/pc debug on` again → the ack
+  alone. `/pc debug` → the unavailable line once more (each entry point says it once), and a second
+  `/pc debug` prints nothing. Result:
 - **DEGRADED-4. `/pc config`.** → `…, so the settings panel is unavailable.` Result:
 - **DEGRADED-5. `/pc resetall` still works.** Change a setting with `/pc disable`, then `/pc resetall` →
   the reset runs and chat formatting returns; the player whose panel will not open is the one who
@@ -643,12 +657,10 @@ Until the pass runs, record this section as unrun, not as coverage.
 
 ## Pending sign-off
 
-Checks the owner has not yet run in a client. Origins are IDs of the pre-2026-09-29 document (`T-NN`),
-or new with the Profiles page and the `/pc profile` verb.
+Checks carried over from the pre-2026-09-29 document that the owner has not yet run in a client, with
+the old ID (`T-NN`) each came from.
 
 | ID | Origin | Why it is owed |
 |---|---|---|
 | PANEL-9 | T-99 | Marked NOT YET RUN since the LibKa0s v1.27.0 re-vendor (session 3, `M4-01`) |
-| PROFILE-1 – 4 | New | The Profiles page and profile events (SP-PC-01, 2026-09-29) |
-| PROFILE-5 – 10, DEGRADED-9 | New | The `/pc profile` verb (SP-PC-02, 2026-09-29) |
 | LOC-1 – 5 | T-104 – T-107 | Marked NOT YET RUN since the 2026-09-07 remediation (session 6, `M5-08`); needs a deDE or frFR client |
