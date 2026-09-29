@@ -124,9 +124,28 @@ never reaches the Profiles page (`options-ui-§3`).
 
 ## Slash commands
 
-No `/pc` verb switches profiles yet; the Profiles page does. `/pc resetall` is the profile reset
-above. Every verb that reads or writes a setting (`get`, `set`, `list`, `reset`) acts on the active
-profile.
+`/pc profile` lists the profiles, sorted without regard to case, with the current one marked
+`(current)`. `/pc profile <name>` switches to an **existing** profile: the name is case-sensitive,
+may contain spaces, and may be wrapped in one pair of quotes (`/pc profile "My Main"`). The verb is
+LibKa0s-Slash's `CliProfile` (Slash minor 17) over `PrettyChat.db`, which the descriptor's
+`profiles` field hands it at call time.
+
+- **A switch is `db:SetProfile`**, so it is the same act as picking the profile on the page: the
+  reaction above runs once, logs its one `[Profile] switched` line, and redraws the page. The
+  library itself logs nothing.
+- **An unknown name is refused, and nothing is created.** Chat answers `No profile named '<name>'.`,
+  adds `Did you mean '<name>'?` when exactly one profile matches without regard to case, then
+  prints the list. Creating a profile stays the page's job, so a typo never leaves a stray profile
+  behind.
+- **In combat the switch is refused** (`Can't switch profiles in combat.`); the list still answers.
+- **It answers while the addon is disabled.** `profile` is a host verb, not one of the standard's
+  reserved thirteen, so `settings/Slash.lua` passes a `liveVerbs` built from `lib.LIVE_VERBS` plus
+  `profile`. A profile holds its own `enabled`, so switching to one where the addon is on brings it
+  back up through the latch (step 2 above).
+- **With LibKa0s absent** the verb answers the one missing-library line and switches nothing.
+
+`/pc resetall` is the profile reset above. Every verb that reads or writes a setting (`get`, `set`,
+`list`, `reset`) acts on the active profile.
 
 ## Tests
 
@@ -135,5 +154,8 @@ Defaults action, drawn on first show into a shown container), the redraw (a swit
 redraws the page, a plain structural refresh does not, a hidden page redraws on its next show, and a
 change from the page's own control opens nothing under its callback and one pass the frame after), the
 latch following the incoming profile's `enabled`, the global reset's blast radius and its veto, and
-the page opting out when AceDBOptions is absent. `tests/test_debuglog.lua` pins the three debug
-lines and `tests/test_database.lua` the load pass on a switch.
+the page opting out when AceDBOptions is absent, and the `/pc profile` verb: the list, a switch
+that runs the profile handler once, an unknown name refused with nothing created, quotes stripped,
+the combat refusal, and the verb answering while the addon is disabled. `tests/test_debuglog.lua`
+pins the three debug lines and `tests/test_database.lua` the load pass on a switch.
+`tests/test_libka0s.lua` pins the library-absent answer.

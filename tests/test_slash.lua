@@ -108,6 +108,20 @@ test("a whitespace-only /pc is bare too", function()
     end
 end)
 
+-- The verb list by value, so adding, dropping or moving a verb is a deliberate edit here and
+-- not a silent drift of the help index, the landing page and the docs that quote the count.
+-- red under: a `profile` row placed anywhere but beside the other settings verbs.
+test("COMMANDS is the fourteen verbs, in their order, and help prints one row each", function()
+    local ORDER = {
+        "help", "config", "version", "list", "get", "set", "reset", "resetall", "profile",
+        "test", "debug", "diagnostics", "enable", "disable",
+    }
+    local got = {}
+    for i, entry in ipairs(NS.COMMANDS) do got[i] = entry[1] end
+    t.eq(table.concat(got, " "), table.concat(ORDER, " "), "the verbs, in declaration order")
+    t.eq(#slash("help"), 1 + #ORDER, "help is the header plus one row per verb")
+end)
+
 test("/pc help prints the help index", function()
     local out = slash("help")
     t.truthy(#out > #NS.COMMANDS, "help emits a header plus one line per command")
@@ -586,6 +600,8 @@ test("disabled: only the feature verbs refuse -- every verb is driven to find ou
         help = true, config = true, version = true,
         enable = true, disable = true, debug = true, perf = true, diagnostics = true,
         get = true, set = true, list = true, reset = true, resetall = true,
+        -- Not reserved: this addon's own verb, which it widens its liveVerbs with.
+        profile = true,
     }
     local i = offline()
     local seen = 0

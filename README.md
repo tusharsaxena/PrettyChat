@@ -4,7 +4,7 @@
 ![CurseForge Version](https://img.shields.io/curseforge/v/919766)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-531%2F531_passing-green)
+![Tests](https://img.shields.io/badge/Tests-538%2F538_passing-green)
 
 World of Warcraft tells you about loot, currency, gold, reputation, experience, honor and crafting in a stream of sentences that all look alike. PrettyChat rewrites them. The information doesn't change, but it's laid out and color-coded, so you can find the line you actually cared about while the chat window scrolls past you.
 
@@ -52,7 +52,7 @@ Switching a message off doesn't throw your version away. PrettyChat stops applyi
 | I edited a message and now it looks broken. | Your version is missing or misusing the `%s` / `%d` placeholders. Copy the original wording from the panel and edit around the placeholders, or turn the message off to restore it. |
 | Can I change the colors? | Yes. The colors are part of the wording. Each message's text carries WoW color codes (`\|cffRRGGBB…\|r`), so you recolor a line by editing those hex values in its **New** box on the settings panel. There's no separate color picker. (Editing from chat works too, but you have to double every `\|` to `\|\|`.) |
 | How do I preview my edits without waiting for real loot? | There are two ways. On the settings panel, each message has a live **Preview** that updates as you type. From chat, `/pc test` writes a before/after sample of every message to the debug console. Add a category (`/pc test category Loot`) or one string (`/pc test formatstring LOOT_ITEM_SELF`) to narrow it down. While the addon is switched off, `/pc test` asks you to turn it back on, but the Preview and the General page's **Test** button keep working. |
-| Where are my settings saved? | In a profile. Every character starts on the shared **Default** profile, so one configuration covers all of them. The **Profiles** page lets you create more, switch between them, copy one into another, and give a character, class, realm or faction its own. The minimap button's shown or hidden choice isn't part of a profile, so switching never moves it. |
+| Where are my settings saved? | In a profile. Every character starts on the shared **Default** profile, so one configuration covers all of them. The **Profiles** page lets you create more, switch between them, copy one into another, and give a character, class, realm or faction its own. From chat, `/pc profile` lists your profiles and `/pc profile Name` switches to one you already have. The minimap button's shown or hidden choice isn't part of a profile, so switching never moves it. |
 | What's the **Debug console** for? Do I need it? | No. It's there to help when you're filing a bug, nothing more. `/pc debug` (or the General-page toggle) opens a small on-screen log window. It starts empty because logging is off by default, and [Reporting a bug](#reporting-a-bug) says how to turn it on and copy out what it caught. Logging is session-only and resets on every reload. |
 
 ## Troubleshooting

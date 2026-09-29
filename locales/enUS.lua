@@ -92,6 +92,7 @@ local enUS = {
     "Set a setting — `/pc set <path> <value>` (try /pc list)",
     "Reset one setting to its default — `/pc reset <path>`",
     "Reset every setting to defaults",
+    "List profiles, or switch to one: profile <name>",
     "Print sample chat lines to the debug console — `/pc test [all | category <name> | formatstring <NAME>]`",
     "Debug console — `/pc debug` shows it; `on`/`off` toggle logging",
     "Print the addon version",

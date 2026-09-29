@@ -14,7 +14,10 @@
 --     tree down under an open dropdown);
 --   * the LATCH: a profile can hold `General.enabled = false`, so a switch stands the addon
 --     down or up with no verb and no checkbox touched (slash-commands-§7);
---   * the GLOBAL RESET's blast radius and its veto (options-ui-§3, §12).
+--   * the GLOBAL RESET's blast radius and its veto (options-ui-§3, §12);
+--   * the `/pc profile` VERB: LibKa0s-Slash's CliProfile over this addon's db, pinned here for
+--     the wiring (the descriptor's store, the live-while-disabled set, the adopt path it
+--     reaches), while the library's own suite owns the parsing and the wording.
 
 local ctx  = _G.PC_TEST
 local t    = ctx.t
@@ -319,4 +322,173 @@ test("Profiles: with AceDBOptions absent the page opts out and a switch still wo
     end
     local ok, err = pcall(function() inst.addon.db:SetProfile("Alt") end)
     t.truthy(ok, "a switch with no page to redraw never raises: " .. tostring(err))
+end)
+
+-- ---------------------------------------------------------------------------
+-- The `/pc profile` verb
+-- ---------------------------------------------------------------------------
+
+-- Every line `/pc <input>` printed, in order.
+local function say(inst, input)
+    local msgs = inst.env.DEFAULT_CHAT_FRAME.messages
+    local from = #msgs
+    inst.addon:OnSlashCommand(input)
+    local out = {}
+    for n = from + 1, #msgs do out[#out + 1] = msgs[n] end
+    return out
+end
+
+local function profileSet(db)
+    local set, n = {}, 0
+    for _, name in ipairs((db:GetProfiles({}))) do set[name] = true; n = n + 1 end
+    return set, n
+end
+
+local function anyLine(lines, needle)
+    for _, line in ipairs(lines) do
+        if line:find(needle, 1, true) then return true end
+    end
+    return false
+end
+
+-- The library's wording, resolved through the dispatcher rather than quoted, so a library
+-- rewording stays the library's business and this suite pins only that the line was said.
+local function text(inst, key, ...)
+    local s = inst.NS.SlashCommands:Text(key)
+    if select("#", ...) > 0 then s = s:format(...) end
+    return s
+end
+
+-- red under: a descriptor with no `profiles` field (every input answers PROFILE_UNAVAILABLE),
+-- or a COMMANDS row that does not route to CliProfile.
+test("/pc profile lists the profiles, sorted, the current one marked, and creates nothing", function()
+    local inst = ctx.loadAddon()
+    local db = inst.addon.db
+    db:SetProfile("beta")
+    db:SetProfile("Alt")
+    db:SetProfile("Default")
+    local _, before = profileSet(db)
+
+    local lines = say(inst, "profile")
+    t.eq(#lines, 5, "a header, one row per profile, and the hint")
+    t.truthy(lines[1]:find(text(inst, "PROFILE_LIST_HEADER"), 1, true), "the header first")
+    local mark = text(inst, "PROFILE_CURRENT_MARK")
+    t.truthy(lines[2]:find("  Alt", 1, true) and not lines[2]:find(mark, 1, true), "Alt first")
+    t.truthy(lines[3]:find("  beta", 1, true), "then beta: the order ignores case")
+    t.truthy(lines[4]:find("  Default " .. mark, 1, true), "and the current one is marked")
+    t.truthy(lines[5]:find(text(inst, "PROFILE_HINT", "/pc"), 1, true), "the hint names /pc")
+    for _, line in ipairs(lines) do
+        t.eq(line:sub(1, #inst.NS.PREFIX), inst.NS.PREFIX, "tagged: " .. line)
+        t.falsy(line:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):find(":%s*$"),
+            "no trailing colon (slash-commands-§4): " .. line)
+    end
+    local _, after = profileSet(db)
+    t.eq(after, before, "listing created no profile")
+    t.eq(db:GetCurrentProfile(), "Default", "and switched nothing")
+end)
+
+-- red under: a verb that writes db.profile itself instead of SetProfile (the handler would not
+-- run and the latch, the strings and the panel would keep the outgoing profile).
+test("/pc profile <name> switches to an existing profile, and the profile handler runs once", function()
+    local inst = ctx.loadAddon()
+    local NS, db, addon = inst.NS, inst.addon.db, inst.addon
+    db:SetProfile("Alt")
+    db:SetProfile("Default")
+    local handled, realHandler = 0, addon.OnProfileChanged
+    addon.OnProfileChanged = function(...) handled = handled + 1; return realHandler(...) end
+    NS.State.debug = true
+    NS.DebugLog:Clear()
+
+    local lines = say(inst, "profile Alt")
+    NS.State.debug = false
+    addon.OnProfileChanged = realHandler
+
+    t.eq(db:GetCurrentProfile(), "Alt", "the store switched")
+    t.eq(#lines, 1, "one line in chat")
+    t.truthy(lines[1]:find(text(inst, "PROFILE_SWITCHED", "Alt"), 1, true), "saying so")
+    t.eq(handled, 1, "the addon's OnProfileChanged ran once")
+    local switchLines = 0
+    for _, line in ipairs(NS.DebugLog.buffer) do
+        if line:find("[Profile] switched", 1, true) then switchLines = switchLines + 1 end
+    end
+    t.eq(switchLines, 1, "and logged its one [Profile] line (debug-logging-§10)")
+
+    lines = say(inst, "profile Alt")
+    t.eq(#lines, 1, "asking for the current profile answers on one line")
+    t.truthy(lines[1]:find(text(inst, "PROFILE_ALREADY", "Alt"), 1, true), "that it is already current")
+end)
+
+-- red under: routing the verb to db:SetProfile directly, which creates a missing profile.
+test("/pc profile refuses an unknown name, creates nothing, and offers the one case match", function()
+    local inst = ctx.loadAddon()
+    local db = inst.addon.db
+    db:SetProfile("Alt")
+    db:SetProfile("Default")
+    local _, before = profileSet(db)
+
+    local lines = say(inst, "profile Nope")
+    t.truthy(lines[1]:find(text(inst, "PROFILE_UNKNOWN", "Nope"), 1, true), "refused by name")
+    t.truthy(anyLine(lines, text(inst, "PROFILE_LIST_HEADER")), "and the list follows")
+    t.falsy(anyLine(lines, "Did you mean"), "no suggestion when nothing matches")
+
+    lines = say(inst, "profile alt")
+    t.truthy(lines[1]:find(text(inst, "PROFILE_UNKNOWN", "alt"), 1, true),
+        "the name is case-sensitive, so 'alt' is not 'Alt'")
+    t.truthy(anyLine(lines, text(inst, "PROFILE_DID_YOU_MEAN", "Alt")), "but it is offered")
+
+    local set, after = profileSet(db)
+    t.eq(after, before, "no profile was created")
+    t.falsy(set.Nope, "not 'Nope'")
+    t.falsy(set.alt, "and not 'alt'")
+    t.eq(db:GetCurrentProfile(), "Default", "and the current profile did not move")
+end)
+
+test("/pc profile strips one pair of surrounding quotes and keeps spaces and case", function()
+    local inst = ctx.loadAddon()
+    local db = inst.addon.db
+    db:SetProfile("My Main")
+    db:SetProfile("Default")
+
+    say(inst, 'profile "My Main"')
+    t.eq(db:GetCurrentProfile(), "My Main", "double quotes stripped, the inner space kept")
+    say(inst, "profile 'Default'")
+    t.eq(db:GetCurrentProfile(), "Default", "single quotes too")
+    say(inst, "profile   My Main  ")
+    t.eq(db:GetCurrentProfile(), "My Main", "and a bare spaced name, trimmed at the edges")
+end)
+
+test("/pc profile refuses to switch in combat, and still lists", function()
+    local inst = ctx.loadAddon()
+    local db = inst.addon.db
+    db:SetProfile("Alt")
+    db:SetProfile("Default")
+    inst.env.InCombatLockdown = function() return true end
+
+    local lines = say(inst, "profile Alt")
+    t.eq(#lines, 1, "one line")
+    t.truthy(lines[1]:find(text(inst, "PROFILE_COMBAT"), 1, true), "naming combat")
+    t.eq(db:GetCurrentProfile(), "Default", "and nothing switched")
+    t.truthy(anyLine(say(inst, "profile"), text(inst, "PROFILE_LIST_HEADER")), "the list still answers")
+    inst.env.InCombatLockdown = function() return false end
+end)
+
+-- red under: a descriptor that passes no liveVerbs (the library's thirteen do not include
+-- `profile`, so the verb would answer the refusal line), or one that passes `profile` alone
+-- (every reserved verb but it would then refuse).
+test("/pc profile answers while the addon is disabled, and can bring it back up", function()
+    local inst = ctx.loadAddon()
+    local NS, db, addon = inst.NS, inst.addon.db, inst.addon
+    db:SetProfile("On")
+    db:SetProfile("Default")
+    addon:OnSlashCommand("disable")
+    t.eq(addon:IsAddonEnabled(), false, "Default is off")
+    local refusal = NS.SlashCommands:DisabledLine()
+
+    t.falsy(anyLine(say(inst, "profile"), refusal), "the bare verb lists rather than refusing")
+    local lines = say(inst, "profile On")
+    t.falsy(anyLine(lines, refusal), "the switch is not refused")
+    t.eq(db:GetCurrentProfile(), "On", "it switched")
+    t.eq(addon:IsAddonEnabled(), true, "to a profile where the addon is on")
+    t.falsy(NS.Lifecycle:IsDown(), "and the latch stood it up")
+    t.falsy(anyLine(say(inst, "test"), refusal), "so a feature verb runs again")
 end)

@@ -53,13 +53,13 @@ settings/Panel.lua:528:    -- A frame later, both are true. C_Timer.After(0, ...
 settings/Panel.lua:531:    if C_Timer and C_Timer.After then
 settings/Panel.lua:532:        C_Timer.After(0, function() fitTree(ctx) end)
 tests/test_disabled.lua:28:-- arms no AceTimer, no C_Timer ticker and no OnUpdate, registers no message and no
-tests/test_libka0s.lua:795:test("degraded SafeRegisterEvents records a rejected name and registers the rest", function()
-tests/test_libka0s.lua:797:    -- (the call raises on nil), call target:RegisterEvent without the pcall (the bad
-tests/test_libka0s.lua:808:    local ok, n = pcall(Util.SafeRegisterEvents, frame, events, nil, rejected)
-tests/test_libka0s.lua:820:    t.eq(Util.SafeRegisterEvents(frame, events, nil, rejected), 1, "a second walk answers the same")
-tests/test_libka0s.lua:822:    t.falsy(Util.SafeRegisterEvent(frame, "PLAYER_REGEN_DISABLED"), "one name answers false with no list")
-tests/test_libka0s.lua:823:    t.truthy(Util.SafeRegisterUnitEvent(frame, "UNIT_HEALTH", rejected, "player"), "the unit form registers")
-tests/test_libka0s.lua:824:    t.falsy(Util.SafeRegisterUnitEvent(frame, "PLAYER_REGEN_DISABLED", rejected, "player"),
+tests/test_libka0s.lua:802:test("degraded SafeRegisterEvents records a rejected name and registers the rest", function()
+tests/test_libka0s.lua:804:    -- (the call raises on nil), call target:RegisterEvent without the pcall (the bad
+tests/test_libka0s.lua:815:    local ok, n = pcall(Util.SafeRegisterEvents, frame, events, nil, rejected)
+tests/test_libka0s.lua:827:    t.eq(Util.SafeRegisterEvents(frame, events, nil, rejected), 1, "a second walk answers the same")
+tests/test_libka0s.lua:829:    t.falsy(Util.SafeRegisterEvent(frame, "PLAYER_REGEN_DISABLED"), "one name answers false with no list")
+tests/test_libka0s.lua:830:    t.truthy(Util.SafeRegisterUnitEvent(frame, "UNIT_HEALTH", rejected, "player"), "the unit form registers")
+tests/test_libka0s.lua:831:    t.falsy(Util.SafeRegisterUnitEvent(frame, "PLAYER_REGEN_DISABLED", rejected, "player"),
 tests/test_override.lua:250:-- Both names go through NS.Util.SafeRegisterEvents (LibKa0s-Core), so a name the
 tests/test_override.lua:254:-- A fresh instance whose client refuses `name` at the frame's RegisterEvent and,
 tests/test_override.lua:283:test("IsEventValid rejects a name without calling RegisterEvent", function()
@@ -77,7 +77,7 @@ tests/wow_mock.lua:142:-- `UnregisterEvent`, `IsEventRegistered`, `RegisterUnitE
 Reconciled, so a future drift is visible rather than arguable. One is a lint declaration
 (`.luacheckrc:60`). Fourteen are the pattern names appearing **inside comments** — `core/CoreSetup.lua:54`,
 `:55`, `core/LifecycleSetup.lua:40`, `modules/Override.lua:126`, `:127`, `settings/Panel.lua:528`,
-`tests/test_disabled.lua:28`, `tests/test_libka0s.lua:797`, `tests/test_override.lua:250`, `:254`,
+`tests/test_disabled.lua:28`, `tests/test_libka0s.lua:804`, `tests/test_override.lua:250`, `:254`,
 `tests/test_panel_categories.lua:272` and `tests/wow_mock.lua:72`, `:141`, `:142` — which describe the discipline
 rather than doing anything; the harness mock no longer defines its own `RegisterEvent`, because the
 frame event methods are the kit's. Nine are `core/CoreSetup.lua`'s `SafeRegisterEvent` /

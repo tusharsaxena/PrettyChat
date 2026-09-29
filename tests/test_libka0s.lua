@@ -692,6 +692,13 @@ test("with Slash absent the host verbs survive and the schema CLI says why", fun
     local names = {}
     for _, n in ipairs((db:GetProfiles({}))) do names[n] = true end
     t.falsy(names.Alt, "and neither created one")
+    -- And the `profile` row reaches the stub's member, so `/pc profile` answers the same.
+    before = #msgs
+    bare.addon:OnSlashCommand("profile Alt")
+    t.eq(#msgs, before + 1, "/pc profile answers on one line with the library absent")
+    t.truthy(msgs[#msgs]:find(bare.NS.LIBKA0S_MISSING ..
+        ", so the settings CLI is unavailable.", 1, true), "the stub's line")
+    t.eq(db:GetCurrentProfile(), current, "and switched nothing")
 
     -- And the stub re-implements none of the library's rendering.
     -- The ONE exception slash-commands-§1 sanctions is DISABLED_LINE_FORMAT's

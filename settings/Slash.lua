@@ -59,6 +59,13 @@ local COMMANDS = {
         function(rest) runReset(rest) end},
     {"resetall", L["Reset every setting to defaults"],
         function() runResetAll() end},
+    -- The profile verb (Slash minor 17): the host owns the row and whether it is live
+    -- while disabled; the library's CliProfile owns what it does. Bare lists the
+    -- profiles, a name switches to an EXISTING one and never creates it (the store is
+    -- the descriptor's `profiles`, below). The switch's one debug line is
+    -- PrettyChat:OnProfileChanged's, as for a switch made on the Profiles page.
+    {"profile",  L["List profiles, or switch to one: profile <name>"],
+        function(rest) Sl:CliProfile(rest) end},
     {"test",     L["Print sample chat lines to the debug console — `/pc test [all | category <name> | formatstring <NAME>]`"],
         function(rest) runTest(rest) end},
     {"debug",    L["Debug console — `/pc debug` shows it; `on`/`off` toggle logging"],
@@ -89,11 +96,13 @@ NS.COMMANDS = COMMANDS
 --
 -- WHAT THE DISABLED SURFACE IS. Every reserved verb answers normally: `help`,
 -- `config`, `version`, `enable`, `disable`, `debug`, `perf`, and the whole schema
--- CLI — `get`, `set`, `list`, `reset`, `resetall` — and the BARE `/pc` opens the
--- settings panel exactly as it does when the addon is running. The reasoning is the
--- player's rather than the addon's: they must be able to READ AND REPAIR SETTINGS
--- and to REACH THE PANEL while the addon is off, which is precisely when they are
--- most likely to need to, and `enable` above all or the pair is one-way again.
+-- CLI — `get`, `set`, `list`, `reset`, `resetall` — plus this addon's `profile`,
+-- and the BARE `/pc` opens the settings panel exactly as it does when the addon is
+-- running. The reasoning is the player's rather than the addon's: they must be able
+-- to READ AND REPAIR SETTINGS and to REACH THE PANEL while the addon is off, which is
+-- precisely when they are most likely to need to, and `enable` above all or the pair
+-- is one-way again. A profile switch is a repair of the same kind: a profile holds
+-- its own `General.enabled`, so switching to one where the addon is on brings it up.
 --
 -- THIS IS ALSO THE ANSWER TO A RULE THAT MOVED AND MOVED BACK. The standard
 -- narrowed this surface to `enable` and `help` at v2.56.0 and REVERSED it at
@@ -101,7 +110,8 @@ NS.COMMANDS = COMMANDS
 -- addon answered with a refusal instead of opening the one panel the player uses to
 -- switch it back on by hand. This addon never shipped the narrowing, and the live
 -- set is not restated here in any case — `lib.LIVE_VERBS` carries it, and a host
--- copy would be the thing that went stale the next time it moved.
+-- copy would be the thing that went stale the next time it moved. `liveVerbs` below
+-- is BUILT from it, with this addon's one addition appended.
 --
 -- SO THE GATE REFUSES EXACTLY ONE VERB HERE: `test`, the preview no other Ka0s
 -- addon has. §2 keeps the refusal a SHOULD partly because an addon with a single
@@ -112,15 +122,17 @@ NS.COMMANDS = COMMANDS
 -- the page beside the switch that turned the addon off, and its report already says
 -- so on its second line (modules/Override.lua's PrettyChat:Test).
 --
--- NO `liveVerbs` IS PASSED, and the omission is the whole decision. That field
--- REPLACES the live set rather than adding to it: a host that passes it answers
+-- `liveVerbs` IS `lib.LIVE_VERBS` PLUS `profile`, BUILT, NEVER WRITTEN OUT. That
+-- field REPLACES the live set rather than adding to it: a host that passes it answers
 -- for every verb that stays live, and loses whatever `lib.LIVE_VERBS` gains later
--- unless it builds its array from that list. Omitted, the live set IS
--- `lib.LIVE_VERBS`, the standard's thirteen reserved verbs (`diagnostics` joined at
--- Slash minor 16 and reached this addon on the re-vendor with no edit here), and
--- `test`, the one feature verb, is refused as this addon wants. §7 is explicit that
--- what a host MUST NOT do is refuse something on the library's live set, so a
--- literal array here could only ever narrow in the one direction the rule forbids.
+-- unless it builds its array from that list. So the array is a copy of the library's
+-- set taken at file load, the standard's thirteen reserved verbs (`diagnostics`
+-- joined at Slash minor 16), with `profile` appended. `profile` is a host verb and
+-- not reserved (Slash minor 17 leaves it out of `lib.LIVE_VERBS` on purpose), so a
+-- host that wants it answered while disabled has to say so here. `test`, the one
+-- feature verb, is still refused as this addon wants. §7 is explicit that what a
+-- host MUST NOT do is refuse something on the library's live set, and a literal array
+-- here could narrow in exactly that direction the next time the set grows.
 --
 -- THE WORDING IS THE COLLECTION'S. `lib.DISABLED_LINE_FORMAT` is the one shape and
 -- `cli:DisabledLine()` builds it, so a player running six of these addons reads one
@@ -270,6 +282,11 @@ local function parseValue(row, text)
     return v, err
 end
 
+-- The live set the gate's header describes: the library's, copied, plus `profile`.
+local liveVerbs = {}
+for i, verb in ipairs(lib.LIVE_VERBS) do liveVerbs[i] = verb end
+liveVerbs[#liveVerbs + 1] = "profile"
+
 Sl = lib:New({
     slash        = "/pc",
     slashAliases = { "/prettychat" },
@@ -278,7 +295,7 @@ Sl = lib:New({
     print   = function(line) NS.Print(line) end,
     version = function() return VERSION end,
 
-    -- THE GATE'S TWO FIELDS (Slash minor 12, live set restored at 13).
+    -- THE GATE'S THREE FIELDS (Slash minor 12, live set restored at 13).
     --
     -- `isEnabled` is asked at DISPATCH time and never cached, so the command after
     -- an `/pc enable` acts rather than refusing. It reads the STORED path and not
@@ -295,6 +312,14 @@ Sl = lib:New({
     -- which is this addon's rainbow brand mark and a ratified toc-file-§1 deviation.
     isEnabled = function() return PrettyChat:IsAddonEnabled() end,
     brandName = BRAND_NAME,
+    -- The library's live set plus `profile` (the gate's header says why).
+    liveVerbs = liveVerbs,
+
+    -- The `profile` verb's store (Slash minor 17), asked at call time: this file runs
+    -- before OnInitialize builds the db. AceDB's own object is the store the library
+    -- duck-types, so the verb switches through db:SetProfile and every switch reaches
+    -- the same OnProfileChanged adopt path the Profiles page does.
+    profiles = function() return PrettyChat.db end,
 
     -- The single write seam again — the same schema-runtime members settings/OptionsSetup.lua
     -- hands the options module, as values, so a CLI change and a checkbox click take one
