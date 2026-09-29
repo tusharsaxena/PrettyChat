@@ -580,7 +580,7 @@ badge and any count quoted in the docs must agree with it.
 - the page says its controls are read only while the master switch is on
 - clicking a tab swaps the body and drops the tab it left
 
-### test_profiles.lua (12)
+### test_profiles.lua (13)
 
 - Profiles: the page is the last in the rail, and its file is the last the TOC loads
 - Profiles: the page hosts AceDBOptions' table over the live db, with no Defaults button
@@ -589,6 +589,7 @@ badge and any count quoted in the docs must agree with it.
 - Profiles: a switch made elsewhere redraws the open page, and a plain refresh does not
 - Profiles: a switch while the page is hidden redraws it on its next show
 - Profiles: a copy and a reset redraw the open page too
+- Profiles: a change from the page's own control never re-opens the page under its callback
 - Profiles: a switch takes the incoming profile's enabled flag, both ways
 - Profiles: the global reset empties the active profile and nothing else
 - Profiles: the global reset's veto names the page, and the library's reset is ResetAll
@@ -659,9 +660,9 @@ badge and any count quoted in the docs must agree with it.
 | test_diagnostics.lua | 18 |
 | test_panel.lua | 25 |
 | test_panel_categories.lua | 23 |
-| test_profiles.lua | 12 |
+| test_profiles.lua | 13 |
 | test_doc_structure.lua | 12 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
 | test_diagnostics_contract.lua | 7 |
-| **Total** | **530** |
+| **Total** | **531** |

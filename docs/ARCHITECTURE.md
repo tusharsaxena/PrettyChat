@@ -105,7 +105,7 @@ Every file opens by destructuring the two values WoW passes each chunk — the a
 | `NS.SetAddonEnabled` | `settings/Slash.lua` | `core/LauncherSetup.lua` — the launcher menu's `setEnabled`, resolved at click time. It IS the file-local handler `/pc enable` and `/pc disable` call (`launcher-§2`: a menu entry calls the verb's own handler), so the menu, the verbs and the General page's Enable row are one write with one echo |
 | `NS.Helpers` | `settings/OptionsSetup.lua` | `settings/Panel.lua` (the `LibKa0s-Options-1.0` instance itself), `settings/Schema.lua` (`RefreshScalars`), `core/PrettyChat.lua` (`OpenOptionsPanel`) |
 | `NS.Config.RegisterPanels()` | `settings/Panel.lua` | `core/PrettyChat.lua` (`OnEnable`) |
-| `NS.Config.RefreshProfilesPage()` | `settings/Profiles.lua` | `core/PrettyChat.lua` (the shared profile adopt path, after the re-apply): redraws the Profiles page now if it is on screen, on its next show if not |
+| `NS.Config.RefreshProfilesPage()` | `settings/Profiles.lua` | `core/PrettyChat.lua` (the shared profile adopt path, after the re-apply): redraws the Profiles page a frame later if it is on screen, on its next show if not |
 
 ## Invariants
 

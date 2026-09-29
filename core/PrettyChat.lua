@@ -98,7 +98,7 @@ local function reloadProfile(self)
     -- Reapply's NotifyPanelChange puts every schema-drawn widget back to the incoming
     -- profile's values. The Profiles page is not schema-drawn: AceConfigDialog re-reads the
     -- active profile only when it is fed again, so it is told separately, and it redraws
-    -- now if it is on screen or on its next show if not (settings/Profiles.lua).
+    -- a frame later if it is on screen or on its next show if not (settings/Profiles.lua).
     if NS.Config and NS.Config.RefreshProfilesPage then NS.Config.RefreshProfilesPage() end
     return applied, restored
 end

@@ -66,7 +66,7 @@ Public surfaces are exposed on `NS`:
 | `NS.LIBKA0S_MISSING` | `core/CoreSetup.lua` | `core/DebugLogSetup.lua`, `settings/OptionsSetup.lua`, `settings/Slash.lua` — the shared cause clause each degraded seam appends its own consequence to |
 | `NS.Helpers` | `settings/OptionsSetup.lua` | `settings/Panel.lua` (the `LibKa0s-Options-1.0` instance itself, decorated in place), `settings/Schema.lua` (`RefreshScalars`), `core/PrettyChat.lua` (`OpenOptionsPanel`) |
 | `NS.Config.RegisterPanels()` | `settings/Panel.lua` | `core/PrettyChat.lua` (`OnEnable` calls it after the snapshot/`ApplyStrings` pair, replacing the old `PLAYER_LOGIN` bootstrap frame) |
-| `NS.Config.RefreshProfilesPage()` | `settings/Profiles.lua` | `core/PrettyChat.lua` (the shared profile adopt path, after `Reapply`): the Profiles page redraws now if it is on screen, on its next show if not |
+| `NS.Config.RefreshProfilesPage()` | `settings/Profiles.lua` | `core/PrettyChat.lua` (the shared profile adopt path, after `Reapply`): the Profiles page redraws a frame later if it is on screen, on its next show if not |
 
 The addon object **is** the `NS` table itself — `core/PrettyChat.lua` passes `NS` to `:NewAddon` (architecture-§2), so its `AceAddon-3.0` methods hang off `NS`. Other files reach it via `LibStub("AceAddon-3.0"):GetAddon("PrettyChat")`, which returns that same table.
 

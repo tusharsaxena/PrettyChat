@@ -9,8 +9,9 @@
 --
 --   * the PAGE: AceDBOptions' own table, over the live db, last in the rail, no Defaults button;
 --   * the REDRAW: AceConfigDialog re-reads the profile only when it is fed again, so a profile
---     event redraws the page, and a pipeline refresh does not (it would tear the widget tree
---     down under an open dropdown);
+--     event redraws the page -- a frame later when it is on screen, never under the callback of
+--     the control that fired it -- and a pipeline refresh does not (it would tear the widget
+--     tree down under an open dropdown);
 --   * the LATCH: a profile can hold `General.enabled = false`, so a switch stands the addon
 --     down or up with no verb and no checkbox touched (slash-commands-§7);
 --   * the GLOBAL RESET's blast radius and its veto (options-ui-§3, §12).
@@ -115,7 +116,8 @@ test("Profiles: a switch made elsewhere redraws the open page, and a plain refre
     profilesFrame(inst):Show()
     t.eq(opens(inst), 1, "drawn on show")
     inst.addon.db:SetProfile("Alt")
-    t.eq(opens(inst), 2, "the switch redrew the open page")
+    inst.env.__fireTimers()
+    t.eq(opens(inst), 2, "the switch redrew the open page, a frame later")
     inst.NS.Helpers.RefreshAllPanels()
     t.eq(opens(inst), 2, "a structural refresh with no profile event draws nothing")
 end)
@@ -138,9 +140,44 @@ test("Profiles: a copy and a reset redraw the open page too", function()
     profilesFrame(inst):Show()
     local before = opens(inst)
     inst.addon.db:CopyProfile("Alt")
+    inst.env.__fireTimers()
     t.eq(opens(inst), before + 1, "the copy redrew the page")
     inst.addon:ResetAll()
+    inst.env.__fireTimers()
     t.eq(opens(inst), before + 2, "and so did the reset")
+end)
+
+-- A switch, new profile, copy or reset made with the page's OWN AceDBOptions control fires the
+-- profile event from inside AceConfigDialog's ActivateControl, which reads `user.rootframe` off
+-- the control's userdata after the callback returns. A re-open inside the callback releases that
+-- control, AceGUI:Release wipes the table in place, and the read raises ("attempt to index field
+-- 'rootframe'") whenever the pool hands the re-open a different widget (options-ui-§11). The fake
+-- dialog cannot pool, so what is pinned is the observable that causes it: no Open while the
+-- event is on the stack, one Open the frame after, and one for several events in that frame.
+--
+-- red under: calling H.RefreshPanel synchronously in NS.Config.RefreshProfilesPage for a shown
+-- page (the Open lands inside the callback), or dropping the one-pass guard (two timers queued).
+test("Profiles: a change from the page's own control never re-opens the page under its callback",
+function()
+    local inst = ctx.loadAddon()
+    local db, env = inst.addon.db, inst.env
+    profilesFrame(inst):Show()
+    local before = opens(inst)
+    env.__timers = {}
+    local during
+    local function activateControl(fn)
+        fn()
+        during = opens(inst)
+    end
+    activateControl(function() db:SetProfile("Alt") end)
+    t.eq(during, before, "the switch opened nothing while the control's callback was running")
+    activateControl(function() db:CopyProfile("Default") end)
+    activateControl(function() db:ResetProfile() end)
+    t.eq(during, before, "nor did a copy or a reset")
+    t.eq(#env.__timers, 1, "three events in one frame queue one redraw")
+    env.__fireTimers()
+    t.eq(opens(inst), before + 1, "and the next frame draws the page once, from the new profile")
+    t.eq(#env.__timers, 0, "leaving nothing queued")
 end)
 
 -- ---------------------------------------------------------------------------

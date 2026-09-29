@@ -60,9 +60,15 @@ Five decisions in that file are deliberate:
   so the library's combat cover reaches the Blizzard AddOns sidebar path too. SetRenderer also puts
   the page on the library's structural refresh; a renderer that re-opened on each of those would
   tear AceConfigDialog's tree down under an open dropdown (`options-ui-§11`). So the renderer draws
-  once per profile event, counted: at once if the page is on screen, on its next show if not
-  (`H.RefreshPanel`). A change made *on* the page needs nothing extra, because AceConfigDialog
-  re-opens its container after every control it activates.
+  once per profile event, counted: one frame later if the page is on screen (`C_Timer.After(0)`),
+  on its next show if not (`H.RefreshPanel`). Never inside the event, because a change made with
+  the page's *own* control fires it from inside AceConfigDialog's `ActivateControl`, which reads
+  `user.rootframe` off that control's userdata after the callback returns. A re-open there
+  releases the control, `AceGUI:Release` wipes the table, and the read raises (`attempt to index
+  field 'rootframe'`) whenever the widget pool hands the re-open a different widget. Such a change
+  is drawn twice, once by AceConfigDialog's own re-open after every control it activates and once
+  by the deferred pass; the second is redundant and harmless. Several events in one frame queue
+  one pass.
 - **No tab strip.** It carries no schema rows, so there is nothing for a strip to partition. It is
   one of the two pages `options-ui-§13` exempts, the landing page being the other.
 
@@ -86,7 +92,8 @@ has to follow. `OnInitialize` registers **one** reaction for all three AceDB cal
 3. **The re-apply**, `PrettyChat.Reapply`: the combat watcher re-armed for the incoming visibility
    mode, every format string re-applied or restored, and every schema-drawn widget refreshed
    (`Schema.NotifyPanelChange`).
-4. **The Profiles page**, `NS.Config.RefreshProfilesPage`: redrawn now or on its next show.
+4. **The Profiles page**, `NS.Config.RefreshProfilesPage`: redrawn a frame later if it is on
+   screen, on its next show if not.
 5. **One debug line**, worded by the event (`debug-logging-§10`):
    - a switch: `[Profile] switched → applied N restored M`;
    - a copy: `[Set] copied profile 'A' → 'B'`;
@@ -125,7 +132,8 @@ profile.
 
 `tests/test_profiles.lua` pins the page (last in the rail, AceDBOptions' table over the live db, no
 Defaults action, drawn on first show into a shown container), the redraw (a switch, copy or reset
-redraws the page, a plain structural refresh does not, a hidden page redraws on its next show), the
+redraws the page, a plain structural refresh does not, a hidden page redraws on its next show, and a
+change from the page's own control opens nothing under its callback and one pass the frame after), the
 latch following the incoming profile's `enabled`, the global reset's blast radius and its veto, and
 the page opting out when AceDBOptions is absent. `tests/test_debuglog.lua` pins the three debug
 lines and `tests/test_database.lua` the load pass on a switch.

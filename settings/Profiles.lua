@@ -22,14 +22,21 @@ local _, NS = ...
 -- second time (Schema.VetoedFromResetAll, handed to the library as `skipRestoreAll`).
 --
 -- WHEN THE PAGE REDRAWS. The widget tree is AceConfigDialog's, and it re-reads the active profile
--- only when it is fed again. A change made ON this page needs nothing -- AceConfigDialog re-opens
--- its own container after every control it activates. A profile changed from anywhere else --
--- `/pc resetall`, Reset all settings, a `/run` -- reaches core/PrettyChat.lua's one adopt path,
--- which calls NS.Config.RefreshProfilesPage below: the page redraws now if it is on screen, and
--- on its next show if not (H.RefreshPanel). It redraws on THAT and on nothing else: SetRenderer
--- also puts the page on the library's structural fan-out, and a renderer that re-opened on each
--- of those would tear AceConfigDialog's tree down under an open dropdown (options-ui-§11). So the
--- renderer draws once per profile event, counted.
+-- only when it is fed again. Every profile event -- a switch, copy or reset made on this page or
+-- anywhere else (`/pc resetall`, Reset all settings, a `/run`) -- reaches core/PrettyChat.lua's
+-- one adopt path, which calls NS.Config.RefreshProfilesPage below. A hidden page is marked and
+-- redraws on its next show (H.RefreshPanel). A page ON SCREEN redraws ONE FRAME LATER, never
+-- inside the event: a change made with this page's own control fires the event from inside
+-- AceConfigDialog's ActivateControl, which still holds that control's userdata table and reads
+-- `user.rootframe` from it after the callback returns. A synchronous re-open releases the control
+-- and AceGUI:Release wipes that table in place, so the read raises ("attempt to index field
+-- 'rootframe'") whenever the pool hands the re-open a different widget -- the rebuild-under-a-
+-- live-callback hazard options-ui-§11 names. Such a change is redrawn twice: once by
+-- AceConfigDialog itself, which re-opens its container after every control it activates, and
+-- once by the deferred pass, which is redundant but harmless. The page redraws on profile events
+-- and on nothing else: SetRenderer also puts it on the library's structural fan-out, and a
+-- renderer that re-opened on each of those would tear AceConfigDialog's tree down under an open
+-- dropdown (options-ui-§11). So the renderer draws once per profile event, counted.
 --
 -- Optional dependency: without AceDBOptions, AceConfig, AceConfigDialog or AceGUI the page opts
 -- out (a nil return) and nothing else is lost. Every lookup is silent (library-stack-§4).
@@ -108,13 +115,32 @@ local function Build(mainCategory)
     return Settings.RegisterCanvasLayoutSubcategory(mainCategory, ctx.panel, L["Profiles"])
 end
 
+-- One deferred redraw at a time: a copy and a switch in the same frame queue one pass, and the
+-- count tells the renderer the pass is owed.
+local redrawQueued = false
+
+local function redrawNextFrame()
+    redrawQueued = false
+    if page then H.RefreshPanel(page, true) end
+end
+
 --- The redraw a profile event asks for, called from core/PrettyChat.lua's shared adopt path.
 --- Safe before the page is built and on an install where it never is: the count still moves,
---- and there is no page to mark.
+--- and there is no page to mark. A hidden page is marked now, which draws nothing; a shown one is
+--- redrawn a frame later (the header above says why). Without C_Timer, which a live client
+--- always answers, the redraw falls back to happening now.
 NS.Config = NS.Config or {}
 NS.Config.RefreshProfilesPage = function()
     profileEvents = profileEvents + 1
-    if page then H.RefreshPanel(page, true) end
+    if not page then return end
+    local shown = page.panel and page.panel:IsShown()
+    if not (shown and C_Timer and C_Timer.After) then
+        H.RefreshPanel(page, true)
+        return
+    end
+    if redrawQueued then return end
+    redrawQueued = true
+    C_Timer.After(0, redrawNextFrame)
 end
 
 -- LAST of the three registrations (settings/Panel.lua registers General and Categories), so the
