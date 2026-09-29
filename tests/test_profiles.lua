@@ -263,13 +263,23 @@ end)
 -- ---------------------------------------------------------------------------
 
 -- library-stack-§4: every lookup silent, so a build without the AceConfig payload loses this
--- page and nothing else.
+-- page and nothing else. OptionsRegistry pcalls every builder and drops a page whose builder
+-- raises, so "no Profiles page" alone cannot tell the silent opt-out from a crash; the chat
+-- survey is what does (testing-§8: the degraded path answers, it does not error).
+--
+-- red under: narrowing the four-library guard in settings/Profiles.lua aceLibs() to
+-- `libs.config` alone (Build then indexes the nil `dbOptions`, and the registry prints
+-- "settings page 'Profiles' failed to build: ..." to the player).
 test("Profiles: with AceDBOptions absent the page opts out and a switch still works", function()
     local inst = ctx.loadAddon({
         mock = function(m) m.__libs["AceDBOptions-3.0"] = nil end,
     })
     t.eq(#inst.env._settings.subcategories, 2, "General and Categories still register")
     t.falsy(profilesFrame(inst), "and no Profiles page does")
+    for _, line in ipairs(inst.env.__printed()) do
+        t.falsy(line:find("failed to build", 1, true),
+            "the page opts out silently, it does not raise: " .. line)
+    end
     local ok, err = pcall(function() inst.addon.db:SetProfile("Alt") end)
     t.truthy(ok, "a switch with no page to redraw never raises: " .. tostring(err))
 end)
