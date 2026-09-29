@@ -218,9 +218,12 @@ Find the cause before changing anything; a fix that only makes the check pass is
 - **PANEL-15. The Preview renders color.** Loot ▸ `LOOT_ITEM_SELF`, read Preview → colored text (red
   `Loot`, green `You`), not raw `|cffff0000Loot|r`. **Fail:** raw escape codes; `InputBoxTemplate`'s
   color handling changed and the Preview needs a label-in-a-frame fallback. Result:
-- **PANEL-16. Enter commits.** In `LOOT_ITEM_SELF`'s New box add a word at the front and press Enter →
-  the Preview re-renders with the new format, and the next item you loot uses it. Press the row's
-  Reset. Result:
+- **PANEL-16. Enter commits, and the row's Enable acts at once.** In `LOOT_ITEM_SELF`'s New box add a
+  word at the front and press Enter → the Preview re-renders with the new format, and the next item you
+  loot uses it. Untick the row's **Enable** and loot again → that line is Blizzard's own
+  `You receive loot: …` at once, with no `/reload`. Tick it again and loot → your edited format is
+  back. Press the row's Reset. **Fail:** the looted line keeps PrettyChat's format after the untick
+  until a `/reload`, or the edit is gone after the re-tick. Result:
 - **PANEL-17. The pipe convention.** Read `LOOT_ITEM_SELF`'s New box → color codes show doubled pipes
   (`||cffff0000`). `/pc get Loot.LOOT_ITEM_SELF.format` → single pipes (`|cffff0000`), the stored form.
   Result:
@@ -643,9 +646,10 @@ an error, an artifact, or the wrong original.
   positional form the override does not carry); a line in the client's own sentence while its category
   is enabled (see LOC-4). Result:
 - **LOC-4. Globals this client does not define.** General ▸ **Test** and scan every `Original:` line →
-  none is empty. **Fail:** an empty or `nil` original. It does not crash: the override writes a global
-  nothing reads, silently, while the panel shows it enabled. Record every global that comes back empty;
-  the list is the finding. Result:
+  none reads the gray `(original not available)`. **Fail:** any `Original:` line that reads
+  `(original not available)`; the panel's Original box shows the same placeholder for that string. It
+  does not crash: the override writes a global nothing reads, silently, while the panel shows it
+  enabled. Record every global that shows the placeholder; the list is the finding. Result:
 - **LOC-5. Nothing else moved.** Run INSTALL-1, INSTALL-3, STATE-1 and TEST-4 to TEST-6 on this client →
   the same behavior as on English. **Fail:** any Lua error (a localized string reached code that
   assumed English). Result:
