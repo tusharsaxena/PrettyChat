@@ -287,6 +287,13 @@ NS.Helpers = lib:New({
         if NS.Config and NS.Config.BuildMain then NS.Config.BuildMain(ctx) end
     end,
 
+    -- The global reset's veto (options-ui-§3, §12): the Profiles page and every
+    -- profile-backed row. The reset every control here reaches is PrettyChat:ResetAll,
+    -- a profile reset, and never this library's row walk; the veto is passed anyway so
+    -- that a RestoreAllDefaults reached from anywhere cannot walk into the Profiles page
+    -- or write profile rows one by one. Named once, in settings/Schema.lua.
+    skipRestoreAll = NS.Schema.VetoedFromResetAll,
+
     -- Deliberately NOT passed, each for a reason worth writing down rather than
     -- leaving as an absence:
     --
@@ -294,9 +301,9 @@ NS.Helpers = lib:New({
     --     is bool and string only, so there is no stored color shape to declare.
     --   getLSM / scheduleTimer    — no media pickers, no color pickers, no sliders,
     --     so nothing reaches either.
-    --   skipRestoreAll / afterRestoreAll — the global reset is PrettyChat:ResetAll,
-    --     which wipes the profile in one pass; the library's row-by-row
-    --     RestoreAllDefaults is not on the path (see settings/Panel.lua).
+    --   afterRestoreAll — the global reset is PrettyChat:ResetAll, which wipes the
+    --     profile in one pass; the library's row-by-row RestoreAllDefaults is not on
+    --     the path (see settings/Panel.lua), so there is nothing to run after it.
     --   validate                  — settings/Schema.lua already runs its integrity
     --     check at file load and stashes the counts on Schema.validation, which the
     --     suite asserts. A second pass at panel-build time would report the same

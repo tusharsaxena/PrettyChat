@@ -47,16 +47,18 @@ end
 
 -- ---- registration -------------------------------------------------
 
-test("registration builds the parent category and two sub-pages", function()
+test("registration builds the parent category and three sub-pages", function()
     -- The left rail used to carry nine rows, eight of which were the same page
     -- with a different noun on it. It carries two: the addon-wide switches, and
-    -- everything this addon rewrites (one tab per message category).
+    -- everything this addon rewrites (one tab per message category), and then the
+    -- Profiles page, last (options-ui-§3; tests/test_profiles.lua owns its detail).
     t.eq(#env._settings.categories, 1, "exactly one canvas parent category")
     t.eq(env._settings.categories[1].name, "Ka0s Pretty Chat", "the parent carries the brand title")
     t.eq(#env._settings.addonCategories, 1, "the parent is added to the AddOns list")
-    t.eq(#env._settings.subcategories, 2, "two sub-pages, not one per category")
+    t.eq(#env._settings.subcategories, 3, "three sub-pages, not one per category")
     t.eq(env._settings.subcategories[1].name, "General", "General leads the rail")
     t.eq(env._settings.subcategories[2].name, L["Categories"], "and Categories follows it")
+    t.eq(env._settings.subcategories[3].name, L["Profiles"], "and Profiles closes it")
     for _, category in ipairs(Schema.CATEGORY_ORDER) do
         if category ~= "General" then
             t.falsy(panelFrame(env, category),
@@ -83,7 +85,7 @@ test("the panel registry holds one ctx per page, reachable by page key", functio
     -- business. What a host (and this suite) still needs is a handle on a live ctx,
     -- which is what the __panelFor test seam exists for.
     t.nilv(addon.optionsCategoryID, "the host no longer keeps a copy of the ID")
-    t.eq(#NS.Helpers.__panels(), 3, "one ctx per sub-page, plus the landing page")
+    t.eq(#NS.Helpers.__panels(), 4, "one ctx per sub-page, plus the landing page")
     -- Keyed by PAGE KEY, titled by the localized display name: the two are the same
     -- word on enUS and must not be assumed to be the same word anywhere else.
     for _, page in ipairs({ { "General", "General" }, { "Categories", L["Categories"] } }) do

@@ -94,7 +94,13 @@ local function reloadProfile(self)
     -- per-string format. Reapply is idempotent and is the same body both latch arms
     -- run, so on an edge this is a second pass over settings that already agree
     -- rather than a second mechanism that might not.
-    return self.Reapply()
+    local applied, restored = self.Reapply()
+    -- Reapply's NotifyPanelChange puts every schema-drawn widget back to the incoming
+    -- profile's values. The Profiles page is not schema-drawn: AceConfigDialog re-reads the
+    -- active profile only when it is fed again, so it is told separately, and it redraws
+    -- now if it is on screen or on its next show if not (settings/Profiles.lua).
+    if NS.Config and NS.Config.RefreshProfilesPage then NS.Config.RefreshProfilesPage() end
+    return applied, restored
 end
 
 local function activeProfile(self)

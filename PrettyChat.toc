@@ -19,6 +19,12 @@ libs\AceAddon-3.0\AceAddon-3.0.xml
 libs\AceDB-3.0\AceDB-3.0.xml
 libs\AceConsole-3.0\AceConsole-3.0.xml
 libs\AceGUI-3.0\AceGUI-3.0.xml
+# AceConfig (Registry, Cmd, Dialog) and AceDBOptions draw the Profiles page, and that is their
+# only use here (options-ui-§3). AFTER AceGUI, and that is load-bearing: AceConfigDialog resolves
+# AceGUI with a non-silent LibStub at file load, so ahead of it the file raises unless some other
+# addon happened to load AceGUI first. Ace3's own TOC orders the two the same way.
+libs\AceConfig-3.0\AceConfig-3.0.xml
+libs\AceDBOptions-3.0\AceDBOptions-3.0.xml
 # The broker pair, and they are the LAUNCHER's (launcher-§1), not LibKa0s's. The one
 # LibDataBroker object core\LauncherSetup.lua builds is handed to LibDBIcon, which draws the
 # minimap button from it; a broker display draws its own row from the same object. LibKa0s
@@ -102,3 +108,7 @@ settings\Slash.lua
 # — and NS.Schema as file-scope upvalues, and then CALLS Helpers.RegisterOptionsPage at file
 # scope for both of its pages, so both seams have to resolve before this line is reached.
 settings\Panel.lua
+# settings\Profiles.lua loads LAST, and the position is load-bearing for the sidebar rather than for
+# a load-time read: pages are drawn in registration order, and options-ui-§3 puts Profiles last.
+# It reads NS.Helpers (settings\OptionsSetup.lua) at file scope, so it also sits below that.
+settings\Profiles.lua

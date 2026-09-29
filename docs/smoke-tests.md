@@ -1109,7 +1109,7 @@ That is what the addon does. Do not file it. What these tests look for is an **e
 
 #### T-104 — The snapshot holds the client's own strings, and the restore gives them back
 
-**Why:** `PrettyChat:SnapshotOriginals` (`core/PrettyChat.lua:182-191`) reads `_G[globalName]` at
+**Why:** `PrettyChat:SnapshotOriginals` (`core/PrettyChat.lua:190-199`) reads `_G[globalName]` at
 `OnEnable`, so on this client it is capturing German. `ApplyStrings`'s restore arm
 (`modules/Override.lua:294-304`) writes those values back. A restore is only ever as good as what
 the snapshot recorded, and nothing outside a live client can say what it recorded.

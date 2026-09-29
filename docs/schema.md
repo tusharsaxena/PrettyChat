@@ -178,7 +178,7 @@ Only user-modified values are stored. The schema's auto-clear keeps `strings[...
 
 ### Profiles
 
-Profiles use AceDB with a single shared `Default` profile:
+Profiles use AceDB, every character starting on the shared `Default` profile:
 
 ```lua
 self.db = LibStub("AceDB-3.0"):New("PrettyChatDB", defaults, true)
@@ -186,7 +186,7 @@ self.db = LibStub("AceDB-3.0"):New("PrettyChatDB", defaults, true)
 
 The third arg (`true`) selects the `Default` profile name for every character. All characters on the account see the same configuration out of the box.
 
-`AceDBOptions-3.0` (per-character / per-class / per-realm profile UI) is **not** wired in. Adding it is a small contribution: register the AceDBOptions table as a third `PrettyChat_Profiles` sub-page in `settings/Panel.lua` (library-drawn, and deliberately never tabbed). See [scope.md](./scope.md#out-of-scope) for why it isn't there today.
+The **Profiles** sub-page (`settings/Profiles.lua`) is AceDBOptions' own UI: create, switch, copy, reset and delete, plus per-character / per-class / per-realm / per-faction scoping. Everything above lives in the profile; `db.global` holds only the migration stamp and LibDBIcon's `minimap` table. What a profile holds, what stays account-wide, and what a switch re-runs: [profiles.md](./profiles.md).
 
 ## Build sequence
 

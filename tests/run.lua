@@ -135,6 +135,9 @@ Kit.run{
         -- reached the 1000-1500 band's third release (anti-pattern #53). Straight after it,
         -- because it is the same page read one level down.
         "test_panel_categories",
+        -- The Profiles page and what a profile act has to reach. After the two panel suites
+        -- because it is the last page in the rail and reads the panel through the same seams.
+        "test_profiles",
         "test_doc_structure",
         "test_register",
         -- The kit has shipped one suite of its own since revision 15: the working-tree

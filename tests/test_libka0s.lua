@@ -401,13 +401,14 @@ test("NS.Helpers IS the library instance, decorated in place", function()
                               "__panels", "__panelFor" }) do
         t.eq(type(NS.Helpers[member]), "function", "the instance carries " .. member)
     end
-    -- Two registered pages, BY KEY and in rail order, rather than a count derived
+    -- Three registered pages, BY KEY and in rail order, rather than a count derived
     -- from CATEGORY_ORDER. The two stopped being the same number when the eight
     -- message categories became eight tabs on one page, and a count alone would
     -- have gone on passing if a page were registered twice under one key.
     local pageKeys = {}
     for i, page in ipairs(NS.Helpers.__pages()) do pageKeys[i] = page.key end
-    t.eq(table.concat(pageKeys, ","), "General,Categories", "every page builder ran, in rail order")
+    t.eq(table.concat(pageKeys, ","), "General,Categories,Profiles",
+        "every page builder ran, in rail order")
 
     -- The member list above survives a copy-across table intact, so on its own it
     -- asserts nothing the case name claims. THIS is the identity check: swap a

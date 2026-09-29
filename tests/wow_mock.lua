@@ -78,6 +78,13 @@
 --                               remembers what is currently registered. The base's
 --                               frame stub answers both from its PascalCase catch-all
 --                               and keeps nothing.
+--  16.  AceDBOptions / AceConfig / AceConfigDialog
+--                             — the Profiles page's three libraries (settings/Profiles.lua),
+--                               which the base deliberately omits. The options table
+--                               remembers the db it was built over, the registry what was
+--                               registered under which app name, and the dialog COUNTS its
+--                               Opens, which is how a case tells a page that redrew from one
+--                               that did not. Modeled on ConsumableMaster's and MultiMeters'.
 --  16.  _G = M               — see below.
 --
 -- ── `_G` is the mock table itself ───────────────────────────────────────────
@@ -439,6 +446,26 @@ local function build()
         created[#created + 1] = w
         return w
     end
+
+    -- 16 — the Profiles page's libraries. Fresh per build, like everything above, so a
+    -- count never carries from one instance into the next. A case that needs the page
+    -- absent removes one of the three from `__libs` in its `opts.mock`.
+    M.__libs["AceDBOptions-3.0"] = {
+        GetOptionsTable = function(_, db)
+            return { type = "group", name = "Profiles", args = {}, __db = db }
+        end,
+    }
+    M.__libs["AceConfig-3.0"] = {
+        __registered = {},
+        RegisterOptionsTable = function(self, name, tbl) self.__registered[name] = tbl end,
+    }
+    M.__libs["AceConfigDialog-3.0"] = {
+        __opens = 0,
+        Open = function(self, name, container)
+            self.__opens = self.__opens + 1
+            self.__lastOpen = { name = name, container = container }
+        end,
+    }
 
     return M
 end

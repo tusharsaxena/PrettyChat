@@ -29,6 +29,23 @@ Schema.CATEGORY_ORDER = CATEGORY_ORDER
 local CATEGORY_PAGE = "Categories"
 Schema.CATEGORY_PAGE = CATEGORY_PAGE
 
+-- The Profiles page's key (settings/Profiles.lua). No row declares it -- that page is
+-- AceDBOptions' own table, not schema rows -- but the global reset's veto names it, so it
+-- is spelled once here, where the page and the veto both read it.
+Schema.PROFILES_PAGE = "Profiles"
+
+--- What a global reset's row walk must NOT touch, named once (options-ui-§3, §12). The
+--- Profiles page, whose rows are AceDBOptions' and delete profiles when "reset", and every
+--- row whose value lives in the profile: the global reset IS the profile reset
+--- (PrettyChat:ResetAll -> db:ResetProfile()), so what a row walk keeps is only what a
+--- profile reset cannot reach -- the session-only rows. settings/OptionsSetup.lua hands it to
+--- the library as `skipRestoreAll`; the degradation stub there has no row walk to share it
+--- with, because its RestoreAllDefaults is ResetAll itself.
+function Schema.VetoedFromResetAll(row)
+    if row.page == Schema.PROFILES_PAGE then return true end
+    return not row.sessionOnly
+end
+
 -- Seven row kinds. Path scheme:
 --   General.enabled                     → addon-wide master toggle (bool)
 --   General.visibility                  → addon-wide visibility mode (string enum)

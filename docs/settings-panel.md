@@ -1,6 +1,6 @@
 # Settings panel
 
-`settings/Panel.lua` builds the settings panel directly on Blizzard's modern `Settings.RegisterCanvasLayoutCategory` / `Settings.RegisterCanvasLayoutSubcategory` API and renders body content with AceGUI. PrettyChat appears under **Ka0s Pretty Chat**; the parent page hosts the logo, tagline, and slash-command list (read-only orientation) — drawn by the library's `H.BuildLandingPage` from a spec this addon declares, not by a body of its own, and **two** sub-pages hold the actionable controls. A bare `/pc` and `/pc config` both open this parent page.
+`settings/Panel.lua` builds the settings panel directly on Blizzard's modern `Settings.RegisterCanvasLayoutCategory` / `Settings.RegisterCanvasLayoutSubcategory` API and renders body content with AceGUI. PrettyChat appears under **Ka0s Pretty Chat**; the parent page hosts the logo, tagline, and slash-command list (read-only orientation) — drawn by the library's `H.BuildLandingPage` from a spec this addon declares, not by a body of its own, and **three** sub-pages hold the actionable controls: `General` and `Categories` from `settings/Panel.lua`, then `Profiles` from `settings/Profiles.lua`. A bare `/pc` and `/pc config` both open this parent page.
 
 **What each page covers.** This summary lived in the README until documentation-§1 dropped the settings table from it; it is the page-granularity view, above the finer per-tab and per-string detail below.
 
@@ -8,8 +8,9 @@
 |------|--------|
 | **General** | One tab, **Master controls**: the master **Enable PrettyChat** switch (turn it off and every message goes back to its original wording), a **General visibility** dropdown (*Always*, *Only in combat*, *Only out of combat*, *Never* — a second master switch, so you can have PrettyChat only while you are fighting), a **Debug console** toggle (shows or hides a small on-screen log window for troubleshooting), a **Minimap button** toggle (show or hide PrettyChat's button on the minimap), a **Test** button that previews every message into that console, and **Reset all settings**. |
 | **Categories** | Everything PrettyChat rewrites, one tab per kind of message — and inside each, a list of that kind's messages down the left, so you pick the line you want to change instead of scrolling past twenty of them. |
+| **Profiles** | Ace3's standard profile controls: switch to another profile, create one, copy settings from one, reset or delete one, and choose whether a character, class, realm or faction gets its own. Every setting on the other two pages belongs to the active profile; the minimap button does not. |
 
-**Every page draws a strip** (options-ui-§13). The `Categories` page draws one — a primary strip of message categories — and inside each of those, an AceGUI **`TreeGroup`**: that category's format strings listed in the tree pane on the left, the editor for the selected one in the content pane on the right.
+**Every schema page draws a strip** (options-ui-§13); `Profiles` carries no schema rows and draws none, one of the two pages §13 exempts (the landing page is the other). The `Categories` page draws one — a primary strip of message categories — and inside each of those, an AceGUI **`TreeGroup`**: that category's format strings listed in the tree pane on the left, the editor for the selected one in the content pane on the right.
 
 | Page | Primary tabs (strip order) | Secondary tabs | Rows |
 |---|---|---|---|
@@ -22,13 +23,13 @@ The primary strip is `H.TabStrip`'s. The string list beside the editor is AceGUI
 
 The `General` page drew **no strip at all** until this pass: one group, one row, `H.RenderRows`. A one-group page draws a one-tab strip as of `OptionsWidgets` minor 13, and this page is why the rule matters — it was the page that read as broken beside `Categories` rather than as simpler.
 
-This doc covers: the canvas-layout framework, the unified per-page header, the `General` page's `Master controls` tab, the `Categories` page's two strips, what each category tab covers, the per-string editor, the Test button, and the color palette.
+This doc covers: the canvas-layout framework, the unified per-page header, the `General` page's `Master controls` tab, the `Categories` page's two strips, what each category tab covers, the `Profiles` page, the per-string editor, the Test button, and the color palette.
 
 ## Canvas-layout framework
 
-The panel does not go through `AceConfigDialog:AddToBlizOptions` (the older path that auto-renders an AceConfig options table inside the addon's right pane). It is plain Blizzard `Frame`s with a unified header and an AceGUI `ScrollFrame` body — and since the LibKa0s adoption, all of that is **`LibKa0s-Options-1.0`'s**, reached through `NS.Helpers` (`settings/OptionsSetup.lua`). Every category (parent + sub-pages) shares the same header design and right-edge gutter as every other Ka0s addon, not merely as every other page here.
+The panel does not go through `AceConfigDialog:AddToBlizOptions` (the older path that auto-renders an AceConfig options table inside the addon's right pane). AceConfig draws exactly one thing here, the AceDBOptions table on the `Profiles` page, and it draws it into this addon's own canvas. It is plain Blizzard `Frame`s with a unified header and an AceGUI `ScrollFrame` body — and since the LibKa0s adoption, all of that is **`LibKa0s-Options-1.0`'s**, reached through `NS.Helpers` (`settings/OptionsSetup.lua`). Every category (parent + sub-pages) shares the same header design and right-edge gutter as every other Ka0s addon, not merely as every other page here.
 
-Registration: `settings/Panel.lua` queues one builder **per page** — two of them, `General` and `Categories` — with `H.RegisterOptionsPage(key, name, builder)` at **file load**. `NS.Config.RegisterPanels` is the library's `CreateOptionsPanel`, called from `PrettyChat:OnEnable`; it resolves AceGUI, registers the parent canvas category, and drains the queue. Each builder creates its canvas with `H.CreatePanel(nil, category, opts)`, declares how the page draws itself with `H.SetRenderer(ctx, fn)`, and returns its `Settings.RegisterCanvasLayoutSubcategory` handle.
+Registration: `settings/Panel.lua` queues one builder **per page** — two of them, `General` and `Categories` — with `H.RegisterOptionsPage(key, name, builder)` at **file load**, and `settings/Profiles.lua`, the last file the TOC loads, queues the third, `Profiles`, so it closes the rail. `NS.Config.RegisterPanels` is the library's `CreateOptionsPanel`, called from `PrettyChat:OnEnable`; it resolves AceGUI, registers the parent canvas category, and drains the queue. Each builder creates its canvas with `H.CreatePanel(nil, category, opts)`, declares how the page draws itself with `H.SetRenderer(ctx, fn)`, and returns its `Settings.RegisterCanvasLayoutSubcategory` handle.
 
 The category handle is the library's own business now — `PrettyChat.optionsCategory` / `optionsCategoryID` are gone, and `PrettyChat:OpenConfig()` is a one-line delegate to `H.OpenOptionsPanel()`, which owns the combat gate and the left-tree expansion ([`LIBKA0S-04`](https://github.com/tusharsaxena/PrettyChat/issues/9)). A host needing a live page context uses the `H.__panelFor(pageKey)` test seam.
 
@@ -136,6 +137,12 @@ The entry that selects a string *is* its name, which is why the `Heading` each b
 **Refresher hygiene.** `Schema.refreshers` is keyed by *category*, not by page, so an entry left behind by the tab the player just left is a closure over released AceGUI widgets that the next master-toggle fan-out would still reach. `buildCategoriesBody` drops every category's entry before it draws, and the body it draws re-registers the one now on screen.
 
 **The Defaults button** in the header is **page-wide** (`options-ui-§13`: a page's Defaults MUST NOT narrow to the visible tab). It calls `PrettyChat:ResetCategoriesPage()` directly, no popup confirm, which hands `Schema.ResetRows` the rows of every message category (`CATEGORY_ORDER` minus the virtual `General`) as one batch: one `ApplyStrings` pass and one `[Set] reset Categories: N rows` line. The canvas's `OnDefault` forwards to the same body, so the Settings window's footer control does the same. Its tooltip reads "Reset the strings on every category tab to their defaults." Per-row reset is preserved via the per-string `Reset` button (see below), and the master `Reset all settings` on General has the popup.
+
+## The `Profiles` sub-page
+
+`settings/Profiles.lua`. AceDBOptions' own options table (`AceDBOptions:GetOptionsTable(NS.db)`), registered with AceConfig as `PrettyChat-Profiles` and drawn by `AceConfigDialog:Open` into an AceGUI `SimpleGroup` inside the page's canvas, under the shared header and breadcrumb. The canvas is `H.CreatePanel(nil, L["Profiles"], { pageKey = "Profiles", defaultsButton = false })`: no **Defaults** button, because "restore defaults" here would mean deleting profiles (`options-ui-§3`). The global reset's veto (`Schema.VetoedFromResetAll`, the Options descriptor's `skipRestoreAll`) names the page a second time.
+
+The draw is the page's `H.SetRenderer` body, so the combat cover applies here as on every other page. It opens the dialog once per **profile event**, counted: a switch, copy or reset reaches `NS.Config.RefreshProfilesPage` from `core/PrettyChat.lua`'s shared adopt path, and `H.RefreshPanel(ctx, true)` redraws the page now if it is on screen and on its next show if not. The library's structural fan-out does not redraw it, which would tear AceConfigDialog's tree down under an open dropdown. With any of AceDBOptions, AceConfig, AceConfigDialog or AceGUI missing, the builder returns nil and the page is absent. Detail: [profiles.md](./profiles.md).
 
 ## Per-string block
 
