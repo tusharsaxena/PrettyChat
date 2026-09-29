@@ -1,0 +1,1 @@
+OK SP-PC-02 PASS: S3 met (re-vendor v1.63.0 identical to tag, profile row + profiles + liveVerbs = LIVE_VERBS+profile, stub CliProfile/ProfileSwitch, tests/docs incl. module-map row); gate 538/0, luacheck 0/0, lizard lua 0 >15; 6 mutations all caught; perf sweep reproduces
