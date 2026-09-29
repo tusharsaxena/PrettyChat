@@ -669,6 +669,30 @@ test("with Slash absent the host verbs survive and the schema CLI says why", fun
         ", so the settings panel is unavailable.", 1, true),
         "and that line is config's, not the help header")
 
+    -- The profile pair (Slash minor 17) takes the stub's route (b): with no library
+    -- there is no store adapter to trust, so both name the missing library in the one
+    -- line every lost verb says and switch nothing. A typed name must not become a
+    -- profile, and ProfileSwitch answers false, as the live member does when it did
+    -- not switch.
+    local db = bare.addon.db
+    local current = db:GetCurrentProfile()
+    before = #msgs
+    bare.NS.SlashCommands:CliProfile("Alt")
+    t.eq(#msgs, before + 1, "the degraded CliProfile answers on one line")
+    t.truthy(msgs[#msgs]:find(bare.NS.LIBKA0S_MISSING ..
+        ", so the settings CLI is unavailable.", 1, true),
+        "through the shared cause clause")
+    before = #msgs
+    t.eq(bare.NS.SlashCommands:ProfileSwitch("Alt"), false, "the degraded ProfileSwitch answers false")
+    t.eq(#msgs, before + 1, "on one line")
+    t.truthy(msgs[#msgs]:find(bare.NS.LIBKA0S_MISSING ..
+        ", so the settings CLI is unavailable.", 1, true),
+        "the same line")
+    t.eq(db:GetCurrentProfile(), current, "neither switched the profile")
+    local names = {}
+    for _, n in ipairs((db:GetProfiles({}))) do names[n] = true end
+    t.falsy(names.Alt, "and neither created one")
+
     -- And the stub re-implements none of the library's rendering.
     -- The ONE exception slash-commands-§1 sanctions is DISABLED_LINE_FORMAT's
     -- verbatim copy (its `/pc enable` is yellow in the library's own bytes), pinned

@@ -219,6 +219,13 @@ if not lib then
         CliReset        = unavailable,
         CliResetAll     = unavailable,
         CliVersion      = function() NS.Print("v" .. VERSION) end,
+        -- The profile pair (Slash minor 17), both because the live instance has both
+        -- and the parity case compares against it. Route (b) of the Slash
+        -- version-17 degradation stub: with no library there is no store adapter to
+        -- trust, so each names the missing library and switches nothing, and
+        -- ProfileSwitch answers false as the live member does when it did not switch.
+        CliProfile      = unavailable,
+        ProfileSwitch   = function() unavailable(); return false end,
         -- The collection's one sentence, built the way `cli:DisabledLine()` builds
         -- it: the plain-text brand, then `/pc enable`. From the verbatim copy above,
         -- never a host spelling, so a degraded build words the refusal exactly as a
