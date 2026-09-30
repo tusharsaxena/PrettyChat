@@ -358,3 +358,27 @@ test("with LibKa0s absent the gated call sites write nothing and raise nothing",
     t.eq(bare.NS.DebugLog.DebugOnce("k", "UI", "x"), false, "DebugOnce answers false")
     t.eq(bare.NS.DebugLog.DebugChanged("k", "UI", "x"), false, "DebugChanged answers false")
 end)
+
+-- ---- the at-enable queue (DebugLogGates 1, Launcher 5) --------------------------
+
+-- red under: a Launcher descriptor with no `debugAtEnable`, whose Register (run in
+-- OnEnable, with the session-only flag off) wrote its state line through the gated
+-- `debug` and so never landed.
+test("the launcher's state line from OnEnable lands at the first enable, once", function()
+    local inst = ctx.loadAddon()
+    local D = inst.NS.DebugLog
+    D:Clear()
+    D:SetEnabled(true)
+    local lines = since(D, 0)
+    t.eq(count(lines, "[Launcher] LibDataBroker-1.1 absent; no launcher"), 1, table.concat(lines, " / "))
+    local init, held
+    for i, line in ipairs(lines) do
+        if line:find("[Init]", 1, true) then init = i end
+        if line:find("[Launcher]", 1, true) then held = i end
+    end
+    t.truthy(init and held and held > init, "after the [Init] summary: " .. table.concat(lines, " / "))
+    D:SetEnabled(false)
+    D:Clear()
+    D:SetEnabled(true)
+    t.eq(count(since(D, 0), "[Launcher]"), 0, "one-shot: a second enable does not repeat it")
+end)
