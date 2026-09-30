@@ -10,8 +10,8 @@ PrettyChat has two debug surfaces, and both write into the same window:
   each line means.
 
 The console itself is the library's, and its contract lives in LibKa0s's
-[`docs/api/DebugLog/version-17.2-docs.md`](https://github.com/tusharsaxena/LibKa0s/blob/master/docs/api/DebugLog/version-17.2-docs.md)
-(DebugLog 17 with DebugLogDiagnostics 2 is the vendored pair, from LibKa0s v1.64.0). This page covers
+[`docs/api/DebugLog/version-18.2.1-docs.md`](https://github.com/tusharsaxena/LibKa0s/blob/master/docs/api/DebugLog/version-18.2.1-docs.md)
+(DebugLog 18 with DebugLogDiagnostics 2 and DebugLogGates 1 is the vendored set, from LibKa0s v1.65.0). This page covers
 only what PrettyChat adds on top.
 
 ## The console
@@ -49,20 +49,27 @@ gated: nothing below lands, and nothing is built for it, while the flag is off. 
 is whether a pasted log lets a maintainer reconstruct what happened; `tests/test_debug_coverage.lua`
 pins the lines that answer that, and `tests/test_debuglog.lua` the `[Set]` ones.
 
+**Which lines are the library's.** Since LibKa0s v1.65.0 every LibKa0s module that decides something
+a support read needs writes its own line through this addon's gated sink: the host passes
+`function(tag, message) NS.Debug(tag, "%s", message) end` as `debug` to the Slash, Lifecycle and
+Launcher descriptors, and `NS.Debug` itself to the Options one. The `Emitted by` column below says
+*the library* for those lines, and this addon writes no copy of any of them (debug-logging-§4).
+`tests/test_debug_coverage.lua` pins each library line landing here, once.
+
 | Tag | Emitted by | When |
 |---|---|---|
 | `Debug` | the library | `logging enabled` / `logging disabled`, at each flip of the flag, including the enable a diagnostics run makes when logging was off. The disable line is written ungated. |
 | `Init` | the library, from `core/DebugLogSetup.lua`'s summary | Once, right after `logging enabled`: version, schema, profile, then `, rejected events: <names>`, `, stood down: <holds>` and `, chat addons: <names>` when each applies. The last two carry what happened at load, while the flag was off. |
-| `Cmd` | `settings/Slash.lua` | Every `/pc` command, as typed (pipes doubled), with `(stood down: <holds>)` appended while any hold is taken, since the library refuses feature verbs in chat only. Then a `<verb> refused: <guard>` line for each refusal the host owns: schema not ready, an unknown category, a category given to `reset`, an unknown format string, an unknown `test` or `debug` form. |
+| `Cmd` | `settings/Slash.lua`, and the library (`LibKa0s-Slash-1.0`) | **Host:** every `/pc` command, as typed (pipes doubled), with `(stood down: <holds>)` appended while any hold is taken; then a `<verb> refused: <guard>` line for each refusal of a verb the host owns: schema not ready, an unknown category, a category given to `reset`, an unknown format string, an unknown `test` or `debug` form. **Library** (Slash minor 18): one `refused <verb>[ <arg>]: <guard>` line after the command line for each refusal the dispatcher decides itself: a feature verb on a stood-down addon (`refused test: disabled`), an unknown verb, `get` / `set` / `reset` usage and not-found, a value that does not parse, a write the seam refused, a reset with no default, and the `profile` verb's unavailable, already-current, in-combat and unknown-profile refusals. |
 | `Set` | the schema write seam (`LibKa0s-Schema-1.0` through `settings/Schema.lua`), `core/PrettyChat.lua`, `modules/Override.lua` | Every setting write as `<path> = <value>`; a format string the signature gate refused, with both sequences; one line per bulk reset (`reset <scope>: N rows`), per profile copy and per profile reset (debug-logging-§10). |
 | `Profile` | `core/PrettyChat.lua` | A profile switch, with the strings it applied and restored. |
 | `Migrate` | `core/Database.lua` | The migration steps that ran, and stored keys pruned for having no schema row, once per pass. Silent when nothing ran or nothing was pruned. |
-| `Lifecycle` | `modules/Override.lua` | Standing down (naming the holds) and standing up, once per edge of the latch. |
-| `Events` | `modules/Override.lua` | `combat watch armed: N/2 events` and `combat watch disarmed`, on a change of registration only. `rejected <names>` follows the arm line when the client refused a name. |
+| `Lifecycle` | the library (`LibKa0s-Lifecycle-1.0`), through `core/LifecycleSetup.lua` | One line per edge of the latch, before the arm runs: `stood down: added <key> (holds: <set>)` and `stood up: released <key> (holds: none)` (Lifecycle minor 3). A call that fires no edge writes nothing. `modules/Override.lua`'s arms write no line of their own. |
+| `Events` | `modules/Override.lua` | `combat watch armed: N/2 events` and `combat watch disarmed`, on a change of registration only, through the console's change gate (`D.DebugChanged`, so a Clear or the enable edge re-arms it). `rejected <names>` follows the arm line when the client refused a name. |
 | `Visibility` | `modules/Override.lua` | Each combat boundary while a combat-scoped mode is stored: `combat entered` or `combat left`, the mode, and the strings applied and restored. |
-| `UI` | `settings/Panel.lua`, `settings/Schema.lua` | A Categories tab switch (`categories tab <name>`) and a string selection (`<category> string <NAME>`). A panel refresher that raised inside its `pcall`: `<site> failed: <error>`, once per distinct site and error. |
-| `Cfg` | the library (`LibKa0s-Options-1.0`) | The settings panel opened, an open refused in combat, and a registration parked in combat. |
-| `Launcher` | the library (`LibKa0s-Launcher-1.0`), through `core/LauncherSetup.lua` | The launcher's own lines: `registered` or the broker library it found missing (both at `OnEnable`, while the session-only flag is still off, so they do not land in practice; the report's `ui` section shows whether the launcher registered), a menu entry refused while disabled, and a tooltip callback that raised. |
+| `UI` | `settings/Panel.lua`, `settings/Schema.lua` | A Categories tab switch (`categories tab <name>`) and a string selection (`<category> string <NAME>`). A panel refresher that raised inside its `pcall`: `<site> failed: <error>`, once per distinct site and error, through the console's `D.DebugOnce` (a Clear re-arms it). |
+| `Cfg` | the library (`LibKa0s-Options-1.0`) | The settings panel opened, an open refused in combat, a registration parked in combat and its `register flushed (combat ended)` line, and (Options minor 27) one `<what> refused (in combat)` line for each write, Defaults, button, toggle, tab or page switch the combat lock refuses on an open panel, once per combat (`tab Money refused (in combat)`). |
+| `Launcher` | the library (`LibKa0s-Launcher-1.0`), through `core/LauncherSetup.lua` | The launcher's own lines. Its state lines, `registered` or the broker library it found missing, are written at `OnEnable` while the session-only flag is off, so they go to the console's at-enable queue (`debugAtEnable`, Launcher minor 5) and land once, right after the `[Init]` summary, the first time logging is turned on. Its events, a menu entry refused while disabled and a tooltip callback that raised, are written as they happen. |
 | `Test` | `settings/Panel.lua` | The `/pc test` samples and the General page's **Test** button. Written ungated, because the player asked for them. |
 | `Diag` | the library | The diagnostics report's markers, identity header and `truncated` line. |
 
@@ -74,22 +81,22 @@ PrettyChat has no `OnUpdate`, no ticker and no repeating timer (the sweep is
 [performance-sweep.md](./performance-sweep.md)). The one path that runs again and again with nothing
 new to say is the combat watcher's registration: `SyncCombatWatch` re-registers on every re-apply (each
 latch arm, each profile event, each visibility write). Its `[Events]` lines are change-gated, so 25
-re-applies with the mode unchanged add no line (debug-logging-§9). The combat-boundary line itself is
-not steady state: each boundary is a real recompute.
+re-applies with the mode unchanged add no line (debug-logging-§9). The gate is the console's
+(`D.DebugChanged`, DebugLogGates 1), not a memo of this addon's, so it remembers nothing while logging
+is off and a Clear re-arms it: the first re-apply after a Clear states the watcher again. The
+combat-boundary line itself is not steady state: each boundary is a real recompute.
 
 ### Deliberately not traced
 
 - **Per-string work.** `ApplyStrings` returns its counts, and its callers put them on their own one
   line. A line per global would be 79 lines a pass (debug-logging-§9).
 - **Load-time work.** The snapshot, the latch armed from the stored path, panel registration and a
-  migration step that fails. The flag is off at every load, so a line there could never land. The
-  `[Init]` tails carry the stand-down; a failed migration is printed to chat, and the report's
+  migration step that fails. The flag is off at every load, so a line there could never land (the
+  launcher's state lines are the exception: they wait in the at-enable queue). The `[Init]` tails
+  carry the stand-down; a failed migration is printed to chat, and the report's
   `state` section shows the stored and code schema versions.
 - **The Preview's render errors.** `NS.RenderSample` catches a `string.format` raise per string and
   shows it in the panel's Preview and in `/pc test`, which is where the player is looking.
-- **The library's own refusals.** `LibKa0s-Slash-1.0` has no debug hook: an unknown verb, a value that
-  does not parse, a feature verb on a stood-down addon and a profile switch in combat are answered in
-  chat only. The `[Cmd]` line, and its stood-down tail, is the log's side of them.
 
 ## The diagnostics report
 
@@ -193,7 +200,7 @@ With no LibKa0s the stub's `RunDiagnostics` prints
 ## Where else this is pinned
 
 The command rows are in [slash-dispatch.md](./slash-dispatch.md), and the player-facing steps are
-the README's `## Reporting a bug`. The in-game checks are DIAG-1 to DIAG-8, DIAG-11 to DIAG-15 and
-COMBAT-4 (the report in combat) in [smoke-tests.md](./smoke-tests.md). The suites are `tests/test_diagnostics.lua` (this addon's
+the README's `## Reporting a bug`. The in-game checks are DIAG-1 to DIAG-8, DIAG-11 to DIAG-15,
+DIAG-23 to DIAG-25 (the library's own lines) and COMBAT-4 (the report in combat) in [smoke-tests.md](./smoke-tests.md). The suites are `tests/test_diagnostics.lua` (this addon's
 sections), the kit's shared `tests/_kit/test_diagnostics_contract.lua` (wired in `tests/run.lua`),
 `tests/test_debuglog.lua`, `tests/test_debug_coverage.lua` (the Coverage lines above), `tests/test_disabled.lua` and `tests/test_slash.lua`.

@@ -99,6 +99,12 @@ if not lib then
         buffer          = {},
         Add             = function() end,
         Debug           = function() end,
+        -- The console's change gates and at-enable queue (DebugLog 18, DebugLogGates 1): with no
+        -- console nothing is written, so each answers false, the "nothing written" answer.
+        DebugOnce       = function() return false end,
+        DebugChanged    = function() return false end,
+        DebugForget     = function() end,
+        DebugAtEnable   = function() return false end,
         Clear           = function() end,
         Show            = function() sayOnWindow() end,
         Hide            = function() end,

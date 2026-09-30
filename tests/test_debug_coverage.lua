@@ -3,8 +3,10 @@
 -- section lists it. test_debuglog.lua owns the console's wiring and the [Set] lines;
 -- this suite owns the lines a support read of a pasted log needs beyond them: the
 -- combat edges, the watcher's registration, the command as typed, the refusals with
--- their guard, the caught errors, the Categories page's view switches, and the two
--- state tails of the [Init] summary.
+-- their guard, the caught errors, the Categories page's view switches, the two
+-- state tails of the [Init] summary, and the lines LibKa0s writes through this addon's
+-- sink (Slash's refusals, Lifecycle's edges, the Options combat lock; LibKa0s v1.65.0),
+-- each pinned as ONE line, never a host copy beside it.
 --
 -- Each case captures the buffer from a mark, so "no new line" means none at all.
 
@@ -146,8 +148,8 @@ test("a command sent with logging off leaves no line", function()
     t.eq(#D.buffer, 0, "the gate holds")
 end)
 
--- red under: a [Cmd] line without the tail. LibKa0s-Slash-1.0 refuses a feature verb
--- on a stood-down addon in chat only, so the tail is the log's record of the guard.
+-- red under: a [Cmd] line without the tail. The tail names the holds behind the
+-- command; the refusal itself is the library's own line (the next section).
 test("a command on a stood-down addon names the holds", function()
     local inst, D = logging()
     inst.NS.Schema.Set("General.enabled", false)
@@ -223,4 +225,160 @@ test("a Categories tab switch and a string selection are one [UI] line each", fu
     from = #D.buffer
     tree:Fire("OnGroupSelected", second)
     t.eq(count(since(D, from), "[UI] Money string " .. second), 1, table.concat(since(D, from), " / "))
+end)
+
+-- ---- the library's own lines, through this addon's sink (LibKa0s v1.65.0) ----------
+
+local function tagged(lines, tag)
+    local out = {}
+    for _, line in ipairs(lines) do
+        if line:find("[" .. tag .. "]", 1, true) then out[#out + 1] = line end
+    end
+    return out
+end
+
+-- red under: a Slash descriptor with no `debug` (the refusal reached chat alone), and
+-- under a host that logged the refusal too (two lines for one refusal).
+test("the dispatcher's own refusals land in this log, one line each", function()
+    local inst, D = logging()
+    inst.NS.Schema.Set("General.enabled", false)
+    local from = #D.buffer
+    inst.addon:OnSlashCommand("test")
+    local lines = since(D, from)
+    t.eq(count(lines, "[Cmd] refused test: disabled"), 1, table.concat(lines, " / "))
+    t.eq(count(lines, "refused test"), 1, "and no second copy of it")
+    t.eq(#lines, 2, "the command as typed, then the library's refusal: " .. table.concat(lines, " / "))
+    inst.NS.Schema.Set("General.enabled", true)
+    from = #D.buffer
+    inst.addon:OnSlashCommand("frobnicate")
+    inst.addon:OnSlashCommand("get Nope.x")
+    lines = since(D, from)
+    t.eq(count(lines, "[Cmd] refused frobnicate: unknown verb"), 1, table.concat(lines, " / "))
+    t.eq(count(lines, "[Cmd] refused get Nope.x: not found"), 1, table.concat(lines, " / "))
+    t.eq(#tagged(lines, "Cmd"), 4, "two commands, two refusals: " .. table.concat(lines, " / "))
+end)
+
+-- A host verb's refusal stays this addon's line and gains no library copy.
+test("a host verb's refusal is the host's line alone", function()
+    local inst, D = logging()
+    inst.addon:OnSlashCommand("list Nope")
+    local lines = since(D, 0)
+    t.eq(count(lines, "[Cmd] list refused: unknown category 'Nope'"), 1, table.concat(lines, " / "))
+    t.eq(count(lines, "refused list"), 0, "the library writes nothing for a verb it does not own")
+end)
+
+-- red under: a Lifecycle descriptor with no `debug`, and under the arms' own
+-- `stood down -> holds` / `stood up -> no holds` lines kept beside the library's.
+test("a stand-down and a stand-up edge are the library's one line each", function()
+    local inst, D = logging()
+    local from = #D.buffer
+    inst.NS.Schema.Set("General.enabled", false)
+    local lines = tagged(since(D, from), "Lifecycle")
+    t.eq(#lines, 1, "one line for the edge: " .. table.concat(lines, " / "))
+    t.truthy(lines[1] and lines[1]:find("[Lifecycle] stood down: added disabled (holds: disabled)", 1, true),
+        lines[1])
+    from = #D.buffer
+    inst.NS.Lifecycle:Hold(inst.NS.HOLD_DISABLED)
+    t.eq(#tagged(since(D, from), "Lifecycle"), 0, "a call that fires no edge writes nothing")
+    from = #D.buffer
+    inst.NS.Schema.Set("General.enabled", true)
+    lines = tagged(since(D, from), "Lifecycle")
+    t.eq(#lines, 1, "one line for the edge back up: " .. table.concat(lines, " / "))
+    t.truthy(lines[1] and lines[1]:find("[Lifecycle] stood up: released disabled (holds: none)", 1, true),
+        lines[1])
+end)
+
+-- red under: an Options descriptor whose `debug` went nowhere, and under a host
+-- onSelect that ran (and traced its own [UI] line) under the lock.
+test("a tab switch refused by the combat lock is the library's one [Cfg] line", function()
+    local inst, D = logging()
+    local fixture = dofile(ctx.root .. "/tests/panel_fixture.lua")(inst.NS)
+    fixture.panelFrame(inst.env, "Categories"):Show()
+    local money
+    for _, b in ipairs(fixture.tabButtons("Categories")) do
+        if b.text == "Money" then money = b end
+    end
+    local from = #D.buffer
+    inst.env.InCombatLockdown = function() return true end
+    money:FireScript("OnClick")
+    money:FireScript("OnClick")
+    inst.env.InCombatLockdown = function() return false end
+    local lines = since(D, from)
+    t.eq(count(lines, "[Cfg] tab Money refused (in combat)"), 1,
+        "once per combat, however often it is clicked: " .. table.concat(lines, " / "))
+    t.eq(count(lines, "[UI] categories tab Money"), 0, "the host's switch did not run")
+end)
+
+-- ---- the console's change gates (DebugLogGates 1) -------------------------------
+
+-- red under: the hand-rolled `watchArmed` memo, which a Clear never re-armed, so a
+-- cleared console stayed silent about an armed watcher until it next changed.
+test("a Clear re-arms the watcher's change gate, and the steady state stays quiet", function()
+    local inst, D = logging()
+    inst.NS.Schema.Set("General.visibility", "inCombat")
+    D:Clear()
+    inst.addon.Reapply()
+    t.eq(count(since(D, 0), "[Events] combat watch armed: 2/2 events"), 1,
+        "the first pass after the Clear states the watcher: " .. table.concat(since(D, 0), " / "))
+    local from = #D.buffer
+    for _ = 1, 10 do inst.addon.Reapply() end
+    t.eq(#since(D, from), 0, "and the passes after it add nothing")
+end)
+
+-- red under: a watcher memo taken while logging was off, which kept the first pass
+-- after `/pc debug on` silent about a watcher armed at login.
+test("the watcher armed while logging was off is stated on the first pass after enable", function()
+    local inst = ctx.loadAddon()
+    local D = inst.NS.DebugLog
+    inst.NS.Schema.Set("General.visibility", "inCombat")
+    D:SetEnabled(true)
+    D:Clear()
+    inst.addon.Reapply()
+    t.eq(count(since(D, 0), "[Events] combat watch armed: 2/2 events"), 1, table.concat(since(D, 0), " / "))
+end)
+
+-- red under: TraceCaught's own `seenErrors` table, which a Clear never re-armed.
+test("a Clear re-arms the caught-error gate", function()
+    local inst, D = logging()
+    local Util = inst.NS.Util
+    Util.TraceCaught("UI", "site", "boom")
+    Util.TraceCaught("UI", "site", "boom")
+    t.eq(#D.buffer, 1, "one line per distinct error")
+    D:Clear()
+    Util.TraceCaught("UI", "site", "boom")
+    t.eq(count(since(D, 0), "[UI] site failed: boom"), 1, "heard again once, after the Clear")
+end)
+
+-- The library-absent stub's gates answer false and raise nothing.
+test("with LibKa0s absent the gated call sites write nothing and raise nothing", function()
+    local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    bare.NS.DebugLog:SetEnabled(true)
+    t.truthy(pcall(bare.NS.Util.TraceCaught, "UI", "site", "boom"), "TraceCaught")
+    t.truthy(pcall(bare.NS.Schema.Set, "General.visibility", "inCombat"), "the watcher's trace")
+    t.eq(bare.NS.DebugLog.DebugOnce("k", "UI", "x"), false, "DebugOnce answers false")
+    t.eq(bare.NS.DebugLog.DebugChanged("k", "UI", "x"), false, "DebugChanged answers false")
+end)
+
+-- ---- the at-enable queue (DebugLogGates 1, Launcher 5) --------------------------
+
+-- red under: a Launcher descriptor with no `debugAtEnable`, whose Register (run in
+-- OnEnable, with the session-only flag off) wrote its state line through the gated
+-- `debug` and so never landed.
+test("the launcher's state line from OnEnable lands at the first enable, once", function()
+    local inst = ctx.loadAddon()
+    local D = inst.NS.DebugLog
+    D:Clear()
+    D:SetEnabled(true)
+    local lines = since(D, 0)
+    t.eq(count(lines, "[Launcher] LibDataBroker-1.1 absent; no launcher"), 1, table.concat(lines, " / "))
+    local init, held
+    for i, line in ipairs(lines) do
+        if line:find("[Init]", 1, true) then init = i end
+        if line:find("[Launcher]", 1, true) then held = i end
+    end
+    t.truthy(init and held and held > init, "after the [Init] summary: " .. table.concat(lines, " / "))
+    D:SetEnabled(false)
+    D:Clear()
+    D:SetEnabled(true)
+    t.eq(count(since(D, 0), "[Launcher]"), 0, "one-shot: a second enable does not repeat it")
 end)

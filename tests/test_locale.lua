@@ -202,7 +202,12 @@ local function scanLiterals(src)
                 -- text by rule (debug-logging-§14), and are read by whoever receives the bug
                 -- report. modules/Diagnostics.lua opens every such call on the line its
                 -- literals sit on, for the same reason.
+                --
+                -- The console's change gates and at-enable queue (`D.DebugOnce`,
+                -- `D.DebugChanged`, `D.DebugAtEnable`, DebugLogGates 1) are the same sink
+                -- behind a gate, formatted as NS.Debug is, so `.Debug<Word>(` counts too.
                 debugArg = src:sub(lineStart, i - 1):find("NS.Debug(", 1, true) ~= nil
+                    or src:sub(lineStart, i - 1):find("%.Debug%u%a*%(") ~= nil
                     or src:sub(lineStart, i - 1):find("out:%a+%(") ~= nil,
                 statement = src:sub(lineStart, i - 1),
             }

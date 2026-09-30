@@ -59,7 +59,7 @@ local addonName, NS = ...
 -- the stub exists for. What it does not do is re-implement `Reevaluate`'s edge
 -- bookkeeping in some other shape: it is the same three lines the library has.
 --
--- TOC slot: after core/DebugLogSetup.lua (NS.Debug, which the arms trace through)
+-- TOC slot: after core/DebugLogSetup.lua (NS.Debug, which the latch's edge lines go through)
 -- and before core/LauncherSetup.lua. Nothing here resolves at load beyond the
 -- LibStub lookup — the arms reach PrettyChat through closures at CALL time — so the
 -- position is conventional rather than load-bearing.
@@ -133,6 +133,13 @@ NS.Lifecycle = Lifecycle:New({
     -- anyway: the member answers `false` with no printer, and a diagnostic that
     -- silently declines to say anything is worse than one that was never wired.
     print = function(line) NS.Print(line) end,
+
+    -- The host's gated sink (Lifecycle minor 3, debug-logging-§4). The library writes ONE
+    -- `[Lifecycle]` line per stand-down / stand-up edge, naming the hold that caused it and
+    -- the resulting set, before the arm runs; modules/Override.lua's arms therefore write no
+    -- line of their own (one line per edge, not two). The stub above writes none: with no
+    -- LibKa0s there is no console to write it to.
+    debug = function(tag, message) NS.Debug(tag, "%s", message) end,
 
     -- No `L`: this library's one line is the collection's, and NS.L answers every
     -- key with the key itself (anti-pattern #2). Nothing to translate, nothing passed.

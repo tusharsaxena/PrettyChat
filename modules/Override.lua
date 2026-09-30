@@ -144,22 +144,24 @@ local function onCombatEdge(_, event)
         PrettyChat:GetVisibility(), applied, restored)
 end
 
--- The registration state last traced. CHANGE-GATED (debug-logging-§9, quiet steady
--- state): SyncCombatWatch runs on every Reapply -- each latch arm, each profile event,
--- each visibility write -- and re-registers every time it is wanted, so only the first
--- call after a disarm is news. The names the client refused ride that one arm line
--- rather than repeating on every re-arm.
-local watchArmed = false
+-- The registration state, CHANGE-GATED (debug-logging-§9, quiet steady state):
+-- SyncCombatWatch runs on every Reapply -- each latch arm, each profile event, each
+-- visibility write -- and re-registers every time it is wanted, so only the first call
+-- after a disarm is news. The gate is the console's (`DebugChanged`, DebugLogGates 1),
+-- keyed on the watcher: it remembers nothing while logging is off, and a Clear or the
+-- enable edge re-arms it, so the next pass after either states the watcher afresh. The
+-- names the client refused ride that one arm line rather than repeating on every re-arm.
+-- Asked through NS.DebugLog at call time; the library-absent stub answers false.
+local WATCH_GATE = "combatWatch"
 
 local function traceWatch(armed, n)
-    if armed == watchArmed then return end
-    watchArmed = armed
+    local D = NS.DebugLog
     if not armed then
-        NS.Debug("Events", "combat watch disarmed")
+        D.DebugChanged(WATCH_GATE, "Events", "combat watch disarmed")
         return
     end
-    NS.Debug("Events", "combat watch armed: %d/%d events", n, #WATCH_EVENTS)
-    if n < #WATCH_EVENTS then
+    if D.DebugChanged(WATCH_GATE, "Events", "combat watch armed: %d/%d events", n, #WATCH_EVENTS)
+       and n < #WATCH_EVENTS then
         NS.Debug("Events", "rejected %s", table.concat(NS.RejectedEvents, ", "))
     end
 end
@@ -281,23 +283,18 @@ end
 -- the time either runs (Lifecycle invariant 6), so both read a latch that already
 -- says what they are for.
 --
--- The trace goes to the DEBUG CONSOLE, never to chat: NS.Debug is the gated sink
--- (debug-logging-§4) and answers nothing at all unless the player turned logging
--- on. A stood-down addon that narrated its own transitions into the chat frame
--- would be the §7 failure in its purest form.
--- The line names the HOLDS and not a count of strings. Inside a settings write the
--- counts belong to that write's own [Set] line (Batch above), so reporting them
--- here would be the same act tallied twice in the console — once honestly and once
--- as zero.
+-- NO LINE HERE. The edge's `[Lifecycle]` line is the LIBRARY'S (Lifecycle minor 3):
+-- core/LifecycleSetup.lua hands the latch the gated sink, and it writes one line per
+-- edge naming the hold and the resulting set before either arm runs. A line here too
+-- would be the same edge twice in the console. The counts of strings stay out of it
+-- on purpose: inside a settings write they belong to that write's own [Set] line
+-- (Batch above).
 function PrettyChat.StandDown()
     PrettyChat.Reapply()
-    NS.Debug("Lifecycle", "stood down \226\134\146 holds: %s",
-             table.concat(NS.Lifecycle:Holds(), ", "))
 end
 
 function PrettyChat.StandUp()
     PrettyChat.Reapply()
-    NS.Debug("Lifecycle", "stood up \226\134\146 no holds")
 end
 
 function PrettyChat:IsCategoryEnabled(category)

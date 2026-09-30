@@ -166,6 +166,12 @@ if Launcher then
 
         print = function(line) NS.Print(line) end,
         debug = function(tag, message) NS.Debug(tag, "%s", message) end,
+        -- Register's four STATE lines (LibDataBroker-1.1 or LibDBIcon-1.0 absent, no
+        -- minimap table, `registered`; Launcher minor 5) go to the console's at-enable
+        -- queue (DebugLogGates 1). Register runs in OnEnable, while the session-only flag
+        -- is off, so through `debug` they were gated off and never landed; held, they are
+        -- written the first time the player turns logging on (debug-logging-§8).
+        debugAtEnable = function(tag, message) NS.DebugLog.DebugAtEnable(tag, "%s", message) end,
 
         -- The tooltip's title reads `Ka0s Pretty Chat  v<version>`. The TOC's own
         -- `## Version`, through the same NS.Version() `/pc version` prints, so a
