@@ -296,6 +296,14 @@ Sl = lib:New({
     print   = function(line) NS.Print(line) end,
     version = function() return VERSION end,
 
+    -- The host's gated sink (Slash minor 18, debug-logging-§4). The dispatcher writes one
+    -- `[Cmd] refused <verb>[ <arg>]: <guard>` line after each refusal it decides itself
+    -- (the disabled gate, an unknown verb, get / set / reset usage, not-found, parse and
+    -- write refusals, no default, and the profile verb's four), so this file logs none of
+    -- those; its own lines are for the refusals of the verbs it owns (list, reset of a
+    -- category, test, debug).
+    debug   = function(tag, message) NS.Debug(tag, "%s", message) end,
+
     -- THE GATE'S THREE FIELDS (Slash minor 12, live set restored at 13).
     --
     -- `isEnabled` is asked at DISPATCH time and never cached, so the command after
@@ -620,8 +628,9 @@ end
 
 -- The command as typed, one gated line per command (debug-logging-§8): the chat reply
 -- is not in the log, so a support read needs the verb to know what the player asked for.
--- The stood-down tail names the guard behind the library's own refusal of a feature
--- verb (slash-commands-§7), which LibKa0s-Slash-1.0 prints to chat and does not trace.
+-- The stood-down tail names the holds behind the command (slash-commands-§7); the
+-- refusal of a feature verb is LibKa0s-Slash-1.0's own `[Cmd] refused <verb>: disabled`
+-- line (Slash minor 18), which follows this one, so the tail is context, not the refusal.
 -- Pipes are doubled so a pasted format string reads as typed instead of coloring the
 -- line; that copy is built only with logging on (debug-logging-§4).
 local function traceCommand(input)

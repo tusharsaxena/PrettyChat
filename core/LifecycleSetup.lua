@@ -134,6 +134,13 @@ NS.Lifecycle = Lifecycle:New({
     -- silently declines to say anything is worse than one that was never wired.
     print = function(line) NS.Print(line) end,
 
+    -- The host's gated sink (Lifecycle minor 3, debug-logging-§4). The library writes ONE
+    -- `[Lifecycle]` line per stand-down / stand-up edge, naming the hold that caused it and
+    -- the resulting set, before the arm runs; modules/Override.lua's arms therefore write no
+    -- line of their own (one line per edge, not two). The stub above writes none: with no
+    -- LibKa0s there is no console to write it to.
+    debug = function(tag, message) NS.Debug(tag, "%s", message) end,
+
     -- No `L`: this library's one line is the collection's, and NS.L answers every
     -- key with the key itself (anti-pattern #2). Nothing to translate, nothing passed.
 })

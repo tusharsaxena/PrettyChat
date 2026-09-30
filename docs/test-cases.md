@@ -581,7 +581,7 @@ badge and any count quoted in the docs must agree with it.
 - the page says its controls are read only while the master switch is on
 - clicking a tab swaps the body and drops the tab it left
 
-### test_debug_coverage.lua (14)
+### test_debug_coverage.lua (18)
 
 - each combat boundary is one line naming the edge and the state it took
 - arming and disarming the combat watcher is one line each
@@ -597,6 +597,10 @@ badge and any count quoted in the docs must agree with it.
 - a raising refresher is one [UI] line, however many writes reach it
 - a caught error seen with logging off is still reported once logging is on
 - a Categories tab switch and a string selection are one [UI] line each
+- the dispatcher's own refusals land in this log, one line each
+- a host verb's refusal is the host's line alone
+- a stand-down and a stand-up edge are the library's one line each
+- a tab switch refused by the combat lock is the library's one [Cfg] line
 
 ### test_profiles.lua (19)
 
@@ -687,10 +691,10 @@ badge and any count quoted in the docs must agree with it.
 | test_diagnostics.lua | 18 |
 | test_panel.lua | 25 |
 | test_panel_categories.lua | 23 |
-| test_debug_coverage.lua | 14 |
+| test_debug_coverage.lua | 18 |
 | test_profiles.lua | 19 |
 | test_doc_structure.lua | 13 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
 | test_diagnostics_contract.lua | 9 |
-| **Total** | **555** |
+| **Total** | **559** |

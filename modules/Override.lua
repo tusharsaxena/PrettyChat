@@ -281,23 +281,18 @@ end
 -- the time either runs (Lifecycle invariant 6), so both read a latch that already
 -- says what they are for.
 --
--- The trace goes to the DEBUG CONSOLE, never to chat: NS.Debug is the gated sink
--- (debug-logging-§4) and answers nothing at all unless the player turned logging
--- on. A stood-down addon that narrated its own transitions into the chat frame
--- would be the §7 failure in its purest form.
--- The line names the HOLDS and not a count of strings. Inside a settings write the
--- counts belong to that write's own [Set] line (Batch above), so reporting them
--- here would be the same act tallied twice in the console — once honestly and once
--- as zero.
+-- NO LINE HERE. The edge's `[Lifecycle]` line is the LIBRARY'S (Lifecycle minor 3):
+-- core/LifecycleSetup.lua hands the latch the gated sink, and it writes one line per
+-- edge naming the hold and the resulting set before either arm runs. A line here too
+-- would be the same edge twice in the console. The counts of strings stay out of it
+-- on purpose: inside a settings write they belong to that write's own [Set] line
+-- (Batch above).
 function PrettyChat.StandDown()
     PrettyChat.Reapply()
-    NS.Debug("Lifecycle", "stood down \226\134\146 holds: %s",
-             table.concat(NS.Lifecycle:Holds(), ", "))
 end
 
 function PrettyChat.StandUp()
     PrettyChat.Reapply()
-    NS.Debug("Lifecycle", "stood up \226\134\146 no holds")
 end
 
 function PrettyChat:IsCategoryEnabled(category)
