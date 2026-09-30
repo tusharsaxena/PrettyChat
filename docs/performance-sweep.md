@@ -5,8 +5,8 @@ summarizes and the `performance-§12` row of
 [`## Documented deviations`](./ARCHITECTURE.md#documented-deviations) ratifies: the committed
 whole-repo sweep that proves criterion (a), and the one load-time cost that was measured and removed.
 Moved here from `performance.md` so that page fits one screen (`documentation-§3`); the prose moved
-verbatim. The result block below was last re-taken on the LibKa0s v1.63.0 tree, by running the
-command, in the `SP-PC-02R:` commit.
+verbatim. The result block below was last re-taken on the LibKa0s v1.64.0 tree, by running the
+command, in the `DL-PC-01:` commit.
 
 ## The sweep — criterion (a), proven rather than asserted
 

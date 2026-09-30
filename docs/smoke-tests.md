@@ -26,7 +26,7 @@ works.
 | TEST-1 – 6 | Test preview | `/pc test` and the Test button, the filters |
 | RESET-1 – 13 | Resets | Row Reset, the Defaults buttons, `/pc reset <path>`, reset all, the one log line |
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
-| DIAG-1 – 19 | Debug and diagnostics | The diagnostics report, the console and its chrome, raw locale keys |
+| DIAG-1 – 21 | Debug and diagnostics | The diagnostics report, the console and its chrome, raw locale keys, resizing the console and its copy window |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
@@ -35,7 +35,7 @@ works.
 - Error display on: `/console scriptErrors 1` (or BugSack). Every check assumes it.
 - A character that can loot, gain XP and reputation, take money, craft and repair, and a training
   dummy nearby for COMBAT and the combat halves of other checks.
-- A second Ka0s addon installed for PANEL-6, DIAG-18 and DEGRADED-1 (BankLedger or PanelMaster, which
+- A second Ka0s addon installed for PANEL-6, DIAG-18, DIAG-20 and DEGRADED-1 (BankLedger or PanelMaster, which
   both draw wide AceGUI groups). Ka0s Loot History for OVR-9. A broker display (Titan Panel, Bazooka or
   ElvUI's data texts) for LAUNCH-7; skip that check if you run none.
 - Back up `WTF/Account/<acct>/SavedVariables/PrettyChatDB.lua` before INSTALL-1 (it deletes the file)
@@ -56,10 +56,10 @@ Which checks to run. Every row after the first also runs the routine row's four 
 | The slash surface in `settings/Slash.lua` | SLASH, STATE-3 – 4, PANEL-19 – 21, INSTALL-6, RESET-5, RESET-10, COMBAT-1, COMBAT-4, DIAG-1 – 8 |
 | `modules/Diagnostics.lua`, the `diagnostics` row or the `debug` word | DIAG-1 – 8, DIAG-11 – 15, COMBAT-4 |
 | A reset path (`ResetString` / `ResetCategory` / `ResetAll`) or a Reset / Defaults button | RESET |
-| `core/DebugLogSetup.lua`, `media/`, or panel chrome (fonts, textures, borders) | DEGRADED, DIAG-9 – 19, PANEL-1 – 9, PANEL-14, RESET-3 – 7, RESET-10, COMBAT-1 – 2, INSTALL-2, OVR-8 |
+| `core/DebugLogSetup.lua`, `media/`, or panel chrome (fonts, textures, borders) | DEGRADED, DIAG-9 – 21, PANEL-1 – 9, PANEL-14, RESET-3 – 7, RESET-10, COMBAT-1 – 2, INSTALL-2, OVR-8 |
 | `core/LauncherSetup.lua`, the minimap row, `media/logos/` or the TOC's `## IconTexture` | LAUNCH, STATE, COMBAT-3 |
 | The Profiles page or `/pc profile` | PROFILE, LAUNCH-6 |
-| A re-vendor of `libs/LibKa0s/`, or a `core/*Setup.lua` seam file | DEGRADED, DIAG-16 – 19, PANEL-1 – 9, PANEL-14, RESET-3 – 7, RESET-10, COMBAT-1 – 2, INSTALL-2 |
+| A re-vendor of `libs/LibKa0s/`, or a `core/*Setup.lua` seam file | DEGRADED, DIAG-16 – 21, PANEL-1 – 9, PANEL-14, RESET-3 – 7, RESET-10, COMBAT-1 – 2, INSTALL-2 |
 | `ApplyStrings`, the combat watcher or `General.visibility`, or a sibling addon that parses loot or currency chat | OVR-4 – 6, OVR-9, STATE-5 – 6 |
 | Before a tag, or after a client patch | Everything; after a patch also regenerate `GlobalStrings/` per [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patch) |
 
@@ -580,6 +580,23 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   particular none of `DEFAULTS_LABEL`, `DEBUG_ON`, `DEBUG_OFF`, `CLEAR`, `COPY`, `COPY_TITLE`, `LINES`,
   `CHECKBOX_LABEL`, `CHECKBOX_TOOLTIP`, `LIST_HEADER`, `LIST_GROUP`, `HELP_HEADER`, `NOT_FOUND`,
   `INVALID`, `USAGE_GET`, `USAGE_SET`, `USAGE_RESET`, `ERR_BOOL`, `ERR_STRING`. Result:
+- **DIAG-20. The console resizes, for the session only.** `/pc debug` and make enough lines to scroll
+  → the console opens at its default size (700 × 344) with a size grip in its bottom-right corner, drawn
+  above the log and clear of the line counter. Drag the grip out on both axes → the log, scrollbar and
+  status bar follow the new edge, the counter keeps its count, the title-bar marks stay at the right
+  end, and the scroll position holds. Drag it in as far as it goes → it stops at a minimum where the
+  title and all three marks still fit and a few log lines show. Close and reopen the console (close
+  mark, then `/pc debug`) → it comes back at the size you left it. `/reload` and `/pc debug` → the
+  default size is back, whether or not you also dragged the window by its title bar. Open another Ka0s
+  addon's console → it opens at its own size, untouched by this one. **Fail:** no grip, a grip under the
+  counter's digits, marks clipped at the minimum, a scrollbar whose range stops tracking the log after
+  a resize, or a size that survives the `/reload`. Result:
+- **DIAG-21. The copy window resizes on its own.** With lines in the console, click the copy mark → the
+  copy window opens at its default size with a grip in its bottom-right corner. Drag it larger and
+  smaller → the text area's width follows the window (no wrap stuck at the old width, no horizontal
+  clipping), the scrollbar's bottom button stays above the grip, and it stops at a minimum with the
+  title and close mark clear. Close it and click copy again → the size you left. Resize the console
+  itself → the copy window keeps its own size. `/reload` → both open at their defaults. Result:
 
 ## DEGRADED
 
@@ -682,6 +699,7 @@ records are in the Ka0sAddonsCommonTasks repository.
 |---|---|---|
 | PROFILE-1 – 10 | New: the Profiles page (`SP-PC-01`) and the `/pc profile` verb (`SP-PC-02`) | New in this rework; never run |
 | DEGRADED-9 | New: `/pc profile` on the library-absent stub (`SP-PC-02`) | New in this rework; never run |
+| DIAG-20 – 21 | New: the resizable console and copy window (LibKa0s v1.64.0, `DL-PC-01`) | New; never run |
 | SLASH-1 | T-03, T-38 | Corrected: the help header ends with the `/prettychat` alias note |
 | SLASH-3 | T-30 | Corrected: 170 setting rows and 180 lines, not "about 170 lines" |
 | SLASH-5 | T-31a | Corrected: neither header ends in a colon |
