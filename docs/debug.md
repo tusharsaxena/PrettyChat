@@ -10,8 +10,8 @@ PrettyChat has two debug surfaces, and both write into the same window:
   each line means.
 
 The console itself is the library's, and its contract lives in LibKa0s's
-[`docs/api/DebugLog/version-17.2-docs.md`](https://github.com/tusharsaxena/LibKa0s/blob/master/docs/api/DebugLog/version-17.2-docs.md)
-(DebugLog 17 with DebugLogDiagnostics 2 is the vendored pair, from LibKa0s v1.64.0). This page covers
+[`docs/api/DebugLog/version-18.2.1-docs.md`](https://github.com/tusharsaxena/LibKa0s/blob/master/docs/api/DebugLog/version-18.2.1-docs.md)
+(DebugLog 18 with DebugLogDiagnostics 2 and DebugLogGates 1 is the vendored set, from LibKa0s v1.65.0). This page covers
 only what PrettyChat adds on top.
 
 ## The console
