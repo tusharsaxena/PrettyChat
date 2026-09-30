@@ -717,7 +717,7 @@ records are in the Ka0sAddonsCommonTasks repository.
 | DEGRADED-9 | New: `/pc profile` on the library-absent stub (`SP-PC-02`) | New in this rework; never run |
 | DIAG-20 – 21 | New: the resizable console and copy window (LibKa0s v1.64.0, `DL-PC-01`) | New; never run |
 | DIAG-4 | The 2026-09-26 diagnostics rollout's recorded pass, rewritten for standard v2.71.0 (`DL-PC-03`) | Corrected: diagnostics now turns logging on for the session, and a `/reload` turns it off |
-| DIAG-22 | New: the console's Diagnostics link (LibKa0s v1.64.0, DebugLog 16, `DL-PC-03`) | New; never run |
+| DIAG-22 | New: the console's Diagnostics link (LibKa0s v1.64.0, DebugLog 17, `DL-PC-03`) | New; never run |
 | SLASH-1 | T-03, T-38 | Corrected: the help header ends with the `/prettychat` alias note |
 | SLASH-3 | T-30 | Corrected: 170 setting rows and 180 lines, not "about 170 lines" |
 | SLASH-5 | T-31a | Corrected: neither header ends in a colon |
