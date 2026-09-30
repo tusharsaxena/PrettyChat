@@ -4,7 +4,7 @@
 ![CurseForge Version](https://img.shields.io/curseforge/v/919766)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-553%2F553_passing-green)
+![Tests](https://img.shields.io/badge/Tests-554%2F554_passing-green)
 
 World of Warcraft tells you about loot, currency, gold, reputation, experience, honor and crafting in a stream of sentences that all look alike. PrettyChat rewrites them. The information doesn't change, but it's laid out and color-coded, so you can find the line you actually cared about while the chat window scrolls past you.
 
@@ -26,10 +26,10 @@ There's nothing to place, size or lock on the first run, because your chat windo
 
 Changing how a message reads takes four steps. The first three happen on the **Categories** page.
 
-1. Find the message. Pick a kind of message from the tabs across the top (Loot, Currency, Money and so on), then a line from the list down the left. Its editor opens beside the list, with the game's wording in **Original** and yours in **New**.
-2. Write your version in the **New** box. The **Preview** box shows the finished line and updates as you type. Colors are part of the wording. To recolor a line, edit its `|cffRRGGBB…|r` codes in that same box.
-3. Keep the placeholders. The `%s` and `%d` are the slots the game drops the item name and the amount into. You can stop before the original's last one, and the line just comes out without whatever it carried. You can't add one, change one's type or reorder them. If you try, PrettyChat won't save your version and prints both sets of placeholders so you can see where yours differs.
-4. Try the whole set. `/pc test` writes every message to the debug console twice, the game's version above yours. Sending it there keeps a couple of hundred lines out of your chat window. The **Test** button on the **General** page does the same run. Add `category Loot` or `formatstring LOOT_ITEM_SELF` to the command to narrow it.
+- Find the message. Pick a kind of message from the tabs across the top (Loot, Currency, Money and so on), then a line from the list down the left. Its editor opens beside the list, with the game's wording in **Original** and yours in **New**.
+- Write your version in the **New** box. The **Preview** box shows the finished line and updates as you type. Colors are part of the wording. To recolor a line, edit its `|cffRRGGBB…|r` codes in that same box.
+- Keep the placeholders. The `%s` and `%d` are the slots the game drops the item name and the amount into. You can stop before the original's last one, and the line just comes out without whatever it carried. You can't add one, change one's type or reorder them. If you try, PrettyChat won't save your version and prints both sets of placeholders so you can see where yours differs.
+- Try the whole set. `/pc test` writes every message to the debug console twice, the game's version above yours. Sending it there keeps a couple of hundred lines out of your chat window. The **Test** button on the **General** page does the same run. Add `category Loot` or `formatstring LOOT_ITEM_SELF` to the command to narrow it.
 
 Your version is only used while three switches are on: **Enable PrettyChat** on the General page, the category's switch on its tab, and the message's own **Enable**. Turn any of them off and the game's original comes back, while your wording stays saved. The **General visibility** dropdown next to the master switch can also limit PrettyChat to combat, or to the time outside it.
 
@@ -69,9 +69,9 @@ Switching a message off doesn't throw your version away. PrettyChat stops applyi
 
 ## Reporting a bug
 
-1. Type `/pc debug on` and reproduce the bug.
-2. Type `/pc diagnostics`.
-3. If the debug window isn't open, open it with `/pc debug`. Press **Copy**, copy the entire output, and include it with your bug report.
+- Type `/pc debug on` and reproduce the bug.
+- Type `/pc diagnostics`.
+- If the debug window isn't open, open it with `/pc debug`. Press **Copy**, copy the entire output, and include it with your bug report.
 
 The report is added after the debug trace in the same window, so one copy carries both.
 

@@ -620,7 +620,7 @@ badge and any count quoted in the docs must agree with it.
 - /pc profile refuses to switch in combat, and still lists
 - /pc profile answers while the addon is disabled, and can bring it back up
 
-### test_doc_structure.lua (12)
+### test_doc_structure.lua (13)
 
 - docs/ARCHITECTURE.md carries the ten sections documentation-§3 names
 - every mandated hub section that has a topic doc has spilled into it
@@ -628,6 +628,7 @@ badge and any count quoted in the docs must agree with it.
 - the player-facing history has the ONE home documentation-§1 allows, and no second
 - README.md's top-level sections are the ones documentation-§1 names, in its order
 - README.md's Reporting a bug section is documentation-§1 item 9 verbatim, with no link
+- README.md carries no numbered list (documentation-§1: bullets only)
 - root CLAUDE.md carries the adherence line documentation-§2 puts second
 - the README's settings table is page-granular, not per-tab
 - docs/smoke-tests.md carries a non-English-client section
@@ -688,8 +689,8 @@ badge and any count quoted in the docs must agree with it.
 | test_panel_categories.lua | 23 |
 | test_debug_coverage.lua | 14 |
 | test_profiles.lua | 19 |
-| test_doc_structure.lua | 12 |
+| test_doc_structure.lua | 13 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
 | test_diagnostics_contract.lua | 9 |
-| **Total** | **554** |
+| **Total** | **555** |

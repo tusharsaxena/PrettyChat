@@ -1,7 +1,7 @@
 -- tests/test_doc_structure.lua — the shapes documentation-§1 and §3 fix in place for the README
 -- and the architecture hub.
 --
--- WHAT IT PROVES, in six cases:
+-- WHAT IT PROVES, in seven cases:
 --   1. docs/ARCHITECTURE.md carries the TEN sections `documentation-§3` names for the hub.
 --   2. Every mandated section that has a canonical topic doc stays inside the spill threshold.
 --   3. Every markdown link pointing INTO one of the hub's headings lands on a heading that exists.
@@ -9,6 +9,8 @@
 --      tracked markdown carries no third.
 --   5. README.md's top-level sections are the ones §1 names, in the order it names them.
 --   6. README.md's `## Reporting a bug` is §1 item 9's fixed text, with the real slash and no link.
+--   7. README.md carries no numbered list: §1 makes every README list a `- ` bullet list, because
+--      CurseForge's description page does not render a numbered one.
 --
 -- WHY IT EXISTS. `documentation-§3` states the hub rule as two thresholds "because 'keep it short'
 -- demonstrably did not hold": a mandated section past roughly 60 lines MUST spill into its canonical
@@ -274,12 +276,12 @@ end)
 
 -- documentation-§1 item 9 (debug-logging-§14): the body is fixed text, verbatim apart from the real
 -- slash, and names no destination. The owner ruled it carries no GitHub or issues link, because the
--- report goes to the maintainer privately. Falsified by dropping step 2, by changing "include it with
+-- report goes to the maintainer privately. Falsified by dropping the `diagnostics` bullet, by changing "include it with
 -- your bug report" back to an issue destination, or by adding a github.com link: each fails here.
 local REPORTING_A_BUG = {
-    "1. Type `/pc debug on` and reproduce the bug.",
-    "2. Type `/pc diagnostics`.",
-    "3. If the debug window isn't open, open it with `/pc debug`. Press **Copy**, copy the entire "
+    "- Type `/pc debug on` and reproduce the bug.",
+    "- Type `/pc diagnostics`.",
+    "- If the debug window isn't open, open it with `/pc debug`. Press **Copy**, copy the entire "
         .. "output, and include it with your bug report.",
     "The report is added after the debug trace in the same window, so one copy carries both.",
 }
@@ -300,6 +302,20 @@ test("README.md's Reporting a bug section is documentation-§1 item 9 verbatim, 
         assertTrue(not line:lower():match("github") and not line:match("%]%("),
             README .. "'s ## Reporting a bug carries a link or a destination: " .. line)
     end
+end)
+
+-- documentation-§1's CurseForge rendering rules: README.md is the CurseForge description, and that page
+-- does not render a Markdown numbered list, so every README list is a `- ` bullet list. Falsified by
+-- turning any README list item back into `1. `: this fails and names the line. A line inside a fenced
+-- code block is not a list and is skipped.
+test("README.md carries no numbered list (documentation-§1: bullets only)", function()
+    local fenced, hits = false, {}
+    for i, line in ipairs(lines(README)) do
+        if line:match("^%s*```") then fenced = not fenced
+        elseif not fenced and line:match("^%s*%d+[.)]%s") then hits[#hits + 1] = i .. ": " .. line end
+    end
+    assertTrue(#hits == 0, README .. " carries a numbered list item, which CurseForge does not render; "
+        .. "use a `- ` bullet: " .. table.concat(hits, " / "))
 end)
 
 test("root CLAUDE.md carries the adherence line documentation-§2 puts second", function()
