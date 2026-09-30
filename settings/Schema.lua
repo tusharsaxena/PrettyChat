@@ -937,6 +937,11 @@ end
 -- live DB the moment it is selected, so it cannot show stale state.
 Schema.refreshers = {}
 
+local function runRefresher(name, fn)
+    local ok, err = pcall(fn)
+    if not ok then NS.Util.TraceCaught("UI", "refresher " .. tostring(name), err) end
+end
+
 function Schema.RegisterRefresher(category, fn)
     Schema.refreshers[category] = fn
 end
@@ -954,12 +959,14 @@ function Schema.NotifyPanelChange(category)
         NS.Helpers.RefreshScalars()
     end
 
+    -- A refresher that raises is swallowed so one broken tab cannot stop the write, and
+    -- traced once per distinct error (debug-logging-§8, Diagnosis: errors caught).
     if category == "General" or category == nil then
-        for _, fn in pairs(Schema.refreshers) do pcall(fn) end
+        for name, fn in pairs(Schema.refreshers) do runRefresher(name, fn) end
         return
     end
     local fn = Schema.refreshers[category]
-    if fn then pcall(fn) end
+    if fn then runRefresher(category, fn) end
 end
 
 -- Schema.ApplyDefault restores ONE row, through the same single write seam a panel

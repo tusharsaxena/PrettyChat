@@ -48,11 +48,11 @@ core/CoreSetup.lua:142:Util.SafeRegisterEvents    = lib.SafeRegisterEvents
 core/LifecycleSetup.lua:40:-- no AceTimer, no C_Timer ticker and no OnUpdate, it registers no message and no
 modules/Override.lua:126:-- Registration goes through LibKa0s-Core's SafeRegisterEvents (bound as
 modules/Override.lua:127:-- NS.Util.SafeRegisterEvents by core/CoreSetup.lua): the C_EventUtils.IsEventValid
-modules/Override.lua:167:        combatWatcher:SetScript("OnEvent", function()
-modules/Override.lua:184:    local n = NS.Util.SafeRegisterEvents(combatWatcher, WATCH_EVENTS, nil, NS.RejectedEvents)
-settings/Panel.lua:528:    -- A frame later, both are true. C_Timer.After(0, ...) is the client's own way
-settings/Panel.lua:531:    if C_Timer and C_Timer.After then
-settings/Panel.lua:532:        C_Timer.After(0, function() fitTree(ctx) end)
+modules/Override.lua:198:        combatWatcher:SetScript("OnEvent", onCombatEdge)
+modules/Override.lua:210:    traceWatch(true, NS.Util.SafeRegisterEvents(combatWatcher, WATCH_EVENTS, nil, NS.RejectedEvents))
+settings/Panel.lua:529:    -- A frame later, both are true. C_Timer.After(0, ...) is the client's own way
+settings/Panel.lua:532:    if C_Timer and C_Timer.After then
+settings/Panel.lua:533:        C_Timer.After(0, function() fitTree(ctx) end)
 settings/Profiles.lua:130:--- redrawn a frame later (the header above says why). Without C_Timer, which a live client
 settings/Profiles.lua:137:    if not (shown and C_Timer and C_Timer.After) then
 settings/Profiles.lua:143:    C_Timer.After(0, redrawNextFrame)
@@ -80,7 +80,7 @@ tests/wow_mock.lua:142:-- `UnregisterEvent`, `IsEventRegistered`, `RegisterUnitE
 
 Reconciled, so a future drift is visible rather than arguable. One is a lint declaration
 (`.luacheckrc:60`). Fifteen are the pattern names appearing **inside comments** — `core/CoreSetup.lua:54`,
-`:55`, `core/LifecycleSetup.lua:40`, `modules/Override.lua:126`, `:127`, `settings/Panel.lua:528`,
+`:55`, `core/LifecycleSetup.lua:40`, `modules/Override.lua:126`, `:127`, `settings/Panel.lua:529`,
 `settings/Profiles.lua:130`, `tests/test_disabled.lua:28`, `tests/test_libka0s.lua:804`, `tests/test_override.lua:250`, `:254`,
 `tests/test_panel_categories.lua:272` and `tests/wow_mock.lua:72`, `:141`, `:142` — which describe the discipline
 rather than doing anything; the harness mock no longer defines its own `RegisterEvent`, because the
@@ -94,7 +94,7 @@ the three sections below: the combat watcher, one next-frame layout fit in the s
 the Profiles page's next-frame redraw.
 
 One thing the grep does *not* return, said out loud so nobody re-adds it: `combatWatcher:UnregisterAllEvents`
-at `modules/Override.lua:181` **does not match**, because the pattern spells `RegisterAllEvents` with a
+at `modules/Override.lua:206` **does not match**, because the pattern spells `RegisterAllEvents` with a
 capital R and `UnregisterAllEvents` spells it lowercase. An earlier revision of this page printed that
 line inside its result block; the command above cannot produce it, and a result block holding a line
 its own command cannot return is worse than no result block at all.
@@ -104,14 +104,14 @@ its own command cannot return is worse than no result block at all.
 What does not survive is *"zero `C_Timer` call"*: `.luacheckrc:60` declares `C_Timer` in
 `read_globals`, and since 2026-09-03 that declaration has had a real consumer, since 2026-09-29 two.
 
-### The combat watcher — `modules/Override.lua:167`, `:184`
+### The combat watcher — `modules/Override.lua:198`, `:210`
 
 Both hits are `PrettyChat:SyncCombatWatch`, and what matters about them is *when they are reached*:
 
 - the frame is **created lazily**, on the first write that stores `General.visibility` as `inCombat`
   or `outOfCombat`. A default install (`always`) creates no frame and registers no event, so on the
   shipped configuration this half of the sweep's runtime answer is still zero;
-- both events are **unregistered** the moment the mode leaves that pair (`modules/Override.lua:181`),
+- both events are **unregistered** the moment the mode leaves that pair (`modules/Override.lua:206`),
   so the subscription tracks the setting rather than outliving it;
 - the handler fires at the combat **boundary** — `PLAYER_REGEN_DISABLED` on entry,
   `PLAYER_REGEN_ENABLED` on exit — at most twice per fight, and never *during* one. Its whole body is
@@ -120,7 +120,7 @@ Both hits are `PrettyChat:SyncCombatWatch`, and what matters about them is *when
 `tests/test_override.lua` pins all three: no frame on a default load, both events registered on a
 combat-scoped write, both dropped on the way back out.
 
-### The settings panel's next-frame fit — `settings/Panel.lua:531-532`
+### The settings panel's next-frame fit — `settings/Panel.lua:532-533`
 
 **A guarded one-shot `C_Timer.After(0, …)` on the settings-panel render path, and nothing else.** It
 arrived on 2026-09-03 with the string-list revamp (`92c43f5`), after this page's sweep was last taken,

@@ -34,6 +34,7 @@ local formatValue           -- the `||` display codec; nil when the library is a
 local function schemaReady()
     if not (NS.Schema and NS.Schema.RowsByCategory) then
         NS.Print(L["schema not ready yet"])
+        NS.Debug("Cmd", "refused: schema not ready")
         return false
     end
     return true
@@ -396,6 +397,7 @@ function listSettings(rest)
     if not matched then
         NS.Print(note(L["unknown category '%s'. Valid: "]:format(arg))
                  .. table.concat(NS.Schema.CATEGORY_ORDER, ", "))
+        NS.Debug("Cmd", "list refused: unknown category '%s'", arg)
         return
     end
     -- The narrowed listing is the library's rendering too, so it cannot drift from
@@ -432,6 +434,7 @@ function runReset(rest)
     if arg and arg ~= "" and not NS.Schema.FindByPath(arg) then
         local matched = NS.Schema.ResolveCategory(arg)
         if matched then
+            NS.Debug("Cmd", "reset refused: '%s' is a category, not a path", arg)
             NS.Print(note("`") .. cmd("/pc reset " .. arg)
                      .. note("` now takes a setting PATH, not a category."))
             NS.Print(note("  To reset one setting: ") .. cmd("/pc reset <path>") .. note(" (try ")
@@ -549,6 +552,7 @@ function runDebug(rest)
         return
     end
     NS.Print("usage: " .. cmd("/pc debug [on | off | diagnostics]"))
+    NS.Debug("Cmd", "debug refused: unknown form '%s'", arg)
 end
 
 local function formatStringExists(globalName)
@@ -575,12 +579,14 @@ function runTest(rest)
         if value == "" then
             NS.Print("usage: " .. cmd("/pc test category <name>") .. note(". Valid: ")
                      .. table.concat(NS.Schema.CATEGORY_ORDER, ", "))
+            NS.Debug("Cmd", "test refused: no category named")
             return
         end
         local matched = NS.Schema.ResolveCategory(value)
         if not matched then
             NS.Print(note(L["unknown category '%s'. Valid: "]:format(value))
                      .. table.concat(NS.Schema.CATEGORY_ORDER, ", "))
+            NS.Debug("Cmd", "test refused: unknown category '%s'", value)
             return
         end
         PrettyChat:TestToConsole({ kind = "category", value = matched })
@@ -591,12 +597,14 @@ function runTest(rest)
         if value == "" then
             NS.Print("usage: " .. cmd("/pc test formatstring <NAME>")
                      .. note(" — try ") .. cmd("/pc list formatstring"))
+            NS.Debug("Cmd", "test refused: no format string named")
             return
         end
         local upper = value:upper()
         if not formatStringExists(upper) then
             NS.Print(note(L["unknown format string '%s' — try "]:format(value))
                      .. cmd("/pc list formatstring"))
+            NS.Debug("Cmd", "test refused: unknown format string '%s'", value)
             return
         end
         PrettyChat:TestToConsole({ kind = "formatstring", value = upper })
@@ -607,11 +615,29 @@ function runTest(rest)
              .. cmd("/pc test all") .. note(", ")
              .. cmd("/pc test category <name>") .. note(", or ")
              .. cmd("/pc test formatstring <NAME>"))
+    NS.Debug("Cmd", "test refused: unknown form '%s'", kind)
+end
+
+-- The command as typed, one gated line per command (debug-logging-§8): the chat reply
+-- is not in the log, so a support read needs the verb to know what the player asked for.
+-- The stood-down tail names the guard behind the library's own refusal of a feature
+-- verb (slash-commands-§7), which LibKa0s-Slash-1.0 prints to chat and does not trace.
+-- Pipes are doubled so a pasted format string reads as typed instead of coloring the
+-- line; that copy is built only with logging on (debug-logging-§4).
+local function traceCommand(input)
+    local typed = (trim(input):gsub("|", "||"))
+    local life = NS.Lifecycle
+    if life and life.IsDown and life:IsDown() then
+        NS.Debug("Cmd", "/pc %s (stood down: %s)", typed, table.concat(life:Holds(), ", "))
+        return
+    end
+    NS.Debug("Cmd", "/pc %s", typed)
 end
 
 -- AceConsole registers both chat commands; the library registers none of its own,
 -- which is what keeps every verb's output flowing through the tagged printer
 -- (slash-commands-§1).
 function PrettyChat:OnSlashCommand(input)
+    if NS.Util.DebugOn() then traceCommand(input) end
     Sl:OnSlash(input)
 end

@@ -581,6 +581,23 @@ badge and any count quoted in the docs must agree with it.
 - the page says its controls are read only while the master switch is on
 - clicking a tab swaps the body and drops the tab it left
 
+### test_debug_coverage.lua (14)
+
+- each combat boundary is one line naming the edge and the state it took
+- arming and disarming the combat watcher is one line each
+- re-arming an armed watcher logs nothing, however often it runs
+- a refused event name is logged once per arming, not once per pass
+- the [Init] summary carries no state tail on a plain enabled install
+- the [Init] summary names the holds of a stood-down addon
+- the [Init] summary names a loaded chat-rewriting addon
+- a slash command is one [Cmd] line, as typed, with pipes doubled
+- a command sent with logging off leaves no line
+- a command on a stood-down addon names the holds
+- a refused command names the guard
+- a raising refresher is one [UI] line, however many writes reach it
+- a caught error seen with logging off is still reported once logging is on
+- a Categories tab switch and a string selection are one [UI] line each
+
 ### test_profiles.lua (19)
 
 - Profiles: the page is the last in the rail, and its file is the last the TOC loads
@@ -667,9 +684,10 @@ badge and any count quoted in the docs must agree with it.
 | test_diagnostics.lua | 18 |
 | test_panel.lua | 25 |
 | test_panel_categories.lua | 23 |
+| test_debug_coverage.lua | 14 |
 | test_profiles.lua | 19 |
 | test_doc_structure.lua | 12 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
 | test_diagnostics_contract.lua | 7 |
-| **Total** | **538** |
+| **Total** | **552** |

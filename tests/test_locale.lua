@@ -310,6 +310,12 @@ local RESIDUE = {
     {"core/DebugLogSetup.lua", ", rejected events: ",
      "the same session header's tail naming event names the client refused, read by "
      .. "whoever receives the bug report; the event names themselves are API identifiers"},
+    {"core/DebugLogSetup.lua", ", stood down: ",
+     "the same session header's tail naming the Lifecycle holds (debug-logging-§8's "
+     .. "stand-down edge, which lands while the flag is off); the holds are library keys"},
+    {"core/DebugLogSetup.lua", ", chat addons: ",
+     "the same session header's dependency tail (debug-logging-§8); the names that follow "
+     .. "are addon folder names"},
     {"core/Util.lua", " (stopped by an error)",
      "debug-console text like every NS.Debug argument, held in one constant so the "
      .. "four bulk-act lines that append it agree; the console translates nothing"},

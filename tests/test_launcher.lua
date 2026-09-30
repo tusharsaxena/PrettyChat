@@ -586,9 +586,11 @@ function()
     local lines = {}
     for i = from + 1, #D.buffer do lines[#lines + 1] = D.buffer[i] end
 
-    t.eq(#lines, 1, "one line for the whole reset")
-    t.truthy(lines[1]:find("reset profile 'Default' to defaults (1 rows)", 1, true),
-        "counting the one profile row the wipe rewrote, not the two that differed: " .. lines[1])
+    -- The [Cmd] line for the verb as typed, then one line for the whole reset.
+    t.eq(#lines, 2, "the command line, then one line for the whole reset")
+    t.truthy(lines[1]:find("[Cmd] /pc resetall", 1, true), "the command as typed: " .. lines[1])
+    t.truthy(lines[2]:find("reset profile 'Default' to defaults (1 rows)", 1, true),
+        "counting the one profile row the wipe rewrote, not the two that differed: " .. lines[2])
     t.eq(inst.addon.db.global.minimap.hide, true, "and the button is still hidden")
 end)
 

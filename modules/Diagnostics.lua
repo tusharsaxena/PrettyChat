@@ -271,15 +271,25 @@ local function addonLoaded()
     end
 end
 
-local function addons(out)
+--- The known chat-rewriting addons loaded right now, in CHAT_ADDONS order, or nil when this
+--- client has no C_AddOns to ask. One walk, two readers: this report's `addons` section and the
+--- [Init] session summary (core/DebugLogSetup.lua), which is where debug-logging-§8's
+--- dependency line lands for an addon whose logging flag is off at every enable.
+function Diagnostics.LoadedChatAddons()
     local loaded = addonLoaded()
-    if not loaded then
-        out:add("Addons", "chat addons loaded: unavailable")
-        return
-    end
+    if not loaded then return nil end
     local found = {}
     for _, name in ipairs(CHAT_ADDONS) do
         if loaded(name) then found[#found + 1] = name end
+    end
+    return found
+end
+
+local function addons(out)
+    local found = Diagnostics.LoadedChatAddons()
+    if not found then
+        out:add("Addons", "chat addons loaded: unavailable")
+        return
     end
     out:list("Addons", "chat addons loaded:", found)
 end

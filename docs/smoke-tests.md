@@ -656,7 +656,7 @@ an error, an artifact, or the wrong original.
 - **LOC-2. Disabling gives the client's strings back.** `/pc set General.enabled false`, then loot, gain
   reputation and take money → all three lines are the client's untouched German.
   `/pc set General.enabled true` and trigger them again → PrettyChat's layout. The restore arm is
-  `ApplyStrings` (`modules/Override.lua:332-341`). **Fail:** English lines while disabled; the same
+  `ApplyStrings` (`modules/Override.lua:355-364`). **Fail:** English lines while disabled; the same
   defect as LOC-1 seen from the other end. Result:
 - **LOC-3. One real line per category, watching for the raise.** With every category enabled, trigger
   one line from each: loot an item, receive a currency, take money, gain reputation, gain XP while

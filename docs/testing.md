@@ -32,6 +32,7 @@ tests/
   mock_menu.lua      -- a fake MenuUtil for the launcher's right-click menu, modeled on LibKa0s's own
   panel_fixture.lua  -- the panel helpers test_panel.lua and test_panel_categories.lua both call
   test_<module>.lua  -- one suite per module; each reads _G.PC_TEST
+  test_debug_coverage.lua -- per-CONCERN: the debug console's content (docs/debug.md, Coverage)
 ```
 
 - `run.lua` builds the shared table with `Kit.expose` and hands the ordered suite list to `Kit.run`. `t.eq` / `t.truthy` / `t.falsy` / `t.nilv` are **aliases** onto `Kit.assertEqual` / `assertTrue` / `assertFalse` / `assertNil`, so the failure messages and the caller-line reporting are the kit's everywhere; `neq` is the one the kit does not carry and is a thin `Kit.fail` wrapper.
