@@ -85,9 +85,12 @@ test("diagnostics: `debug diagnostics` is tested before the other debug words", 
     t.eq(i.NS.State.debug, false, "logging starts off")
     slash(i, "debug diagnostics")
     t.truthy(#D.buffer > before, "/pc debug diagnostics wrote the report")
-    -- A run turns logging on for the session (debug-logging-§14, v2.71.0). This addon keeps the
-    -- library's default (no `diagnosticsEnablesLogging = false`), so the word ran the report
-    -- rather than being read as `on`, and the report itself flipped the flag.
+    -- The end marker is what tells the word from `on`: `/pc debug on` also grows the buffer and
+    -- sets the flag, but it never writes the report's end line.
+    t.truthy(D.buffer[#D.buffer]:find("Ka0s Pretty Chat diagnostics end:", 1, true),
+        "the word ran the report (it ends on the end marker) rather than being read as `on`")
+    -- A run also turns logging on for the session (debug-logging-§14, v2.71.0): this addon keeps
+    -- the library's default (no `diagnosticsEnablesLogging = false`).
     t.eq(i.NS.State.debug, true, "and turned logging on for the session")
 end)
 
