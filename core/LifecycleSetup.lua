@@ -59,7 +59,7 @@ local addonName, NS = ...
 -- the stub exists for. What it does not do is re-implement `Reevaluate`'s edge
 -- bookkeeping in some other shape: it is the same three lines the library has.
 --
--- TOC slot: after core/DebugLogSetup.lua (NS.Debug, which the arms trace through)
+-- TOC slot: after core/DebugLogSetup.lua (NS.Debug, which the latch's edge lines go through)
 -- and before core/LauncherSetup.lua. Nothing here resolves at load beyond the
 -- LibStub lookup — the arms reach PrettyChat through closures at CALL time — so the
 -- position is conventional rather than load-bearing.

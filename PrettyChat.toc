@@ -66,8 +66,8 @@ core\CoreSetup.lua
 # file-scope lib:New descriptor reads NS.Const.FONT_MONO. NS.State and NS.Print are read at call
 # time, so they do not pin it.
 core\DebugLogSetup.lua
-# core\LifecycleSetup.lua loads AFTER core\DebugLogSetup.lua (the NS.Debug seam the two
-# stand-down arms trace through) and BEFORE core\LauncherSetup.lua. It publishes NS.Lifecycle,
+# core\LifecycleSetup.lua loads AFTER core\DebugLogSetup.lua (the NS.Debug seam the latch
+# writes its edge lines through) and BEFORE core\LauncherSetup.lua. It publishes NS.Lifecycle,
 # the one latch this addon is stood down by (slash-commands-§7); modules\Override.lua's show
 # ladder and settings\Schema.lua's Enable row both read it. Nothing resolves at load beyond the
 # LibStub lookup -- both arms reach PrettyChat through closures at CALL time -- so the position

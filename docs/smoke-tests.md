@@ -26,7 +26,7 @@ works.
 | TEST-1 – 6 | Test preview | `/pc test` and the Test button, the filters |
 | RESET-1 – 13 | Resets | Row Reset, the Defaults buttons, `/pc reset <path>`, reset all, the one log line |
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
-| DIAG-1 – 22 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link |
+| DIAG-1 – 25 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
@@ -613,6 +613,24 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   as it goes (DIAG-20) → the link still fits beside the label and the title, and the three marks stay
   clear of it. **Fail:** a control drawn as a button, no gap, a link over the title, or a click that
   writes nothing. Result:
+- **DIAG-23. A Slash refusal shows in the console.** `/pc debug on`, then `/pc disable` → then
+  `/pc test` → chat prints the one refusal line naming `/pc enable`, and the console gains two lines:
+  `[Cmd] /pc test (stood down: disabled)` and, right after it, `[Cmd] refused test: disabled`. Then
+  `/pc frobnicate` → chat prints the unknown-command help, and the console gains
+  `[Cmd] refused frobnicate: unknown verb` after the command line. `/pc enable` to finish.
+  **Fail:** a refusal with no `refused` line in the console, or the same refusal written twice.
+  Result:
+- **DIAG-24. A Lifecycle edge shows in the console.** `/pc debug on`, then `/pc disable` → the console
+  gains exactly one `[Lifecycle] stood down: added disabled (holds: disabled)` line, followed by
+  `[Set] General.enabled = false`. `/pc disable` again → no new `[Lifecycle]` line. `/pc enable` → exactly
+  one `[Lifecycle] stood up: released disabled (holds: none)` line. **Fail:** no `[Lifecycle]` line,
+  two lines for one edge (a second `stood down → holds: …` line in the old arrow shape), or a line for
+  the repeated `/pc disable`. Result:
+- **DIAG-25. The launcher's state line lands when logging is turned on.** `/reload`, then
+  `/pc debug on` → after `[Debug] logging enabled` and the `[Init]` summary, the console carries one
+  `[Launcher] registered` line (or, on an install missing the broker libraries, the one line naming
+  the missing library). `/pc debug off`, `/pc debug on` → it is not written again. **Fail:** no
+  `[Launcher]` line after the first enable, or one on every enable. Result:
 
 ## DEGRADED
 
@@ -672,7 +690,7 @@ an error, an artifact, or the wrong original.
 - **LOC-2. Disabling gives the client's strings back.** `/pc set General.enabled false`, then loot, gain
   reputation and take money → all three lines are the client's untouched German.
   `/pc set General.enabled true` and trigger them again → PrettyChat's layout. The restore arm is
-  `ApplyStrings` (`modules/Override.lua:355-364`). **Fail:** English lines while disabled; the same
+  `ApplyStrings` (`modules/Override.lua:352-361`). **Fail:** English lines while disabled; the same
   defect as LOC-1 seen from the other end. Result:
 - **LOC-3. One real line per category, watching for the raise.** With every category enabled, trigger
   one line from each: loot an item, receive a currency, take money, gain reputation, gain XP while
@@ -718,6 +736,7 @@ records are in the Ka0sAddonsCommonTasks repository.
 | DIAG-20 – 21 | New: the resizable console and copy window (LibKa0s v1.64.0, `DL-PC-01`) | New; never run |
 | DIAG-4 | The 2026-09-26 diagnostics rollout's recorded pass, rewritten for standard v2.71.0 (`DL-PC-03`) | Corrected: diagnostics now turns logging on for the session, and a `/reload` turns it off |
 | DIAG-22 | New: the console's Diagnostics link (LibKa0s v1.64.0, DebugLog 17, `DL-PC-03`) | New; never run |
+| DIAG-23 – 25 | New: the library's Slash refusals, Lifecycle edges and Launcher state lines in the console (LibKa0s v1.65.0, `DG-PC-01`) | New; never run |
 | SLASH-1 | T-03, T-38 | Corrected: the help header ends with the `/prettychat` alias note |
 | SLASH-3 | T-30 | Corrected: 170 setting rows and 180 lines, not "about 170 lines" |
 | SLASH-5 | T-31a | Corrected: neither header ends in a colon |

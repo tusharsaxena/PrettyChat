@@ -5,8 +5,8 @@ summarizes and the `performance-§12` row of
 [`## Documented deviations`](./ARCHITECTURE.md#documented-deviations) ratifies: the committed
 whole-repo sweep that proves criterion (a), and the one load-time cost that was measured and removed.
 Moved here from `performance.md` so that page fits one screen (`documentation-§3`); the prose moved
-verbatim. The result block below was last re-taken on the LibKa0s v1.64.0 tree, by running the
-command, in the `DL-PC-01:` commit.
+verbatim. The result block below was last re-taken on the LibKa0s v1.65.0 tree, by running the
+command, in the `DG-PC-01:` commit.
 
 ## The sweep — criterion (a), proven rather than asserted
 
@@ -48,8 +48,8 @@ core/CoreSetup.lua:142:Util.SafeRegisterEvents    = lib.SafeRegisterEvents
 core/LifecycleSetup.lua:40:-- no AceTimer, no C_Timer ticker and no OnUpdate, it registers no message and no
 modules/Override.lua:126:-- Registration goes through LibKa0s-Core's SafeRegisterEvents (bound as
 modules/Override.lua:127:-- NS.Util.SafeRegisterEvents by core/CoreSetup.lua): the C_EventUtils.IsEventValid
-modules/Override.lua:198:        combatWatcher:SetScript("OnEvent", onCombatEdge)
-modules/Override.lua:210:    traceWatch(true, NS.Util.SafeRegisterEvents(combatWatcher, WATCH_EVENTS, nil, NS.RejectedEvents))
+modules/Override.lua:200:        combatWatcher:SetScript("OnEvent", onCombatEdge)
+modules/Override.lua:212:    traceWatch(true, NS.Util.SafeRegisterEvents(combatWatcher, WATCH_EVENTS, nil, NS.RejectedEvents))
 settings/Panel.lua:529:    -- A frame later, both are true. C_Timer.After(0, ...) is the client's own way
 settings/Panel.lua:532:    if C_Timer and C_Timer.After then
 settings/Panel.lua:533:        C_Timer.After(0, function() fitTree(ctx) end)
@@ -94,7 +94,7 @@ the three sections below: the combat watcher, one next-frame layout fit in the s
 the Profiles page's next-frame redraw.
 
 One thing the grep does *not* return, said out loud so nobody re-adds it: `combatWatcher:UnregisterAllEvents`
-at `modules/Override.lua:206` **does not match**, because the pattern spells `RegisterAllEvents` with a
+at `modules/Override.lua:208` **does not match**, because the pattern spells `RegisterAllEvents` with a
 capital R and `UnregisterAllEvents` spells it lowercase. An earlier revision of this page printed that
 line inside its result block; the command above cannot produce it, and a result block holding a line
 its own command cannot return is worse than no result block at all.
@@ -104,14 +104,14 @@ its own command cannot return is worse than no result block at all.
 What does not survive is *"zero `C_Timer` call"*: `.luacheckrc:60` declares `C_Timer` in
 `read_globals`, and since 2026-09-03 that declaration has had a real consumer, since 2026-09-29 two.
 
-### The combat watcher — `modules/Override.lua:198`, `:210`
+### The combat watcher — `modules/Override.lua:200`, `:212`
 
 Both hits are `PrettyChat:SyncCombatWatch`, and what matters about them is *when they are reached*:
 
 - the frame is **created lazily**, on the first write that stores `General.visibility` as `inCombat`
   or `outOfCombat`. A default install (`always`) creates no frame and registers no event, so on the
   shipped configuration this half of the sweep's runtime answer is still zero;
-- both events are **unregistered** the moment the mode leaves that pair (`modules/Override.lua:206`),
+- both events are **unregistered** the moment the mode leaves that pair (`modules/Override.lua:208`),
   so the subscription tracks the setting rather than outliving it;
 - the handler fires at the combat **boundary** — `PLAYER_REGEN_DISABLED` on entry,
   `PLAYER_REGEN_ENABLED` on exit — at most twice per fight, and never *during* one. Its whole body is
