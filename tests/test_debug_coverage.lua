@@ -308,3 +308,53 @@ test("a tab switch refused by the combat lock is the library's one [Cfg] line", 
         "once per combat, however often it is clicked: " .. table.concat(lines, " / "))
     t.eq(count(lines, "[UI] categories tab Money"), 0, "the host's switch did not run")
 end)
+
+-- ---- the console's change gates (DebugLogGates 1) -------------------------------
+
+-- red under: the hand-rolled `watchArmed` memo, which a Clear never re-armed, so a
+-- cleared console stayed silent about an armed watcher until it next changed.
+test("a Clear re-arms the watcher's change gate, and the steady state stays quiet", function()
+    local inst, D = logging()
+    inst.NS.Schema.Set("General.visibility", "inCombat")
+    D:Clear()
+    inst.addon.Reapply()
+    t.eq(count(since(D, 0), "[Events] combat watch armed: 2/2 events"), 1,
+        "the first pass after the Clear states the watcher: " .. table.concat(since(D, 0), " / "))
+    local from = #D.buffer
+    for _ = 1, 10 do inst.addon.Reapply() end
+    t.eq(#since(D, from), 0, "and the passes after it add nothing")
+end)
+
+-- red under: a watcher memo taken while logging was off, which kept the first pass
+-- after `/pc debug on` silent about a watcher armed at login.
+test("the watcher armed while logging was off is stated on the first pass after enable", function()
+    local inst = ctx.loadAddon()
+    local D = inst.NS.DebugLog
+    inst.NS.Schema.Set("General.visibility", "inCombat")
+    D:SetEnabled(true)
+    D:Clear()
+    inst.addon.Reapply()
+    t.eq(count(since(D, 0), "[Events] combat watch armed: 2/2 events"), 1, table.concat(since(D, 0), " / "))
+end)
+
+-- red under: TraceCaught's own `seenErrors` table, which a Clear never re-armed.
+test("a Clear re-arms the caught-error gate", function()
+    local inst, D = logging()
+    local Util = inst.NS.Util
+    Util.TraceCaught("UI", "site", "boom")
+    Util.TraceCaught("UI", "site", "boom")
+    t.eq(#D.buffer, 1, "one line per distinct error")
+    D:Clear()
+    Util.TraceCaught("UI", "site", "boom")
+    t.eq(count(since(D, 0), "[UI] site failed: boom"), 1, "heard again once, after the Clear")
+end)
+
+-- The library-absent stub's gates answer false and raise nothing.
+test("with LibKa0s absent the gated call sites write nothing and raise nothing", function()
+    local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    bare.NS.DebugLog:SetEnabled(true)
+    t.truthy(pcall(bare.NS.Util.TraceCaught, "UI", "site", "boom"), "TraceCaught")
+    t.truthy(pcall(bare.NS.Schema.Set, "General.visibility", "inCombat"), "the watcher's trace")
+    t.eq(bare.NS.DebugLog.DebugOnce("k", "UI", "x"), false, "DebugOnce answers false")
+    t.eq(bare.NS.DebugLog.DebugChanged("k", "UI", "x"), false, "DebugChanged answers false")
+end)

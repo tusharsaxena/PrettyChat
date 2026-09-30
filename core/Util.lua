@@ -68,15 +68,14 @@ end
 
 -- An error a pcall this addon owns has swallowed, traced ONCE per distinct site and
 -- message (debug-logging-§8, Diagnosis: errors caught). A refresher that raises on every
--- settings write is one line, not one per write. Nothing is built, compared or remembered
--- while logging is off, so an error first seen with the flag off is still reported the
--- first time it recurs with the flag on.
-local seenErrors = {}
-
+-- settings write is one line, not one per write. The gate is the console's (`DebugOnce`,
+-- DebugLogGates 1): nothing is remembered while logging is off, so an error first seen
+-- with the flag off is still reported the first time it recurs with the flag on, and a
+-- Clear re-arms it, so a cleared console hears a still-raising site again. The key is
+-- built only with logging on (debug-logging-§4). Call-time: core/DebugLogSetup.lua loads
+-- later, and its library-absent stub answers false.
 function Util.TraceCaught(tag, site, err)
     if not Util.DebugOn() then return end
     local key = tostring(site) .. "\0" .. tostring(err)
-    if seenErrors[key] then return end
-    seenErrors[key] = true
-    NS.Debug(tag, "%s failed: %s", site, err)
+    NS.DebugLog.DebugOnce(key, tag, "%s failed: %s", site, err)
 end
