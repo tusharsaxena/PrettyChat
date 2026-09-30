@@ -85,7 +85,7 @@
 --                               registered under which app name, and the dialog COUNTS its
 --                               Opens, which is how a case tells a page that redrew from one
 --                               that did not. Modeled on ConsumableMaster's and MultiMeters'.
---  16.  _G = M               — see below.
+--  17.  _G = M               — see below.
 --
 -- ── `_G` is the mock table itself ───────────────────────────────────────────
 --
