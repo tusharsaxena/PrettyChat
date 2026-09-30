@@ -3,9 +3,10 @@
 -- word in settings/Slash.lua, and the descriptor fields core/DebugLogSetup.lua hands the library.
 --
 -- The dispatcher contract every addon owes (both forms, any case, the markers, append, ungated,
--- while disabled, no `diag`) is the kit's shared suite, tests/_kit/test_diagnostics_contract.lua,
--- wired through Kit.diagnostics in tests/run.lua. What is here is this addon's own: what the
--- report says about PrettyChat, and that saying it changes nothing.
+-- logging turned on for the session, while disabled, no `diag`) is the kit's shared suite,
+-- tests/_kit/test_diagnostics_contract.lua, wired through Kit.diagnostics in tests/run.lua. What
+-- is here is this addon's own: what the report says about PrettyChat, and that building it
+-- changes nothing.
 
 local ctx  = _G.PC_TEST
 local t    = ctx.t
@@ -81,9 +82,13 @@ test("diagnostics: `debug diagnostics` is tested before the other debug words", 
     local i = ctx.loadAddon()
     local D = i.NS.DebugLog
     local before = #D.buffer
+    t.eq(i.NS.State.debug, false, "logging starts off")
     slash(i, "debug diagnostics")
     t.truthy(#D.buffer > before, "/pc debug diagnostics wrote the report")
-    t.eq(i.NS.State.debug, false, "and left the logging flag where it was")
+    -- A run turns logging on for the session (debug-logging-§14, v2.71.0). This addon keeps the
+    -- library's default (no `diagnosticsEnablesLogging = false`), so the word ran the report
+    -- rather than being read as `on`, and the report itself flipped the flag.
+    t.eq(i.NS.State.debug, true, "and turned logging on for the session")
 end)
 
 test("diagnostics: the debug usage line names diagnostics, and `diag` is an ordinary unknown word", function()

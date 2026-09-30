@@ -26,7 +26,7 @@ works.
 | TEST-1 – 6 | Test preview | `/pc test` and the Test button, the filters |
 | RESET-1 – 13 | Resets | Row Reset, the Defaults buttons, `/pc reset <path>`, reset all, the one log line |
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
-| DIAG-1 – 21 | Debug and diagnostics | The diagnostics report, the console and its chrome, raw locale keys, resizing the console and its copy window |
+| DIAG-1 – 22 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
@@ -518,9 +518,15 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   stripped nor rendered as color. Press the copy mark and paste into a text editor → the trace, both
   reports and both markers, and no `|c` escape except the doubled ones. Paste the doubled value back
   into `/pc set` → it round-trips. `/pc reset Loot.LOOT_ITEM_SELF.format`. Result:
-- **DIAG-4. The report ignores the logging flag.** `/pc debug off`, `/pc diagnostics` → the whole report
-  lands; the console header still reads `Debug: OFF`, and changing a setting writes no `[Set]` line.
-  **Fail:** a missing report, or a header that flipped to `Debug: ON`. Result:
+- **DIAG-4. Diagnostics turns logging on for the session.** `/reload`, then `/pc debug` → the header
+  reads `Debug: OFF`. `/pc diagnostics` → the whole report lands, with `[Debug] logging enabled` and
+  the `[Init]` line just above its begin marker; the color-coded `debug logging ON` ack prints in chat,
+  the header now reads `Debug: ON`, and changing a setting writes a `[Set]` line. `/pc diagnostics`
+  again → a second report and no second `logging enabled` line. `/reload`, then `/pc debug` → the
+  header reads `Debug: OFF` again and changing a setting writes nothing. Repeat from that `/reload`
+  with the console's **Diagnostics** link (DIAG-22) in place of `/pc diagnostics` → the same.
+  **Fail:** a missing report, a header still at `Debug: OFF` after the run, a second enable line, or
+  logging still on after the `/reload`. Result:
 - **DIAG-5. Every spelling of the report.** `/pc debug diagnostics`, `/prettychat diagnostics` and
   `/prettychat debug diagnostics` → each writes the same report. Result:
 - **DIAG-6. No short alias.** `/pc debug diag` → `usage: /pc debug [on | off | diagnostics]` and no
@@ -574,10 +580,10 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   **Fail:** different art on the two means one addon is on an older LibKa0s payload. Result:
 - **DIAG-19. No raw locale key on screen.** Walk `/pc config` (landing page, General, Categories and
   its eight tabs with the Defaults button and footnote, Profiles), the console (title, the
-  `Debug: ON` / `Debug: OFF` toggle, the counter, the copy window's title), the *Debug console*
+  `Debug: ON` / `Debug: OFF` toggle, the Diagnostics link, the counter, the copy window's title), the *Debug console*
   checkbox's tooltip, and `/pc help`, `/pc list`, `/pc get General.enabled`,
   `/pc set General.enabled maybe`, `/pc reset nonsense` → no string matches `^[A-Z][A-Z0-9_]+$`, in
-  particular none of `DEFAULTS_LABEL`, `DEBUG_ON`, `DEBUG_OFF`, `CLEAR`, `COPY`, `COPY_TITLE`, `LINES`,
+  particular none of `DEFAULTS_LABEL`, `DEBUG_ON`, `DEBUG_OFF`, `DIAGNOSTICS`, `CLEAR`, `COPY`, `COPY_TITLE`, `LINES`,
   `CHECKBOX_LABEL`, `CHECKBOX_TOOLTIP`, `LIST_HEADER`, `LIST_GROUP`, `HELP_HEADER`, `NOT_FOUND`,
   `INVALID`, `USAGE_GET`, `USAGE_SET`, `USAGE_RESET`, `ERR_BOOL`, `ERR_STRING`. Result:
 - **DIAG-20. The console resizes, for the session only.** `/pc debug` and make enough lines to scroll
@@ -597,6 +603,16 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   clipping), the scrollbar's bottom button stays above the grip, and it stops at a minimum with the
   title and close mark clear. Close it and click copy again → the size you left. Resize the console
   itself → the copy window keeps its own size. `/reload` → both open at their defaults. Result:
+- **DIAG-22. The Diagnostics link.** `/pc debug` → in the title bar, top left, the word
+  **Diagnostics** sits just right of the `Debug: ON` / `Debug: OFF` label with a small gap, drawn
+  orange in the same plain text as that label: no button art, border or background. Hover it → it
+  brightens; move off → orange again. Click it → the diagnostics report is written into the console,
+  begin to end marker as in DIAG-1, with the one chat line giving its line count, exactly as
+  `/pc diagnostics` writes it (and, with logging off, it turns logging on, as DIAG-4 checks). Toggle
+  the label between ON and OFF → the gap after it holds for either word. Drag the console in as far
+  as it goes (DIAG-20) → the link still fits beside the label and the title, and the three marks stay
+  clear of it. **Fail:** a control drawn as a button, no gap, a link over the title, or a click that
+  writes nothing. Result:
 
 ## DEGRADED
 
@@ -689,7 +705,7 @@ recorded pass. The old document had no Result lines, so most checks are here. Si
 `Result:` line, then remove its ID from this table.
 
 Not listed, because a recorded pass covers them and the rework did not change what they expect:
-DIAG-1, DIAG-3 – 8, DIAG-14, COMBAT-4 and DEGRADED-8 (T-39 steps 1–2 and 4–10, T-29b step 6 and T-90
+DIAG-1, DIAG-3, DIAG-5 – 8, DIAG-14, COMBAT-4 and DEGRADED-8 (T-39 steps 1–2 and 4–10, T-29b step 6 and T-90
 step 7, passed in the owner's run of 2026-09-26 as rows PC-S1 – PC-S11 and PC-X1 of the diagnostics
 rollout's report), and LAUNCH-2 – 4 (T-65 and T-65a, passed in the owner's minimap re-check of
 2026-09-25 on the launcher-menu builds, step X1.4 of the 2026-09-23 remediation's checklist). Both
@@ -700,6 +716,8 @@ records are in the Ka0sAddonsCommonTasks repository.
 | PROFILE-1 – 10 | New: the Profiles page (`SP-PC-01`) and the `/pc profile` verb (`SP-PC-02`) | New in this rework; never run |
 | DEGRADED-9 | New: `/pc profile` on the library-absent stub (`SP-PC-02`) | New in this rework; never run |
 | DIAG-20 – 21 | New: the resizable console and copy window (LibKa0s v1.64.0, `DL-PC-01`) | New; never run |
+| DIAG-4 | The 2026-09-26 diagnostics rollout's recorded pass, rewritten for standard v2.71.0 (`DL-PC-03`) | Corrected: diagnostics now turns logging on for the session, and a `/reload` turns it off |
+| DIAG-22 | New: the console's Diagnostics link (LibKa0s v1.64.0, DebugLog 16, `DL-PC-03`) | New; never run |
 | SLASH-1 | T-03, T-38 | Corrected: the help header ends with the `/prettychat` alias note |
 | SLASH-3 | T-30 | Corrected: 170 setting rows and 180 lines, not "about 170 lines" |
 | SLASH-5 | T-31a | Corrected: neither header ends in a colon |

@@ -10,9 +10,9 @@ PrettyChat has two debug surfaces, and both write into the same window:
   each line means.
 
 The console itself is the library's, and its contract lives in LibKa0s's
-[`docs/api/DebugLog/version-14.1-docs.md`](https://github.com/tusharsaxena/LibKa0s/blob/master/docs/api/DebugLog/version-14.1-docs.md)
-(DebugLog 14.1 is the vendored minor, from LibKa0s v1.60.0). This page covers only what PrettyChat
-adds on top.
+[`docs/api/DebugLog/version-17.2-docs.md`](https://github.com/tusharsaxena/LibKa0s/blob/master/docs/api/DebugLog/version-17.2-docs.md)
+(DebugLog 17 with DebugLogDiagnostics 2 is the vendored pair, from LibKa0s v1.64.0). This page covers
+only what PrettyChat adds on top.
 
 ## The console
 
@@ -20,7 +20,7 @@ adds on top.
 |---|---|
 | `/pc debug` | Shows or hides the console window, "Pretty Chat — Debug". The logging flag is unchanged. |
 | `/pc debug on` / `off` | Sets or clears the logging flag through `NS.DebugLog:SetEnabled`, which confirms on one chat line. |
-| `/pc debug diagnostics` | Writes the diagnostics report (below). |
+| `/pc debug diagnostics` | Writes the diagnostics report (below), and turns logging on for the session if it was off. |
 | `/pc debug <anything else>` | Prints `usage: /pc debug [on \| off \| diagnostics]`. |
 
 What PrettyChat supplies, all in `core/DebugLogSetup.lua`:
@@ -51,7 +51,7 @@ pins the lines that answer that, and `tests/test_debuglog.lua` the `[Set]` ones.
 
 | Tag | Emitted by | When |
 |---|---|---|
-| `Debug` | the library | `logging enabled` / `logging disabled`, at each flip of the flag. The disable line is written ungated. |
+| `Debug` | the library | `logging enabled` / `logging disabled`, at each flip of the flag, including the enable a diagnostics run makes when logging was off. The disable line is written ungated. |
 | `Init` | the library, from `core/DebugLogSetup.lua`'s summary | Once, right after `logging enabled`: version, schema, profile, then `, rejected events: <names>`, `, stood down: <holds>` and `, chat addons: <names>` when each applies. The last two carry what happened at load, while the flag was off. |
 | `Cmd` | `settings/Slash.lua` | Every `/pc` command, as typed (pipes doubled), with `(stood down: <holds>)` appended while any hold is taken, since the library refuses feature verbs in chat only. Then a `<verb> refused: <guard>` line for each refusal the host owns: schema not ready, an unknown category, a category given to `reset`, an unknown format string, an unknown `test` or `debug` form. |
 | `Set` | the schema write seam (`LibKa0s-Schema-1.0` through `settings/Schema.lua`), `core/PrettyChat.lua`, `modules/Override.lua` | Every setting write as `<path> = <value>`; a format string the signature gate refused, with both sequences; one line per bulk reset (`reset <scope>: N rows`), per profile copy and per profile reset (debug-logging-§10). |
@@ -95,10 +95,15 @@ not steady state: each boundary is a real recompute.
 
 ### Running it
 
-There are exactly two forms, and no third:
+There are exactly two slash forms, and no third:
 
 - `/pc diagnostics`, a row of the `COMMANDS` table in `settings/Slash.lua`;
 - `/pc debug diagnostics`, the first word `runDebug` tests, in any case.
+
+The console carries the one other way in: the orange **Diagnostics** link in its title bar, a small
+gap right of the Debug On/Off label (the library's, DebugLog minor 16 and later). It is plain text,
+not a button, and a click runs the same `RunDiagnostics` the two forms call, so it writes the same
+report.
 
 `/prettychat` reaches both, as it reaches every verb. `diag`, `dump`, `dx` and every other short name
 are ordinary unknown words: `/pc diag` prints the unknown-command help, and `/pc debug diag` prints
@@ -114,7 +119,16 @@ printing empty data.
   has just reproduced stays above it and one Copy carries both. Nothing the report reaches calls
   `Clear()`.
 - **It is ungated.** It writes through the library's raw append, not `NS.Debug`, so it lands in full
-  with logging off, and it does not read or change the flag: the header reads the same afterwards.
+  whatever the flag says.
+- **It turns logging on for the session** (`debug-logging-§14`, standard v2.71.0). When logging is
+  off, the run calls `NS.DebugLog:SetEnabled(true)`, the flag's one seam, before it writes, so the
+  `[Debug] logging enabled` line, the `[Init]` summary and the chat ack come first, the header reads
+  `Debug: ON` afterwards, and the player's next reproduction is traced. It never turns logging off,
+  and with logging already on it writes no second enable line. A `/reload` turns it off again, as it
+  does every session. PrettyChat keeps the library's default: its descriptor in
+  `core/DebugLogSetup.lua` sets no `diagnosticsEnablesLogging = false`, and `runDiagnostics` wraps no
+  `SetEnabled` of its own around the run. The sections only read the flag, which is why the identity
+  header prints it as on.
 - **It reveals the console** if it is hidden, then prints one chat line:
   `Diagnostic report written to the debug console: N lines. Use Copy to share it.`
 - **It is plain text.** The library strips color, texture, atlas and hyperlink escapes from every
