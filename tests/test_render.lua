@@ -16,7 +16,7 @@ test("positional %n$s formats degrade gracefully under stock Lua", function()
     -- Positional specifiers (%n$s) are a WoW Lua extension; stock Lua 5.1
     -- (this harness) can't render them, but RenderSample must degrade
     -- gracefully (nil + error) rather than throw. In-game these render;
-    -- see docs/smoke-tests.md for the manual positional check.
+    -- docs/smoke-tests.md LOC-3 is the in-client check.
     local ok = pcall(render, "%2$s then %1$s")
     t.truthy(ok, "positional format never throws (graceful under stock Lua)")
 end)

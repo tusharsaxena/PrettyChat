@@ -401,13 +401,14 @@ test("NS.Helpers IS the library instance, decorated in place", function()
                               "__panels", "__panelFor" }) do
         t.eq(type(NS.Helpers[member]), "function", "the instance carries " .. member)
     end
-    -- Two registered pages, BY KEY and in rail order, rather than a count derived
+    -- Three registered pages, BY KEY and in rail order, rather than a count derived
     -- from CATEGORY_ORDER. The two stopped being the same number when the eight
     -- message categories became eight tabs on one page, and a count alone would
     -- have gone on passing if a page were registered twice under one key.
     local pageKeys = {}
     for i, page in ipairs(NS.Helpers.__pages()) do pageKeys[i] = page.key end
-    t.eq(table.concat(pageKeys, ","), "General,Categories", "every page builder ran, in rail order")
+    t.eq(table.concat(pageKeys, ","), "General,Categories,Profiles",
+        "every page builder ran, in rail order")
 
     -- The member list above survives a copy-across table intact, so on its own it
     -- asserts nothing the case name claims. THIS is the identity check: swap a
@@ -667,6 +668,37 @@ test("with Slash absent the host verbs survive and the schema CLI says why", fun
     t.truthy(msgs[#msgs]:find(bare.NS.LIBKA0S_MISSING ..
         ", so the settings panel is unavailable.", 1, true),
         "and that line is config's, not the help header")
+
+    -- The profile pair (Slash minor 17) takes the stub's route (b): with no library
+    -- there is no store adapter to trust, so both name the missing library in the one
+    -- line every lost verb says and switch nothing. A typed name must not become a
+    -- profile, and ProfileSwitch answers false, as the live member does when it did
+    -- not switch.
+    local db = bare.addon.db
+    local current = db:GetCurrentProfile()
+    before = #msgs
+    bare.NS.SlashCommands:CliProfile("Alt")
+    t.eq(#msgs, before + 1, "the degraded CliProfile answers on one line")
+    t.truthy(msgs[#msgs]:find(bare.NS.LIBKA0S_MISSING ..
+        ", so the settings CLI is unavailable.", 1, true),
+        "through the shared cause clause")
+    before = #msgs
+    t.eq(bare.NS.SlashCommands:ProfileSwitch("Alt"), false, "the degraded ProfileSwitch answers false")
+    t.eq(#msgs, before + 1, "on one line")
+    t.truthy(msgs[#msgs]:find(bare.NS.LIBKA0S_MISSING ..
+        ", so the settings CLI is unavailable.", 1, true),
+        "the same line")
+    t.eq(db:GetCurrentProfile(), current, "neither switched the profile")
+    local names = {}
+    for _, n in ipairs((db:GetProfiles({}))) do names[n] = true end
+    t.falsy(names.Alt, "and neither created one")
+    -- And the `profile` row reaches the stub's member, so `/pc profile` answers the same.
+    before = #msgs
+    bare.addon:OnSlashCommand("profile Alt")
+    t.eq(#msgs, before + 1, "/pc profile answers on one line with the library absent")
+    t.truthy(msgs[#msgs]:find(bare.NS.LIBKA0S_MISSING ..
+        ", so the settings CLI is unavailable.", 1, true), "the stub's line")
+    t.eq(db:GetCurrentProfile(), current, "and switched nothing")
 
     -- And the stub re-implements none of the library's rendering.
     -- The ONE exception slash-commands-§1 sanctions is DISABLED_LINE_FORMAT's

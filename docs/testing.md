@@ -6,7 +6,7 @@ Contributor-facing verification guide. (Player-facing docs live in the root [REA
 
 PrettyChat runs on the **shared LibKa0s test kit** (testing-§1), vendored whole to `tests/_kit/` and never edited there. The kit owns the case registry, the assertions, the runner, the `--list` renderer, the sandboxed source loader and the TOC reader; what stays in this repo is the instance factory, the mock extender and the suite list.
 
-It runs under stock Lua 5.1 with no WoW client, loading the vendored library files and then the addon's own sources into a mock WoW environment, and exercises constants, string helpers, locale manifest, defaults data, schema, sample renderer, apply pipeline and override engine, migration runner, addon lifecycle, debug console, diagnostics report, slash dispatcher, settings panel — and the six LibKa0s seams.
+It runs under stock Lua 5.1 with no WoW client, loading the vendored library files and then the addon's own sources into a mock WoW environment, and exercises constants, string helpers, locale manifest, defaults data, schema, sample renderer, apply pipeline and override engine, migration runner, addon lifecycle, debug console, diagnostics report, slash dispatcher, settings panel, Profiles page — and the nine adopted LibKa0s seams.
 
 ```sh
 lua tests/run.lua          # run every suite (exits non-zero on failure)
@@ -38,13 +38,14 @@ tests/
 - `loader.lua` derives **both** load lists rather than restating either (testing-§9) — the addon's own from `PrettyChat.toc` with `Loader.tocFiles`, and the vendored-library list from `libs/LibKa0s/LibKa0s.xml` with `Loader.xmlFiles`, in XML order — seeds every schema-registered Blizzard global with a recognizable `ORIG:<NAME>` value, and runs the AceAddon lifecycle. `ctx.loadAddon()` returns a **fresh, fully-booted, isolated instance** (`{ env, NS, addon }`); `ctx.loadAddon({ skip = { … } })` loads with files genuinely absent, which is how the degraded-install cases are driven rather than by hand-stubbing (testing-§8) — `tests/test_surface_parity.lua` is where the four whole-surface ones live, one per adopted seam, and `{ mock = fn }` reshapes the environment before anything loads.
 
   **Why this file survives the kit adoption, and how little of it is left.** It is reduced to the isolated-environment need and nothing else; every capability the kit has is taken from the kit, and when `LIBKA0S-01` lands upstream the file is deleted outright rather than trimmed again. `tests/_kit/loader.lua` builds ONE environment whose `__newindex` writes through to the real `_G`. This addon's entire feature is rewriting `_G[GLOBALNAME]`, and half the suite asserts on what landed there — so each instance needs its own. `tests/wow_mock.lua` points `_G` back at the mock table and this file builds a fresh mock per call, which is what supplies the isolation the kit has no mode for. Chunks compile once and re-run per instance, and the cache doing that is **this file's own** `loadfile` cache rather than the kit's: `tests/loader.lua` takes only `Loader.makeEnv`, `Loader.tocFiles` and `Loader.xmlFiles` from the kit and calls none of `Loader.load` / `Loader.loadAll` / `Loader.loadSource`, which are the three entry points the kit's own chunk cache (revision 12 and later) sits behind — so that cache is never reached from here. The local one used to be load-bearing, because `loadfile` on the ~1.9 MB of generated `GlobalStrings/` chunks dominated the run; `PrettyChat.toc` no longer loads them (PC-R-05), so it is now merely cheap.
-- `wow_mock.lua` is a **thin extender** (testing-§1): `local base = dofile("tests/_kit/mock_base.lua")`, then a builder that overwrites the fifteen keys this addon genuinely needs differently. Its own header documents each with the reason it cannot come from the base. The load-bearing ones:
+- `wow_mock.lua` is a **thin extender** (testing-§1): `local base = dofile("tests/_kit/mock_base.lua")`, then a builder that overwrites or adds the seventeen keys this addon genuinely needs differently. Its own header documents each with the reason it cannot come from the base. The load-bearing ones:
   - **distinct `CreateFontString` / `CreateTexture` objects.** The base aliases them onto the frame itself — a divergence its own README documents as deliberate — and the debug console hangs three FontStrings off one title bar, so an aliased one would make `frame.debugToggle.text` read back the window *title*;
   - `Show()`/`Hide()` **fire** the OnShow/OnHide scripts and hooks; the base tracks visibility only, and every settings page builds its body on first show;
   - a **recording** `DEFAULT_CHAT_FRAME`; the base's stub frame answers `AddMessage` from its metatable and keeps nothing, which would silence every chat assertion in the suite;
   - `AceAddon:NewAddon`, wrapped rather than replaced. Since kit revision 17 the wrapper calls the kit's own `NewAddon` with the name and the mixin list, so the kit names the object, registers it for the `GetAddon` six PrettyChat files call (`modules/Override.lua:8`, `modules/Diagnostics.lua:30`, `settings/Schema.lua:6`, `settings/Panel.lua:19`, `settings/Slash.lua:15`, and `settings/OptionsSetup.lua:220` through the addon object), and embeds AceConsole, whose `RegisterChatCommand` records into `AceConsole.commands` and runs through `AceConsole:__slash`. The wrapper keeps one thing of its own: AceConsole's `Print` shape landing in this environment's chat frame, because the kit's mixin writes to the harness process's never-set `DEFAULT_CHAT_FRAME`, and a failed reclaim that printed nothing would let the reclaim cases read a stale `[PC]` line and pass;
   - `SettingsPanel = nil`, so the private category-tree walk takes its guarded fallback rather than "succeeding" against a stub that answers every method;
-  - `C_AddOns` / `GetAddOnMetadata`, deliberately absent from the base so the `core/EnvSetup.lua` seam's library-absent fallback branch stays drivable.
+  - `C_AddOns` / `GetAddOnMetadata`, deliberately absent from the base so the `core/EnvSetup.lua` seam's library-absent fallback branch stays drivable;
+  - `AceDBOptions-3.0`, `AceConfig-3.0` and `AceConfigDialog-3.0`, the Profiles page's libraries, which the base omits. The dialog **counts** its `Open` calls, which is how `tests/test_profiles.lua` tells a page that redrew from one that did not.
 
   **Every frame it builds is built on the kit's TRACKED stub**, and that one line is what makes `tests/test_disabled.lua` possible. The kit's recording mock surveys the frames a build actually made — `M.__registrations()`, `M.__shownFrames()` — and until this file adopted the tracked factory, the combat watcher (the one frame this addon registers anything on) was invisible to it. A stand-down suite that asserted "nothing is registered" over a table this repo's frames never reached would be green over a question it never asked. For the same reason the **event** methods are the kit's rather than this file's, and `_events` is answered through the metatable off the kit's live `__frameEvents` rather than kept as a second table that `UnregisterAllEvents` would leave stale; and the recording `DEFAULT_CHAT_FRAME` above records into the kit's transcript as well as its own, so `M.__printed()` can answer "zero lines reached the player".
 
@@ -54,13 +55,13 @@ What the mocks deliberately do *not* model is layout: they answer "which widget,
 
 Both `lua tests/run.lua` and `luacheck .` must be green before any commit. Lint config is `.luacheckrc` (`std=lua51`; excludes `libs/`, `GlobalStrings/`, `tests/_kit/`, `docs/audits`, `docs/reviews`). The suites register named `test(name, fn)` cases; the `Tests` badge in the README badge row shows the pass/total.
 
-**The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 53 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the seven seam files are inside the set that was actually checked:
+**The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 55 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the nine seam files are inside the set that was actually checked:
 
 ```sh
 luacheck . --formatter plain | tail -1     # and read the file count it reports
 ```
 
-A warning inside `core/EnvSetup.lua`, `core/MediaSetup.lua`, `core/CoreSetup.lua`, `core/DebugLogSetup.lua`, `core/LauncherSetup.lua`, `settings/OptionsSetup.lua` or `settings/Slash.lua` is an adoption defect. A warning elsewhere is pre-existing host hygiene. Neither statement means anything if the lint never opened the file.
+A warning inside `core/EnvSetup.lua`, `core/MediaSetup.lua`, `core/CoreSetup.lua`, `core/DebugLogSetup.lua`, `core/LifecycleSetup.lua`, `core/LauncherSetup.lua`, `settings/Schema.lua`, `settings/OptionsSetup.lua` or `settings/Slash.lua` is an adoption defect. A warning elsewhere is pre-existing host hygiene. Neither statement means anything if the lint never opened the file.
 
 ## The vendor gate — four diffs, and they answer two different questions
 
@@ -117,7 +118,7 @@ Run **both** of each pair and read the difference between them:
 ## The 1500-line cap gate
 
 `tests/_kit/test_layout_cap.lua` — the kit's gate since LibKa0s v1.55.0 (kit revision 25), and still
-the gate in the vendored LibKa0s v1.62.0 (kit revision 31), declared in `tests/run.lua` as
+the gate in the vendored LibKa0s v1.63.0 (kit revision 32), declared in `tests/run.lua` as
 `{ name = "test_layout_cap", dir = "tests/_kit/" }` — compares two things: every authored
 `.lua` git tracks, and the census under *Files over the 1500-line cap* in
 [ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both directions, so a file that crosses the
@@ -262,4 +263,4 @@ output. Bundles are never edited and never pruned.
 
 ## In-game validation
 
-For behavior stock Lua can't cover (panel rendering, live chat overrides, positional `%n$s` formats), follow the manual [smoke-test suite](./smoke-tests.md) — it lists which invariant each test guards, so a failure can be tied back to a specific area of the addon.
+For behavior stock Lua can't cover (panel rendering, live chat overrides, positional `%n$s` formats), follow the manual [smoke-test suite](./smoke-tests.md) — its checks are grouped by theme and each says what must happen, so a failure can be tied back to a specific area of the addon.

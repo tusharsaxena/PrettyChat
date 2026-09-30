@@ -13,6 +13,7 @@ filter, hooks no chat frame, and has no `OnUpdate` handler and no ticker. Its wh
 | Login (`OnInitialize`, `OnEnable`) | AceDB, migrations, one snapshot of Blizzard's originals, one `ApplyStrings` pass |
 | A settings change, or a combat boundary while `General.visibility` is `inCombat` / `outOfCombat` | one `ApplyStrings` pass (a boundary: at most twice per fight) |
 | A settings-panel category render, panel open | one AceGUI tree build and **one** `C_Timer.After(0, …)` layout fit |
+| A profile switch, copy or reset, Profiles page open | **one** `C_Timer.After(0, …)` and one AceConfigDialog redraw a frame later |
 | Every other moment, combat included | **nothing** |
 
 ## Which of (b) and (c) applies: both

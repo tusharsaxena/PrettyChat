@@ -26,6 +26,11 @@ Every library the addon uses is **vendored and committed** under `libs/` and lis
 - `LibStub`, `CallbackHandler-1.0`, `AceAddon-3.0`, `AceDB-3.0`, `AceConsole-3.0`, `AceGUI-3.0`,
   `LibDataBroker-1.1`, `LibDBIcon-1.0`, and the Ka0s umbrella `LibKa0s` (vendored whole from the
   sibling `../LibKa0s` checkout).
+- `AceConfig-3.0` (with its `AceConfigRegistry-3.0`, `AceConfigCmd-3.0` and `AceConfigDialog-3.0`
+  parts) and `AceDBOptions-3.0` serve the **Profiles page** and nothing else (`options-ui-§3`,
+  `settings/Profiles.lua`). They are the same Ace3 release as the rest of the Ace libraries here
+  (AceConfig-3.0 minor 3, AceDBOptions-3.0 minor 15). `settings/Profiles.lua` resolves all four it
+  needs with `LibStub(…, true)`, so an install missing any of them loses that page and nothing else.
 - The broker pair is the **launcher's** (`launcher-§1`), not LibKa0s's: `core/LauncherSetup.lua`
   builds one LibDataBroker object and hands it to LibDBIcon, so the minimap button and any broker
   display draw from the same object. `LibKa0s-Launcher-1.0` resolves both with `LibStub(…, true)`
@@ -160,7 +165,7 @@ signature, dev-only in the same sense as `docs/` and `tests/`.
 | | |
 |---|---|
 | **Version** | Any recent Pillow. Verified here with 10.2.0 (Ubuntu 24.04's `python3-pil`). |
-| **Why** | `layout-§4`'s recipe regenerates `media/logos/prettychat.logo.128.tga` (128x128, uncompressed 32-bit TGA, image type 2) from the 2000x2000 `media/logos/prettychat.logo.png` beside it, as `core/LauncherSetup.lua:96-97` records. The `.tga` is committed, so the recipe is run **by hand when the source art changes**; nothing in the build, the TOC, the tests or the packager invokes it. The other logo files (`prettychat.logo.tga`, `.jpg`) and `media/screenshots/` have no regeneration recipe and are not covered by this entry. |
+| **Why** | `layout-§4`'s recipe regenerates `media/logos/prettychat.logo.128.tga` (128x128, uncompressed 32-bit TGA, image type 2) from the 2000x2000 `media/logos/prettychat.logo.png` beside it, as `core/LauncherSetup.lua:102-103` records. The `.tga` is committed, so the recipe is run **by hand when the source art changes**; nothing in the build, the TOC, the tests or the packager invokes it. The other logo files (`prettychat.logo.tga`, `.jpg`) and `media/screenshots/` have no regeneration recipe and are not covered by this entry. |
 | **Packages** | `PIL` (Pillow), imported by the recipe's `from PIL import Image`. |
 | **Install** | `sudo apt install -y python3-pil` |
 | **Verify** | `python3 -c 'import PIL; print(PIL.__version__)'` |

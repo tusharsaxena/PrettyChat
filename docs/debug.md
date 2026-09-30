@@ -144,7 +144,7 @@ With no LibKa0s the stub's `RunDiagnostics` prints
 ## Where else this is pinned
 
 The command rows are in [slash-dispatch.md](./slash-dispatch.md), and the player-facing steps are
-the README's `## Reporting a bug`. The in-game checks are T-39 and T-29b in
-[smoke-tests.md](./smoke-tests.md). The suites are `tests/test_diagnostics.lua` (this addon's
+the README's `## Reporting a bug`. The in-game checks are DIAG-1 to DIAG-8, DIAG-11 to DIAG-15 and
+COMBAT-4 (the report in combat) in [smoke-tests.md](./smoke-tests.md). The suites are `tests/test_diagnostics.lua` (this addon's
 sections), the kit's shared `tests/_kit/test_diagnostics_contract.lua` (wired in `tests/run.lua`),
 `tests/test_debuglog.lua`, `tests/test_disabled.lua` and `tests/test_slash.lua`.

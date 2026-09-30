@@ -263,16 +263,19 @@ end)
 -- registration are SETUP, not features, so keeping them live costs nothing the
 -- stand-down was trying to reclaim.
 --
--- The surface here is the standard's thirteen reserved verbs, ALL ANSWERING, and the
--- bare `/pc` opening the panel. That was narrowed to `enable` and `help` at standard
--- v2.56.0 and REVERSED at v2.57.0, on the first thing anyone tried: `/pc` on a
--- disabled addon answered with a refusal instead of opening the one surface a player
--- uses to switch it back on by hand.
+-- The surface here is the standard's thirteen reserved verbs plus this addon's
+-- `profile`, ALL ANSWERING, and the bare `/pc` opening the panel. That was narrowed
+-- to `enable` and `help` at standard v2.56.0 and REVERSED at v2.57.0, on the first
+-- thing anyone tried: `/pc` on a disabled addon answered with a refusal instead of
+-- opening the one surface a player uses to switch it back on by hand.
 
 local LIVE_VERBS = {
     help = true, config = true, version = true, enable = true, disable = true,
     debug = true, perf = true, diagnostics = true,
     get = true, set = true, list = true, reset = true, resetall = true,
+    -- Not one of the thirteen: the host verb this addon adds to its liveVerbs, because
+    -- a profile can hold `General.enabled = true` and switching to it is a repair.
+    profile = true,
 }
 
 local function say(i, input)
@@ -295,6 +298,9 @@ test("disabled/7: every reserved verb answers normally, and the bare /pc opens t
         local verb = entry[1]
         if LIVE_VERBS[verb] then
             seen = seen + 1
+            -- Each verb must really be dispatched while DISABLED, or this pin cannot
+            -- fail: a verb run with the addon back up answers whether it is live or not.
+            t.eq(i.addon:IsAddonEnabled(), false, "/pc " .. verb .. " is sent while disabled")
             local lines = say(i, verb)
             if verb == "help" then
                 -- The one live verb that carries the line, and it is not a refusal OF
@@ -308,9 +314,10 @@ test("disabled/7: every reserved verb answers normally, and the bare /pc opens t
                         "/pc " .. verb .. " must answer normally while disabled, not refuse")
                 end
             end
-            -- `enable` and `disable` are live and they WRITE, so put the addon back
-            -- where this loop found it before the next verb runs.
-            if verb == "enable" then disable(i) end
+            -- `enable`, `disable` and `resetall` are live and they WRITE (`resetall` puts
+            -- General.enabled back to its default of true), so put the addon back where
+            -- this loop found it before the next verb runs.
+            if verb == "enable" or verb == "resetall" then disable(i) end
         end
     end
     t.truthy(seen >= 10, "the loop actually reached the reserved verbs: " .. tostring(seen))

@@ -433,12 +433,13 @@ badge and any count quoted in the docs must agree with it.
 - Launcher: DEGRADED — LibDataBroker present, LibDBIcon absent: the plugin, no button
 - Launcher: DEGRADED — no LibKa0s at all: no launcher, and the row survives
 
-### test_slash.lua (52)
+### test_slash.lua (53)
 
 - Schema.FormatValue formats bools and doubles pipes in strings
 - NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
 - a bare /pc opens the settings panel through config
 - a whitespace-only /pc is bare too
+- COMMANDS is the fourteen verbs, in their order, and help prints one row each
 - /pc help prints the help index
 - /pc help lists every command with its description
 - the resetall help row says it resets every setting
@@ -528,7 +529,7 @@ badge and any count quoted in the docs must agree with it.
 
 ### test_panel.lua (25)
 
-- registration builds the parent category and two sub-pages
+- registration builds the parent category and three sub-pages
 - the strip carries one tab per message category, in CATEGORY_ORDER
 - the panel registry holds one ctx per page, reachable by page key
 - sub-page frames start hidden and unbuilt
@@ -579,6 +580,28 @@ badge and any count quoted in the docs must agree with it.
 - no per-string enable tooltip carries a second-category note
 - the page says its controls are read only while the master switch is on
 - clicking a tab swaps the body and drops the tab it left
+
+### test_profiles.lua (19)
+
+- Profiles: the page is the last in the rail, and its file is the last the TOC loads
+- Profiles: the page hosts AceDBOptions' table over the live db, with no Defaults button
+- Profiles: nothing is drawn until the page is shown, then it is drawn once
+- Profiles: a pooled, hidden SimpleGroup is shown before the page fills it
+- Profiles: a switch made elsewhere redraws the open page, and a plain refresh does not
+- Profiles: a switch while the page is hidden redraws it on its next show
+- Profiles: a copy and a reset redraw the open page too
+- Profiles: a change from the page's own control never re-opens the page under its callback
+- Profiles: a switch takes the incoming profile's enabled flag, both ways
+- Profiles: the global reset empties the active profile and nothing else
+- Profiles: the global reset's veto names the page, and the library's reset is ResetAll
+- Profiles: Reset all settings' tooltip says it is the same act as Profiles -> Reset Profile
+- Profiles: with AceDBOptions absent the page opts out and a switch still works
+- /pc profile lists the profiles, sorted, the current one marked, and creates nothing
+- /pc profile <name> switches to an existing profile, and the profile handler runs once
+- /pc profile refuses an unknown name, creates nothing, and offers the one case match
+- /pc profile strips one pair of surrounding quotes and keeps spaces and case
+- /pc profile refuses to switch in combat, and still lists
+- /pc profile answers while the addon is disabled, and can bring it back up
 
 ### test_doc_structure.lua (12)
 
@@ -639,13 +662,14 @@ badge and any count quoted in the docs must agree with it.
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
 | test_launcher.lua | 40 |
-| test_slash.lua | 52 |
+| test_slash.lua | 53 |
 | test_disabled.lua | 14 |
 | test_diagnostics.lua | 18 |
 | test_panel.lua | 25 |
 | test_panel_categories.lua | 23 |
+| test_profiles.lua | 19 |
 | test_doc_structure.lua | 12 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
 | test_diagnostics_contract.lua | 7 |
-| **Total** | **518** |
+| **Total** | **538** |

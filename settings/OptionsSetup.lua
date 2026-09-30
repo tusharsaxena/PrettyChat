@@ -287,6 +287,30 @@ NS.Helpers = lib:New({
         if NS.Config and NS.Config.BuildMain then NS.Config.BuildMain(ctx) end
     end,
 
+    -- The global reset's veto (options-ui-§3, §12): the Profiles page and every
+    -- profile-backed row. The reset every control here reaches is PrettyChat:ResetAll,
+    -- a profile reset, and never this library's row walk; the veto is passed anyway so
+    -- that a RestoreAllDefaults reached from anywhere cannot walk into the Profiles page
+    -- or write profile rows one by one. Named once, in settings/Schema.lua.
+    skipRestoreAll = NS.Schema.VetoedFromResetAll,
+
+    -- RESET ALL SETTINGS IS A PROFILE RESET (options-ui-§12), and these two fields
+    -- tell the library so. What they change today is the Master controls "Reset all
+    -- settings" tooltip (Options minor 18): with both, it names the current profile,
+    -- says the other profiles are not affected, and names the equivalence with
+    -- Profiles -> Reset Profile, since settings/Profiles.lua ships that page. Without
+    -- them the composer keeps the pre-profile wording, "Restore every setting in this
+    -- addon to its default", which overstates what the reset touches. The reset the
+    -- button reaches is still PrettyChat:ResetAll through the confirmation popup, and
+    -- nothing on the live path calls the library's RestoreAllDefaults; `resetProfile`
+    -- is the real act anyway, so the field is accurate if that is ever reached — the
+    -- library then sweeps the sessionOnly rows, calls this, and refreshes the panels,
+    -- and ResetAll's own OnProfileReset line stays the one [Set] line (no bulk
+    -- bracket is passed, so the library adds none). Late-bound: ResetAll lives in
+    -- modules/Override.lua. tests/test_profiles.lua pins the tooltip.
+    resetProfile = function() NS:ResetAll() end,
+    profilesPage = true,
+
     -- Deliberately NOT passed, each for a reason worth writing down rather than
     -- leaving as an absence:
     --
@@ -294,9 +318,9 @@ NS.Helpers = lib:New({
     --     is bool and string only, so there is no stored color shape to declare.
     --   getLSM / scheduleTimer    — no media pickers, no color pickers, no sliders,
     --     so nothing reaches either.
-    --   skipRestoreAll / afterRestoreAll — the global reset is PrettyChat:ResetAll,
-    --     which wipes the profile in one pass; the library's row-by-row
-    --     RestoreAllDefaults is not on the path (see settings/Panel.lua).
+    --   afterRestoreAll — the global reset is PrettyChat:ResetAll, which wipes the
+    --     profile in one pass; the library's row-by-row RestoreAllDefaults is not on
+    --     the path (see settings/Panel.lua), so there is nothing to run after it.
     --   validate                  — settings/Schema.lua already runs its integrity
     --     check at file load and stashes the counts on Schema.validation, which the
     --     suite asserts. A second pass at panel-build time would report the same

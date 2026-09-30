@@ -49,6 +49,9 @@ local enUS = {
     "Strings on these tabs are rewritten only while the master Enable on the General page is on.",
     -- The page's Defaults tooltip. The button resets every tab (options-ui-§13).
     "Reset the strings on every category tab to their defaults.",
+    -- Profiles sub-page (settings/Profiles.lua): its sidebar entry and header title.
+    -- The page body is AceDBOptions' own table, translated by Ace3's locale files.
+    "Profiles",
     -- Category sub-page. `%s` is the category name, which is itself English —
     -- see the `localization-§1` row in docs/ARCHITECTURE.md's deviations
     -- register. The placeholder is what makes the SENTENCE translatable; these
@@ -89,6 +92,7 @@ local enUS = {
     "Set a setting — `/pc set <path> <value>` (try /pc list)",
     "Reset one setting to its default — `/pc reset <path>`",
     "Reset every setting to defaults",
+    "List profiles, or switch to one: profile <name>",
     "Print sample chat lines to the debug console — `/pc test [all | category <name> | formatstring <NAME>]`",
     "Debug console — `/pc debug` shows it; `on`/`off` toggle logging",
     "Print the addon version",
