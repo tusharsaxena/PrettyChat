@@ -360,8 +360,11 @@ test("/pc resetall is one debug line in total", function()
     addon:ResetAll()
     NS.Schema.Set("Loot.enabled", false)
     local buf, passes, notifies = capture(function() addon:OnSlashCommand("resetall") end)
-    t.eq(#buf, 1, "the slash verb adds no second line")
-    t.truthy(buf[1]:find("[Set] reset profile 'Default' to defaults (1 rows)", 1, true),
+    -- Two lines: the command as typed ([Cmd], debug-logging-§8), then the reset's one
+    -- [Set] line. The verb adds no second [Set] line.
+    t.eq(#buf, 2, "the command line and the reset line, and no second [Set] line")
+    t.truthy(buf[1]:find("[Cmd] /pc resetall", 1, true), "the command as typed")
+    t.truthy(buf[2]:find("[Set] reset profile 'Default' to defaults (1 rows)", 1, true),
         "the same profile-reset line")
     t.eq(passes, 1, "one ApplyStrings pass")
     t.eq(notifies, 1, "one NotifyPanelChange")

@@ -20,6 +20,27 @@ local addonName, NS = ...
 -- so a load-time summary would always be gated off and never render — and only
 -- we can know what it says
 -- (debug-logging-§5/§8).
+-- The two state tails (debug-logging-§8, Diagnosis), each absent in the common case so a
+-- plain enabled install's summary keeps its shape. Both facts are settled at load, while the
+-- session-only flag is off and no line can land, so the summary written when logging goes on
+-- is the one place the log can carry them:
+--   * `stood down: <holds>` -- the addon's own stand-down edge, taken in OnEnable;
+--   * `chat addons: <names>` -- the dependency line: a known chat-rewriting addon loaded
+--     beside this one is the first explanation to rule out for "my format does not show".
+local function stateTail()
+    local tail = ""
+    local life = NS.Lifecycle
+    if life and life.IsDown and life:IsDown() then
+        tail = tail .. ", stood down: " .. table.concat(life:Holds(), ", ")
+    end
+    local D = NS.Diagnostics
+    local found = D and D.LoadedChatAddons and D.LoadedChatAddons()
+    if type(found) == "table" and #found > 0 then
+        tail = tail .. ", chat addons: " .. table.concat(found, ", ")
+    end
+    return tail
+end
+
 local function sessionSummary()
     local name    = NS.name or "PrettyChat"
     local version = NS.version or "?"
@@ -42,7 +63,7 @@ local function sessionSummary()
     if type(rejected) == "table" and #rejected > 0 then
         line = line .. ", rejected events: " .. table.concat(rejected, ", ")
     end
-    return line
+    return line .. stateTail()
 end
 
 local lib = LibStub and LibStub("LibKa0s-DebugLog-1.0", true)

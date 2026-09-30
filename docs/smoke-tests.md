@@ -26,7 +26,7 @@ works.
 | TEST-1 – 6 | Test preview | `/pc test` and the Test button, the filters |
 | RESET-1 – 13 | Resets | Row Reset, the Defaults buttons, `/pc reset <path>`, reset all, the one log line |
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
-| DIAG-1 – 19 | Debug and diagnostics | The diagnostics report, the console and its chrome, raw locale keys |
+| DIAG-1 – 22 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
@@ -35,7 +35,7 @@ works.
 - Error display on: `/console scriptErrors 1` (or BugSack). Every check assumes it.
 - A character that can loot, gain XP and reputation, take money, craft and repair, and a training
   dummy nearby for COMBAT and the combat halves of other checks.
-- A second Ka0s addon installed for PANEL-6, DIAG-18 and DEGRADED-1 (BankLedger or PanelMaster, which
+- A second Ka0s addon installed for PANEL-6, DIAG-18, DIAG-20 and DEGRADED-1 (BankLedger or PanelMaster, which
   both draw wide AceGUI groups). Ka0s Loot History for OVR-9. A broker display (Titan Panel, Bazooka or
   ElvUI's data texts) for LAUNCH-7; skip that check if you run none.
 - Back up `WTF/Account/<acct>/SavedVariables/PrettyChatDB.lua` before INSTALL-1 (it deletes the file)
@@ -56,10 +56,10 @@ Which checks to run. Every row after the first also runs the routine row's four 
 | The slash surface in `settings/Slash.lua` | SLASH, STATE-3 – 4, PANEL-19 – 21, INSTALL-6, RESET-5, RESET-10, COMBAT-1, COMBAT-4, DIAG-1 – 8 |
 | `modules/Diagnostics.lua`, the `diagnostics` row or the `debug` word | DIAG-1 – 8, DIAG-11 – 15, COMBAT-4 |
 | A reset path (`ResetString` / `ResetCategory` / `ResetAll`) or a Reset / Defaults button | RESET |
-| `core/DebugLogSetup.lua`, `media/`, or panel chrome (fonts, textures, borders) | DEGRADED, DIAG-9 – 19, PANEL-1 – 9, PANEL-14, RESET-3 – 7, RESET-10, COMBAT-1 – 2, INSTALL-2, OVR-8 |
+| `core/DebugLogSetup.lua`, `media/`, or panel chrome (fonts, textures, borders) | DEGRADED, DIAG-9 – 21, PANEL-1 – 9, PANEL-14, RESET-3 – 7, RESET-10, COMBAT-1 – 2, INSTALL-2, OVR-8 |
 | `core/LauncherSetup.lua`, the minimap row, `media/logos/` or the TOC's `## IconTexture` | LAUNCH, STATE, COMBAT-3 |
 | The Profiles page or `/pc profile` | PROFILE, LAUNCH-6 |
-| A re-vendor of `libs/LibKa0s/`, or a `core/*Setup.lua` seam file | DEGRADED, DIAG-16 – 19, PANEL-1 – 9, PANEL-14, RESET-3 – 7, RESET-10, COMBAT-1 – 2, INSTALL-2 |
+| A re-vendor of `libs/LibKa0s/`, or a `core/*Setup.lua` seam file | DEGRADED, DIAG-16 – 21, PANEL-1 – 9, PANEL-14, RESET-3 – 7, RESET-10, COMBAT-1 – 2, INSTALL-2 |
 | `ApplyStrings`, the combat watcher or `General.visibility`, or a sibling addon that parses loot or currency chat | OVR-4 – 6, OVR-9, STATE-5 – 6 |
 | Before a tag, or after a client patch | Everything; after a patch also regenerate `GlobalStrings/` per [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patch) |
 
@@ -518,9 +518,15 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   stripped nor rendered as color. Press the copy mark and paste into a text editor → the trace, both
   reports and both markers, and no `|c` escape except the doubled ones. Paste the doubled value back
   into `/pc set` → it round-trips. `/pc reset Loot.LOOT_ITEM_SELF.format`. Result:
-- **DIAG-4. The report ignores the logging flag.** `/pc debug off`, `/pc diagnostics` → the whole report
-  lands; the console header still reads `Debug: OFF`, and changing a setting writes no `[Set]` line.
-  **Fail:** a missing report, or a header that flipped to `Debug: ON`. Result:
+- **DIAG-4. Diagnostics turns logging on for the session.** `/reload`, then `/pc debug` → the header
+  reads `Debug: OFF`. `/pc diagnostics` → the whole report lands, with `[Debug] logging enabled` and
+  the `[Init]` line just above its begin marker; the color-coded `debug logging ON` ack prints in chat,
+  the header now reads `Debug: ON`, and changing a setting writes a `[Set]` line. `/pc diagnostics`
+  again → a second report and no second `logging enabled` line. `/reload`, then `/pc debug` → the
+  header reads `Debug: OFF` again and changing a setting writes nothing. Repeat from that `/reload`
+  with the console's **Diagnostics** link (DIAG-22) in place of `/pc diagnostics` → the same.
+  **Fail:** a missing report, a header still at `Debug: OFF` after the run, a second enable line, or
+  logging still on after the `/reload`. Result:
 - **DIAG-5. Every spelling of the report.** `/pc debug diagnostics`, `/prettychat diagnostics` and
   `/prettychat debug diagnostics` → each writes the same report. Result:
 - **DIAG-6. No short alias.** `/pc debug diag` → `usage: /pc debug [on | off | diagnostics]` and no
@@ -574,12 +580,39 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   **Fail:** different art on the two means one addon is on an older LibKa0s payload. Result:
 - **DIAG-19. No raw locale key on screen.** Walk `/pc config` (landing page, General, Categories and
   its eight tabs with the Defaults button and footnote, Profiles), the console (title, the
-  `Debug: ON` / `Debug: OFF` toggle, the counter, the copy window's title), the *Debug console*
+  `Debug: ON` / `Debug: OFF` toggle, the Diagnostics link, the counter, the copy window's title), the *Debug console*
   checkbox's tooltip, and `/pc help`, `/pc list`, `/pc get General.enabled`,
   `/pc set General.enabled maybe`, `/pc reset nonsense` → no string matches `^[A-Z][A-Z0-9_]+$`, in
-  particular none of `DEFAULTS_LABEL`, `DEBUG_ON`, `DEBUG_OFF`, `CLEAR`, `COPY`, `COPY_TITLE`, `LINES`,
+  particular none of `DEFAULTS_LABEL`, `DEBUG_ON`, `DEBUG_OFF`, `DIAGNOSTICS`, `CLEAR`, `COPY`, `COPY_TITLE`, `LINES`,
   `CHECKBOX_LABEL`, `CHECKBOX_TOOLTIP`, `LIST_HEADER`, `LIST_GROUP`, `HELP_HEADER`, `NOT_FOUND`,
   `INVALID`, `USAGE_GET`, `USAGE_SET`, `USAGE_RESET`, `ERR_BOOL`, `ERR_STRING`. Result:
+- **DIAG-20. The console resizes, for the session only.** `/pc debug` and make enough lines to scroll
+  → the console opens at its default size (700 × 344) with a size grip in its bottom-right corner, drawn
+  above the log and clear of the line counter. Drag the grip out on both axes → the log, scrollbar and
+  status bar follow the new edge, the counter keeps its count, the title-bar marks stay at the right
+  end, and the scroll position holds. Drag it in as far as it goes → it stops at a minimum where the
+  title and all three marks still fit and a few log lines show. Close and reopen the console (close
+  mark, then `/pc debug`) → it comes back at the size you left it. `/reload` and `/pc debug` → the
+  default size is back, whether or not you also dragged the window by its title bar. Open another Ka0s
+  addon's console → it opens at its own size, untouched by this one. **Fail:** no grip, a grip under the
+  counter's digits, marks clipped at the minimum, a scrollbar whose range stops tracking the log after
+  a resize, or a size that survives the `/reload`. Result:
+- **DIAG-21. The copy window resizes on its own.** With lines in the console, click the copy mark → the
+  copy window opens at its default size with a grip in its bottom-right corner. Drag it larger and
+  smaller → the text area's width follows the window (no wrap stuck at the old width, no horizontal
+  clipping), the scrollbar's bottom button stays above the grip, and it stops at a minimum with the
+  title and close mark clear. Close it and click copy again → the size you left. Resize the console
+  itself → the copy window keeps its own size. `/reload` → both open at their defaults. Result:
+- **DIAG-22. The Diagnostics link.** `/pc debug` → in the title bar, top left, the word
+  **Diagnostics** sits just right of the `Debug: ON` / `Debug: OFF` label with a small gap, drawn
+  orange in the same plain text as that label: no button art, border or background. Hover it → it
+  brightens; move off → orange again. Click it → the diagnostics report is written into the console,
+  begin to end marker as in DIAG-1, with the one chat line giving its line count, exactly as
+  `/pc diagnostics` writes it (and, with logging off, it turns logging on, as DIAG-4 checks). Toggle
+  the label between ON and OFF → the gap after it holds for either word. Drag the console in as far
+  as it goes (DIAG-20) → the link still fits beside the label and the title, and the three marks stay
+  clear of it. **Fail:** a control drawn as a button, no gap, a link over the title, or a click that
+  writes nothing. Result:
 
 ## DEGRADED
 
@@ -639,7 +672,7 @@ an error, an artifact, or the wrong original.
 - **LOC-2. Disabling gives the client's strings back.** `/pc set General.enabled false`, then loot, gain
   reputation and take money → all three lines are the client's untouched German.
   `/pc set General.enabled true` and trigger them again → PrettyChat's layout. The restore arm is
-  `ApplyStrings` (`modules/Override.lua:332-341`). **Fail:** English lines while disabled; the same
+  `ApplyStrings` (`modules/Override.lua:355-364`). **Fail:** English lines while disabled; the same
   defect as LOC-1 seen from the other end. Result:
 - **LOC-3. One real line per category, watching for the raise.** With every category enabled, trigger
   one line from each: loot an item, receive a currency, take money, gain reputation, gain XP while
@@ -672,7 +705,7 @@ recorded pass. The old document had no Result lines, so most checks are here. Si
 `Result:` line, then remove its ID from this table.
 
 Not listed, because a recorded pass covers them and the rework did not change what they expect:
-DIAG-1, DIAG-3 – 8, DIAG-14, COMBAT-4 and DEGRADED-8 (T-39 steps 1–2 and 4–10, T-29b step 6 and T-90
+DIAG-1, DIAG-3, DIAG-5 – 8, DIAG-14, COMBAT-4 and DEGRADED-8 (T-39 steps 1–2 and 4–10, T-29b step 6 and T-90
 step 7, passed in the owner's run of 2026-09-26 as rows PC-S1 – PC-S11 and PC-X1 of the diagnostics
 rollout's report), and LAUNCH-2 – 4 (T-65 and T-65a, passed in the owner's minimap re-check of
 2026-09-25 on the launcher-menu builds, step X1.4 of the 2026-09-23 remediation's checklist). Both
@@ -682,6 +715,9 @@ records are in the Ka0sAddonsCommonTasks repository.
 |---|---|---|
 | PROFILE-1 – 10 | New: the Profiles page (`SP-PC-01`) and the `/pc profile` verb (`SP-PC-02`) | New in this rework; never run |
 | DEGRADED-9 | New: `/pc profile` on the library-absent stub (`SP-PC-02`) | New in this rework; never run |
+| DIAG-20 – 21 | New: the resizable console and copy window (LibKa0s v1.64.0, `DL-PC-01`) | New; never run |
+| DIAG-4 | The 2026-09-26 diagnostics rollout's recorded pass, rewritten for standard v2.71.0 (`DL-PC-03`) | Corrected: diagnostics now turns logging on for the session, and a `/reload` turns it off |
+| DIAG-22 | New: the console's Diagnostics link (LibKa0s v1.64.0, DebugLog 17, `DL-PC-03`) | New; never run |
 | SLASH-1 | T-03, T-38 | Corrected: the help header ends with the `/prettychat` alias note |
 | SLASH-3 | T-30 | Corrected: 170 setting rows and 180 lines, not "about 170 lines" |
 | SLASH-5 | T-31a | Corrected: neither header ends in a colon |

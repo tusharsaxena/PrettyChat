@@ -133,6 +133,37 @@ local WATCH_EVENTS  = { "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }
 local combatWatcher
 NS.RejectedEvents = NS.RejectedEvents or {}
 
+-- The watcher's one handler. A state edge (debug-logging-§8, Diagnosis): one line per
+-- boundary, naming WHICH boundary and the state the pass took from it, never one line
+-- per string. Each edge is a real recompute with its own counts, so it is not the steady
+-- state §9 silences.
+local function onCombatEdge(_, event)
+    local applied, restored = PrettyChat:ApplyStrings()
+    NS.Debug("Visibility", "combat %s (%s) \226\134\146 applied %d restored %d",
+        event == "PLAYER_REGEN_DISABLED" and "entered" or "left",
+        PrettyChat:GetVisibility(), applied, restored)
+end
+
+-- The registration state last traced. CHANGE-GATED (debug-logging-§9, quiet steady
+-- state): SyncCombatWatch runs on every Reapply -- each latch arm, each profile event,
+-- each visibility write -- and re-registers every time it is wanted, so only the first
+-- call after a disarm is news. The names the client refused ride that one arm line
+-- rather than repeating on every re-arm.
+local watchArmed = false
+
+local function traceWatch(armed, n)
+    if armed == watchArmed then return end
+    watchArmed = armed
+    if not armed then
+        NS.Debug("Events", "combat watch disarmed")
+        return
+    end
+    NS.Debug("Events", "combat watch armed: %d/%d events", n, #WATCH_EVENTS)
+    if n < #WATCH_EVENTS then
+        NS.Debug("Events", "rejected %s", table.concat(NS.RejectedEvents, ", "))
+    end
+end
+
 --- The watcher as a diagnostics report reads it (debug-logging-§14): the frame, or nil
 --- when no combat-scoped mode has been stored this session, the events it takes, and
 --- whether the current state wants it armed. A READ: it builds nothing and registers
@@ -164,13 +195,7 @@ function PrettyChat:SyncCombatWatch()
 
     if not combatWatcher then
         combatWatcher = CreateFrame("Frame", "PrettyChatCombatWatcher")
-        combatWatcher:SetScript("OnEvent", function()
-            local applied, restored = PrettyChat:ApplyStrings()
-            -- Bulk mutation (debug-logging-§8): one summary per boundary, never
-            -- one line per string.
-            NS.Debug("Visibility", "%s → applied %d restored %d",
-                PrettyChat:GetVisibility(), applied, restored)
-        end)
+        combatWatcher:SetScript("OnEvent", onCombatEdge)
     end
 
     if not wanted then
@@ -179,12 +204,10 @@ function PrettyChat:SyncCombatWatch()
         -- above must not be able to survive here because somebody edited one list
         -- and not the other.
         combatWatcher:UnregisterAllEvents()
+        traceWatch(false)
         return
     end
-    local n = NS.Util.SafeRegisterEvents(combatWatcher, WATCH_EVENTS, nil, NS.RejectedEvents)
-    if n < #WATCH_EVENTS then
-        NS.Debug("Events", "rejected %s", table.concat(NS.RejectedEvents, ", "))
-    end
+    traceWatch(true, NS.Util.SafeRegisterEvents(combatWatcher, WATCH_EVENTS, nil, NS.RejectedEvents))
 end
 
 -- ---------------------------------------------------------------------

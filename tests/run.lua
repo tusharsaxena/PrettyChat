@@ -135,6 +135,10 @@ Kit.run{
         -- reached the 1000-1500 band's third release (anti-pattern #53). Straight after it,
         -- because it is the same page read one level down.
         "test_panel_categories",
+        -- The debug console's content (debug-logging-§8/§9): the lines docs/debug.md's
+        -- Coverage section lists. After the panel suites because its view-switch case
+        -- drives the Categories page through the same fixture.
+        "test_debug_coverage",
         -- The Profiles page and what a profile act has to reach. After the two panel suites
         -- because it is the last page in the rail and reads the panel through the same seams.
         "test_profiles",

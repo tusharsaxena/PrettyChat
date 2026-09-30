@@ -490,6 +490,7 @@ local function buildCategoryBody(ctx, scroll, category, catData)
     tree:SetCallback("OnGroupSelected", function(_, _, value)
         if not value or value == ctx.activeSubTab[category] then return end
         ctx.activeSubTab[category] = value
+        NS.Debug("UI", "%s string %s", category, value)
         buildCategoriesBody(ctx)
     end)
 
@@ -535,8 +536,13 @@ local function buildCategoryBody(ctx, scroll, category, catData)
     -- The bespoke block is invisible to the library's ctx.refreshers, so it
     -- registers through the schema's own dispatch. Schema.NotifyPanelChange drives
     -- both registries; see the comment there.
+    -- A widget refresher that raises is swallowed, and traced once per distinct error
+    -- (debug-logging-§8, Diagnosis: errors caught).
     Schema.RegisterRefresher(category, function()
-        for _, fn in ipairs(refreshers) do pcall(fn) end
+        for i, fn in ipairs(refreshers) do
+            local ok, err = pcall(fn)
+            if not ok then NS.Util.TraceCaught("UI", tostring(category) .. "#" .. i, err) end
+        end
     end)
 end
 
@@ -619,6 +625,7 @@ function buildCategoriesBody(ctx)
         onSelect = function(key)
             if key == ctx.activeTab then return end
             ctx.activeTab = key
+            NS.Debug("UI", "categories tab %s", key)
             buildCategoriesBody(ctx)
         end,
     })

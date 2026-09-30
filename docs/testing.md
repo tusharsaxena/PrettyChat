@@ -32,6 +32,7 @@ tests/
   mock_menu.lua      -- a fake MenuUtil for the launcher's right-click menu, modeled on LibKa0s's own
   panel_fixture.lua  -- the panel helpers test_panel.lua and test_panel_categories.lua both call
   test_<module>.lua  -- one suite per module; each reads _G.PC_TEST
+  test_debug_coverage.lua -- per-CONCERN: the debug console's content (docs/debug.md, Coverage)
 ```
 
 - `run.lua` builds the shared table with `Kit.expose` and hands the ordered suite list to `Kit.run`. `t.eq` / `t.truthy` / `t.falsy` / `t.nilv` are **aliases** onto `Kit.assertEqual` / `assertTrue` / `assertFalse` / `assertNil`, so the failure messages and the caller-line reporting are the kit's everywhere; `neq` is the one the kit does not carry and is a thin `Kit.fail` wrapper.
@@ -118,7 +119,7 @@ Run **both** of each pair and read the difference between them:
 ## The 1500-line cap gate
 
 `tests/_kit/test_layout_cap.lua` — the kit's gate since LibKa0s v1.55.0 (kit revision 25), and still
-the gate in the vendored LibKa0s v1.63.0 (kit revision 32), declared in `tests/run.lua` as
+the gate in the vendored LibKa0s v1.64.0 (kit revision 34), declared in `tests/run.lua` as
 `{ name = "test_layout_cap", dir = "tests/_kit/" }` — compares two things: every authored
 `.lua` git tracks, and the census under *Files over the 1500-line cap* in
 [ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both directions, so a file that crosses the

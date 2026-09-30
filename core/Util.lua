@@ -56,3 +56,27 @@ function Util.RunAct(fn, onRaise)
     onRaise()
     error(err, 0)
 end
+
+-- Is the debug console capturing right now? The gate a call site asks BEFORE it builds
+-- anything a trace line needs beyond NS.Debug's own deferred format (debug-logging-§4):
+-- a doubled-pipe copy of a slash line, a de-dup key. Read through the console so the
+-- degraded stub answers the same flag. Call-time: core/DebugLogSetup.lua loads later.
+function Util.DebugOn()
+    local log = NS.DebugLog
+    return (log and log.IsEnabled and log:IsEnabled()) and true or false
+end
+
+-- An error a pcall this addon owns has swallowed, traced ONCE per distinct site and
+-- message (debug-logging-§8, Diagnosis: errors caught). A refresher that raises on every
+-- settings write is one line, not one per write. Nothing is built, compared or remembered
+-- while logging is off, so an error first seen with the flag off is still reported the
+-- first time it recurs with the flag on.
+local seenErrors = {}
+
+function Util.TraceCaught(tag, site, err)
+    if not Util.DebugOn() then return end
+    local key = tostring(site) .. "\0" .. tostring(err)
+    if seenErrors[key] then return end
+    seenErrors[key] = true
+    NS.Debug(tag, "%s failed: %s", site, err)
+end
