@@ -24,6 +24,7 @@ tests/
                      --                          test_eol.lua, test_prose.lua, prose_lists.lua,
                      --                          prose_coverage.lua, prose_selftests.lua,
                      --                          test_layout_cap.lua, test_diagnostics_contract.lua,
+                     --                          lizard_sighted.lua, test_lizard_sighted.lua,
                      --                          run-automated-tests.sh, README.md
   run.lua            -- the suite list, the assertion aliases, Kit.layoutCap, and Kit.run
   prose_waivers.lua  -- the per-file, per-word waivers the kit's prose gate reads
@@ -119,7 +120,7 @@ Run **both** of each pair and read the difference between them:
 ## The 1500-line cap gate
 
 `tests/_kit/test_layout_cap.lua` — the kit's gate since LibKa0s v1.55.0 (kit revision 25), and still
-the gate in the vendored LibKa0s v1.65.0 (kit revision 34), declared in `tests/run.lua` as
+the gate in the vendored LibKa0s v1.66.0 (kit revision 35), declared in `tests/run.lua` as
 `{ name = "test_layout_cap", dir = "tests/_kit/" }` — compares two things: every authored
 `.lua` git tracks, and the census under *Files over the 1500-line cap* in
 [ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both directions, so a file that crosses the
@@ -233,7 +234,7 @@ There are **two** checkpoints and a suite answers differently at each, so the ta
 | `lint` | `luacheck .` | **yes** | **yes** |
 | `tests` | `lua tests/run.lua` | **yes** | **yes** |
 | `perf` | `lua tests/perf.lua` | no — recorded only | **yes** |
-| `complexity` | `lizard -l lua -x "./libs/*" -x "./tests/_kit/*" .` | no — recorded only | **yes** |
+| `complexity` | `lizard -l lua -L 1500 -x "./libs/*" -x "./tests/_kit/*" .`, run by the runner over a sanitized shadow of the tree, with a function-count parity check (kit revision 35); never raw | no — recorded only | **yes** (a parity mismatch, `blindFiles` > 0, is `fail` and blocks the tag like a skip) |
 
 **`perf` and `complexity` never fail a run and never block a commit.** They are measured, recorded
 and diffed — a threshold that fails a run teaches everyone to reach for `--no-verify`, after which
