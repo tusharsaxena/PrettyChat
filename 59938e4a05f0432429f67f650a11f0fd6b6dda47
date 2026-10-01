@@ -1,0 +1,1 @@
+OK CA-PC-NM tests 572 passed/0 failed/1 skipped (573); luacheck 0/0 in 56 files; revert of OptionsSetup.lua turns the new guard red; vendor diff empty; test-cases.md == --list; CRLF kept; lizard -C 15 clean on touched files
