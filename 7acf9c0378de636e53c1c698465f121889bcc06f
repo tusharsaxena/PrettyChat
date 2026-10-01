@@ -1,0 +1,1 @@
+OK GI-PC-RV — both payloads diff-empty vs v1.66.0 (e4c5ef7), provenance rolled same commit, test_lizard_sighted wired; reviewer re-ran gate: 571/0/1, luacheck 0/0, sighted complexity pass maxCcn 15 (1313 funcs); live doc stamps rolled, CRLF preserved, no contract blocker
