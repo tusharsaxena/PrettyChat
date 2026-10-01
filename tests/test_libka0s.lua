@@ -518,6 +518,35 @@ test("a settings page shown in combat is covered, not drawn and not closed", fun
     t.truthy(opts.STRINGS.COMBAT_LOCKED_NOTICE:find("^|cffaaaaaa"), "and the line renders gray")
 end)
 
+test("the Options descriptor passes the FOLDER name, so a help mark draws the library's art", function()
+    -- LibKa0s#42. OptionsIdList draws a help mark from the vendored `info` icon only
+    -- when the descriptor names the addon FOLDER (Media.Icon builds the path from
+    -- it); without it, or with a name the client has not loaded, it falls back to
+    -- Blizzard's information disc. Nothing else on the descriptor is the folder:
+    -- parentTitle is the brand and mainPanelName is "PrettyChatOptionsPanel". The
+    -- value is the first vararg, the same one core/DebugLogSetup.lua passes.
+    -- PrettyChat draws no IdList today, so this is latent, and pinned so the first
+    -- list with help does not quietly get the blue disc.
+    --
+    -- Read off the SOURCE because a descriptor field is not observable after lib:New
+    -- returns, with comments stripped so prose cannot stand in for the field.
+    -- red under: dropping the field, passing a display label ("Pretty Chat"), or
+    -- discarding the vararg again (`local _, NS = ...`).
+    local src = readFile("settings/OptionsSetup.lua")
+    t.truthy(src, "settings/OptionsSetup.lua is readable")
+    local code = src:gsub("%-%-[^\r\n]*", "")
+    t.truthy(code:match("^local%s+addonName%s*,%s*NS%s*=%s*%.%.%.") ~= nil,
+        "the file keeps its first vararg as addonName rather than discarding it")
+    t.truthy(code:match("lib:New%(%{.-addonName%s*=%s*addonName%s*,") ~= nil,
+        "the Options descriptor passes addonName = addonName")
+
+    -- The residual the library's loaded-addon guard cannot see: a correct folder name
+    -- with the art missing from the vendored path builds a path to nothing.
+    local fh = io.open(ctx.root .. "/libs/LibKa0s/media/icons/info.tga", "rb")
+    t.truthy(fh ~= nil, "libs/LibKa0s/media/icons/info.tga is vendored where Media.Icon looks")
+    if fh then fh:close() end
+end)
+
 test("with Options absent the schema still loads whole — the measured stub set", function()
     -- options-ui-§1's degradation rule is LOAD-COMPLETING rather than
     -- member-answering, and the member set it requires MUST be determined by

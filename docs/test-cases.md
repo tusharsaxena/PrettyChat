@@ -60,7 +60,7 @@ badge and any count quoted in the docs must agree with it.
 - prose self-test: the disclosure names what each entry suppressed, and says when it is bounded
 - prose self-test: a malformed waived is a failure, not a silence
 
-### test_libka0s.lua (33)
+### test_libka0s.lua (34)
 
 - the locale-table matcher catches both offending spellings and clears the legal one
 - no seam file hands a LibKa0s descriptor the addon-wide locale table
@@ -81,6 +81,7 @@ badge and any count quoted in the docs must agree with it.
 - NS.Helpers IS the library instance, decorated in place
 - every canvas frame carries the Blizzard OnCommit / OnDefault / OnRefresh trio
 - a settings page shown in combat is covered, not drawn and not closed
+- the Options descriptor passes the FOLDER name, so a help mark draws the library's art
 - with Options absent the schema still loads whole — the measured stub set
 - the dispatcher renders prose, not its own SCREAMING_SNAKE keys
 - the COMMANDS table is the positional shape the library reads
@@ -686,7 +687,7 @@ badge and any count quoted in the docs must agree with it.
 | test_layout_cap.lua | 13 |
 | test_lintconfig.lua | 4 |
 | test_prose.lua | 15 |
-| test_libka0s.lua | 33 |
+| test_libka0s.lua | 34 |
 | test_surface_parity.lua | 7 |
 | test_envsetup.lua | 9 |
 | test_constants.lua | 8 |
@@ -714,4 +715,4 @@ badge and any count quoted in the docs must agree with it.
 | test_eol.lua | 2 |
 | test_diagnostics_contract.lua | 9 |
 | test_lizard_sighted.lua | 8 |
-| **Total** | **572** |
+| **Total** | **573** |
