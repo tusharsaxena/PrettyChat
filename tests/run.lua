@@ -155,5 +155,10 @@ Kit.run{
         -- Kit.diagnostics. Until the addon ships the report that table is unset and the suite
         -- registers one declared skip naming the rule, so the re-vendor is green on its own.
         { name = "test_diagnostics_contract", dir = "tests/_kit/" },
+        -- The kit's sighted-complexity gate (automated-tests-§3), its own since revision 35: it
+        -- pins the sanitizer and the parity reader the complexity suite measures its shadow
+        -- through, and runs lizard end to end on a hazard fixture when lizard is on PATH (a
+        -- declared skip otherwise). It needs no consumer facts.
+        { name = "test_lizard_sighted", dir = "tests/_kit/" },
     },
 }

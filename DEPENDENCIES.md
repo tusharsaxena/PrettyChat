@@ -188,7 +188,7 @@ Run these from the repo root. All three should be green.
 ```sh
 lua tests/run.lua                                     # headless suite — exits non-zero on failure
 luacheck .                                            # lint (config: .luacheckrc)
-lizard -l lua -x "./libs/*" -x "./tests/_kit/*" .     # complexity report (performance-§10)
+bash tests/_kit/run-automated-tests.sh --suite complexity   # sighted complexity report (automated-tests-§3)
 ```
 
 The first two are the **commit gate**; the third is a **release** checkpoint and never gates a
