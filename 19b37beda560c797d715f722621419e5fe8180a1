@@ -1,0 +1,1 @@
+OK CA-PC-RV tests 571/0/1 of 572; luacheck 0/0 in 56 files; vendor parity diff -r empty (libs + kit vs v1.67.0 0bccf4c); i/lf w/crlf kept; test-cases.md == --list; badge 571/571
