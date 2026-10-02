@@ -18,7 +18,7 @@ works.
 |---|---|---|
 | INSTALL-1 – 7 | Install, load and persistence | First load, the TOC version, reload persistence, the SavedVariables shape, the schema v2 move |
 | SLASH-1 – 10 | Slash commands | Help, bare `/pc`, `list`, `get`, `set`, the format-string write gate |
-| PANEL-1 – 21 | Settings panel | Landing page, rail, header, General, the Categories strip, string list and editor, panel and CLI sync |
+| PANEL-1 – 22 | Settings panel | Landing page, rail, header, General, the Categories strip, string list and editor, panel and CLI sync, the descriptor's folder name |
 | PROFILE-1 – 10 | Profiles | The Profiles page, per-profile settings, the `/pc profile` verb |
 | STATE-1 – 6 | Enable and stand-down | `/pc enable` / `/pc disable`, what answers while disabled, the combat watcher standing down |
 | COMBAT-1 – 4 | Combat | The panel's combat refusal and cover, the launcher in combat, diagnostics in combat |
@@ -242,6 +242,12 @@ Find the cause before changing anything; a fix that only makes the check pass is
   without a reopen. Set it back to `true`. Result:
 - **PANEL-21. A panel write reaches the CLI.** Change a value on the panel and press Enter, then
   `/pc get` its path → the new value. Result:
+- **PANEL-22. The panel still opens with the folder name on its descriptor.** `settings/OptionsSetup.lua`
+  now passes `addonName` to the Options library (LibKa0s#42). PrettyChat draws no help marks, so nothing
+  should look different. `/pc debug on`, `/reload` → no Lua error on load. `/pc config`, then open every
+  page: the landing page, General, each Categories tab and Profiles → each renders as before. The debug
+  console shows no `[Cfg] help art:` line. **Fail:** a Lua error, a page that is blank or laid out
+  differently, or a `help art:` line. `/pc debug off`. Result:
 
 ## PROFILE
 
@@ -737,6 +743,7 @@ records are in the Ka0sAddonsCommonTasks repository.
 | DIAG-4 | The 2026-09-26 diagnostics rollout's recorded pass, rewritten for standard v2.71.0 (`DL-PC-03`) | Corrected: diagnostics now turns logging on for the session, and a `/reload` turns it off |
 | DIAG-22 | New: the console's Diagnostics link (LibKa0s v1.64.0, DebugLog 17, `DL-PC-03`) | New; never run |
 | DIAG-23 – 25 | New: the library's Slash refusals, Lifecycle edges and Launcher state lines in the console (LibKa0s v1.65.0, `DG-PC-01`) | New; never run |
+| PANEL-22 | New: the Options descriptor passes `addonName` (LibKa0s v1.67.0, LibKa0s#42, `CA-PC-NM`) | New; never run |
 | SLASH-1 | T-03, T-38 | Corrected: the help header ends with the `/prettychat` alias note |
 | SLASH-3 | T-30 | Corrected: 170 setting rows and 180 lines, not "about 170 lines" |
 | SLASH-5 | T-31a | Corrected: neither header ends in a colon |

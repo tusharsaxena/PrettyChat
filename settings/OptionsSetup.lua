@@ -1,4 +1,4 @@
-local _, NS = ...
+local addonName, NS = ...
 
 -- settings/OptionsSetup.lua — wires the addon into LibKa0s-Options-1.0.
 --
@@ -260,6 +260,11 @@ NS.Helpers = lib:New({
     -- the library validates, and it raises rather than defaulting, for exactly that
     -- reason. Sub-pages stay anonymous — settings/Panel.lua passes nil.
     mainPanelName = "PrettyChatOptionsPanel",
+
+    -- The FOLDER name (the first vararg), not a display label: OptionsIdList builds
+    -- the help-mark art path from it through Media.Icon, and falls back to the
+    -- client glyph when it is missing or not a loaded addon (LibKa0s#42).
+    addonName = addonName,
 
     print = function(line) NS.Print(line) end,
     debug = function(tag, fmt, ...) NS.Debug(tag, fmt, ...) end,
