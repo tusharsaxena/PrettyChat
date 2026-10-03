@@ -399,8 +399,10 @@ local GENERAL_RESET_PATHS = { "General.enabled", "General.visibility" }
 -- helper's batched entry (architecture-§5): one ApplyStrings pass, one panel
 -- refresh and one `[Set] reset <cat>: N rows` line, never a pass or a [Set] line
 -- per row (debug-logging-§10). For General the visibility row's own set()
--- re-syncs the combat watcher. The public per-category method: no panel button
--- calls it (see GENERAL_RESET_PATHS above).
+-- re-syncs the combat watcher. No source path calls it: no panel button and no
+-- `/pc` verb reaches it (see GENERAL_RESET_PATHS above). It is published for the
+-- headless suite, which drives it from test_override, test_database,
+-- test_launcher and test_schema.
 --
 -- Dot-defined with a `_` receiver: callers still use the colon form, and the body
 -- reads the schema through NS rather than through the addon table.

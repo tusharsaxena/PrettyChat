@@ -61,7 +61,7 @@ box snaps back to what is stored, and writes a `[Set] … refused` trace.
 The gate is **each format row's `validate`**, not a wrapper in front of `Schema.Set`. The runtime
 runs `validate` on every entry: a panel write, `/pc set`, `/pc reset` through `ApplyDefault`, and
 both value-bound descriptors. A wrapper would be bypassed by `ApplyDefault`, which calls the
-runtime's own `Set` (LibKa0s's `docs/api/Schema/version-1-docs.md`, "A gate in front of the seam").
+runtime's own `Set` (LibKa0s's `docs/api/Schema/version-2-docs.md`, "A gate in front of the seam").
 `tests/test_schema.lua` drives the refusal through the `/pc set` dispatcher.
 
 Dropping trailing conversions is allowed and deliberately so: `string.format` ignores surplus

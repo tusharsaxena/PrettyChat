@@ -78,7 +78,7 @@ local parityBare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
 -- Read, Write, SameValue, New), which is what the major publishes. Its instance
 -- surface is not in the major's member manifest, so it is pinned with the two-table
 -- form in its own case below, against the live instance (docs/api/Schema/
--- version-1-docs.md, "Pinning it").
+-- version-2-docs.md, "Pinning it").
 ctx.setSurfaceSource{
     ["LibKa0s-Options-1.0"]   = parityLive.NS.Helpers,
     ["LibKa0s-DebugLog-1.0"]  = parityLive.NS.DebugLog,
@@ -107,7 +107,7 @@ local function coreSurface(instance)
         MakeCloseButton = instance.NS.MakeCloseButton,
         -- Core minor 8's pcalled event registration helper (events-frames-taint-§1).
         -- The live arm binds the library's three; the stub carries the one-rung
-        -- bodies docs/api/Core/version-8-docs.md "Degradation" prescribes.
+        -- bodies docs/api/Core/version-10-docs.md "Degradation" prescribes.
         SafeRegisterEvent     = instance.NS.Util.SafeRegisterEvent,
         SafeRegisterUnitEvent = instance.NS.Util.SafeRegisterUnitEvent,
         SafeRegisterEvents    = instance.NS.Util.SafeRegisterEvents,

@@ -101,7 +101,7 @@ if not lib then
     -- The pcalled event registration helper (Core minor 8, events-frames-taint-§1),
     -- as ONE-RUNG bodies: the pcall and the rejected-list append, with no
     -- C_EventUtils front gate and no probe frame. That is the shape LibKa0s
-    -- docs/api/Core/version-8-docs.md "Degradation" prescribes for a stub: the path
+    -- docs/api/Core/version-10-docs.md "Degradation" prescribes for a stub: the path
     -- for a missing library, not a second implementation. The pcall alone is what
     -- keeps one retired event name from taking the rest of a registration block down.
     -- On an AceEvent target it inherits the first-registrant blind spot the library's
