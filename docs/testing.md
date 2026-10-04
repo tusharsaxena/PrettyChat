@@ -242,7 +242,7 @@ the gate protects nothing and the habit remains. They contribute `amber`, which 
 than a stop. **A missing tool is a skip recorded with its reason**, never a pass.
 
 **The tag is gated on all four suites at `pass`, plus zero functions above CCN 15**
-(`automated-tests-§3`, *The release gate*), evaluated by `/wow-addon:bump-version` from the
+(`automated-tests-§3`, *The release gate*), evaluated by `/dev-copilot:bump-version` from the
 `manifest.json` the release run writes — not by the runner, whose exit code is unchanged. A `skip` is
 **NOT EVALUATED** there rather than passed: install the tool and re-run. The one narrow exception is
 `perf`, skipped under the ratified `performance-§12` no-combat-path exemption (register row in
