@@ -34,7 +34,7 @@ gate protects nothing and the habit remains. They contribute `amber`, which is a
 stop.
 
 **The tag is a different checkpoint.** It is gated on all four suites at `pass` plus zero functions
-above CCN 15 (`automated-tests-§3`, *The release gate*), evaluated by `/wow-addon:bump-version` from
+above CCN 15 (`automated-tests-§3`, *The release gate*), evaluated by `/dev-copilot:bump-version` from
 the `manifest.json` the release run writes — never by the runner, whose exit code is unchanged. A
 `skip` is **NOT EVALUATED** there rather than passed; the one narrow exception is `perf` skipped
 because this addon ships no `tests/perf.lua`, which the release notes state out loud.
