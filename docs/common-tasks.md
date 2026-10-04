@@ -73,7 +73,7 @@ See [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patc
 
 ## Bump the client interface
 
-1. Move `## Interface:` in `PrettyChat.toc` (`/wow-addon:bump-interface`).
+1. Move `## Interface:` in `PrettyChat.toc` (`/dev-copilot:wow-bump-interface`).
 2. In the **same change**, move the README's static `[WoW]` badge to match (documentation-§1): it is
    a shields.io image that goes stale silently, and it MUST show the same client as the TOC line.
 

@@ -213,7 +213,7 @@ generated directories are named once each and never enumerated per run: `docs/au
 (**v2.21.0**), [2026-08-04](./audits/2026-08-04/) (**v2.17.1**), [2026-07-18](./audits/2026-07-18/)
 (**v2.7.0**, its open MUST/SHOULD items remediated in `1c0248a`) and [2026-07-12](./audits/2026-07-12/),
 which predates the modular restructure and carries the only `06_EXECUTION_OUTCOME`. Re-audit with
-`/wow-addon:standards-audit`.
+`/dev-copilot:wow-standards-audit`.
 
 **There is no `docs/agent-context.md`, and it MUST NOT be created** (the standard deleted it in
 v2.17.0; shipping it is anti-pattern #49). The root `CLAUDE.md` stub is the repo's only agent brief.
