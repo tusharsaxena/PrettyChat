@@ -438,7 +438,7 @@ Total.
 - Launcher: DEGRADED — LibDataBroker present, LibDBIcon absent: the plugin, no button
 - Launcher: DEGRADED — no LibKa0s at all: no launcher, and the row survives
 
-### test_slash.lua (53)
+### test_slash.lua (54)
 
 - Schema.FormatValue formats bools and doubles pipes in strings
 - NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
@@ -486,6 +486,7 @@ Total.
 - /pc test formatstring upper-cases the name before matching
 - /pc test surfaces usage for each malformed filter
 - /pc test rejects unknown filter values by name
+- /pc test category refuses General as unknown and never offers it
 - /pc debug rejects an argument that is neither on, off, nor a toggle
 - every slash line carries the cyan [PC] tag
 - disabled: a feature verb refuses on ONE line naming /pc enable, and does not act
@@ -708,7 +709,7 @@ Total.
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
 | test_launcher.lua | 40 |
-| test_slash.lua | 53 |
+| test_slash.lua | 54 |
 | test_disabled.lua | 14 |
 | test_diagnostics.lua | 18 |
 | test_panel.lua | 25 |
@@ -721,4 +722,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **575** |
+| **Total** | **576** |

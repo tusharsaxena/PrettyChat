@@ -494,6 +494,30 @@ test("/pc test rejects unknown filter values by name", function()
     t.truthy(text:find("/pc list formatstring", 1, true), "with a pointer to the listing")
 end)
 
+-- General is a page, not a test category: it owns no strings, so offering it only promised a
+-- preview of nothing ("(no matching strings)"). PC-R-11.
+-- red under: building the Valid list from CATEGORY_ORDER whole, or previewing a matched General.
+test("/pc test category refuses General as unknown and never offers it", function()
+    for _, name in ipairs({ "General", "general" }) do
+        local preview = consoleJoined("test category " .. name)
+        t.truthy(joined("test category " .. name):find("unknown category '" .. name .. "'", 1, true),
+            "'" .. name .. "' takes the unknown-category path")
+        t.falsy(preview:find("Category:", 1, true), "and nothing is previewed for '" .. name .. "'")
+    end
+    local valid = {
+        usage   = joined("test category"),
+        unknown = joined("test category zzz"),
+    }
+    for which, text in pairs(valid) do
+        local list = text:match("Valid: (.*)$") or ""
+        t.falsy(list:find("General", 1, true), which .. " line leaves General out of the Valid list")
+        for _, cat in ipairs({ "Loot", "Currency", "Money", "Reputation",
+                               "Experience", "Honor", "Tradeskill", "Misc" }) do
+            t.truthy(list:find(cat, 1, true), which .. " line still offers " .. cat)
+        end
+    end
+end)
+
 -- ---- debug ----------------------------------------------------------
 
 test("/pc debug rejects an argument that is neither on, off, nor a toggle", function()
