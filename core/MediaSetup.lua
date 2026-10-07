@@ -62,7 +62,7 @@ local Media = LibStub and LibStub("LibKa0s-Media-1.0", true)
 --- "Interface\\AddOns\\<addon>\\media\\logos\\prettychat.logo.tga" by hand, because a
 --- per-addon LOGO is not a catalog entry and could not be one: the catalog holds
 --- the marks the collection SHARES -- one `close`, one set of glyphs, drawn the
---- same in nine addons -- and resolves them per folder. Branding art is the
+--- same in every addon -- and resolves them per folder. Branding art is the
 --- opposite, one file per addon that nothing else ever asks for, so a catalog key
 --- for it would have exactly one caller and would still need the folder. What the
 --- library does own there is the SIZE, and Panel.lua deliberately does not name it

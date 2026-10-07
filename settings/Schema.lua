@@ -101,9 +101,9 @@ end
 -- The Master controls block (options-ui-§15) — the General page's one tab.
 --
 -- COMPOSED, never hand-written. LibKa0s-Options-1.0's MasterControls composer
--- owns the canonical row set, its order and its wording; nine addons drawing the
--- same tab from nine hand-written copies is exactly the drift OptionsCompose.lua
--- was extracted to end. What stays here is the half a library cannot know: which
+-- owns the canonical row set, its order and its wording; every addon drawing
+-- the same tab from its own hand-written copy is exactly the drift
+-- OptionsCompose.lua was extracted to end. What stays here is the half a library cannot know: which
 -- stored path each leaf keeps, and the get/set closure behind it.
 --
 -- PrettyChat is FRAMELESS — `grep -rn SetMovable core/ modules/ settings/`

@@ -258,7 +258,7 @@ test("the checkbox re-syncs when the console is opened another way", function()
 end)
 
 test("the Test button writes the report to the console, never into chat", function()
-    -- The report is 500+ lines with every category enabled, and the chat frame is
+    -- The report is a few hundred lines with every category enabled, and the chat frame is
     -- the thing this addon exists to keep readable. The button opens the console
     -- and writes there -- and so does `/pc test` now (the case below). Dies if the
     -- sink argument is dropped and Test falls back to NS.Print for both callers.
@@ -277,7 +277,7 @@ end)
 
 test("/pc test writes the same report to the same place the button does", function()
     -- This case used to say the verb still printed the report to chat, and pinned the two callers
-    -- DISAGREEING: the button opened the console, the verb put eighty-odd lines into the
+    -- DISAGREEING: the button opened the console, the verb put a few hundred lines into the
     -- chat frame. One name, two acts. The sink is still a PARAMETER on Test rather than a
     -- redirection of NS.Print -- both callers simply pass the console writer now
     -- (settings/Panel.lua's PrettyChat:TestToConsole, which the verb routes through).

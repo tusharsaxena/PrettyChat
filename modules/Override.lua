@@ -749,7 +749,7 @@ end
 --
 -- `sink` is where the report goes. BOTH CALLERS PASS THE DEBUG CONSOLE'S WRITER:
 -- the settings panel's Test button, and `/pc test`, which routes through the same
--- `PrettyChat:TestToConsole` (settings/Panel.lua). A 500-line preview belongs in a
+-- `PrettyChat:TestToConsole` (settings/Panel.lua). A few-hundred-line preview belongs in a
 -- window with a scrollbar and a copy button, not in the chat frame the addon exists
 -- to keep readable -- and that was true of the verb as much as of the button, which
 -- is why they no longer disagree. One name, one act.

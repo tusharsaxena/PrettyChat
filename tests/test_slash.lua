@@ -444,7 +444,7 @@ end)
 -- ---- test -----------------------------------------------------------
 
 test("/pc test writes to the debug console and leaves the chat frame alone", function()
-    -- The report is eighty-odd lines. It belongs in a window with a scrollbar and a copy
+    -- The report is a few hundred lines. It belongs in a window with a scrollbar and a copy
     -- button, not in the chat frame this addon exists to keep readable -- which is why the
     -- panel's Test button always sent it there. The verb does the same thing now.
     -- red under: routing the verb back through NS.Print.

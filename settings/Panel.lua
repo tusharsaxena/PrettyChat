@@ -103,10 +103,10 @@ local DebugLogLib = LibStub and LibStub("LibKa0s-DebugLog-1.0", true)
 -- The report the Test button and `/pc test` write, and where they write it.
 --
 -- To the DEBUG CONSOLE, not to chat: `PrettyChat:Test()` prints one line per
--- format string plus a header and a footer — 500+ lines with every category
--- enabled — into the chat frame this addon exists to keep readable. The console
--- is a window with a scrollbar and a copy button, which is what a report that
--- long actually needs. The sink is a PARAMETER on Test rather than a redirection
+-- format string plus a header and a footer — a few hundred lines with every
+-- category enabled — into the chat frame this addon exists to keep readable. The
+-- console is a window with a scrollbar and a copy button, which is what a report
+-- that long actually needs. The sink is a PARAMETER on Test rather than a redirection
 -- of NS.Print, so both destinations get the same report.
 --
 -- A DEGRADED INSTALL FALLS BACK TO CHAT. With LibKa0s-DebugLog-1.0 absent there is
@@ -123,7 +123,7 @@ local DebugLogLib = LibStub and LibStub("LibKa0s-DebugLog-1.0", true)
 --
 -- TAKES A FILTER, because `/pc test` routes through here too now. The button and
 -- the chat verb used to disagree about where the report goes -- the button opened
--- the console, the verb printed eighty-odd lines into the chat frame this addon
+-- the console, the verb printed a few hundred lines into the chat frame this addon
 -- exists to keep readable -- which made them two acts wearing one name. The filter
 -- is what the verb's `category` / `formatstring` forms need; the button passes
 -- none, which is the `all` case.

@@ -98,7 +98,7 @@ Kit.run{
         { name = "test_prose", dir = "tests/_kit/" },
         "test_libka0s",
         -- The four degradation-stub parity cases, split out of test_libka0s by M4-09 so the
-        -- gate sits at the path all nine addons carry it at. Immediately after test_libka0s
+        -- gate sits at the path every addon carries it at. Immediately after test_libka0s
         -- because it is the same seam read from the other side, and because it registers the
         -- surface source the by-name form resolves through.
         "test_surface_parity",
