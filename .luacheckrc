@@ -123,7 +123,7 @@ files["tests/"] = {
 
 -- `PrettyChat:OpenConfig` -- the body is one delegation to `NS.Helpers.OpenOptionsPanel()`, the
 -- library's combat-gated opener, so it touches no addon state. It stays a method because
--- settings/Slash.lua:49 reaches it as `PrettyChat:OpenConfig()` and five cases in
+-- settings/Slash.lua's `config` verb reaches it as `PrettyChat:OpenConfig()` and five cases in
 -- tests/test_lifecycle.lua reach it as `addon:OpenConfig()`, which is the surface
 -- docs/module-map.md publishes.
 files["core/PrettyChat.lua"] = {
@@ -131,10 +131,14 @@ files["core/PrettyChat.lua"] = {
 }
 
 -- `PrettyChat:ConfirmResetAll` and `PrettyChat:TestToConsole`. Both are LATE-BOUND through the
--- addon table on purpose: settings/Schema.lua:180 and :194 close over `PrettyChat` and call each
--- with a colon from inside the composed MASTER_SPEC, which is built while this file has not loaded
--- yet. Neither body reads the receiver -- one shows a StaticPopup registered in this file, the
--- other drives `NS.DebugLog` -- but a plain local would give Schema's specs nothing to name.
+-- addon table on purpose: settings/Schema.lua's MASTER_SPEC (its `onResetAll` and the Test
+-- button's `onClick`) closes over `PrettyChat` and calls each with a colon, and it is built while
+-- this file has not loaded yet. Neither body reads the receiver -- one shows a StaticPopup
+-- registered in this file, the other drives `NS.DebugLog` -- but a plain local would give
+-- Schema's specs nothing to name. `PrettyChat:ConfirmResetCategories` (PC-03) is the Categories
+-- page's twin of ConfirmResetAll, called with a colon from that page's `defaultsOnClick` and
+-- published on the addon table beside it (docs/module-map.md); its body only shows the
+-- PRETTYCHAT_RESET_CATEGORIES popup, so it is the same unread receiver.
 files["settings/Panel.lua"] = {
     ignore = { "212/self" },
 }
@@ -149,7 +153,7 @@ files["settings/Slash.lua"] = {
 }
 
 -- The mock frame's `GetTextColor`, which answers a constant 1,1,1,1 rather than reading `self`.
--- It is a method because the code under test calls it as one: libs/LibKa0s/Options.lua:606 tints
+-- It is a method because the code under test calls it as one: libs/LibKa0s/Options.lua's buildHeader tints
 -- the header divider from `titleFS:GetTextColor()`. Returning real values instead of nil is the
 -- mock's fidelity rule 2, written up at tests/wow_mock.lua:36 -- the whole point is that this
 -- object answers like a FontString for every frame the suites make, not for one stored color.
