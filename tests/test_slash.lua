@@ -502,6 +502,12 @@ test("/pc test category refuses General as unknown and never offers it", functio
         local preview = consoleJoined("test category " .. name)
         t.truthy(joined("test category " .. name):find("unknown category '" .. name .. "'", 1, true),
             "'" .. name .. "' takes the unknown-category path")
+        -- Test() always opens with this header, even when the filter matches no strings, so its
+        -- absence (and that of the empty-result line) proves no preview ran at all.
+        t.falsy(preview:find("sample of every format string", 1, true),
+            "no preview is started for '" .. name .. "'")
+        t.falsy(preview:find("(no matching strings)", 1, true),
+            "and no empty preview is reported for '" .. name .. "'")
         t.falsy(preview:find("Category:", 1, true), "and nothing is previewed for '" .. name .. "'")
     end
     local valid = {
