@@ -407,7 +407,7 @@ end)
 -- the `local ..., NS = ...` bootstrap, the first comment names the file's own path and one-line
 -- purpose, `-- <path> — <purpose>`, so a reader who lands in the file from a grep knows where they
 -- are. architecture-§3: a module publishes onto NS with `NS.<X> = NS.<X> or {}`, never with a bare
--- constructor that would replace a table something earlier seeded (PRETTYCHAT-A-20, A-25).
+-- constructor that would replace a table something earlier seeded (PC-95, PC-99).
 --
 -- WHAT IT DOES NOT DO. It does not judge the purpose text, and it does not catch a data table
 -- published as a filled literal (`NS.Defaults = { Loot = ... }`) -- that is a declaration, not a
@@ -466,7 +466,7 @@ end)
 -- chain inside backticks, and that chain names every authored file PrettyChat.toc loads (libs/
 -- excluded), in TOC order, with `.lua` dropped. The TOC is the source of truth and the line is its
 -- prose copy; a file added to the TOC without the line following -- core/LifecycleSetup did exactly
--- that (PRETTYCHAT-A-03) -- leaves the hub describing a load order the client never runs.
+-- that (PC-77) -- leaves the hub describing a load order the client never runs.
 --
 -- WHAT IT DOES NOT DO. It does not read docs/module-map.md's numbered list, whose entries carry
 -- prose per step, and it does not check the libraries' order, which the line summarizes in words.

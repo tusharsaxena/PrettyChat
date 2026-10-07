@@ -35,7 +35,7 @@ Database.SCHEMA_VERSION = 2
 
 -- The AceDB `global` defaults -- the declared 0 stamp and LibDBIcon's minimap
 -- table -- are NS.GlobalDefaults in defaults/Profile.lua, the one declaration site
--- savedvariables-§2 names (PRETTYCHAT-A-19); the reasoning for both lives there.
+-- savedvariables-§2 names (PC-94); the reasoning for both lives there.
 
 -- migrations[v] = { scope = "profile" | "global", run = function(target, db, profileName) end }
 -- upgrades a DB from version v-1 to v. `target` is one raw stored profile table

@@ -31,10 +31,11 @@ exclude_files = {
 -- entries named something real, but a top-level ignore reaches all 48 files, so it silenced those
 -- codes in every file that has no business producing them too. Removing the line reported SIXTEEN
 -- findings, and ELEVEN of them were not conventions at all: eleven files opened
--- `local addonName, NS = ...` over a folder name they never read. Seven files here DO read it --
--- Namespace, CoreSetup, EnvSetup, MediaSetup, DebugLogSetup, PrettyChat and settings/Panel, each
--- handing it to a vendored library or a texture path that cannot infer which folder it was copied
--- into. The other eleven had it because the line was copied, and they now open `local _, NS = ...`.
+-- `local addonName, NS = ...` over a folder name they never read. The files that keep that opener
+-- DO read it (at M4c-06 they were Namespace, CoreSetup, EnvSetup, MediaSetup, DebugLogSetup,
+-- PrettyChat and settings/Panel), each handing it to a vendored library or a texture path that
+-- cannot infer which folder it was copied into. The other eleven had it because the line was
+-- copied, and they now open `local _, NS = ...`.
 -- All eleven are fixed in the source rather than moved into a narrower suppression.
 --
 -- The third entry, `212/event`, matched NOTHING: no file in this addon has an unused `event`

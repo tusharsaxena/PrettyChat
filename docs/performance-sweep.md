@@ -81,7 +81,7 @@ tests/wow_mock.lua:142:-- `UnregisterEvent`, `IsEventRegistered`, `RegisterUnitE
 Reconciled, so a future drift is visible rather than arguable. One is a lint declaration
 (`.luacheckrc:60`). Fifteen are the pattern names appearing **inside comments** — `core/CoreSetup.lua:54`,
 `:55`, `core/LifecycleSetup.lua:40`, `modules/Override.lua:126`, `:127`, `settings/Panel.lua:529`,
-`settings/Profiles.lua:130`, `tests/test_disabled.lua:28`, `tests/test_libka0s.lua:804`, `tests/test_override.lua:250`, `:254`,
+`settings/Profiles.lua:130`, `tests/test_disabled.lua:28`, the comment in `tests/test_libka0s.lua`'s *degraded SafeRegisterEvents records a rejected name and registers the rest*, `tests/test_override.lua:250`, `:254`,
 `tests/test_panel_categories.lua:272` and `tests/wow_mock.lua:72`, `:141`, `:142` — which describe the discipline
 rather than doing anything; the harness mock no longer defines its own `RegisterEvent`, because the
 frame event methods are the kit's. Nine are `core/CoreSetup.lua`'s `SafeRegisterEvent` /
@@ -89,7 +89,9 @@ frame event methods are the kit's. Nine are `core/CoreSetup.lua`'s `SafeRegister
 bodies, and `:140`-`:142`, the binds to `LibKa0s-Core`'s own): wrappers that subscribe nothing until a
 caller hands them a frame, and the only caller is the combat watcher. Twelve are suite code that
 drives those wrappers or pins the watcher (`tests/test_libka0s.lua`, `tests/test_override.lua`,
-`tests/test_surface_parity.lua`). The remaining **six are call sites in shipped code**, and they are
+`tests/test_surface_parity.lua`); the seven `tests/test_libka0s.lua` lines are all the one test
+*degraded SafeRegisterEvents records a rejected name and registers the rest*, so find it by that name:
+the suite has grown above it since this block was taken, and its line numbers have moved. The remaining **six are call sites in shipped code**, and they are
 the three sections below: the combat watcher, one next-frame layout fit in the settings panel, and
 the Profiles page's next-frame redraw.
 
