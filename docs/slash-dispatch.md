@@ -121,7 +121,7 @@ Each command body is a small file-local function in `settings/Slash.lua`:
 
 ## Why no chat-side confirm popup for resets
 
-The slash command itself is the assertion. In the panel, the per-category **Defaults** header button has no popup confirm (a category reset is one click, recoverable by editing back), and the **Reset all settings** button on the `Master controls` tab is gated by the `PRETTYCHAT_RESET_ALL` StaticPopup because the global reset is destructive. Chat reset commands take more typing and rarely fire by accident, so they skip the confirm. If the asymmetry ever bites, add a `StaticPopupDialogs` confirmation in `runResetAll` — but don't add one mid-feature without a triggering complaint.
+The slash command itself is the assertion. In the panel, the Categories page's **Defaults** header button asks through the `PRETTYCHAT_RESET_CATEGORIES` StaticPopup (it discards the edits on all eight tabs, PC-R-03), and the **Reset all settings** button on the `Master controls` tab is gated by the `PRETTYCHAT_RESET_ALL` StaticPopup because the global reset is destructive. Chat reset commands take more typing and rarely fire by accident, so they skip the confirm. If the asymmetry ever bites, add a `StaticPopupDialogs` confirmation in `runResetAll` — but don't add one mid-feature without a triggering complaint.
 
 ## What lives in the panel but NOT in the slash UI
 

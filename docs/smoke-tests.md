@@ -429,14 +429,17 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   editable, Preview re-renders it, and your own loot line uses PrettyChat's default (not Blizzard's).
   `/pc get Loot.LOOT_ITEM_SELF.enabled` → `true`, `.format` → the default. **Fail:** Enable stays
   unticked; the `disabledStrings` clear regressed. Result:
-- **RESET-3. The Categories Defaults button covers every tab.** Edit a Loot format, untick a Loot string
-  and edit a Money format. On Loot click the header **Defaults** → Loot and Money both revert, with no
-  popup; `/pc list Loot` and `/pc list Money` read all defaults. Hovering Defaults reads "Reset the
+- **RESET-3. The Categories Defaults button asks, then covers every tab.** Edit a Loot format, untick a
+  Loot string and edit a Money format. On Loot click the header **Defaults** → a popup: *Reset the
+  strings on every category tab to their defaults? Your edits in every category are discarded.*
+  **No** → every edit stays. Click **Defaults** again, **Yes** → Loot and Money both revert;
+  `/pc list Loot` and `/pc list Money` read all defaults. Hovering Defaults reads "Reset the
   strings on every category tab to their defaults." **Fail:** Money keeps its edit (the handler narrowed
   to the visible tab). Result:
 - **RESET-4. The Settings window's footer control does the same.** Set the RESET-3 edits up again and
-  use the Blizzard Settings window's own footer defaults control → the same result as RESET-3. **Fail:**
-  nothing happens (the canvas lost its `OnDefault`). Result:
+  use the Blizzard Settings window's own footer defaults control → Blizzard's own confirmation, once,
+  and accepting it gives the same result as RESET-3 with no second PrettyChat popup. **Fail:** nothing
+  happens (the canvas lost its `OnDefault`), or the PrettyChat popup appears as well. Result:
 - **RESET-5. `/pc reset <path>` resets one row.** Edit two Loot formats and untick one Loot string.
   `/pc reset Loot.LOOT_ITEM_SELF.format` → `Loot.LOOT_ITEM_SELF.format = ` and then the default, with
   single pipes as `/pc get` shows it, and `/pc list Loot` shows that row at default and the others

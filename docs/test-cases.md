@@ -554,8 +554,8 @@ Total.
 - Reset all asks for confirmation instead of resetting immediately
 - the Defaults button is deferred to first show, not built at registration
 - the General page declares a Defaults button whose click opens the reset-all popup
-- the Categories Defaults button resets every category, not only the selected tab
-- the footer OnDefault forwards to the same page-wide body
+- the Categories Defaults button asks, then resets every category, not only the selected tab
+- the footer OnDefault forwards to the same page-wide body, without a second popup
 - the parent page lists every slash command through the one row formatter
 - the landing logo is hidden when its group goes back to AceGUI's pool
 - the parent page shows the TOC tagline

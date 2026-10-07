@@ -49,6 +49,8 @@ local enUS = {
     "Strings on these tabs are rewritten only while the master Enable on the General page is on.",
     -- The page's Defaults tooltip. The button resets every tab (options-ui-§13).
     "Reset the strings on every category tab to their defaults.",
+    -- The confirmation that page's header Defaults raises (PC-R-03).
+    "Reset the strings on every category tab to their defaults? Your edits in every category are discarded.",
     -- Profiles sub-page (settings/Profiles.lua): its sidebar entry and header title.
     -- The page body is AceDBOptions' own table, translated by Ace3's locale files.
     "Profiles",

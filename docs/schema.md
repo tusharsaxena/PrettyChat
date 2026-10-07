@@ -167,7 +167,7 @@ Three reset verbs on `PrettyChat`. The first two write through the helper's batc
 
 They are reachable from:
 
-- The per-string `Reset` button on each panel row (`ResetString` — always visible, a no-op when the string is already at default), the `Categories` page's `Defaults` button (`ResetCategoriesPage`, in the page header, acting on every category tab — no popup confirm), and the `Master controls` tab's composed "Reset all settings" button and the General page's header `Defaults` button (both gated by the `PRETTYCHAT_RESET_ALL` StaticPopup, through `PrettyChat:ConfirmResetAll`).
+- The per-string `Reset` button on each panel row (`ResetString` — always visible, a no-op when the string is already at default), the `Categories` page's `Defaults` button (`ResetCategoriesPage`, in the page header, acting on every category tab — the header click is gated by the `PRETTYCHAT_RESET_CATEGORIES` StaticPopup through `PrettyChat:ConfirmResetCategories`; the Settings window's footer control, already confirmed by Blizzard, resets directly), and the `Master controls` tab's composed "Reset all settings" button and the General page's header `Defaults` button (both gated by the `PRETTYCHAT_RESET_ALL` StaticPopup, through `PrettyChat:ConfirmResetAll`).
 - `/pc reset <path>` (one row, through `Schema.ApplyDefault` → the single write seam) and `/pc resetall` (no in-chat confirmation — typing the command is itself the assertion). There is no category-scoped reset in chat or on the panel; `/pc reset` has taken a path rather than a category since `LIBKA0S-10`.
 
 ## SavedVariables shape

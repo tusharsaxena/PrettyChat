@@ -113,6 +113,7 @@ PrettyChat:ResetAll()                  -- counts the rows it will change (Schema
 PrettyChat.CombatWatchState()         -- the combat watcher frame (nil until a combat-scoped mode is stored), its event list and whether the current state wants it armed; a read for the diagnostics report
 PrettyChat:Test(filter, sink)          -- prints a per-category Original-vs-Formatted block per string (ignores enable toggles); filter is nil | {kind="category", value=…} | {kind="formatstring", value=…}; sink defaults to NS.Print, and the General page's Test button passes the debug console's writer instead
 PrettyChat:ConfirmResetAll()           -- the ONE way into ResetAll: raises the PRETTYCHAT_RESET_ALL StaticPopup (settings/Panel.lua)
+PrettyChat:ConfirmResetCategories()    -- the Categories header Defaults: raises PRETTYCHAT_RESET_CATEGORIES, whose Accept runs ResetCategoriesPage (settings/Panel.lua)
 
 -- AceDB profile callbacks (core/PrettyChat.lua). One shared reload -- migrations, SyncCombatWatch,
 -- ApplyStrings, NotifyPanelChange(), the Profiles page's redraw -- then ONE line worded by the event (debug-logging-§10)

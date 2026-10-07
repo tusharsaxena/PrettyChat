@@ -61,6 +61,23 @@ function PrettyChat:ConfirmResetAll()
     StaticPopup_Show("PRETTYCHAT_RESET_ALL")
 end
 
+-- The Categories page's header Defaults confirmation (PC-R-03). One click
+-- discards the edits on all eight category tabs, so the header button asks
+-- first; Accept runs the same page-wide batch the footer path runs.
+StaticPopupDialogs["PRETTYCHAT_RESET_CATEGORIES"] = {
+    text         = L["Reset the strings on every category tab to their defaults? Your edits in every category are discarded."],
+    button1      = YES,
+    button2      = NO,
+    timeout      = 0,
+    whileDead    = true,
+    hideOnEscape = true,
+    OnAccept     = function() PrettyChat:ResetCategoriesPage() end,
+}
+
+function PrettyChat:ConfirmResetCategories()
+    StaticPopup_Show("PRETTYCHAT_RESET_CATEGORIES")
+end
+
 -- ---------------------------------------------------------------------
 -- General sub-page — one tab, `Master controls`, and every addon-wide control on
 -- it (options-ui-§15).
@@ -753,8 +770,20 @@ H.RegisterOptionsPage(CATEGORY_PAGE, CATEGORY_PAGE, function(mainCategory)
     -- batched entry (Schema.ResetRows) and re-applies in ONE pass with ONE
     -- `[Set] reset Categories: N rows` line (debug-logging-§10), where the row-by-row
     -- form would run ApplyStrings once per row.
-    ctx.panel.defaultsOnClick = function()
-        PrettyChat:ResetCategoriesPage()
+    --
+    -- The library calls this from TWO places (PC-R-03): the header button's
+    -- AceGUI OnClick, as onClick(widget, event, ...), and the canvas's OnDefault
+    -- forwarder for the Settings window's footer control, as defaultsOnClick()
+    -- with no arguments. The header click asks first (PRETTYCHAT_RESET_CATEGORIES);
+    -- the footer path has already been confirmed by Blizzard's own Defaults dialog,
+    -- so it resets directly rather than asking twice. The combat refusal stays in
+    -- the library on both paths.
+    ctx.panel.defaultsOnClick = function(...)
+        if select("#", ...) > 0 then
+            PrettyChat:ConfirmResetCategories()
+        else
+            PrettyChat:ResetCategoriesPage()
+        end
     end
 
     H.SetRenderer(ctx, buildCategoriesBody)

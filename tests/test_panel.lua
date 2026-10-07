@@ -370,8 +370,12 @@ end
 -- radius MUST NOT narrow to the visible tab. One batch over every category's
 -- rows, so one pass and one `[Set] reset Categories: N rows` line.
 --
--- red under: defaultsOnClick calling ResetCategory(activeCategory(ctx)).
-test("the Categories Defaults button resets every category, not only the selected tab", function()
+-- PC-R-03: the header button asks first (PRETTYCHAT_RESET_CATEGORIES), because
+-- one click discards the edits on all eight tabs; nothing changes until Accept.
+--
+-- red under: defaultsOnClick calling ResetCategory(activeCategory(ctx)), or the
+-- header click resetting without the confirmation.
+test("the Categories Defaults button asks, then resets every category, not only the selected tab", function()
     local fresh = ctx.loadAddon()
     local S = fresh.NS.Schema
     local panel = panelFrame(fresh.env, "Categories")
@@ -381,7 +385,25 @@ test("the Categories Defaults button resets every category, not only the selecte
     S.Set("Loot." .. lootG .. ".format", "CUSTOM")
     S.Set("Money.enabled", false)
 
-    local lines = setLines(fresh, function() panel.defaultsOnClick() end)
+    local shownBefore = #fresh.env._popupsShown
+    local pending = setLines(fresh, function() panel.defaultsBtn:Fire("OnClick") end)
+    t.eq(#fresh.env._popupsShown, shownBefore + 1, "the header click raises one popup")
+    t.eq(fresh.env._popupsShown[#fresh.env._popupsShown], "PRETTYCHAT_RESET_CATEGORIES",
+        "the Categories reset confirmation")
+    t.eq(#pending, 0, "and writes nothing")
+    t.eq(S.Get("Loot." .. lootG .. ".format"), "CUSTOM", "the selected tab's edit survives")
+    t.eq(S.Get("Money.enabled"), false, "and so does the other tab's")
+
+    local dialog = fresh.env.StaticPopupDialogs["PRETTYCHAT_RESET_CATEGORIES"]
+    t.truthy(dialog, "the popup is registered")
+    t.eq(dialog.text,
+        fresh.NS.L["Reset the strings on every category tab to their defaults? Your edits in every category are discarded."],
+        "with its own locale key")
+    t.eq(dialog.timeout, 0, "it does not time out")
+    t.truthy(dialog.hideOnEscape, "Escape dismisses it")
+    t.truthy(dialog.whileDead, "and it works while dead")
+
+    local lines = setLines(fresh, function() dialog.OnAccept() end)
 
     t.nilv(fresh.addon.db.profile.categories.Loot, "the selected tab's override is cleared")
     t.nilv(fresh.addon.db.profile.categories.Money, "and so is the other tab's")
@@ -394,7 +416,7 @@ test("the Categories Defaults button resets every category, not only the selecte
         "and its tooltip names every tab")
 end)
 
-test("the footer OnDefault forwards to the same page-wide body", function()
+test("the footer OnDefault forwards to the same page-wide body, without a second popup", function()
     local fresh = ctx.loadAddon()
     local S = fresh.NS.Schema
     local panel = panelFrame(fresh.env, "Categories")
@@ -402,8 +424,12 @@ test("the footer OnDefault forwards to the same page-wide body", function()
     S.Set("Loot.enabled", false)
     S.Set("Misc.enabled", false)
 
+    -- Blizzard's footer Defaults has already asked through its own dialog, so the
+    -- forwarder must not raise a second confirmation (PC-R-03).
+    local shownBefore = #fresh.env._popupsShown
     local lines = setLines(fresh, function() panel.OnDefault() end)
 
+    t.eq(#fresh.env._popupsShown, shownBefore, "no second confirmation on the footer path")
     t.eq(S.Get("Loot.enabled"), fresh.NS.Defaults.Loot.enabled, "the selected tab is reset")
     t.eq(S.Get("Misc.enabled"), fresh.NS.Defaults.Misc.enabled, "and so is a tab never opened")
     t.eq(#lines, 1, "through the one batch")
