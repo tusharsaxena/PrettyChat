@@ -188,7 +188,7 @@ Total.
 - each format row's schema default is the defaults-table default
 - defaults are declared only in defaults/Profile.lua
 
-### test_schema.lua (45)
+### test_schema.lua (46)
 
 - resolves known setting paths and returns nil for unknown ones
 - resolves categories case-insensitively and by prefix
@@ -197,6 +197,7 @@ Total.
 - re-setting a format to its default auto-clears the stored override
 - a format write with a surplus conversion is refused
 - a format whose conversions prefix the default's is stored
+- a blank or whitespace-only format write is refused (PC-R-02)
 - Set on an unknown path is a no-op returning false
 - load-time schema path validation resolved every path
 - the four row kinds are built with their documented shape
@@ -558,7 +559,7 @@ Total.
 - the landing logo is hidden when its group goes back to AceGUI's pool
 - the parent page shows the TOC tagline
 
-### test_panel_categories.lua (23)
+### test_panel_categories.lua (24)
 
 - a category tab builds a toggle, a secondary strip, and ONE string block
 - the category Enable stays ABOVE the tree
@@ -574,6 +575,7 @@ Total.
 - the per-string checkbox writes the string's enable path
 - the New edit box unescapes || to | before storing
 - the New box hands Schema.Set exactly (path, value)
+- a cleared New box committed with Enter stores nothing (PC-R-02)
 - the Preview box renders the live format with sample arguments
 - the Preview box surfaces an unrenderable format instead of blanking
 - the per-string Reset button restores both dimensions
@@ -697,7 +699,7 @@ Total.
 | test_util.lua | 8 |
 | test_locale.lua | 12 |
 | test_defaults.lua | 16 |
-| test_schema.lua | 45 |
+| test_schema.lua | 46 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
 | test_override.lua | 46 |
@@ -709,7 +711,7 @@ Total.
 | test_disabled.lua | 14 |
 | test_diagnostics.lua | 18 |
 | test_panel.lua | 25 |
-| test_panel_categories.lua | 23 |
+| test_panel_categories.lua | 24 |
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
 | test_doc_structure.lua | 13 |
@@ -718,4 +720,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **572** |
+| **Total** | **574** |

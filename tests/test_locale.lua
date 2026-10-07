@@ -309,6 +309,9 @@ local RESIDUE = {
     {"settings/Schema.lua", "conversion signature",
      "the format row's `validate` reason, returned as Set's third value (`why`). Nothing "
      .. "prints it: the player-facing refusal is the routed `Not saved` line beside it"},
+    {"settings/Schema.lua", "blank format",
+     "the same `why`, for the blank-format rule (PC-R-02); the player-facing refusal is "
+     .. "the routed `Not saved — %s: a format can't be blank` line beside it"},
     {"core/DebugLogSetup.lua", "%s v%s, schema v%s, profile '%s'",
      "the debug console's session header, which is copied INTO bug reports and is "
      .. "read by whoever receives them"},

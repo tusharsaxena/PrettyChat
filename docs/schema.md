@@ -64,6 +64,15 @@ both value-bound descriptors. A wrapper would be bypassed by `ApplyDefault`, whi
 runtime's own `Set` (LibKa0s's `docs/api/Schema/version-2-docs.md`, "A gate in front of the seam").
 `tests/test_schema.lua` drives the refusal through the `/pc set` dispatcher.
 
+One rule runs before the comparison: a **blank** format (empty or whitespace only) is refused with
+`Not saved — <path>: a format can't be blank. Use Reset to restore the default.` and a
+`[Set] <path> refused: blank format` trace (PC-R-02). The signature check alone would accept it, since
+the empty sequence is a prefix of every sequence, and the panel's New box hands `Schema.Set` whatever
+is left in it — so clearing the box and pressing Enter used to store `""` and print that message
+blank. `/pc set` never reached the gate with a blank value (the library's `ParseValue` refuses it
+first); the rule sits in the gate so every write path is covered. `tests/test_schema.lua` and
+`tests/test_panel_categories.lua` drive it.
+
 Dropping trailing conversions is allowed and deliberately so: `string.format` ignores surplus
 *arguments*, so a shorter format is safe. Asking for one more conversion than the caller passes is the
 raise this gate exists to stop, and nothing downstream can catch it — the Preview synthesizes its

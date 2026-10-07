@@ -339,15 +339,29 @@ end
 -- cannot restore a conversion one of the four SANCTIONED_TRUNCATIONS dropped;
 -- lengthening the default is the way to give it back, and that is a change to
 -- the shipped data where it belongs.
+--
+-- One rule runs first: a BLANK format (empty or whitespace-only) is refused
+-- before the signature is compared (PC-R-02). The signature gate alone accepts
+-- one, because the empty sequence is a prefix of every sequence, and the panel's
+-- New box hands Set whatever the player left in it, so clearing the box and
+-- pressing Enter stored "" and ApplyStrings printed that message blank. `/pc set`
+-- never got that far (the library's ParseValue refuses a blank value); the rule
+-- sits here so every write the seam runs is covered. The second return names the
+-- rule that refused, for formatAccepted's debug line and `why`.
 local function refusedBySignature(row, value)
     if row.kind ~= "string_format" or type(value) ~= "string" then return false end
+    if value:match("^%s*$") then
+        NS.Print(NS.L["Not saved — %s: a format can't be blank. Use Reset to restore the default."]
+            :format(row.path))
+        return true, "blank format"
+    end
     local asked    = NS.ConversionSequence(value)
     local supplied = NS.ConversionSequence(row.default)
     if NS.SequenceIsPrefix(asked, supplied) then return false end
     NS.Print(NS.L["Not saved — %s asks for %s; %s supplies %s. A format may drop trailing conversions but must not add or retype one."]
         :format(row.path, NS.DescribeSequence(asked),
                 row.globalName, NS.DescribeSequence(supplied)))
-    return true
+    return true, "conversion signature"
 end
 
 -- The gate AS THE ROW'S `validate`, which the write seam runs on every entry: a
@@ -359,12 +373,17 @@ end
 -- snaps the New box back to what is actually stored (the `/pc set` echo re-reads
 -- too), and the one debug line saying why.
 local function formatAccepted(row, value)
-    if not refusedBySignature(row, value) then return true end
+    local refused, why = refusedBySignature(row, value)
+    if not refused then return true end
     Schema.NotifyPanelChange(row.category)
-    NS.Debug("Set", "%s refused: %s is not a prefix of %s", row.path,
-        NS.DescribeSequence(NS.ConversionSequence(value)),
-        NS.DescribeSequence(NS.ConversionSequence(row.default)))
-    return false, "conversion signature"
+    if why == "blank format" then
+        NS.Debug("Set", "%s refused: blank format", row.path)
+    else
+        NS.Debug("Set", "%s refused: %s is not a prefix of %s", row.path,
+            NS.DescribeSequence(NS.ConversionSequence(value)),
+            NS.DescribeSequence(NS.ConversionSequence(row.default)))
+    end
+    return false, why
 end
 
 -- EVERY ROW ON EVERY PAGE CARRIES A `group` (options-ui-§13). These rows are not

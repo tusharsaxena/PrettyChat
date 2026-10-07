@@ -175,7 +175,7 @@ State derived per block in the block's `refresh()` closure (run on first build a
 
 The new-format `EditBox` commits on `OnEnterPressed` through `NS.Schema.Set(formatPath, …)` after un-escaping `||` → `|`. The schema runs `PrettyChat:ApplyStrings()` and calls `Schema.NotifyPanelChange(category)`, which dispatches to the category's refresher (see below).
 
-A commit whose conversion signature is not a positional prefix of the shipped default's is **refused** (see [schema.md](./schema.md)): nothing is stored, `NS.Print` names both signatures, and the refresher still runs — which is what snaps the box back from the rejected text to the value that is actually stored. The Preview cannot stand in for this check, because it synthesizes its sample arguments from the format it is handed.
+A commit whose conversion signature is not a positional prefix of the shipped default's is **refused** (see [schema.md](./schema.md)): nothing is stored, `NS.Print` names both signatures, and the refresher still runs — which is what snaps the box back from the rejected text to the value that is actually stored. The Preview cannot stand in for this check, because it synthesizes its sample arguments from the format it is handed. A cleared box committed with Enter is refused the same way, by the gate's blank-format rule (`Not saved — <path>: a format can't be blank. …`, PC-R-02), and snaps back to the stored format; **Reset** is how a string goes back to its default.
 
 ## Edit-box pipe escaping
 

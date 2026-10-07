@@ -77,6 +77,9 @@ local enUS = {
     -- the schema path, the signature asked for, the Blizzard global and the
     -- signature it supplies.
     "Not saved — %s asks for %s; %s supplies %s. A format may drop trailing conversions but must not add or retype one.",
+    -- The same gate's blank-format rule (PC-R-02), checked first: a cleared New
+    -- box committed with Enter. The placeholder is the schema path.
+    "Not saved — %s: a format can't be blank. Use Reset to restore the default.",
     "Reset",
     "Restore this string to its default.",
     "Preview",
