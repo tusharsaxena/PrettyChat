@@ -6,7 +6,7 @@
 -- omitted stub member — a stub returns without assigning a formatter, and the verb
 -- raises on exactly the path the stub exists to survive.
 --
--- Split out of tests/test_libka0s.lua by M4-09, which asks all nine addons for a
+-- Split out of tests/test_libka0s.lua by M4-09, which asks every addon for a
 -- file of this name so the gate is findable by the same path in every repo. The
 -- cases are unchanged in what they assert; what moved is the calling form of three
 -- of the four, below.

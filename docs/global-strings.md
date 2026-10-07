@@ -48,6 +48,47 @@ The script:
 
 After regenerating, run `lua tests/run.lua` — `tests/test_defaults.lua` is what reads the chunks, so a re-split that changed a Blizzard signature shows up there rather than in game. If a Blizzard format-string signature changed (e.g. `%s` → `%2$s`), the corresponding `NS.Defaults` entry in `defaults/Defaults.lua` needs updating to match — see [common-tasks.md](./common-tasks.md#fix-a-broken-format-string). Run the full [smoke-test suite](./smoke-tests.md) — a client patch can shift behavior anywhere in the override pipeline, not just in the keys you re-split.
 
+## The cap exemption
+
+`GlobalStrings/GlobalStrings.lua` (23,842 lines) is the one tracked `.lua` file over `layout-§1`'s 1500-line cap. The census in [ARCHITECTURE.md](./ARCHITECTURE.md#files-over-the-1500-line-cap) records it as `exempt` under the generated-data carve-out; this section is the reasoning behind that row.
+
+**The exemption is earned condition by condition, and each condition is one line somebody could
+delete for an unrelated reason.** `layout-§1` grants it only when **all three** hold:
+
+1. **Generated, and saying so.** `GlobalStrings/GlobalStrings.lua:1` reads
+   `-- AUTOMATICALLY GENERATED -- Your benefactors send their regards.` It is an extraction from
+   the client, and the next extraction overwrites any hand edit wholesale.
+2. **Nothing loads it.** `PrettyChat.toc` carries no `GlobalStrings\` line and has not since
+   PC-R-05, and the headless harness derives its file list from that same TOC, so one absence
+   answers for the client and for the suite. `tests/test_defaults.lua` reading the chunks through
+   `loadfile` is a fixture being read as data, which the rule names explicitly as still qualifying.
+3. **`.pkgmeta`-ignored.** The `- GlobalStrings` entry drops the whole folder from the packaged
+   zip, so no player downloads a byte of it.
+
+**Re-checked against the generator's move to `tools/` (2026-09-24, `PC-83`).** The
+splitter left `GlobalStrings/` for `tools/split_globalstrings.py`, as `layout-§1`'s "Where an
+authored generator lives" requires, and all three conditions still hold because only the program
+moved. The dump's banner (condition 1) is unchanged, and the dump is still the client extraction,
+not the script's output. The TOC still names neither folder (condition 2), and the script is
+Python, so the harness's TOC-derived load list could not reach it anyway. The `- GlobalStrings`
+entry still covers the dump and the chunks (condition 3), and a separate `- tools` entry covers the
+generator, which the same rule makes `.pkgmeta`-ignored in its own right. The generator is
+authored, so the cap binds it like any other file; at under 250 lines it is nowhere near.
+
+A file failing any one of the three "is an ordinary source file with an unusual origin, and the cap
+binds it". **What the gate checks, and what it leaves to a reader.** Since LibKa0s v1.55.0 the cap
+gate is the kit's (`tests/_kit/test_layout_cap.lua`, declared by the pair in `tests/run.lua`), and it
+cannot read any of the three conditions — they are facts about the repository, not properties a
+path betrays (`layout-§1`). So the exempt set arrives through `Kit.layoutCap.exempt`, and the gate
+asserts only that the ARCHITECTURE.md census table and that set agree about which paths were exempted: a row marked
+`exempt` must name a path in the set, and an over-cap path in the set must be marked `exempt` or
+absent from that census, never given a terminal state. Whether the exemption is *legitimate* is the auditor's
+call. Until that revision this repository ran a hand-written gate that re-derived all three
+conditions from the TOC, `.pkgmeta` and the banner on every run; it was retired rather than wired
+beside the kit's, because `testing-§9` reports the two as a collision. Nothing in the suite now
+re-derives the banner or the TOC and `.pkgmeta` conditions for this folder, so a TOC line added back
+or the `.pkgmeta` entry tidied away would reach an audit before it reached a red run.
+
 ## Why split into chunks?
 
 Two reasons, and they set two different limits.

@@ -444,7 +444,7 @@ end)
 -- ---- test -----------------------------------------------------------
 
 test("/pc test writes to the debug console and leaves the chat frame alone", function()
-    -- The report is eighty-odd lines. It belongs in a window with a scrollbar and a copy
+    -- The report is a few hundred lines. It belongs in a window with a scrollbar and a copy
     -- button, not in the chat frame this addon exists to keep readable -- which is why the
     -- panel's Test button always sent it there. The verb does the same thing now.
     -- red under: routing the verb back through NS.Print.
@@ -492,6 +492,36 @@ test("/pc test rejects unknown filter values by name", function()
     t.truthy(text:find("unknown format string 'NOPE_NOPE'", 1, true),
         "an unknown format string is named")
     t.truthy(text:find("/pc list formatstring", 1, true), "with a pointer to the listing")
+end)
+
+-- General is a page, not a test category: it owns no strings, so offering it only promised a
+-- preview of nothing ("(no matching strings)"). PC-R-11.
+-- red under: building the Valid list from CATEGORY_ORDER whole, or previewing a matched General.
+test("/pc test category refuses General as unknown and never offers it", function()
+    for _, name in ipairs({ "General", "general" }) do
+        local preview = consoleJoined("test category " .. name)
+        t.truthy(joined("test category " .. name):find("unknown category '" .. name .. "'", 1, true),
+            "'" .. name .. "' takes the unknown-category path")
+        -- Test() always opens with this header, even when the filter matches no strings, so its
+        -- absence (and that of the empty-result line) proves no preview ran at all.
+        t.falsy(preview:find("sample of every format string", 1, true),
+            "no preview is started for '" .. name .. "'")
+        t.falsy(preview:find("(no matching strings)", 1, true),
+            "and no empty preview is reported for '" .. name .. "'")
+        t.falsy(preview:find("Category:", 1, true), "and nothing is previewed for '" .. name .. "'")
+    end
+    local valid = {
+        usage   = joined("test category"),
+        unknown = joined("test category zzz"),
+    }
+    for which, text in pairs(valid) do
+        local list = text:match("Valid: (.*)$") or ""
+        t.falsy(list:find("General", 1, true), which .. " line leaves General out of the Valid list")
+        for _, cat in ipairs({ "Loot", "Currency", "Money", "Reputation",
+                               "Experience", "Honor", "Tradeskill", "Misc" }) do
+            t.truthy(list:find(cat, 1, true), which .. " line still offers " .. cat)
+        end
+    end
 end)
 
 -- ---- debug ----------------------------------------------------------

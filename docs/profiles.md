@@ -33,7 +33,9 @@ Three things are deliberately **not** in a profile, and none of them moves when 
   (`launcher-§3`), so a profile switch, copy or reset never shows or hides the button.
 - **`global.schemaVersion`**, the account-wide migration marker. `Database.RunMigrations` walks it
   to the current version, and a profile-scoped step runs on every stored profile, so a profile the
-  player switches to later is already current.
+  player switches to later is already current. A stamp ahead of this build's version was written by
+  a newer build (a rollback), and the load pass then leaves the DB alone: no step, no restamp and no
+  orphan prune, so the newer build's overrides survive.
 - **The debug console's visibility and the session logging flag.** Both are session state.
 
 ## The Profiles page

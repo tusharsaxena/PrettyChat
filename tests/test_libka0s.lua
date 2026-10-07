@@ -633,7 +633,13 @@ test("the format hook doubles pipes without re-implementing the value formatter"
     t.truthy(joinedGet(row.path):find("||cffff0000Red||r %s", 1, true),
         "a stored pipe renders doubled so the escape reads as text")
 
-    NS.Schema.Set(row.path, "")
+    -- Seeded into the DB rather than written through Set: the write gate refuses a
+    -- blank format now (PC-R-02), so what is still reachable is a "" stored before
+    -- the gate, and the hook must still render it as the library's (none).
+    local catDB = inst.addon:EnsureCategoryDB(row.category)
+    catDB.strings = catDB.strings or {}
+    catDB.strings[row.globalName] = ""
+    t.eq(NS.Schema.Get(row.path), "", "the seeded blank reads back")
     t.truthy(joinedGet(row.path):find(slashLib.STRINGS.NONE, 1, true),
         "an empty string renders as the library's (none), per slash-commands-§5")
     NS.Schema.Set(row.path, row.default)

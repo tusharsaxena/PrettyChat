@@ -15,6 +15,8 @@ local _, NS = ...
 --   * THE RUNNER OWNS THE STAMP. `global.schemaVersion` advances only past a
 --     step that completed: a step that raises is printed, the walk STOPS, and the
 --     stamp stays at the last version that succeeded, so the next load retries.
+--   * A STAMP AHEAD OF THE TARGET is a DB a newer build wrote (a rollback). The
+--     runner leaves it untouched: no step, no restamp, no orphan prune.
 --   * The stamp's declared default is 0 (NS.GlobalDefaults in defaults/Profile.lua,
 --     which says why it survives AceDB's removeDefaults).
 --   * A PROFILE-scoped step is run on EVERY stored profile (db.sv.profiles), not
@@ -33,7 +35,7 @@ Database.SCHEMA_VERSION = 2
 
 -- The AceDB `global` defaults -- the declared 0 stamp and LibDBIcon's minimap
 -- table -- are NS.GlobalDefaults in defaults/Profile.lua, the one declaration site
--- savedvariables-§2 names (PRETTYCHAT-A-19); the reasoning for both lives there.
+-- savedvariables-§2 names (PC-94); the reasoning for both lives there.
 
 -- migrations[v] = { scope = "profile" | "global", run = function(target, db, profileName) end }
 -- upgrades a DB from version v-1 to v. `target` is one raw stored profile table
@@ -187,18 +189,23 @@ local function traceLoadPass(from, reached, ran, dropped)
 end
 
 -- Run every pending migration in order, stamp the last version that completed,
--- then run the orphan repair above. A stamp already ahead of SCHEMA_VERSION (a
--- DB written by a newer build) is normalized down to it. Idempotent: a DB
--- already at SCHEMA_VERSION runs no steps, and a clean profile has nothing to
--- prune.
+-- then run the orphan repair above. A stamp ahead of SCHEMA_VERSION means a
+-- newer build wrote this DB (a rollback): it is left untouched -- no step, no
+-- restamp and no prune -- because keys with no row in THIS build may be rows in
+-- that one, and lowering the stamp would make it re-run its own steps. One
+-- [Migrate] line says so. Idempotent: a DB already at SCHEMA_VERSION runs no
+-- steps, and a clean profile has nothing to prune.
 function Database.RunMigrations(db)
     if not (db and db.global) then return end
     local from = db.global.schemaVersion or 0
-    local ran, reached = runSteps(db, from)
-    if from < Database.SCHEMA_VERSION then
-        db.global.schemaVersion = reached
-    else
-        db.global.schemaVersion = Database.SCHEMA_VERSION
+    if type(from) == "number" and from > Database.SCHEMA_VERSION then
+        if NS.Debug then
+            NS.Debug("Migrate", "stored schema v%d is newer than this build's v%d; leaving the profile untouched",
+                from, Database.SCHEMA_VERSION)
+        end
+        return
     end
+    local ran, reached = runSteps(db, from)
+    db.global.schemaVersion = reached
     traceLoadPass(from, reached, ran, Database.PruneOrphans(db))
 end

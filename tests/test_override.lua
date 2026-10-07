@@ -74,7 +74,7 @@ test("IsAddonEnabled treats an absent flag as default-true", function()
     addon:ResetAll()
 end)
 
--- Characterization for PRETTYCHAT-A-19: the two General defaults now come from
+-- Characterization for PC-94: the two General defaults now come from
 -- NS.GeneralDefaults (defaults/Profile.lua). These pin what a player with no
 -- stored key sees, before and after that move.
 test("IsAddonEnabled answers true with no stored key", function()

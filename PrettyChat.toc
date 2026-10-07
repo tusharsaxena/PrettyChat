@@ -84,16 +84,24 @@ core\LauncherSetup.lua
 defaults\Profile.lua
 defaults\Defaults.lua
 
-# Modules (the override pipeline). Conventional: modules\Override.lua reads NS.Defaults, NS.Util
-# and the AceAddon object, all published above.
+# Modules (the override pipeline).
+# modules\Override.lua loads AFTER core\PrettyChat.lua, core\Constants.lua, core\Util.lua and
+# locales\enUS.lua, and the position is load-bearing: at file scope it calls
+# GetAddon("PrettyChat") (non-silent, so it raises without the AceAddon object core\PrettyChat.lua
+# creates) and takes NS.Const.Color, NS.Util.note and NS.L as upvalues.
 modules\Override.lua
-# modules\Diagnostics.lua loads AFTER modules\Override.lua and conventionally: every NS member its
-# sections read (NS.Schema, NS.Helpers, NS.Launcher, the Override engine) is read when a report RUNS,
-# and core\DebugLogSetup.lua asks for the sections then too, so nothing here resolves at load.
+# modules\Diagnostics.lua loads AFTER core\PrettyChat.lua, and that much is load-bearing: its
+# file-scope GetAddon("PrettyChat") raises without the AceAddon object. Its place after
+# modules\Override.lua is conventional: every NS member its sections read (NS.Schema, NS.Helpers,
+# NS.Launcher, the Override engine) is read when a report RUNS.
 modules\Diagnostics.lua
 
-# Settings. The annotated lines (OptionsSetup, Slash, Panel) are load-bearing; the rest of the
-# order is conventional.
+# Settings. Every line in this group is load-bearing and carries its own note.
+# settings\Schema.lua loads AFTER defaults\Defaults.lua, defaults\Profile.lua, core\PrettyChat.lua
+# and modules\Override.lua, and the position is load-bearing: it builds every row at file load from
+# NS.Defaults, NS.GeneralDefaults and NS.GlobalDefaults, sorts each category through
+# NS.SortedStringNames (published by modules\Override.lua), and calls GetAddon("PrettyChat") at
+# file scope.
 settings\Schema.lua
 # settings\OptionsSetup.lua loads AFTER settings\Schema.lua and the position is load-bearing: its
 # file-scope descriptor takes NS.SchemaRuntime.Get/Set/ApplyDefault/AllRows as values, and it calls

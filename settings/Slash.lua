@@ -572,6 +572,16 @@ local function formatStringExists(globalName)
     return false
 end
 
+-- The categories `/pc test category` accepts. General is a page in CATEGORY_ORDER (the panel
+-- needs it there) but owns no strings, so it is not a test category and is never offered.
+local function testCategoryList()
+    local names = {}
+    for _, name in ipairs(NS.Schema.CATEGORY_ORDER) do
+        if name ~= "General" then names[#names + 1] = name end
+    end
+    return table.concat(names, ", ")
+end
+
 function runTest(rest)
     local arg = trim(rest)
     if arg == "" or arg:lower() == "all" then
@@ -586,14 +596,14 @@ function runTest(rest)
     if kind == "category" then
         if value == "" then
             NS.Print("usage: " .. cmd("/pc test category <name>") .. note(". Valid: ")
-                     .. table.concat(NS.Schema.CATEGORY_ORDER, ", "))
+                     .. testCategoryList())
             NS.Debug("Cmd", "test refused: no category named")
             return
         end
         local matched = NS.Schema.ResolveCategory(value)
-        if not matched then
+        if not matched or matched == "General" then
             NS.Print(note(L["unknown category '%s'. Valid: "]:format(value))
-                     .. table.concat(NS.Schema.CATEGORY_ORDER, ", "))
+                     .. testCategoryList())
             NS.Debug("Cmd", "test refused: unknown category '%s'", value)
             return
         end

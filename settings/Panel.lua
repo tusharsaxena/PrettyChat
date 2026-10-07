@@ -61,6 +61,23 @@ function PrettyChat:ConfirmResetAll()
     StaticPopup_Show("PRETTYCHAT_RESET_ALL")
 end
 
+-- The Categories page's header Defaults confirmation (PC-R-03). One click
+-- discards the edits on all eight category tabs, so the header button asks
+-- first; Accept runs the same page-wide batch the footer path runs.
+StaticPopupDialogs["PRETTYCHAT_RESET_CATEGORIES"] = {
+    text         = L["Reset the strings on every category tab to their defaults? Your edits in every category are discarded."],
+    button1      = YES,
+    button2      = NO,
+    timeout      = 0,
+    whileDead    = true,
+    hideOnEscape = true,
+    OnAccept     = function() PrettyChat:ResetCategoriesPage() end,
+}
+
+function PrettyChat:ConfirmResetCategories()
+    StaticPopup_Show("PRETTYCHAT_RESET_CATEGORIES")
+end
+
 -- ---------------------------------------------------------------------
 -- General sub-page — one tab, `Master controls`, and every addon-wide control on
 -- it (options-ui-§15).
@@ -86,10 +103,10 @@ local DebugLogLib = LibStub and LibStub("LibKa0s-DebugLog-1.0", true)
 -- The report the Test button and `/pc test` write, and where they write it.
 --
 -- To the DEBUG CONSOLE, not to chat: `PrettyChat:Test()` prints one line per
--- format string plus a header and a footer — 500+ lines with every category
--- enabled — into the chat frame this addon exists to keep readable. The console
--- is a window with a scrollbar and a copy button, which is what a report that
--- long actually needs. The sink is a PARAMETER on Test rather than a redirection
+-- format string plus a header and a footer — a few hundred lines with every
+-- category enabled — into the chat frame this addon exists to keep readable. The
+-- console is a window with a scrollbar and a copy button, which is what a report
+-- that long actually needs. The sink is a PARAMETER on Test rather than a redirection
 -- of NS.Print, so both destinations get the same report.
 --
 -- A DEGRADED INSTALL FALLS BACK TO CHAT. With LibKa0s-DebugLog-1.0 absent there is
@@ -106,7 +123,7 @@ local DebugLogLib = LibStub and LibStub("LibKa0s-DebugLog-1.0", true)
 --
 -- TAKES A FILTER, because `/pc test` routes through here too now. The button and
 -- the chat verb used to disagree about where the report goes -- the button opened
--- the console, the verb printed eighty-odd lines into the chat frame this addon
+-- the console, the verb printed a few hundred lines into the chat frame this addon
 -- exists to keep readable -- which made them two acts wearing one name. The filter
 -- is what the verb's `category` / `formatstring` forms need; the button passes
 -- none, which is the `all` case.
@@ -753,8 +770,20 @@ H.RegisterOptionsPage(CATEGORY_PAGE, CATEGORY_PAGE, function(mainCategory)
     -- batched entry (Schema.ResetRows) and re-applies in ONE pass with ONE
     -- `[Set] reset Categories: N rows` line (debug-logging-§10), where the row-by-row
     -- form would run ApplyStrings once per row.
-    ctx.panel.defaultsOnClick = function()
-        PrettyChat:ResetCategoriesPage()
+    --
+    -- The library calls this from TWO places (PC-R-03): the header button's
+    -- AceGUI OnClick, as onClick(widget, event, ...), and the canvas's OnDefault
+    -- forwarder for the Settings window's footer control, as defaultsOnClick()
+    -- with no arguments. The header click asks first (PRETTYCHAT_RESET_CATEGORIES);
+    -- the footer path has already been confirmed by Blizzard's own Defaults dialog,
+    -- so it resets directly rather than asking twice. The combat refusal stays in
+    -- the library on both paths.
+    ctx.panel.defaultsOnClick = function(...)
+        if select("#", ...) > 0 then
+            PrettyChat:ConfirmResetCategories()
+        else
+            PrettyChat:ResetCategoriesPage()
+        end
     end
 
     H.SetRenderer(ctx, buildCategoriesBody)

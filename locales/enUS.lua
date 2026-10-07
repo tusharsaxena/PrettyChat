@@ -49,6 +49,8 @@ local enUS = {
     "Strings on these tabs are rewritten only while the master Enable on the General page is on.",
     -- The page's Defaults tooltip. The button resets every tab (options-ui-§13).
     "Reset the strings on every category tab to their defaults.",
+    -- The confirmation that page's header Defaults raises (PC-R-03).
+    "Reset the strings on every category tab to their defaults? Your edits in every category are discarded.",
     -- Profiles sub-page (settings/Profiles.lua): its sidebar entry and header title.
     -- The page body is AceDBOptions' own table, translated by Ace3's locale files.
     "Profiles",
@@ -77,6 +79,9 @@ local enUS = {
     -- the schema path, the signature asked for, the Blizzard global and the
     -- signature it supplies.
     "Not saved — %s asks for %s; %s supplies %s. A format may drop trailing conversions but must not add or retype one.",
+    -- The same gate's blank-format rule (PC-R-02), checked first: a cleared New
+    -- box committed with Enter. The placeholder is the schema path.
+    "Not saved — %s: a format can't be blank. Use Reset to restore the default.",
     "Reset",
     "Restore this string to its default.",
     "Preview",

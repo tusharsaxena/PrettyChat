@@ -300,7 +300,7 @@ test("each format row's schema default is the defaults-table default", function(
 end)
 
 -- savedvariables-§2: defaults/Profile.lua is the only place a setting's default is
--- hard-coded (PRETTYCHAT-A-19). Scans every authored source the TOC loads, with
+-- hard-coded (PC-94). Scans every authored source the TOC loads, with
 -- line comments stripped, for the literals the old copies used. defaults/Defaults.lua
 -- is exempt: it is the per-string reference data (NS.Defaults), whose per-category
 -- `enabled = true` IS that data's declaration, and it sits in defaults/ too.

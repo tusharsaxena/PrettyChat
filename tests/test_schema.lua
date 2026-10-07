@@ -96,6 +96,26 @@ test("a format whose conversions prefix the default's is stored", function()
     Schema.Set(sigRow.path, sigRow.default)
 end)
 
+-- red under: refusedBySignature without its blank-format rule (the empty sequence
+-- is a prefix of every sequence, so "" passed the conversion gate and was stored)
+test("a blank or whitespace-only format write is refused (PC-R-02)", function()
+    -- The panel's New box sends what the player left in it: clear the box, press
+    -- Enter, and Schema.Set(path, "") arrives. Stored, ApplyStrings wrote "" into
+    -- the Blizzard global and that message printed blank.
+    local stored = Schema.Get(sigRow.path)
+    for _, blank in ipairs({ "", "   ", "\t", " \t \n" }) do
+        local at = #env.DEFAULT_CHAT_FRAME.messages
+        t.falsy(Schema.Set(sigRow.path, blank), ("%q is refused"):format(blank))
+        t.eq(Schema.Get(sigRow.path), stored, ("%q stored nothing"):format(blank))
+        t.eq(env[sigRow.globalName], stored, ("%q never reached _G"):format(blank))
+        t.truthy(saidSince(at, "can't be blank"), ("%q prints the blank refusal"):format(blank))
+    end
+    -- Non-vacuity: a non-blank valid format through the same write is stored.
+    t.truthy(Schema.Set(sigRow.path, "Loot | %s"), "a non-blank format still sets")
+    t.eq(Schema.Get(sigRow.path), "Loot | %s", "and is stored")
+    Schema.Set(sigRow.path, sigRow.default)
+end)
+
 test("Set on an unknown path is a no-op returning false", function()
     t.falsy(Schema.Set("Nope.nope", true), "Set unknown path returns false")
 end)

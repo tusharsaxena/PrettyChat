@@ -1,8 +1,10 @@
 # Test Cases
 
 The full inventory of every headless test case in this repo, grouped by the suite file it
-lives in. The `## Totals` table below is the **authoritative pass count** — the README test
-badge and any count quoted in the docs must agree with it.
+lives in. The `## Totals` table below counts the cases that run: its **Total** is the
+authoritative pass count, and the README test badge and any count quoted in the docs must equal
+it. A declared skip is listed by name in its group and counted on the `Skipped` row, never in
+Total.
 
 **Generated — do not hand-edit.** Regenerate with `lua tests/run.lua --list > docs/test-cases.md`.
 
@@ -186,7 +188,7 @@ badge and any count quoted in the docs must agree with it.
 - each format row's schema default is the defaults-table default
 - defaults are declared only in defaults/Profile.lua
 
-### test_schema.lua (45)
+### test_schema.lua (46)
 
 - resolves known setting paths and returns nil for unknown ones
 - resolves categories case-insensitively and by prefix
@@ -195,6 +197,7 @@ badge and any count quoted in the docs must agree with it.
 - re-setting a format to its default auto-clears the stored override
 - a format write with a surplus conversion is refused
 - a format whose conversions prefix the default's is stored
+- a blank or whitespace-only format write is refused (PC-R-02)
 - Set on an unknown path is a no-op returning false
 - load-time schema path validation resolved every path
 - the four row kinds are built with their documented shape
@@ -312,7 +315,7 @@ badge and any count quoted in the docs must agree with it.
 - SortedStringNames answers the same sorted table on every call
 - a formatstring-filtered report does not shrink the cached list
 
-### test_database.lua (26)
+### test_database.lua (27)
 
 - NS.Database and the db.global namespace exist
 - a fresh DB is stamped at the current schema version
@@ -322,12 +325,13 @@ badge and any count quoted in the docs must agree with it.
 - the schema version is a positive integer the defaults start below
 - a DB with no recorded version is treated as version 0
 - RunMigrations tolerates nil and a db without .global
-- the runner stamps the current version even with no steps to run
+- a stamp ahead of the target is left unchanged
 - the load pass drops strings/disabledStrings keys that have no schema row
 - the load pass prunes the tables its repair empties
 - a category reset after the load pass leaves no category table
 - a profile switch runs the repair on the incoming profile
 - the repair traces once when it drops keys, and stays silent otherwise
+- a profile written by a newer build keeps its overrides and its stamp
 - the repair tolerates a db with no profile or no categories
 - migrating emits no debug noise when nothing ran
 - a profile-scoped step lifts every stored profile, not only the active one
@@ -434,7 +438,7 @@ badge and any count quoted in the docs must agree with it.
 - Launcher: DEGRADED — LibDataBroker present, LibDBIcon absent: the plugin, no button
 - Launcher: DEGRADED — no LibKa0s at all: no launcher, and the row survives
 
-### test_slash.lua (53)
+### test_slash.lua (54)
 
 - Schema.FormatValue formats bools and doubles pipes in strings
 - NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
@@ -482,6 +486,7 @@ badge and any count quoted in the docs must agree with it.
 - /pc test formatstring upper-cases the name before matching
 - /pc test surfaces usage for each malformed filter
 - /pc test rejects unknown filter values by name
+- /pc test category refuses General as unknown and never offers it
 - /pc debug rejects an argument that is neither on, off, nor a toggle
 - every slash line carries the cyan [PC] tag
 - disabled: a feature verb refuses on ONE line naming /pc enable, and does not act
@@ -550,13 +555,13 @@ badge and any count quoted in the docs must agree with it.
 - Reset all asks for confirmation instead of resetting immediately
 - the Defaults button is deferred to first show, not built at registration
 - the General page declares a Defaults button whose click opens the reset-all popup
-- the Categories Defaults button resets every category, not only the selected tab
-- the footer OnDefault forwards to the same page-wide body
+- the Categories Defaults button asks, then resets every category, not only the selected tab
+- the footer OnDefault forwards to the same page-wide body, without a second popup
 - the parent page lists every slash command through the one row formatter
 - the landing logo is hidden when its group goes back to AceGUI's pool
 - the parent page shows the TOC tagline
 
-### test_panel_categories.lua (23)
+### test_panel_categories.lua (24)
 
 - a category tab builds a toggle, a secondary strip, and ONE string block
 - the category Enable stays ABOVE the tree
@@ -572,6 +577,7 @@ badge and any count quoted in the docs must agree with it.
 - the per-string checkbox writes the string's enable path
 - the New edit box unescapes || to | before storing
 - the New box hands Schema.Set exactly (path, value)
+- a cleared New box committed with Enter stores nothing (PC-R-02)
 - the Preview box renders the live format with sample arguments
 - the Preview box surfaces an unrenderable format instead of blanking
 - the per-string Reset button restores both dimensions
@@ -695,24 +701,25 @@ badge and any count quoted in the docs must agree with it.
 | test_util.lua | 8 |
 | test_locale.lua | 12 |
 | test_defaults.lua | 16 |
-| test_schema.lua | 45 |
+| test_schema.lua | 46 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
 | test_override.lua | 46 |
-| test_database.lua | 26 |
+| test_database.lua | 27 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
 | test_launcher.lua | 40 |
-| test_slash.lua | 53 |
+| test_slash.lua | 54 |
 | test_disabled.lua | 14 |
 | test_diagnostics.lua | 18 |
 | test_panel.lua | 25 |
-| test_panel_categories.lua | 23 |
+| test_panel_categories.lua | 24 |
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
 | test_doc_structure.lua | 13 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
-| test_diagnostics_contract.lua | 9 |
+| test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
-| **Total** | **573** |
+| Skipped | 1 |
+| **Total** | **576** |

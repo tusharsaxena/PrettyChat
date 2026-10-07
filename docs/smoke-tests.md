@@ -17,7 +17,7 @@ works.
 | ID range | Theme | What it covers |
 |---|---|---|
 | INSTALL-1 – 7 | Install, load and persistence | First load, the TOC version, reload persistence, the SavedVariables shape, the schema v2 move |
-| SLASH-1 – 10 | Slash commands | Help, bare `/pc`, `list`, `get`, `set`, the format-string write gate |
+| SLASH-1 – 11 | Slash commands | Help, bare `/pc`, `list`, `get`, `set`, the format-string write gate, the blank-format refusal |
 | PANEL-1 – 22 | Settings panel | Landing page, rail, header, General, the Categories strip, string list and editor, panel and CLI sync, the descriptor's folder name |
 | PROFILE-1 – 10 | Profiles | The Profiles page, per-profile settings, the `/pc profile` verb |
 | STATE-1 – 6 | Enable and stand-down | `/pc enable` / `/pc disable`, what answers while disabled, the combat watcher standing down |
@@ -145,6 +145,11 @@ Find the cause before changing anything; a fix that only makes the check pass is
   all), loot → it saves and the line reads `Loot happened`; `/pc test formatstring LOOT_ITEM_SELF`
   renders it with no `errored` count in the footer. **Fail:** a refusal here means the gate tests
   equality rather than a positional prefix. `/pc reset Loot.LOOT_ITEM_SELF.format`. Result:
+- **SLASH-11. A blank format is refused.** `/pc config` → Categories → Loot, select any string, clear
+  its New box and press Enter → `Not saved — Loot.<GLOBAL>.format: a format can't be blank. Use Reset
+  to restore the default.`, and the box snaps back to the stored format. `/pc test category Loot` → in the
+  debug console, that message still prints formatted, not blank. **Fail:** the box stays empty, or the test line is
+  blank; the cleared box stored `""` (PC-R-02). Result:
 
 ## PANEL
 
@@ -424,14 +429,17 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   editable, Preview re-renders it, and your own loot line uses PrettyChat's default (not Blizzard's).
   `/pc get Loot.LOOT_ITEM_SELF.enabled` → `true`, `.format` → the default. **Fail:** Enable stays
   unticked; the `disabledStrings` clear regressed. Result:
-- **RESET-3. The Categories Defaults button covers every tab.** Edit a Loot format, untick a Loot string
-  and edit a Money format. On Loot click the header **Defaults** → Loot and Money both revert, with no
-  popup; `/pc list Loot` and `/pc list Money` read all defaults. Hovering Defaults reads "Reset the
+- **RESET-3. The Categories Defaults button asks, then covers every tab.** Edit a Loot format, untick a
+  Loot string and edit a Money format. On Loot click the header **Defaults** → a popup: *Reset the
+  strings on every category tab to their defaults? Your edits in every category are discarded.*
+  **No** → every edit stays. Click **Defaults** again, **Yes** → Loot and Money both revert;
+  `/pc list Loot` and `/pc list Money` read all defaults. Hovering Defaults reads "Reset the
   strings on every category tab to their defaults." **Fail:** Money keeps its edit (the handler narrowed
   to the visible tab). Result:
 - **RESET-4. The Settings window's footer control does the same.** Set the RESET-3 edits up again and
-  use the Blizzard Settings window's own footer defaults control → the same result as RESET-3. **Fail:**
-  nothing happens (the canvas lost its `OnDefault`). Result:
+  use the Blizzard Settings window's own footer defaults control → Blizzard's own confirmation, once,
+  and accepting it gives the same result as RESET-3 with no second PrettyChat popup. **Fail:** nothing
+  happens (the canvas lost its `OnDefault`), or the PrettyChat popup appears as well. Result:
 - **RESET-5. `/pc reset <path>` resets one row.** Edit two Loot formats and untick one Loot string.
   `/pc reset Loot.LOOT_ITEM_SELF.format` → `Loot.LOOT_ITEM_SELF.format = ` and then the default, with
   single pipes as `/pc get` shows it, and `/pc list Loot` shows that row at default and the others
@@ -750,6 +758,7 @@ records are in the Ka0sAddonsCommonTasks repository.
 | SLASH-6 | T-32 | Corrected: the library's `Setting not found` wording, and `get` echoes `<path> = <value>` with the format unquoted |
 | SLASH-7 | T-33 | Corrected: the library's refusal wording |
 | SLASH-10 | T-34a steps 3–4 and 6, T-51 | Corrected: a format with fewer conversions saves and renders |
+| SLASH-11 | New: the blank-format refusal (`PC-01`, PC-R-02) | New; never run |
 | INSTALL-6 | T-43 | Corrected: the SavedVariables key is `profiles.Default` |
 | PANEL-7 | T-29a step 1, T-100 | Corrected: the layout gained the Minimap button row |
 | PANEL-11 | T-102 | Corrected: Loot lists 17 strings, not nineteen |

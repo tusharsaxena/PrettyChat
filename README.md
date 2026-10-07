@@ -4,7 +4,7 @@
 ![CurseForge Version](https://img.shields.io/curseforge/v/919766)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-572%2F572_passing-green)
+![Tests](https://img.shields.io/badge/Tests-576%2F576_passing-green)
 
 World of Warcraft tells you about loot, currency, gold, reputation, experience, honor and crafting in a stream of sentences that all look alike. PrettyChat rewrites them. The information doesn't change, but it's laid out and color-coded, so you can find the line you actually cared about while the chat window scrolls past you.
 
@@ -60,9 +60,9 @@ Switching a message off doesn't throw your version away. PrettyChat stops applyi
 | Symptom | Fix |
 |---------|-----|
 | Nothing changed after installing | Make sure it's switched on by checking the master switch, the category, and the message (`/pc get General.enabled` should be `true`). Then run `/pc test`. If the preview looks formatted but real chat doesn't, another addon is changing the same messages after PrettyChat. |
-| A message I edited looks broken | Your wording dropped or misused a `%s` / `%d` placeholder. Restore that one message with its **Reset** button (or `/pc reset path`), or copy the original from the panel and edit around the placeholders. The Categories page's **Defaults** button also fixes it, but it resets every category tab, so you lose your edits in the other categories too. |
+| A message I edited looks broken | Your wording dropped or misused a `%s` / `%d` placeholder. Restore that one message with its **Reset** button (or `/pc reset path`), or copy the original from the panel and edit around the placeholders. The Categories page's **Defaults** button also fixes it, but it resets every category tab, so you lose your edits in the other categories too. It asks first. |
 | The settings panel won't open | `/pc config` opens it from chat. Wait until you're fully loaded in, and note that it won't open during combat. If the main page opens but a sub-page doesn't, click the sub-page's row in the settings list (**General**, **Categories** or **Profiles**). |
-| I want a clean slate | For one message, use its **Reset** button or `/pc reset path` (`/pc list` shows the paths). For every category's strings, use the Categories page's **Defaults** button, which resets every category tab and not only the one you're looking at. For everything, use `/pc resetall`, **Reset all settings**, or the **Defaults** button on the General page (both buttons ask first). That resets the profile you're on, the same as **Reset Profile** on the Profiles page, and leaves your other profiles alone. |
+| I want a clean slate | For one message, use its **Reset** button or `/pc reset path` (`/pc list` shows the paths). For every category's strings, use the Categories page's **Defaults** button, which asks first and then resets every category tab, not only the one you're looking at. For everything, use `/pc resetall`, **Reset all settings**, or the **Defaults** button on the General page (both buttons ask first). That resets the profile you're on, the same as **Reset Profile** on the Profiles page, and leaves your other profiles alone. |
 | I opened the debug console but it's empty | The window and logging are separate switches, and opening the window (`/pc debug`) doesn't start logging. Turn logging on first with `/pc debug on` or the **Debug** toggle inside the window, then reproduce the problem. To send it in, follow [Reporting a bug](#reporting-a-bug) below. |
 | The "you create an item" messages are gone from the Loot tab | They're on the **Tradeskill** tab now, and only there. They used to appear on both tabs, but only the Tradeskill copy ever reached chat. If you had customized the Loot copy, your wording moved to the Tradeskill tab the first time you logged in on this version. |
 | Something looks wrong and I want to report it | Follow [Reporting a bug](#reporting-a-bug) below. |

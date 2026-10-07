@@ -485,6 +485,20 @@ test("the New box hands Schema.Set exactly (path, value)", function()
     t.eq(gotValue, "A|B %s", "and the unescaped value")
 end)
 
+-- red under: refusedBySignature without its blank-format rule (the box stored "")
+test("a cleared New box committed with Enter stores nothing (PC-R-02)", function()
+    local path = "Loot." .. sortedNames("Loot")[1] .. ".format"
+    lootBlock.new:Fire("OnEnterPressed", "CUSTOM")
+    t.eq(Schema.Get(path), "CUSTOM", "a custom format is stored first")
+    local before = addon.db.profile.categories.Loot.strings[sortedNames("Loot")[1]]
+    lootBlock.new:Fire("OnEnterPressed", "")
+    t.eq(Schema.Get(path), "CUSTOM", "the cleared box did not overwrite it")
+    t.eq(addon.db.profile.categories.Loot.strings[sortedNames("Loot")[1]], before,
+        "db.profile is unchanged")
+    t.eq(lootBlock.new.text, "CUSTOM", "and the refresh snaps the box back to what is stored")
+    addon:ResetAll()
+end)
+
 test("the Preview box renders the live format with sample arguments", function()
     -- Driven on a string whose SHIPPED DEFAULT carries the two conversions this
     -- case types in, rather than on whatever sorts first: the write gate
