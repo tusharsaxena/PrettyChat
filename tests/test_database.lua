@@ -57,13 +57,15 @@ test("RunMigrations tolerates nil and a db without .global", function()
     t.truthy(pcall(Database.RunMigrations, { global = false }), "a non-table global is a no-op")
 end)
 
-test("the runner stamps the current version even with no steps to run", function()
-    -- A stamp already ahead of the target has no step to run; the runner still
-    -- normalizes it so the next release can rely on it.
+test("a stamp ahead of the target is left unchanged", function()
+    -- red under: RunMigrations normalizing an ahead stamp down to SCHEMA_VERSION
+    -- A stamp ahead of the target was written by a newer build (a rollback). The
+    -- runner has no step for it and must not lower it, or the newer build would
+    -- re-run its own steps over a shape they already lifted.
     local ahead = { global = { schemaVersion = Database.SCHEMA_VERSION + 5 } }
     Database.RunMigrations(ahead)
-    t.eq(ahead.global.schemaVersion, Database.SCHEMA_VERSION,
-        "the stamp is written unconditionally")
+    t.eq(ahead.global.schemaVersion, Database.SCHEMA_VERSION + 5,
+        "an ahead stamp stays where the newer build left it")
 end)
 
 -- ---- the load-pass repair: stored keys with no schema row -------------
@@ -145,6 +147,30 @@ test("the repair traces once when it drops keys, and stays silent otherwise", fu
     t.eq(#inst.NS.DebugLog.buffer, 1, "one [Migrate] line for the repair, never one per key")
     t.truthy((inst.NS.DebugLog.buffer[1] or ""):find("Migrate", 1, true), "tagged Migrate")
     inst.NS.State.debug = false
+    inst.NS.DebugLog:Clear()
+end)
+
+test("a profile written by a newer build keeps its overrides and its stamp", function()
+    -- red under: RunMigrations running PruneOrphans and restamping when the stored stamp is ahead
+    local future = {
+        global  = { schemaVersion = 99 },
+        profile = { categories = { [liveCat] = {
+            strings         = { FUTURE_ONLY_GLOBAL = "NEWER %s", [liveGlobal] = "KEPT %s" },
+            disabledStrings = { FUTURE_ONLY_GLOBAL = true },
+        } } },
+    }
+    inst.NS.State.debug = true
+    inst.NS.DebugLog:Clear()
+    Database.RunMigrations(future)
+    local buffer = inst.NS.DebugLog.buffer
+    inst.NS.State.debug = false
+    local catDB = future.profile.categories[liveCat]
+    t.eq(future.global.schemaVersion, 99, "the newer build's stamp is not lowered")
+    t.eq(catDB.strings.FUTURE_ONLY_GLOBAL, "NEWER %s", "an override with no row in this build survives")
+    t.eq(catDB.disabledStrings.FUTURE_ONLY_GLOBAL, true, "a disabled flag with no row in this build survives")
+    t.eq(catDB.strings[liveGlobal], "KEPT %s", "a row-owned override is untouched too")
+    t.eq(#buffer, 1, "one [Migrate] line, and no prune line")
+    t.truthy((buffer[1] or ""):find("newer than this build", 1, true), "the line says the profile is newer")
     inst.NS.DebugLog:Clear()
 end)
 

@@ -315,7 +315,7 @@ Total.
 - SortedStringNames answers the same sorted table on every call
 - a formatstring-filtered report does not shrink the cached list
 
-### test_database.lua (26)
+### test_database.lua (27)
 
 - NS.Database and the db.global namespace exist
 - a fresh DB is stamped at the current schema version
@@ -325,12 +325,13 @@ Total.
 - the schema version is a positive integer the defaults start below
 - a DB with no recorded version is treated as version 0
 - RunMigrations tolerates nil and a db without .global
-- the runner stamps the current version even with no steps to run
+- a stamp ahead of the target is left unchanged
 - the load pass drops strings/disabledStrings keys that have no schema row
 - the load pass prunes the tables its repair empties
 - a category reset after the load pass leaves no category table
 - a profile switch runs the repair on the incoming profile
 - the repair traces once when it drops keys, and stays silent otherwise
+- a profile written by a newer build keeps its overrides and its stamp
 - the repair tolerates a db with no profile or no categories
 - migrating emits no debug noise when nothing ran
 - a profile-scoped step lifts every stored profile, not only the active one
@@ -703,7 +704,7 @@ Total.
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
 | test_override.lua | 46 |
-| test_database.lua | 26 |
+| test_database.lua | 27 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
 | test_launcher.lua | 40 |
@@ -720,4 +721,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **574** |
+| **Total** | **575** |
