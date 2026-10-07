@@ -259,7 +259,7 @@ never a live requirement, and never a reason to "restore" the file.
 
 | Doc | Covers |
 |---|---|
-| `global-strings.md` | The GlobalStrings sub-tree: what is overridden and how it is generated |
+| `global-strings.md` | The GlobalStrings sub-tree: what is overridden, how it is generated, and why the dump is exempt from the 1500-line cap (the three `layout-§1` conditions and what the gate checks) |
 | `performance-sweep.md` | The committed `performance-§12` sweep behind the exemption, and the PC-R-05 load-time measurement |
 
 ## Documented deviations
@@ -292,47 +292,21 @@ and the expansion is stated once, so a reader who has only ever seen the short f
 
 **Retired on 2026-09-08, two rows, both because the collision they recorded was upstream.**
 
-- **`toc-file-§5` — `# Locales` immediately after `# Libraries`.** The row never argued that this
-  addon wanted a different order; it argued that the standard asked for two, `toc-file-§5` putting
-  Locales before Defaults and `layout-§1`'s load order putting Defaults first, and that PrettyChat
-  had resolved toward the former. There is no disagreement left to resolve: `layout.md:53` states
-  the folder order `libs/* → locales/* → core/* → defaults/* → modules/* → settings/*`,
-  `toc-file.md:109` states the header order **Libraries → Locales → Core → Defaults → Modules →
-  Settings**, and `layout-§1` adds that if the two ever disagree "that is a defect in this document
-  rather than a choice an addon gets to make". This TOC's sections (`PrettyChat.toc:15`, `:24`,
-  `:27`, `:49`, `:53`, `:56`) are that order, so what the row recorded as a departure is now
-  mandated by both sections at once. The row's trigger — *"WowAddonStandards#2 resolving"* — fired
-  on 2026-08-06, when that issue was closed `state:will-not-do`; the `# GlobalStrings` half had
-  already closed with `PC-R-05`. `PC-61`.
-
-- **`library-stack-§1` — AceEvent-3.0 and AceTimer-3.0 not vendored.** The row recorded a
-  contradiction inside one section: `§1`'s table listed both among the libs every Ace3 addon
-  vendors, while `§3` MUSTs vendoring only libs the addon actually `LibStub`s. This addon reaches
-  neither — it starts no timers, and the two combat-boundary events its visibility watcher needs go
-  on a plain frame it creates lazily and drops again (`modules/Override.lua`) — so it could satisfy
-  one half or the other and never both. `library-stack-§1`'s table now reads that "mandatory" means
-  mandatory **when used**, marks AceEvent and AceTimer that way, and names this addon as the case
-  the wording was written for — adding that an addon holding a ratified-deviation row for a
-  contradiction that lives upstream is the graveyard the register exists to prevent, manufactured
-  by the standard rather than by the addon, and that the row is retired rather than re-argued.
-  Vendoring six of the table's eight rows is compliant. The row's trigger was, in as many words,
-  *"the next `library-stack` edit"*; this is that edit. `PC-52`.
+- **`toc-file-§5` — `# Locales` immediately after `# Libraries`.** Retired because `layout-§1` and
+  `toc-file-§5` now state the same Libraries → Locales → Core → Defaults → Modules → Settings order
+  this TOC already follows, the trigger (WowAddonStandards#2) having fired on 2026-08-06. `PC-61`.
+- **`library-stack-§1` — AceEvent-3.0 and AceTimer-3.0 not vendored.** Retired because the table now
+  reads "mandatory" as mandatory **when used**, and this addon `LibStub`s neither, so leaving them
+  out is compliant (`library-stack-§3`). `PC-52`.
 
 **Retired and narrowed on 2026-09-24, one row and one half-row, each because what it recorded was compliant.**
 
-- **`debug-logging-§2` — the debug console's monospace font with no LibSharedMedia registration.**
-  Retired. `core/MediaSetup.lua` calls `Media.RegisterLSM(addonName)` at load like every other addon
-  in the collection, which is what `debug-logging-§2` asks, and the font reaches the console as the
-  descriptor's `font` path (`Const.FONT_MONO`), which is the other half of it. That the call returns
-  `0, 0` follows from `library-stack-§3`: PrettyChat has no font-picker consumer, so it does not
-  vendor LibSharedMedia-3.0, and a library nothing `LibStub`s is not vendored. There was no departure
-  to ratify. `PC-88`.
-
-- **`toc-file-§1` — the `X-Wago-ID` half.** Narrowed out of the row, which now carries the brand
-  mark alone. `toc-file-§1` makes `X-Wago-ID` a MAY, included only once an addon is listed on Wago;
-  PrettyChat is on CurseForge only (`## X-Curse-Project-ID: 919766`), so omitting the field is
-  compliant and was never a deviation. Do not add it and do not commit a placeholder. Issue #7 stays
-  `state:will-not-do`. `PC-73`.
+- **`debug-logging-§2` — monospace console font with no LibSharedMedia registration.** Retired because
+  `core/MediaSetup.lua` calls `Media.RegisterLSM(addonName)` and the font arrives as `Const.FONT_MONO`;
+  LibSharedMedia-3.0 is unvendored only because nothing here consumes it (`library-stack-§3`). `PC-88`.
+- **`toc-file-§1` — the `X-Wago-ID` half.** Narrowed out because the field is a MAY for Wago-listed
+  addons and PrettyChat is on CurseForge only; add neither it nor a placeholder (issue #7 stays
+  `state:will-not-do`). `PC-73`.
 
 ### Files over the 1500-line cap
 
@@ -354,47 +328,14 @@ git ls-files '*.lua' | grep -v '^libs/' | grep -v '^tests/_kit/' | xargs wc -l |
 
 | File | Lines (2026-09-24) | Disposition |
 |---|---|---|
-| `GlobalStrings/GlobalStrings.lua` | 23,842 | `exempt` — `layout-§1`'s generated-data carve-out, handed to the gate as `Kit.layoutCap = { exempt = { "GlobalStrings/" } }` in `tests/run.lua`. Not a breach, so it carries none of the three terminal states; the three conditions below are the auditor's to re-check |
+| `GlobalStrings/GlobalStrings.lua` | 23,842 | `exempt` — `layout-§1`'s generated-data carve-out, handed to the gate as `Kit.layoutCap = { exempt = { "GlobalStrings/" } }` in `tests/run.lua`. Not a breach, so it carries none of the three terminal states; the three conditions ([global-strings.md](./global-strings.md#the-cap-exemption)) are the auditor's to re-check |
 
 **This addon has no cap breach.** One file is over 1500 lines and it is the generated dump, which
 the carve-out reaches. Nothing here is peeled, and nothing needed to be.
 
-**The exemption is earned condition by condition, and each condition is one line somebody could
-delete for an unrelated reason.** `layout-§1` grants it only when **all three** hold:
-
-1. **Generated, and saying so.** `GlobalStrings/GlobalStrings.lua:1` reads
-   `-- AUTOMATICALLY GENERATED -- Your benefactors send their regards.` It is an extraction from
-   the client, and the next extraction overwrites any hand edit wholesale.
-2. **Nothing loads it.** `PrettyChat.toc` carries no `GlobalStrings\` line and has not since
-   PC-R-05, and the headless harness derives its file list from that same TOC, so one absence
-   answers for the client and for the suite. `tests/test_defaults.lua` reading the chunks through
-   `loadfile` is a fixture being read as data, which the rule names explicitly as still qualifying.
-3. **`.pkgmeta`-ignored.** The `- GlobalStrings` entry drops the whole folder from the packaged
-   zip, so no player downloads a byte of it.
-
-**Re-checked against the generator's move to `tools/` (2026-09-24, `PC-83`).** The
-splitter left `GlobalStrings/` for `tools/split_globalstrings.py`, as `layout-§1`'s "Where an
-authored generator lives" requires, and all three conditions still hold because only the program
-moved. The dump's banner (condition 1) is unchanged, and the dump is still the client extraction,
-not the script's output. The TOC still names neither folder (condition 2), and the script is
-Python, so the harness's TOC-derived load list could not reach it anyway. The `- GlobalStrings`
-entry still covers the dump and the chunks (condition 3), and a separate `- tools` entry covers the
-generator, which the same rule makes `.pkgmeta`-ignored in its own right. The generator is
-authored, so the cap binds it like any other file; at under 250 lines it is nowhere near.
-
-A file failing any one of the three "is an ordinary source file with an unusual origin, and the cap
-binds it". **What the gate checks, and what it leaves to a reader.** Since LibKa0s v1.55.0 the cap
-gate is the kit's (`tests/_kit/test_layout_cap.lua`, declared by the pair in `tests/run.lua`), and it
-cannot read any of the three conditions — they are facts about the repository, not properties a
-path betrays (`layout-§1`). So the exempt set arrives through `Kit.layoutCap.exempt`, and the gate
-asserts only that this table and that set agree about which paths were exempted: a row marked
-`exempt` must name a path in the set, and an over-cap path in the set must be marked `exempt` or
-absent here, never given a terminal state. Whether the exemption is *legitimate* is the auditor's
-call. Until that revision this repository ran a hand-written gate that re-derived all three
-conditions from the TOC, `.pkgmeta` and the banner on every run; it was retired rather than wired
-beside the kit's, because `testing-§9` reports the two as a collision. Nothing in the suite now
-re-derives the banner or the TOC and `.pkgmeta` conditions for this folder, so a TOC line added back
-or the `.pkgmeta` entry tidied away would reach an audit before it reached a red run.
+**Why the exemption holds, and what the gate does and does not check:** the three `layout-§1`
+conditions, their re-check against the generator's move to `tools/` (`PC-83`), and the kit gate's
+reach are reasoned in [global-strings.md](./global-strings.md#the-cap-exemption).
 
 **The line count is dated because it drifts, and nothing asserts it.** What the gate asserts is the
 *membership* of this table, in both directions: a file that crosses 1500 and is not listed here
