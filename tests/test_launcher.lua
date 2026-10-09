@@ -619,29 +619,19 @@ function()
     t.eq(db.global.minimap.hide, true, "and the button is STILL hidden")
 end)
 
-test("Launcher: no per-category reset reaches the row either", function()
-    -- PrettyChat:ResetCategory is the public per-category method. No panel button
-    -- calls it any more (the Categories page's resets every message category in one
-    -- batch, and General's is the profile reset above), and `/pc` never did, but it
-    -- stays public, so every category is driven here, plus the General body itself,
-    -- which is the one a widening of its allow-list would reach.
+test("Launcher: the Categories page's Defaults does not reach the row either", function()
+    -- PrettyChat:ResetCategoriesPage is the other page-scoped Defaults button: it
+    -- resets every message category in one batch (General's is the profile reset
+    -- above). It must leave the minimap choice alone as well.
     local inst = wired()
     local Schema, db = inst.NS.Schema, inst.addon.db
 
-    for _, category in ipairs(Schema.CATEGORY_ORDER) do
-        hidden(inst)
-        inst.addon:ResetCategory(category)
-        t.eq(db.global.minimap.hide, true,
-            "the Defaults button on " .. category .. " left the button hidden")
-    end
-
-    -- And the General body really did reset what it owns, so the sweep above is
-    -- not passing over a reset that did nothing.
     hidden(inst)
-    Schema.Set("General.visibility", "never")
-    inst.addon:ResetCategory("General")
-    t.eq(Schema.Get("General.visibility"), "always", "General's own rows went back to default")
-    t.eq(db.global.minimap.hide, true, "and the minimap row was not among them")
+    Schema.Set("Loot.enabled", false)
+    inst.addon:ResetCategoriesPage()
+    t.eq(Schema.Get("Loot.enabled"), inst.NS.Defaults.Loot.enabled,
+        "the page reset really ran, so this is not passing over a reset that did nothing")
+    t.eq(db.global.minimap.hide, true, "and the button is STILL hidden")
     t.eq(Schema.Get(MINIMAP_PATH), false)
 end)
 
@@ -658,7 +648,7 @@ test("Launcher: a reset does not RE-HIDE a shown button either", function()
     local before = #acts
 
     inst.addon:ResetAll()
-    inst.addon:ResetCategory("General")
+    inst.addon:ResetCategoriesPage()
 
     t.eq(db.global.minimap.hide, false, "still shown")
     t.eq(#acts, before, "and LibDBIcon was never asked to Show or Hide anything")

@@ -123,7 +123,7 @@ test("a category reset after the load pass leaves no category table", function()
         disabledStrings = { ALSO_GONE = true },
     }
     Database.RunMigrations(db)
-    inst.addon:ResetCategory(liveCat)
+    inst.addon:ResetCategoriesPage()
     t.nilv(db.profile.categories[liveCat], "nothing a row does not own is left for the reset to strand")
 end)
 

@@ -1018,7 +1018,7 @@ end
 -- effects ONCE: one ApplyStrings pass, one panel refresh, and ONE
 -- `[Set] reset <label>: N rows` line in place of a [Set] line per row
 -- (debug-logging-§10). PrettyChat:ResetCategoriesPage (the Categories page's
--- Defaults button), PrettyChat:ResetCategory and PrettyChat:ResetString are its
+-- Defaults button) and PrettyChat:ResetString (the per-string Reset button) are its
 -- callers.
 --
 -- The act is the schema runtime's own (issue #18): one S.BulkRun('reset', label)

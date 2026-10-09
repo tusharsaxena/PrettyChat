@@ -152,7 +152,7 @@ end)
 
 test("ResetString clears both the custom format and the per-string disable", function()
     -- A per-string reset must restore BOTH dimensions to default (enabled
-    -- + default format), matching ResetCategory/ResetAll. Dirty both first.
+    -- + default format), matching ResetCategoriesPage/ResetAll. Dirty both first.
     Schema.Set(cat .. "." .. g .. ".enabled", false)
     Schema.Set(cat .. "." .. g .. ".format", "CUSTOM:" .. tostring(g))
     t.falsy(inst.addon:IsStringEnabled(cat, g), "string disabled before reset")

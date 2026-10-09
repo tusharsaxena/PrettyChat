@@ -1,6 +1,6 @@
 # Override pipeline
 
-How Blizzard's chat lines become PrettyChat's reformatted output. The engine lives in `modules/Override.lua` (`ApplyStrings`, the enable predicates, `ResetString` / `ResetCategory` / `ResetAll`); the pristine-values snapshot is taken by `core/PrettyChat.lua`'s `SnapshotOriginals`, the first thing `OnEnable` does. It runs at `OnEnable`, on every settings change, on a profile switch / copy / reset, and — only while `General.visibility` is a combat-scoped mode — at each combat boundary.
+How Blizzard's chat lines become PrettyChat's reformatted output. The engine lives in `modules/Override.lua` (`ApplyStrings`, the enable predicates, `ResetString` / `ResetCategoriesPage` / `ResetAll`); the pristine-values snapshot is taken by `core/PrettyChat.lua`'s `SnapshotOriginals`, the first thing `OnEnable` does. It runs at `OnEnable`, on every settings change, on a profile switch / copy / reset, and — only while `General.visibility` is a combat-scoped mode — at each combat boundary.
 
 ## Three steps
 
@@ -97,7 +97,7 @@ Runs from:
 
 - `OnEnable` — initial pass after the snapshot.
 - `Schema.Set` (every row write from the panel and the slash CLI) — `Schema.Set` calls `ApplyStrings` directly after the row's `set()` writes the DB. Row `set()` closures themselves are pure DB writes; they do not trigger `ApplyStrings`, so the batched entry below can apply once per batch.
-- `Schema.ResetRows(rows, label)`, the write helper's batched entry, reached from `PrettyChat:ResetString(cat, name)` (that string's two rows) and `PrettyChat:ResetCategory(cat)` (every row of the category, or `General`'s two stored rows). It writes each row's default through its `set()`, then calls `ApplyStrings` once and `Schema.NotifyPanelChange` once for the whole batch.
+- `Schema.ResetRows(rows, label)`, the write helper's batched entry, reached from `PrettyChat:ResetString(cat, name)` (that string's two rows) and `PrettyChat:ResetCategoriesPage()` (every message category's rows, never `General`'s). It writes each row's default through its `set()`, then calls `ApplyStrings` once and `Schema.NotifyPanelChange` once for the whole batch.
 - `PrettyChat:ResetAll()` — **not** directly. It is a profile reset (`db:ResetProfile()`, options-ui-§12); the re-apply lands on the `OnProfileReset` callback below.
 - The three AceDB profile callbacks registered in `core/PrettyChat.lua`'s `OnInitialize` and answered by its `OnProfileChanged`, `OnProfileCopied` and `OnProfileReset` methods. One shared reload, three lines: re-run the migrations, `SyncCombatWatch`, `ApplyStrings`, `Schema.NotifyPanelChange()` (nil → every category), a redraw of the Profiles page (`NS.Config.RefreshProfilesPage`, [profiles.md](./profiles.md)), then one line worded by the event (debug-logging-§10): `[Profile] switched → applied N restored M`, `[Set] copied profile 'A' → 'B'` or `[Set] reset profile '<name>' to defaults (N rows)`. Switching, copying or resetting a profile replaces every stored value at once, and nothing else would have reacted.
 - `PrettyChatCombatWatcher` — one `ApplyStrings` pass per combat **boundary**, and only while `General.visibility` is `inCombat` or `outOfCombat` (see [The three enable layers](#the-three-enable-layers)).

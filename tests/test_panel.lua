@@ -373,7 +373,7 @@ end
 -- PC-R-03: the header button asks first (PRETTYCHAT_RESET_CATEGORIES), because
 -- one click discards the edits on all eight tabs; nothing changes until Accept.
 --
--- red under: defaultsOnClick calling ResetCategory(activeCategory(ctx)), or the
+-- red under: defaultsOnClick resetting only activeCategory(ctx)'s rows, or the
 -- header click resetting without the confirmation.
 test("the Categories Defaults button asks, then resets every category, not only the selected tab", function()
     local fresh = ctx.loadAddon()

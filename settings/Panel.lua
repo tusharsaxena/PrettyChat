@@ -743,7 +743,7 @@ H.RegisterOptionsPage("General", "General", function(mainCategory)
     -- options-ui-§5 gives every sub-page a header Defaults button, and §12 puts the
     -- General page's behind the SAME implementation as the composed `Reset all
     -- settings` and `/pc resetall`: the confirmation popup, then PrettyChat:ResetAll.
-    -- Not ResetCategory("General"), which would be a Defaults button doing less than
+    -- Not a reset of the General page's own rows, which would be a Defaults button doing less than
     -- the reset beside it. The minimap choice survives because it lives in the
     -- global store, which a profile reset does not reach (launcher-§3).
     ctx.panel.defaultsOnClick = function() PrettyChat:ConfirmResetAll() end

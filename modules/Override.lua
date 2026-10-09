@@ -74,7 +74,7 @@ end
 --- is the correct reading for that window: nothing can be holding a latch that
 --- does not exist yet, and OnEnable arms it from the stored path before anything
 --- draws.
--- Dot-defined with no receiver, like ResetCategory below: the body reads the latch
+-- Dot-defined with no receiver, like ResetCategoriesPage below: the body reads the latch
 -- through NS rather than through the addon table, and every caller still uses the
 -- colon form.
 function PrettyChat.IsStoodDown()
@@ -368,58 +368,6 @@ function PrettyChat:ApplyStrings()
     return applied, restored
 end
 
--- The General virtual category's two PROFILE rows, named one by one. This is an
--- ALLOW-LIST and never RowsByCategory("General"), and it is load-bearing for two
--- separate rules now rather than the one it was written for.
---
---   * the session-only `state.debugConsole` row is in that category too, and a
---     Defaults press must not close the player's debug console;
---   * `global.minimap.shown` (stored as db.global.minimap.hide) is in it as
---     well — settings/Schema.lua wires the composed Master-controls rows onto the virtual General category, so the
---     minimap row carries `category = "General"` AND a `default`, which is
---     exactly the shape a page walk rewrites. launcher-§3 (Standard v2.54.0)
---     states as a PROPERTY that a player's minimap-button choice survives both
---     options-ui-§12's `Reset all settings` and a page-scoped Defaults button:
---     it is a per-installation display preference, in the same class as the
---     angle the player dragged the button to, which LibDBIcon keeps in the same
---     table and which no reset touches.
---
--- Widening this back to the category walk would un-hide a hidden button, and
--- nothing else in the file would look wrong. tests/test_launcher.lua drives the
--- reset and asserts the stored value survived it.
---
--- NO PANEL BUTTON REACHES THIS ANY MORE, and `/pc` never did. The General page's
--- header Defaults button is the options-ui-§12 profile reset (ConfirmResetAll ->
--- ResetAll), and the Categories page's is ResetCategoriesPage below. The allow-list
--- stays because ResetCategory stays public, and its General arm is the one call
--- that could still walk the minimap row.
-local GENERAL_RESET_PATHS = { "General.enabled", "General.visibility" }
-
--- Restore one category to its defaults, every row of it through the write
--- helper's batched entry (architecture-§5): one ApplyStrings pass, one panel
--- refresh and one `[Set] reset <cat>: N rows` line, never a pass or a [Set] line
--- per row (debug-logging-§10). For General the visibility row's own set()
--- re-syncs the combat watcher. No source path calls it: no panel button and no
--- `/pc` verb reaches it (see GENERAL_RESET_PATHS above). It is published for the
--- headless suite, which drives it from test_override, test_database,
--- test_launcher and test_schema.
---
--- Dot-defined with a `_` receiver: callers still use the colon form, and the body
--- reads the schema through NS rather than through the addon table.
-function PrettyChat.ResetCategory(_, category)
-    local Schema = NS.Schema
-    local list
-    if category == "General" then
-        list = {}
-        for _, path in ipairs(GENERAL_RESET_PATHS) do
-            list[#list + 1] = Schema.FindByPath(path)
-        end
-    else
-        list = Schema.RowsByCategory(category)
-    end
-    Schema.ResetRows(list, category)
-end
-
 -- The Categories page's Defaults button, and the Settings window's footer control
 -- that forwards to it. options-ui-§13: a page's Defaults stays PAGE-WIDE, and its
 -- blast radius MUST NOT narrow to the visible tab, so this is every message
@@ -496,7 +444,7 @@ end
 
 -- Restore ONE string to its untouched default. A per-string reset must
 -- clear BOTH per-string dimensions — the custom format AND the disable
--- flag — so it matches the full-reset semantics of ResetCategory /
+-- flag — so it matches the full-reset semantics of ResetCategoriesPage /
 -- ResetAll (which wipe every dimension at once). Resetting only the
 -- format would leave a previously-disabled string half-reset. Both rows go
 -- through the write helper's batched entry, so the pair costs one pass and

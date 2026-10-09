@@ -266,7 +266,7 @@ Total.
 - ResetString clears both the custom format and the per-string disable
 - the Tradeskill format is the one that reaches _G for LOOT_ITEM_CREATED_SELF
 
-### test_override.lua (46)
+### test_override.lua (44)
 
 - GetStringValue falls back to the defaults table until overridden
 - IsAddonEnabled treats an absent flag as default-true
@@ -286,11 +286,9 @@ Total.
 - IsEventValid rejects a name without calling RegisterEvent
 - toggling visibility twice does not duplicate a rejected name
 - the [Init] summary names a rejected event
-- ResetCategory drops the whole category table
-- ResetCategory('General') clears only the addon-wide keys
+- a category's batched reset drops the whole category table
 - ResetAll clears the master flag and every category at once
-- ResetCategory: one pass, one [Set] reset line counting the rows written
-- ResetCategory('General'): one pass, one [Set] reset line, the watcher disarmed
+- a category's batched reset: one pass, one [Set] reset line counting the rows written
 - ResetString: one pass, one [Set] reset line, both of the string's rows cleared
 - a reset counts only the rows it changed, and still logs once when none
 - a reset that raises between its writes logs one marked line, then raises
@@ -426,7 +424,7 @@ Total.
 - Launcher: `Reset all settings` does not un-hide the button
 - Launcher: `/pc resetall` counts the rows it rewrote, and not the minimap row
 - Launcher: a hidden minimap button survives the General page's real Defaults button
-- Launcher: no per-category reset reaches the row either
+- Launcher: the Categories page's Defaults does not reach the row either
 - Launcher: a reset does not RE-HIDE a shown button either
 - Launcher: /pc enable and /pc disable write the Enable row's own stored path
 - Launcher: the verbs hold NO state of their own — the long form is the same write
@@ -704,7 +702,7 @@ Total.
 | test_schema.lua | 46 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
-| test_override.lua | 46 |
+| test_override.lua | 44 |
 | test_database.lua | 27 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
@@ -722,4 +720,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **576** |
+| **Total** | **574** |

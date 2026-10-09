@@ -694,7 +694,7 @@ end)
 --
 -- options-ui-§1 keeps Reset All real and slash-commands-§1 keeps the host verbs,
 -- so a load with no LibKa0s still writes. One case per writer kind: the host verb,
--- a panel-less category reset, and the seam itself with its gate.
+-- a panel-less Categories-page reset, and the seam itself with its gate.
 local bareSeam = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
 
 test("seam, library absent: /pc disable and /pc enable still write the master switch", function()
@@ -714,7 +714,7 @@ test("seam, library absent: a category reset and the format gate still work", fu
     t.truthy(BS.Set("Loot.enabled", false), "a toggle write lands")
     t.falsy(BS.Set(SIG, "Loot | %s %s"), "a surplus conversion is still refused")
     t.eq(BS.Get(SIG), "Loot | %s", "and stores nothing")
-    B.addon:ResetCategory("Loot")
+    B.addon:ResetCategoriesPage()
     t.eq(BS.Get("Loot.enabled"), B.NS.Defaults.Loot.enabled, "the category reset restored the toggle")
     t.eq(BS.Get(SIG), BS.FindByPath(SIG).default, "and the format")
     t.nilv(B.addon.db.profile.categories.Loot, "leaving no category table")

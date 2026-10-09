@@ -55,7 +55,7 @@ Which checks to run. Every row after the first also runs the routine row's four 
 | `settings/Panel.lua` | PANEL, RESET, DIAG-9 – 18, INSTALL-6, LAUNCH-6, OVR-8 |
 | The slash surface in `settings/Slash.lua` | SLASH, STATE-3 – 4, PANEL-19 – 21, INSTALL-6, RESET-5, RESET-10, COMBAT-1, COMBAT-4, DIAG-1 – 8 |
 | `modules/Diagnostics.lua`, the `diagnostics` row or the `debug` word | DIAG-1 – 8, DIAG-11 – 15, COMBAT-4 |
-| A reset path (`ResetString` / `ResetCategory` / `ResetAll`) or a Reset / Defaults button | RESET |
+| A reset path (`ResetString` / `ResetCategoriesPage` / `ResetAll`) or a Reset / Defaults button | RESET |
 | `core/DebugLogSetup.lua`, `media/`, or panel chrome (fonts, textures, borders) | DEGRADED, DIAG-9 – 21, PANEL-1 – 9, PANEL-14, RESET-3 – 7, RESET-10, COMBAT-1 – 2, INSTALL-2, OVR-8 |
 | `core/LauncherSetup.lua`, the minimap row, `media/logos/` or the TOC's `## IconTexture` | LAUNCH, STATE, COMBAT-3 |
 | The Profiles page or `/pc profile` | PROFILE, LAUNCH-6 |
