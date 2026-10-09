@@ -30,7 +30,7 @@ and removed (PC-R-05). Re-run the sweep before trusting this page.
 
 The exemption drops `core/PerfSetup.lua`, `PrettyChatPerfDB`, the `perf` verb registration,
 `tests/perf.lua` and `docs/perf-analysis/`; `perf` stays reserved and `libs/LibKa0s/` stays whole.
-The vendored kit-26 runner reads the register row and records skip reason (2),
+The vendored kit runner (`tests/_kit/run-automated-tests.sh`) reads the register row and records skip reason (2),
 `performance-§12 no-combat-path exemption (ratified; docs/ARCHITECTURE.md -> Documented deviations)`,
 in [`automated-tests/`](./automated-tests/RESULTS.md); the release notes name the exemption too.
 

@@ -20,7 +20,8 @@ luacheck .                 # static analysis (config in .luacheckrc)
 tests/
   _kit/              -- VENDORED, never edited: framework.lua, asserts.lua, inventory.lua,
                      --                          loader.lua, mock_base.lua, mock_record.lua,
-                     --                          mock_events.lua, mock_ids.lua, vendor_sync.lua,
+                     --                          mock_events.lua, mock_ids.lua, mock_lines.lua,
+                     --                          mock_resize.lua, secrets.lua, vendor_sync.lua,
                      --                          test_eol.lua, test_prose.lua, prose_lists.lua,
                      --                          prose_coverage.lua, prose_selftests.lua,
                      --                          test_layout_cap.lua, test_diagnostics_contract.lua,
@@ -113,7 +114,7 @@ Run **both** of each pair and read the difference between them:
 - **content differs** → a real fork in `libs/` or `tests/_kit/`, which is the one state the vendoring discipline forbids. Fix it upstream in `../LibKa0s` and re-vendor whole (`cp -r ../LibKa0s/LibKa0s/. libs/LibKa0s/`); never edit the vendored copy.
 - **content same, bytes differ** → **nothing has forked.** The two checkouts merely disagree about line endings. Every repo here pins `* text=auto eol=crlf` while git stores LF blobs, so a working tree holding either ending round-trips to the same blob and `git status` stays clean on both sides — the state is invisible and self-perpetuating. Renormalize whichever side drifted (`git add --renormalize .`); re-vendoring will **not** converge it, it just moves the wrong endings downstream.
 
-`tests/test_vendor_sync.lua` runs the same comparison mechanically whenever the sibling checkout is present. It is a ten-line call into the shared gate `tests/_kit/vendor_sync.lua`, vendored from LibKa0s like the rest of the kit rather than hand-copied here. It reads raw bytes and applies **exactly one** normalization — CR stripped from the working-tree side, because the other side is a `git show` blob (LF) while this working tree is CRLF — so a line-ending-only difference passes and a single content byte fails. A missing sibling is the one case where it can go quiet, and it reports **SKIP with that reason** rather than passing silently, which is why the commands above stay written down here.
+`tests/test_vendor_sync.lua` runs the same comparison mechanically whenever the sibling checkout is present. It is a two-statement call into the shared gate `tests/_kit/vendor_sync.lua`, vendored from LibKa0s like the rest of the kit rather than hand-copied here. It reads raw bytes and applies **exactly one** normalization — CR stripped from the working-tree side, because the other side is a `git show` blob (LF) while this working tree is CRLF — so a line-ending-only difference passes and a single content byte fails. A missing sibling is the one case where it can go quiet, and it reports **SKIP with that reason** rather than passing silently, which is why the commands above stay written down here.
 
 **Which tag it compares against comes from the root [`CLAUDE.md`](../CLAUDE.md).** The gate greps the `Bundles [LibKa0s](…) vX.Y.Z (MIT).` provenance line out of that file — kit revision 9 moved it there from `README.md`, with **no fallback**, because the README is the player's page and no longer carries a bundled-library inventory at all. So the line moves in the same commit as the vendored bytes: bump `libs/LibKa0s/` or `tests/_kit/` without moving it and this gate fails, naming `CLAUDE.md`.
 
