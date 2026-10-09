@@ -12,7 +12,7 @@ the analysis of a given run is its `ANALYSIS.md`.
 read and compared, not thresholded (`performance-§9`, `performance-§10`).
 
 **The tag is gated on all four suites at `pass`, plus zero functions above CCN 15**
-(`automated-tests-§3`, *The release gate*), evaluated by `/wow-addon:bump-version` from the
+(`automated-tests-§3`, *The release gate*), evaluated by `/dev-copilot:bump-version` from the
 `manifest.json` the release run writes — not by this script, whose exit code is unchanged.
 
 A `skip` is a suite that did not run at all. It is never a pass, and at the release gate it is
@@ -32,6 +32,7 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 
 | Run | Commit | Tree | Version | Lint w/e | Files | Tests | Perf | NLOC | Funcs | Avg NLOC | Avg CCN | Max CCN | CCN warn | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [`20261009-191724`](20261009-191724/) | `3c40352` | clean | 1.6.0 → 1.7.0 | 0/0 | 56 | 574/1/575 | skip | 57462 | 1319 | 7.3 | 2.1 | 15 | 0 | **green** |
 | [`20260927-031723`](20260927-031723/) | `a663bc6` | clean | 1.6.0 | 0/0 | 53 | 518/0/518 | skip | 56489 | 1135 | 6.8 | 1.9 | 14 | 0 | **green** |
 | [`20260927-030323`](20260927-030323/) | `c2faa0c` | clean | 1.5.0 → 1.6.0 | 0/0 | 51 | 518/0/518 | skip | 56455 | 1134 | 6.8 | 1.9 | 14 | 0 | **green** |
 | [`20260926-193107`](20260926-193107/) | `d6e8d76` | clean | 1.5.0 | 0/0 | 51 | 518/0/518 | skip | 56455 | 1134 | 6.8 | 1.9 | 14 | 0 | **green** |
@@ -51,19 +52,18 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 
 ## Test suite
 
-**518 cases** — 518 passed, 0 failed, 0 skipped. The generated inventory
-[`20260927-031723/test-cases.md`](20260927-031723/test-cases.md) is the authority on which cases existed at this run;
+**575 cases** — 574 passed, 0 failed, 1 skipped. The generated inventory
+[`20261009-191724/test-cases.md`](20261009-191724/test-cases.md) is the authority on which cases existed at this run;
 `docs/test-cases.md` is that same list at HEAD.
 
-The count has been **flat at 518 across the last 4 runs**. A suite that stopped growing while
-the addon did is a coverage gap, and it is the one thing the table above cannot show.
+Moved **518 → 575** since the previous run.
 
-No case reported a `skip`, so passed and total agree and nothing in this row claims coverage
-that was not exercised.
+**1 case(s) reported a `skip`.** A skip is counted in the total and never in `passed`, and at
+the release gate it is NOT EVALUATED rather than passed (`automated-tests-§3`).
 
 ## Lint
 
-**0 warnings / 0 errors over 53 files** (`luacheck .`).
+**0 warnings / 0 errors over 56 files** (`luacheck .`).
 
 Read that figure with its scope attached: `.luacheckrc` excludes 6 path(s) from it — `Libs`, `libs`, `GlobalStrings`, `docs/audits`, `docs/reviews`, `tests/_kit/` —
 so nothing under them is in the count above. A `0/0` that never moves is partly a statement about
@@ -80,7 +80,7 @@ combat path for one to measure, not because the question was never asked.
 
 ## Complexity watch list
 
-Current as of [`20260927-031723`](20260927-031723/) — **this run's measurement, not its diff.** Max CCN **14** across 1135
+Current as of [`20261009-191724`](20261009-191724/) — **this run's measurement, not its diff.** Max CCN **15** across 1319
 functions, **0** of them warned on; 1 file(s) in the 1000–1500 band and 0 over the 1500 cap
 (`layout-§1`).
 
@@ -100,7 +100,7 @@ None.
 
 | Band | File | LOC | Disposition |
 |---|---|---|---|
-| 1000–1500 (on notice) | `settings/Schema.lua` | 1070 | **On notice**, carried forward: unchanged at 1070 at `20260927-031723` (`a663bc6`, the run after the 1.6.0 release run), fifth consecutive run in the band (entered at `20260924-104049`), one release run in that span (`20260927-030323`, 1.6.0). Now the only file in the band, after the `tests/test_panel.lua` split (`a663bc6`) took that file out. 998 lines at the LibKa0s v1.56.0 re-vendor (`18b3e2e`), 1070 at `f85e6d1`: the 2026-09-23 remediation items grew it, the largest shares being PC-00 (+41, clearing the re-vendor reds) and PC-01 (+14, the v1.56.0 Core and Schema forwarding). It is the settings schema — every row, its wiring and the runtime instance over them — so it grows with the schema rather than by tangle, and no function in it is warned on. On notice is the compliant state under `layout-§1`, not a breach, and `docs/ARCHITECTURE.md` → *Files over the 1500-line cap* names it. Re-check at 1200. |
+| 1000–1500 (on notice) | `settings/Schema.lua` | 1113 | **On notice**, carried forward and re-ruled: 1070 → 1113 (+43) at `20261009-191724` (`3c40352`, the 1.7.0 release run), sixth consecutive run in the band (entered at `20260924-104049`), second release run in that span (1.6.0 at `20260927-030323`, 1.7.0 here). The growth is the 1.7.0 work landing in the schema: SP-PC-01 (+17, the Profiles page's rows and wiring), PC-01 (+19 net, refusing blank formats at the write seam), DL-PC-02 (+7, debug coverage), and a net 0 from SD-FIN-01, PC-05 and SD-FIN-03. It is the settings schema — every row, its wiring and the runtime instance over them — so it grows with the schema rather than by tangle, and no function in it is warned on. On notice is the compliant state under `layout-§1`, not a breach, and `docs/ARCHITECTURE.md` → *Files over the 1500-line cap* names it. Re-check at 1200. |
 
 Left out as generated non-shipping data (`layout-§1`'s second carve-out, declared in
 `Kit.layoutCap.exempt` in `tests/run.lua`, the set the cap gate reads): `GlobalStrings/GlobalStrings.lua`.
