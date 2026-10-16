@@ -18,7 +18,7 @@ import, or a documented command. Nothing here is listed because it seemed likely
 
 | Requirement | Version | Evidence |
 |---|---|---|
-| World of Warcraft, Retail | Interface `120100` (Midnight 12.1.0) | `PrettyChat.toc:1` — `## Interface: 120100`, the single latest-Retail line |
+| World of Warcraft, Retail | Interface `120105` (Midnight 12.1.5) | `PrettyChat.toc:1` — `## Interface: 120105`, the single latest-Retail line |
 
 Every library the addon uses is **vendored and committed** under `libs/` and listed in the TOC's
 `# Libraries` section, so a player installs no library packs:
