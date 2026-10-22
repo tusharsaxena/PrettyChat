@@ -97,3 +97,6 @@ Bugs and feature requests are tracked on GitHub: [https://github.com/tusharsaxen
 
 The debug console uses [JetBrains Mono](https://www.jetbrains.com/lp/mono/), licensed under the SIL
 Open Font License 1.1. It ships inside the bundled LibKa0s payload, with its license text beside it.
+
+The debug console's copy, clear and close marks are from [Open Iconic](https://github.com/iconic/open-iconic)
+by Waybury, licensed under the MIT License. The license text ships beside the art.

@@ -139,7 +139,7 @@ Total.
 - MediaSetup: NS.MediaFont answers the vendored face, and only for a face it ships
 - MediaSetup: the font this addon names is one the library carries
 - MediaSetup: every mark the console title bar reaches for is one the library ships
-- MediaSetup: every name the library ships has a file in the vendored copy
+- MediaSetup: every icon CLAUDE.md declares has a file in the vendored copy, and nothing else ships
 - MediaSetup: the vendored face is on disk where the seam says it is
 - MediaSetup: with no library there is no art and no face, and that is not an error
 

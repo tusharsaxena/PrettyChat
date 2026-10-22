@@ -28,6 +28,7 @@ works.
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
 | DIAG-1 – 25 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
+| RV-75 – 77 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
 ## Before you start
@@ -675,6 +676,23 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
 - **DEGRADED-10. Restore.** Quit, rename `libs/LibKa0s.off` back, log in → no missing-library line,
   `/pc list` prints the full listing, and the console is monospaced with its three marks. Result: pass (owner-marked 2026-10-10)
 
+## RV
+
+Checks owed by the LibKa0s v1.75.0 re-vendor (`docs/revendor/2026-10-22-v1.75.0/`), whose copy
+prunes `libs/LibKa0s/media/icons/` to the `LibKa0s icons: clear, close, copy.` line in `CLAUDE.md`.
+
+- **RV-75. Icons after the v1.75.0 prune.** `/pc debug` → the console's copy, clear and close marks
+  draw as three square icons (the DIAG-17 look). Open the copy window with the copy mark → its close
+  mark draws, and a click on it closes the window. **Fail:** a blank control where a mark should be
+  means a name the library draws was pruned because the declaration left it out; the declaration
+  and `libs/LibKa0s/media/icons/` are the places to look. Result: owed
+- **RV-76. A clean load on the new payload.** `/reload` with PrettyChat enabled → no Lua error.
+  `/pc config` opens the landing page, General, Categories and Profiles; `/pc test` prints the
+  preview. **Fail:** any Lua error naming a file under `libs/LibKa0s/`. Result: owed
+- **RV-77. The Categories page keeps its scroll position (Options minor 29).** On a long Categories
+  page, scroll down and change a setting that re-renders the page → the scroll position is kept, not
+  reset to the top. **Fail:** the page jumps back to the top after the change. Result: owed
+
 ## Non-English client
 
 Run on a client set to **deDE or frFR**, the two the collection's other locale checks use
@@ -730,7 +748,7 @@ Until the pass runs, record this section as unrun, not as coverage.
 
 ## Pending sign-off
 
-None. On 2026-10-10 the owner marked every check in this file as passed, recorded on its
+On 2026-10-10 the owner marked every check in this file as passed, recorded on its
 `Result:` line as `pass (owner-marked 2026-10-10)`; a check that already carried a dated owner pass
 keeps it. A check added or rewritten after that date is listed here until its `Result:` line records
-a pass.
+a pass. Listed now: RV-75, RV-76 and RV-77 (added 2026-10-22 with the LibKa0s v1.75.0 re-vendor).

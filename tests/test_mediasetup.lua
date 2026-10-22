@@ -80,18 +80,45 @@ function()
     end
 end)
 
-test("MediaSetup: every name the library ships has a file in the vendored copy", function()
-    -- The library's own suite checks its catalog against its own directory. This
-    -- checks THE COPY: a re-vendor that dropped a file, or a packaging rule that
-    -- filtered one out, leaves a catalog naming art this build does not carry.
-    local Media = media()
+test("MediaSetup: every icon CLAUDE.md declares has a file in the vendored copy, and nothing else ships",
+function()
+    -- From LibKa0s v1.75.0 (kit revision 40) media/icons/ is pruned to the
+    -- `LibKa0s icons:` line under the CLAUDE.md provenance line, so the copy no
+    -- longer carries the whole catalog. The kit's gate already holds declared ==
+    -- shipped; this case ties THAT declaration to what this addon draws, which the
+    -- gate cannot see. The line is read with the kit's own parser, never a second
+    -- one written here.
+    -- red under: the prune skipped, or a drawn name left out of the declaration
+    local VendorSync = dofile((ctx.root or ".") .. "/tests/_kit/vendor_sync.lua")
+    local fh = io.open((ctx.root or ".") .. "/CLAUDE.md", "rb")
+    t.truthy(fh ~= nil, "CLAUDE.md is readable")
+    local doc = fh:read("*a")
+    fh:close()
+    local decl, why = VendorSync.iconDeclaration(doc)
+    t.truthy(decl ~= nil, "CLAUDE.md carries a valid `LibKa0s icons:` line: " .. tostring(why))
+    t.eq(decl.mode, "list", "this addon declares a list, not all or none")
+
     local root = (ctx.root or ".") .. "/libs/LibKa0s/media/icons/"
-    local missing = {}
-    for _, name in ipairs(Media.ICONS) do
-        local fh = io.open(root .. name .. ".tga", "rb")
-        if fh then fh:close() else missing[#missing + 1] = name end
+    local declared, missing = {}, {}
+    for _, name in ipairs(decl.names) do
+        declared[name] = true
+        local icon = io.open(root .. name .. ".tga", "rb")
+        if icon then icon:close() else missing[#missing + 1] = name end
     end
-    t.eq(table.concat(missing, ", "), "")
+    t.eq(table.concat(missing, ", "), "", "declared icons missing from the vendored copy")
+
+    -- The console's title-bar marks (the case above) must all be declared, or the
+    -- prune removes art the library still draws and the control draws blank.
+    for _, name in ipairs({ "copy", "clear", "close" }) do
+        t.truthy(declared[name] == true, "the console draws '" .. name
+            .. "', which the `LibKa0s icons:` line does not declare")
+    end
+
+    -- An undeclared catalog name is gone: the prune ran.
+    t.truthy(not declared.info, "info is not declared here")
+    local stray = io.open(root .. "info.tga", "rb")
+    if stray then stray:close() end
+    t.truthy(stray == nil, "info.tga still ships, so the prune did not run")
 end)
 
 test("MediaSetup: the vendored face is on disk where the seam says it is", function()

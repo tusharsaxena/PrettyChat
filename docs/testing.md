@@ -121,7 +121,7 @@ Run **both** of each pair and read the difference between them:
 ## The 1500-line cap gate
 
 `tests/_kit/test_layout_cap.lua` — the kit's gate since LibKa0s v1.55.0 (kit revision 25), and still
-the gate in the vendored LibKa0s v1.71.0 (kit revision 38), declared in `tests/run.lua` as
+the gate in the vendored LibKa0s v1.75.0 (kit revision 41), declared in `tests/run.lua` as
 `{ name = "test_layout_cap", dir = "tests/_kit/" }` — compares two things: every authored
 `.lua` git tracks, and the census under *Files over the 1500-line cap* in
 [ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both directions, so a file that crosses the
@@ -235,7 +235,7 @@ There are **two** checkpoints and a suite answers differently at each, so the ta
 | `lint` | `luacheck .` | **yes** | **yes** |
 | `tests` | `lua tests/run.lua` | **yes** | **yes** |
 | `perf` | `lua tests/perf.lua` | no — recorded only | **yes** |
-| `complexity` | `lizard -l lua -L 1500 -x "./libs/*" -x "./tests/_kit/*" .`, run by the runner over a sanitized shadow of the tree, with a function-count parity check (kit revision 35); never raw | no — recorded only | **yes** (a parity mismatch, `blindFiles` > 0, is `fail` and blocks the tag like a skip) |
+| `complexity` | `lizard -l lua -L 1500 -x "./libs/*" -x "./tests/_kit/*" .`, run by the runner over a sanitized shadow of the tree, with a function-count parity check (kit revision 35); never raw | no — recorded only | **yes** (a parity mismatch, `blindFiles` > 0, is `fail` and blocks the tag like a skip; so is a crashed or bounded lizard run since kit revision 41, listed under a separate `crashed` bucket that names the file, alongside `blindFiles`) |
 
 **`perf` and `complexity` never fail a run and never block a commit.** They are measured, recorded
 and diffed — a threshold that fails a run teaches everyone to reach for `--no-verify`, after which
