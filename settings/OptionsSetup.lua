@@ -110,7 +110,6 @@ if not lib then
         __tabBand            = function() return 0 end,
         __layoutTabs         = function() return {} end,
         __tabPlacement       = function() return {}, 0 end,
-        __releaseChrome      = function() end,
         -- The strip's measured row pitch and the seam that forgets it. Zero is
         -- the honest degraded answer for the same reason __tabBand's is: with no
         -- AceGUI there is no tab art to measure.
@@ -137,6 +136,10 @@ if not lib then
         -- NavRail, new at LibKa0s v1.61.0 (OptionsNav minor 1): drawn only by a page
         -- render, and no page here draws a rail, so the same inert no-op applies.
         NavRail              = function() end,
+        -- Drawer, new at LibKa0s v1.73.0 (Options minor 29 attaches OptionsDrawer minor 1):
+        -- drawn only by a page render, and no page here draws a drawer, so the same inert
+        -- no-op applies.
+        Drawer               = function() end,
         -- ── the ONE stub member that is reached at LOAD ──────────────────
         --
         -- options-ui-§1's degradation rule is LOAD-COMPLETING, and the measured
