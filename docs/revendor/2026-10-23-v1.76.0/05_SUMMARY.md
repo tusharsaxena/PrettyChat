@@ -17,3 +17,18 @@
   `ka0s-bounded lua tests/run.lua` 574 passed, 0 failed, 1 skipped (575), `test_vendor_sync`
   green against v1.76.0; no authored `.lua` over the 1500-line cap outside the census.
 - **Owed in client:** nothing new; the run's own smoke file carries no PrettyChat check for this item.
+
+## Addendum: the tag moved (PC-RV2)
+
+The local tag `v1.76.0` was moved for LK-91 (step-panel labels bounded before the command column,
+the BankLedger `/bl sim` overlap): LibKa0s commit `9949368` (tag object `546e284`) -> `7e81ff7`
+(tag object `2949c78`). The payload was re-copied whole from the moved tag, the same way, and
+`media/icons/` re-pruned to `LibKa0s icons: clear, close, copy.` (kept 4, removed 5836).
+
+- **Files that changed:** `libs/LibKa0s/PerfPanel.lua` (PerfPanel minor 7 -> 8, Perf key
+  15.1.1.7 -> 15.1.1.8) and `libs/LibKa0s/SimPanel.lua` (still minor 5). `tests/_kit/` did not
+  move (kit revision 41).
+- **Consumption:** PrettyChat opens neither panel, so nothing here changes and nothing is adopted.
+  The provenance line already names v1.76.0 and is kept.
+- **Gates:** `ka0s-bounded luacheck .` 0 / 0 in 56 files; `ka0s-bounded lua tests/run.lua` 574
+  passed, 0 failed, 1 skipped (575), `test_vendor_sync` green against the moved tag.
