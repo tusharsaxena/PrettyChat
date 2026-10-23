@@ -685,13 +685,13 @@ prunes `libs/LibKa0s/media/icons/` to the `LibKa0s icons: clear, close, copy.` l
   draw as three square icons (the DIAG-17 look). Open the copy window with the copy mark → its close
   mark draws, and a click on it closes the window. **Fail:** a blank control where a mark should be
   means a name the library draws was pruned because the declaration left it out; the declaration
-  and `libs/LibKa0s/media/icons/` are the places to look. Result: owed
+  and `libs/LibKa0s/media/icons/` are the places to look. Result: pass (owner-marked 2026-10-23)
 - **RV-76. A clean load on the new payload.** `/reload` with PrettyChat enabled → no Lua error.
   `/pc config` opens the landing page, General, Categories and Profiles; `/pc test` prints the
-  preview. **Fail:** any Lua error naming a file under `libs/LibKa0s/`. Result: owed
+  preview. **Fail:** any Lua error naming a file under `libs/LibKa0s/`. Result: pass (owner-marked 2026-10-23)
 - **RV-77. The Categories page keeps its scroll position (Options minor 29).** On a long Categories
   page, scroll down and change a setting that re-renders the page → the scroll position is kept, not
-  reset to the top. **Fail:** the page jumps back to the top after the change. Result: owed
+  reset to the top. **Fail:** the page jumps back to the top after the change. Result: pass (owner-marked 2026-10-23)
 
 ## Non-English client
 
@@ -748,7 +748,7 @@ Until the pass runs, record this section as unrun, not as coverage.
 
 ## Pending sign-off
 
-On 2026-10-10 the owner marked every check in this file as passed, recorded on its
+None. On 2026-10-10 the owner marked every check in this file as passed, recorded on its
 `Result:` line as `pass (owner-marked 2026-10-10)`; a check that already carried a dated owner pass
 keeps it. A check added or rewritten after that date is listed here until its `Result:` line records
-a pass. Listed now: RV-75, RV-76 and RV-77 (added 2026-10-22 with the LibKa0s v1.75.0 re-vendor).
+a pass.
