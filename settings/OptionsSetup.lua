@@ -148,6 +148,11 @@ if not lib then
         KeybindingsTab       = function() return nil end,
         KeybindRows          = function() return nil end,
         StrataTooltip        = function() return nil end,
+        -- ResetAllTooltip, new at LibKa0s v1.77.0 after the tag moved (OptionsCompose
+        -- minor 11): the tooltip a General-page header Defaults carries, read only by a
+        -- page render. No page here draws that header yet, so the same inert no-op
+        -- applies.
+        ResetAllTooltip      = function() return nil end,
         -- ── the ONE stub member that is reached at LOAD ──────────────────
         --
         -- options-ui-§1's degradation rule is LOAD-COMPLETING, and the measured
