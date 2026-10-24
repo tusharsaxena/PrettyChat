@@ -655,7 +655,7 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
 - **DIAG-27. A reset confirmation is never buried by the console (LibKa0s v1.77.0, frame-layering-§4).**
   `/pc config` ▸ General ▸ **Reset all settings** → the confirmation shows; do not answer it. With the
   console closed, type `/pc debug` in chat → the console opens, and the confirmation still draws on top
-  of it wherever the two overlap. Click **Cancel** → nothing is reset. **Fail:** the console covers the
+  of it wherever the two overlap. Click **No** → nothing is reset. **Fail:** the console covers the
   confirmation when it opens (the console's show did not re-raise the shown StaticPopup). Result:
 
 ## DEGRADED
