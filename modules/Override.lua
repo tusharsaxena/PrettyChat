@@ -26,7 +26,25 @@ local LABEL = {
 -- decided (PRETTYCHAT-R-09). Memoizing is safe because NS.Defaults is static after
 -- load; nothing writes it at runtime. The saving is unmeasured (there is no
 -- tests/perf.lua, by exemption) -- the point is one ordering rule, not speed.
+--
+-- The order is the CURATED one (item 020, PRC-L01): each defaults entry's data-only
+-- `order`, ties and unranked entries broken by GLOBALNAME, every unranked entry after
+-- every ranked one. It used to be the bare GLOBALNAME, which the list showed by LABEL,
+-- so it read as no order at all. ApplyStrings does not care about the walk order:
+-- a global registered twice is refused at load (PRETTYCHAT-R-02).
 local sortedNames = {}
+
+local function rankedBefore(strings)
+    return function(a, b)
+        local ra, rb = strings[a].order, strings[b].order
+        if ra and rb then
+            if ra ~= rb then return ra < rb end
+        elseif ra or rb then
+            return ra ~= nil
+        end
+        return a < b
+    end
+end
 
 -- READ-ONLY: callers must not mutate the returned array. It is the shared cache;
 -- a caller that needs a subset (collectNames) filters into a NEW table.
@@ -35,10 +53,11 @@ function NS.SortedStringNames(category)
     if names then return names end
     names = {}
     local catData = NS.Defaults[category]
-    for globalName in pairs((catData and catData.strings) or {}) do
+    local strings = (catData and catData.strings) or {}
+    for globalName in pairs(strings) do
         names[#names + 1] = globalName
     end
-    table.sort(names)
+    table.sort(names, rankedBefore(strings))
     sortedNames[category] = names
     return names
 end

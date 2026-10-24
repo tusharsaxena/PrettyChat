@@ -9,11 +9,13 @@ The single source of truth is `defaults/Defaults.lua` — the schema, the settin
 1. In `defaults/Defaults.lua`, add a new entry under the relevant category's `strings` table:
    ```lua
    YOUR_GLOBAL_NAME = {
+       order = 18,
        label = "Friendly Label (Self)",
        default = "|cffff0000Loot|cffffffff | |cff93c47dYou|cffffffff | |cffffffff+ %s|cffffffff",
    },
    ```
-   - `label` is what the panel shows as the string's **row in the tree** down the left of its category tab, and the Blizzard `GLOBALNAME` is that row's `value` — what the click reports back and what the editor shows beside the Enable tick. There is no heading above the editor — the entry that selects the string is its name.
+   - `label` is what the panel shows as the string's **row in the tree** down the left of its category tab, and the Blizzard `GLOBALNAME` is that row's `value` — what the click reports back and what the editor shows beside the *Rewrite this message* tick. There is no heading above the editor — the entry that selects the string is its name.
+   - `order` is the entry's place in its category's list, which `/pc list` and `/pc test` print in too (`NS.SortedStringNames`). Display data, never a SavedVariables key: give it the slot that keeps the category's rule (kind first, then Self before Other, then single before Multiple, odd ones last) and renumber the entries after it. An entry left without one still appears, after every ranked one, by global name; `tests/test_defaults.lua` asks for one on every shipped entry, and `tests/test_override.lua` pins the curated order name by name.
    - `default` is the PrettyChat format. Match Blizzard's `%`-conversion signature exactly — see [Fix a broken format string](#fix-a-broken-format-string) below for what happens if you don't.
 2. `/reload` in-game. The schema rebuilds at file-load, so the new row appears in `/pc list <Category>`, on the category's tab of the Categories page, and the override pipeline starts targeting `_G[YOUR_GLOBAL_NAME]`.
 
@@ -51,7 +53,7 @@ A format string "breaks" when the panel-edited (or `/pc set`-edited) value's `%`
 1. Open the category's tab on the Categories page, pick the string from the list below the category's Enable row, and read the **Original** disabled input in the pane beside it. That's Blizzard's exact signature as **this** client loaded it — the `OnEnable` snapshot, through `NS.OriginalFormat`, the same source `/pc test` prints (PC-R-04). If this client does not define the global, the box and `/pc test` both read **(original not available)**: a snapshotted nil is an answer, and PrettyChat's override that now sits in the live global is never shown in its place (PRETTYCHAT-R-05). Out of game, `GlobalStrings/` carries the same data for the patch it was cut from, and `tests/test_defaults.lua` checks every default against it.
 2. Edit the **New** input: keep every `%`-conversion (`%s`, `%d`, `%.1f`, `%2$s`, …) in the same order, but freely change surrounding text and `|cAARRGGBB...|r` color escapes.
 3. The Preview disabled `EditBox` (under the New box) renders the format with sample arguments substituted in via `NS.RenderSample` (which wraps `buildSampleArgs` from `modules/Override.lua`). It always reflects the saved value and updates after every commit (Enter). On `string.format` failure, the preview shows the error message instead.
-4. To revert: (a) click the per-string **Reset** button (at the foot of the block — always visible, no-op when the value already equals the default — the simplest path); (b) set the format back to the PrettyChat default exactly — the auto-clear kicks in and removes the override (see [schema.md](./schema.md#auto-clear-on-default)); (c) disable the per-string Enable checkbox, which restores Blizzard's original via the snapshot path; or (d) the category page's header **Defaults** button — which is now the only category-scoped reset, since `/pc reset` takes a setting path (`LIBKA0S-10`).
+4. To revert: (a) click the per-string **Reset message** button (at the foot of the block — always visible, no-op when the value already equals the default — the simplest path); (b) set the format back to the PrettyChat default exactly — the auto-clear kicks in and removes the override (see [schema.md](./schema.md#auto-clear-on-default)); (c) untick the per-string *Rewrite this message* checkbox, which restores Blizzard's original via the snapshot path; or (d) the category page's header **Defaults** button — which is now the only category-scoped reset, since `/pc reset` takes a setting path (`LIBKA0S-10`).
 
 ## Edit the PrettyChat default for a string
 
@@ -68,7 +70,7 @@ See [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patc
 
 1. Drop the new `GlobalStrings.lua` into `GlobalStrings/`.
 2. `python3 tools/split_globalstrings.py` — it rewrites the chunk files and asserts `PrettyChat.toc` still does not load them (PC-R-05). The chunk count changes whenever the entry count crosses a multiple of 900. Then run `lua tests/run.lua`: `tests/test_defaults.lua` reads the chunks, so a changed Blizzard signature surfaces there.
-3. `/reload` in-game; verify the panel's "Original Format String" inputs still resolve.
+3. `/reload` in-game; verify the panel's **Original** boxes still resolve.
 4. If Blizzard renamed any keys or changed signatures, update the corresponding entries in `defaults/Defaults.lua`.
 
 ## Bump the client interface
@@ -109,9 +111,9 @@ Two follow-ups the harness enforces:
 
 ## Adjust the per-string panel block layout
 
-The per-string editor lives in `settings/Panel.lua`'s `buildStringRow(pane, category, globalName, refreshers)`, which draws into the RIGHT-hand column: `[Enable] [GLOBALNAME]` on one row, then **Original**, **New** and **Preview** at full width, then **Reset** at the foot. It attaches a `refresh()` closure to `refreshers` so subsequent DB-mutations (`/pc set`, category toggle, Defaults click) re-sync its widgets. It carries **no heading**: the list entry that selects the string is its name, and exactly one editor is drawn per category tab.
+The per-string editor lives in `settings/Panel.lua`'s `buildStringRow(pane, category, globalName, refreshers)`, which draws into the RIGHT-hand column: `[Rewrite this message] [GLOBALNAME]` on one row, then **Original**, **New** and **Preview** at full width, then **Reset message** at the foot. It attaches a `refresh()` closure to `refreshers` so subsequent DB-mutations (`/pc set`, category toggle, Defaults click) re-sync its widgets. It carries **no heading**: the list entry that selects the string is its name, and exactly one editor is drawn per category tab.
 
-The first row is an AceGUI `SimpleGroup` with `Flow` layout holding the Enable tick at `TICK_W = 0.3` and the caption at `CAPTION_W = 0.7` of the pane; the three EditBoxes are full width and carry `:SetLabel("Original" / "New" / "Preview")`; Reset is `RESET_W = 0.4` of the pane. The pane itself is whatever the `TreeGroup` leaves beside its `TREE_W = 200` px tree. `STRING_VSPACER` is this block's own and lives in `NS.Const`; the shared spacing it sits beside (`ROW_VSPACER`, `SECTION_HEADING_H`) is read off `NS.Helpers`, because the library owns the layout constants now (options-ui-§8). See [settings-panel.md](./settings-panel.md).
+The first row is an AceGUI `SimpleGroup` with `Flow` layout holding the *Rewrite this message* tick at `TICK_W = 0.5` and the caption at `CAPTION_W = 0.5` of the pane; the three EditBoxes are full width and carry `:SetLabel("Original" / "New" / "Preview")`; Reset is `RESET_W = 0.4` of the pane. The pane itself is whatever the `TreeGroup` leaves beside its `TREE_W = 200` px tree. `STRING_VSPACER` is this block's own and lives in `NS.Const`; the shared spacing it sits beside (`ROW_VSPACER`, `SECTION_HEADING_H`) is read off `NS.Helpers`, because the library owns the layout constants now (options-ui-§8). See [settings-panel.md](./settings-panel.md).
 
 When you add or remove a widget, also update the block's `refresh()` closure so the new widget syncs from the DB on every mutation.
 

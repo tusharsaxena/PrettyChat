@@ -69,16 +69,14 @@ function PrettyChat:ApplyStrings()
     -- combat mode whose condition is not met, restores every original exactly as a
     -- taken hold does.
     local addonEnabled = (not self:IsStoodDown()) and self:IsVisible()
-    -- Deterministic iteration (PC-16): fixed CATEGORY_ORDER, sorted names within each
-    -- category, so a global registered under two categories resolves the same way every
-    -- reload. (Elided here: applied/restored counters; ApplyStrings returns them.)
+    -- Deterministic iteration (PC-16): fixed CATEGORY_ORDER, then each category's names
+    -- in the one order NS.SortedStringNames decides (each entry's `order`, then the
+    -- GLOBALNAME), so every reload walks the same way. (Elided here: applied/restored
+    -- counters; ApplyStrings returns them.)
     for _, category in ipairs(NS.Schema.CATEGORY_ORDER) do
         local catData = NS.Defaults[category]
         if catData and catData.strings then
-            local names = {}
-            for globalName in pairs(catData.strings) do names[#names + 1] = globalName end
-            table.sort(names)
-            for _, globalName in ipairs(names) do
+            for _, globalName in ipairs(NS.SortedStringNames(category)) do
                 if addonEnabled
                    and self:IsCategoryEnabled(category)
                    and self:IsStringEnabled(category, globalName) then

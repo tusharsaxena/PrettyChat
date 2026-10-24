@@ -109,6 +109,9 @@ test("a blank or whitespace-only format write is refused (PC-R-02)", function()
         t.eq(Schema.Get(sigRow.path), stored, ("%q stored nothing"):format(blank))
         t.eq(env[sigRow.globalName], stored, ("%q never reached _G"):format(blank))
         t.truthy(saidSince(at, "can't be blank"), ("%q prints the blank refusal"):format(blank))
+        -- It names the per-string button by its on-screen label (item 020, PRC-L14).
+        t.truthy(saidSince(at, "Use Reset message to restore it."),
+            ("%q names the Reset message button"):format(blank))
     end
     -- Non-vacuity: a non-blank valid format through the same write is stored.
     t.truthy(Schema.Set(sigRow.path, "Loot | %s"), "a non-blank format still sets")
@@ -718,4 +721,22 @@ test("seam, library absent: a category reset and the format gate still work", fu
     t.eq(BS.Get("Loot.enabled"), B.NS.Defaults.Loot.enabled, "the category reset restored the toggle")
     t.eq(BS.Get(SIG), BS.FindByPath(SIG).default, "and the format")
     t.nilv(B.addon.db.profile.categories.Loot, "leaving no category table")
+end)
+
+-- ---- the stored surface is pinned (PC-LY, item 020) -----------------------
+--
+-- Item 020 moved, regrouped and relabeled rows and changed no key, default or set of
+-- settings. tests/settings_snapshot.lua is that surface as it stood before the item; a path
+-- that appears, vanishes or ships another default fails here, whatever else moved.
+test("the stored setting paths and their defaults match the pinned snapshot", function()
+    local pinned = dofile(ctx.root .. "/tests/settings_snapshot.lua")
+    local seen = {}
+    for _, r in ipairs(Schema.AllRows()) do
+        t.truthy(pinned[r.path] ~= nil, "path " .. r.path .. " is in the snapshot")
+        t.eq(r.default, pinned[r.path], "and " .. r.path .. " keeps its default")
+        seen[r.path] = true
+    end
+    for path in pairs(pinned) do
+        t.truthy(seen[path], "pinned path " .. path .. " is still a setting")
+    end
 end)

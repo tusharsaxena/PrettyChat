@@ -152,6 +152,31 @@ test("the General page builds its controls on first show", function()
         "the library registered a refresher per widget it built")
 end)
 
+-- THE GENERAL PAGE'S CHROME IS TRANSLATABLE (item 020, PRC-L15), like Categories and Profiles:
+-- the title and the sidebar name go through L["General"], while the page KEY the library is
+-- handed stays the literal (options-ui-§5 names the first sub-page "General"). Read from the
+-- source, because L falls back to the key and an enUS run cannot tell the two apart.
+test("the General page's title and sidebar name are routed through L", function()
+    local f = assert(io.open(ctx.root .. "/settings/Panel.lua", "rb"))
+    local src = f:read("*a")
+    f:close()
+    t.truthy(src:find('H.CreatePanel(nil, L["General"]', 1, true), "the title is L[\"General\"]")
+    t.truthy(src:find('RegisterCanvasLayoutSubcategory(mainCategory, ctx.panel, L["General"])', 1, true),
+        "and so is the sidebar name")
+    t.truthy(src:find('H.RegisterOptionsPage("General", "General"', 1, true), "the page key stays the literal")
+    t.truthy(src:find('pageKey         = "General"', 1, true), "on the ctx too")
+end)
+
+-- THE FRAMELESS PACKING (LibKa0s v1.77.0, LK-30): with no Lock frame, Minimap button sits beside
+-- Debug console instead of opening a half-empty line of its own.
+test("Master controls packs Debug console and Minimap button on one line", function()
+    local console = Schema.FindByPath("state.debugConsole")
+    local minimap = Schema.FindByPath("global.minimap.shown")
+    t.truthy(console and minimap, "both rows are installed")
+    t.falsy(minimap.startsLine, "Minimap button does not open a line of its own")
+    t.truthy(console.order < minimap.order, "and follows Debug console")
+end)
+
 -- TEST AND RESET ALL SETTINGS ARE ONE ROW. Test used to sit on a row of its own
 -- above the reset, because §15 fixes the reset's wording and the composer is the
 -- only thing that writes it -- so putting them side by side meant either drawing
@@ -337,9 +362,21 @@ test("the General page declares a Defaults button whose click opens the reset-al
     local fresh = ctx.loadAddon()
     local panel = panelFrame(fresh.env, "General")
     t.truthy(panel.wantsDefaultsButton, "General asks for a Defaults button")
-    t.eq(panel.defaultsTooltip, fresh.NS.L["Reset every setting to its default."],
-        "with the reset-all tooltip")
+    -- The library's own words for the act (options-ui-§12, U-04; item 020's PRC-L-new1), the
+    -- very text Reset all settings carries, with no tail: PrettyChat ships no key bindings.
+    t.eq(panel.defaultsTooltip, fresh.NS.Helpers.ResetAllTooltip(),
+        "with the reset-all tooltip, read off the library")
+    t.truthy(panel.defaultsTooltip:find("Reset Profile", 1, true), "which names Profiles' Reset Profile")
     panel:Show()
+    local resetBtn
+    for _, w in ipairs(fresh.env._widgets) do
+        if w.type == "Button" and w.text == "Reset all settings" then resetBtn = w end
+    end
+    t.truthy(resetBtn, "the composed Reset all settings button is on the page")
+    fresh.env.GameTooltip.lines = nil
+    resetBtn:Fire("OnEnter")
+    t.eq((fresh.env.GameTooltip.lines or {})[1], panel.defaultsTooltip,
+        "and the header Defaults says exactly what that button says")
     t.truthy(panel.defaultsBtn, "the first show builds it")
 
     fresh.NS.Schema.Set("Loot.enabled", false)

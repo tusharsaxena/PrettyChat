@@ -104,6 +104,8 @@ Kit.run{
         "test_surface_parity",
         "test_envsetup",
         "test_constants",
+        -- Frame layering (frame-layering-§5): the frameless shape, beside the constants it reads.
+        "test_layers",
         "test_mediasetup",
         "test_util",
         "test_locale",

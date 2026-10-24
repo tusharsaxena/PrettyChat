@@ -140,6 +140,19 @@ if not lib then
         -- drawn only by a page render, and no page here draws a drawer, so the same inert
         -- no-op applies.
         Drawer               = function() end,
+        -- KeybindingsTab and KeybindRows, new at LibKa0s v1.77.0 (OptionsKeybinds
+        -- minor 2), and StrataTooltip (OptionsCompose minor 8): this addon has no key
+        -- binding and no strata row, so nothing here calls any of them, and the same
+        -- inert no-op applies. KEYBINDS_UNCHANGED is the library's English and is not
+        -- copied here (tests/test_surface_parity.lua lists it as live-only).
+        KeybindingsTab       = function() return nil end,
+        KeybindRows          = function() return nil end,
+        StrataTooltip        = function() return nil end,
+        -- ResetAllTooltip, new at LibKa0s v1.77.0 after the tag moved (OptionsCompose
+        -- minor 11): the tooltip a General-page header Defaults carries, read only by a
+        -- page render. No page here draws that header yet, so the same inert no-op
+        -- applies.
+        ResetAllTooltip      = function() return nil end,
         -- ── the ONE stub member that is reached at LOAD ──────────────────
         --
         -- options-ui-§1's degradation rule is LOAD-COMPLETING, and the measured

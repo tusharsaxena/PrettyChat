@@ -39,14 +39,24 @@ local enUS = {
     "Test",
     "Write a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` writes the same report there.",
     "Reset this profile to the addon's defaults? Everything you have configured or added in it is discarded — your other profiles are not affected.",
-    -- The General page's header Defaults tooltip. The button is the same reset as
-    -- `Reset all settings` (options-ui-§12), confirmation included.
-    "Reset every setting to its default.",
+    -- The General sub-page's title and sidebar name (its page KEY stays the literal). Its
+    -- header Defaults tooltip is the library's (O.ResetAllTooltip), the words `Reset all
+    -- settings` carries, so it is not keyed here.
+    "General",
     -- Categories sub-page (the tab strip). The page name is a heading rather
     -- than a schema path segment, so unlike the category names interpolated
     -- below it is fully translatable.
     "Categories",
-    "Strings on these tabs are rewritten only while the master Enable on the General page is on.",
+    "Messages are rewritten only while Enable PrettyChat is on and General visibility allows it (General page > Master controls).",
+    -- The eight tab tooltips (item 020): what each tab covers, and where the look-alikes went.
+    "Item pickups, your own and group loot, bonus rolls, refunds. Crafted items are under Tradeskill.",
+    "Currency gained and lost. Currency refunds are under Loot.",
+    "Gold looted, split, refunded or rewarded.",
+    "Faction standing going up and down.",
+    "XP from kills and quests, by rest state, solo, group or raid. Quest-reward and exploration XP lines are under Misc.",
+    "Honor you earn.",
+    "Professions: crafting (yours and others') and opening locks.",
+    "Quest-reward XP and zone exploration XP.",
     -- The page's Defaults tooltip. The button resets every tab (options-ui-§13).
     "Reset the strings on every category tab to their defaults.",
     -- The confirmation that page's header Defaults raises (PC-R-03).
@@ -63,17 +73,15 @@ local enUS = {
     -- to defaults.` had no caller left, because one Defaults button over eight
     -- tabs cannot name a category (settings/Panel.lua, the Categories page).
     "Enable %s",
-    "Enable or disable all %s string overrides.",
-    -- Per-string row
-    "Enable",
-    "Use the rewritten format for this message. When unchecked, Blizzard's original is used.",
+    "Rewrite %s messages. When off, every %s message uses Blizzard's original wording, whatever the switches below say.",
+    -- Per-string row. Each tooltip title is its control's label, so a label is one key.
+    "Rewrite this message",
+    "Rewrite this message. When off, Blizzard's original wording is used.",
     "Original",
-    "Original Format String",
     "Blizzard's original format. Read-only.",
     "(original not available)",
     "New",
-    "New Format String",
-    "Your replacement. Type `||` for a literal `|` (color codes use this).",
+    "Your rewritten format. Type `||` for a literal `|` (color codes use this).",
     -- The write gate's refusal (PC-R-01), shown wherever the write came from:
     -- the panel's New box, `/pc set`, or a preset load. The four placeholders are
     -- the schema path, the signature asked for, the Blizzard global and the
@@ -81,11 +89,11 @@ local enUS = {
     "Not saved — %s asks for %s; %s supplies %s. A format may drop trailing conversions but must not add or retype one.",
     -- The same gate's blank-format rule (PC-R-02), checked first: a cleared New
     -- box committed with Enter. The placeholder is the schema path.
-    "Not saved — %s: a format can't be blank. Use Reset to restore the default.",
-    "Reset",
+    "Not saved — %s: a format can't be blank. Use Reset message to restore it.",
+    "Reset message",
     "Restore this string to its default.",
     "Preview",
-    "The current format rendered with sample arguments.",
+    "Your rewritten format, rendered with sample values. Hover the entry in the list to see Blizzard's original rendered the same way.",
     -- Parent page
     "Slash Commands",
     "/prettychat is an alias for /pc",

@@ -776,16 +776,96 @@ test("every Test line routes through the [PC] printer", function()
 end)
 
 -- ---- the memoized sorted name list (PRETTYCHAT-R-09) -------------
+--
+-- The curated order (PC-LY, item 020's PRC-L01): each defaults entry carries a data-only
+-- `order`, and NS.SortedStringNames sorts by (order, GLOBALNAME). The rule is kind first,
+-- then Self before Other, then single before Multiple, odd ones last. Written out here
+-- rather than derived, because a derivation would agree with whatever the data says.
+local CURATED = {
+    Loot = {
+        "LOOT_ITEM_SELF", "LOOT_ITEM_SELF_MULTIPLE", "LOOT_ITEM", "LOOT_ITEM_MULTIPLE",
+        "LOOT_ITEM_PUSHED_SELF", "LOOT_ITEM_PUSHED_SELF_MULTIPLE",
+        "LOOT_ITEM_PUSHED", "LOOT_ITEM_PUSHED_MULTIPLE",
+        "LOOT_ITEM_BONUS_ROLL_SELF", "LOOT_ITEM_BONUS_ROLL_SELF_MULTIPLE",
+        "LOOT_ITEM_BONUS_ROLL", "LOOT_ITEM_BONUS_ROLL_MULTIPLE",
+        "BATTLE_PET_LOOT_RECEIVED", "LOOT_DISENCHANT_CREDIT",
+        "LOOT_ITEM_REFUND", "LOOT_ITEM_REFUND_MULTIPLE", "LOOT_CURRENCY_REFUND",
+    },
+    Currency = {
+        "CURRENCY_GAINED", "CURRENCY_GAINED_MULTIPLE", "CURRENCY_GAINED_MULTIPLE_BONUS",
+        "CURRENCY_LOST_FROM_DEATH",
+    },
+    Money = {
+        "YOU_LOOT_MONEY", "LOOT_MONEY", "YOU_LOOT_MONEY_MOD", "YOU_LOOT_MONEY_GUILD",
+        "LOOT_MONEY_SPLIT", "LOOT_MONEY_REFUND", "ERR_QUEST_REWARD_MONEY_S",
+        "GENERIC_MONEY_GAINED_RECEIPT",
+    },
+    Reputation = {
+        "FACTION_STANDING_INCREASED", "FACTION_STANDING_INCREASED_GENERIC",
+        "FACTION_STANDING_INCREASED_ACH_BONUS", "FACTION_STANDING_INCREASED_ACH_PART",
+        "FACTION_STANDING_INCREASED_DOUBLE_BONUS", "FACTION_STANDING_INCREASED_GUARDIAN",
+        "FACTION_STANDING_INCREASED_REST_PART", "FACTION_STANDING_INCREASED_BONUS",
+        "FACTION_STANDING_INCREASED_REFER_PART",
+        "FACTION_STANDING_DECREASED", "FACTION_STANDING_DECREASED_GENERIC",
+        "FACTION_STANDING_CHANGED", "FACTION_STANDING_CHANGED_GUILD",
+        "FACTION_STANDING_CHANGED_GUILDNAME",
+    },
+    Experience = {
+        "COMBATLOG_XPGAIN_EXHAUSTION1", "COMBATLOG_XPGAIN_EXHAUSTION1_GROUP",
+        "COMBATLOG_XPGAIN_EXHAUSTION1_RAID",
+        "COMBATLOG_XPGAIN_EXHAUSTION2", "COMBATLOG_XPGAIN_EXHAUSTION2_GROUP",
+        "COMBATLOG_XPGAIN_EXHAUSTION2_RAID",
+        "COMBATLOG_XPGAIN_EXHAUSTION4", "COMBATLOG_XPGAIN_EXHAUSTION4_GROUP",
+        "COMBATLOG_XPGAIN_EXHAUSTION4_RAID",
+        "COMBATLOG_XPGAIN_EXHAUSTION5", "COMBATLOG_XPGAIN_EXHAUSTION5_GROUP",
+        "COMBATLOG_XPGAIN_EXHAUSTION5_RAID",
+        "COMBATLOG_XPGAIN_FIRSTPERSON", "COMBATLOG_XPGAIN_FIRSTPERSON_GROUP",
+        "COMBATLOG_XPGAIN_FIRSTPERSON_RAID",
+        "COMBATLOG_XPGAIN_FIRSTPERSON_UNNAMED", "COMBATLOG_XPGAIN_FIRSTPERSON_UNNAMED_GROUP",
+        "COMBATLOG_XPGAIN_FIRSTPERSON_UNNAMED_RAID",
+        "COMBATLOG_XPGAIN_QUEST", "COMBATLOG_XPLOSS_FIRSTPERSON_UNNAMED",
+    },
+    Honor = {
+        "COMBATLOG_HONORGAIN", "COMBATLOG_HONORGAIN_EXHAUSTION1", "COMBATLOG_HONORGAIN_NO_RANK",
+        "COMBATLOG_HONORGAIN_NO_RANK_EXHAUSTION1", "COMBATLOG_HONORAWARD", "COMBATLOG_DISHONORGAIN",
+    },
+    Tradeskill = {
+        "LOOT_ITEM_CREATED_SELF", "LOOT_ITEM_CREATED_SELF_MULTIPLE", "CREATED_ITEM",
+        "CREATED_ITEM_MULTIPLE", "TRADESKILL_LOG_FIRSTPERSON", "TRADESKILL_LOG_THIRDPERSON",
+        "OPEN_LOCK_SELF", "OPEN_LOCK_OTHER",
+    },
+    Misc = { "ERR_QUEST_REWARD_EXP_I", "ERR_ZONE_EXPLORED_XP" },
+}
 
 local function sortedKeys(category)
-    local keys = {}
-    local catData = NS.Defaults[category]
-    for name in pairs((catData and catData.strings) or {}) do keys[#keys + 1] = name end
-    table.sort(keys)
-    return keys
+    return CURATED[category] or {}
 end
 
-test("the /pc test report lists each category's strings in sorted order", function()
+test("the curated order names every shipped string exactly once", function()
+    for category, catData in pairs(NS.Defaults) do
+        local want, seen = sortedKeys(category), {}
+        for _, name in ipairs(want) do
+            t.truthy(catData.strings[name], ("%s: curated %s is a shipped string"):format(category, name))
+            t.falsy(seen[name], ("%s: %s is listed once"):format(category, name))
+            seen[name] = true
+        end
+        for name in pairs(catData.strings) do
+            t.truthy(seen[name], ("%s: shipped %s has a curated place"):format(category, name))
+        end
+    end
+end)
+
+test("SortedStringNames ranks by order, then GLOBALNAME, and puts unranked names last", function()
+    local i = ctx.loadAddon()
+    -- A category nothing has asked for yet, so the memo has no entry for it.
+    i.NS.Defaults.PCLY_PROBE = { enabled = true, strings = {
+        ZETA = { order = 2 }, ALPHA = {}, OMEGA = { order = 1 }, BETA = {}, GAMMA = { order = 2 },
+    } }
+    t.eq(table.concat(i.NS.SortedStringNames("PCLY_PROBE"), ","), "OMEGA,GAMMA,ZETA,ALPHA,BETA",
+        "ranked first by order with ties on the name, then the unranked by name")
+end)
+
+test("the /pc test report lists each category's strings in the curated order", function()
     addon:ResetAll()
     local sunk = {}
     addon:Test(nil, function(line) sunk[#sunk + 1] = line end)
@@ -799,11 +879,11 @@ test("the /pc test report lists each category's strings in sorted order", functi
     end
     t.eq(#seen, #want, "one Name: line per shipped string")
     for i, name in ipairs(want) do
-        t.eq(seen[i], name, ("Name: line %d is the sorted key"):format(i))
+        t.eq(seen[i], name, ("Name: line %d is the curated key"):format(i))
     end
 end)
 
-test("SortedStringNames answers the same sorted table on every call", function()
+test("SortedStringNames answers the same curated table on every call", function()
     t.eq(type(NS.SortedStringNames), "function", "NS.SortedStringNames is published")
     for _, category in ipairs(Schema.CATEGORY_ORDER) do
         local first = NS.SortedStringNames(category)
@@ -812,7 +892,7 @@ test("SortedStringNames answers the same sorted table on every call", function()
         local want = sortedKeys(category)
         t.eq(#first, #want, category .. ": every shipped name is listed")
         for i, name in ipairs(want) do
-            t.eq(first[i], name, ("%s: entry %d is in sorted order"):format(category, i))
+            t.eq(first[i], name, ("%s: entry %d is in the curated order"):format(category, i))
         end
     end
 end)
