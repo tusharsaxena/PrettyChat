@@ -182,6 +182,11 @@ test("the Options stub carries the whole live surface", function()
         VISIBILITY_VALUES        = true,
         VISIBILITY_SORT          = true,
         CLASS_COLOR_NOTE         = true,
+        -- OptionsKeybinds minor 2 (LibKa0s v1.77.0): "Key bindings are not changed.",
+        -- for the end of a General page's defaults tooltip. This addon has no key
+        -- binding, so its defaults tooltip never reads it, and a stub copy of the
+        -- library's English is the copy that goes stale, as with the constants above.
+        KEYBINDS_UNCHANGED       = true,
         -- Read by settings/Panel.lua, but only inside the General page's builder
         -- and only AFTER the EnsureScroll guard the degraded page returns at, so
         -- it is never reached here. Spelling the literal into the stub would put
