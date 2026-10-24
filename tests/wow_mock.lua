@@ -437,6 +437,12 @@ local function build()
             w.SetTreeWidth = function(self, px, sizable)
                 self.treeWidth, self.treeSizable = px, sizable; return self
             end
+            -- Recorded, because the page turns AceGUI's label-only hover tooltip OFF and
+            -- draws its own on OnButtonEnter (PC-LY, item 020's PRC-L04): with both on,
+            -- two tooltips draw.
+            w.EnableButtonTooltips = function(self, enable)
+                self.buttonTooltips = enable and true or false; return self
+            end
             w.SelectByValue = function(self, value)
                 self.selected = value
                 self:Fire("OnGroupSelected", value)

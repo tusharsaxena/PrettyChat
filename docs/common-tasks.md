@@ -9,11 +9,13 @@ The single source of truth is `defaults/Defaults.lua` — the schema, the settin
 1. In `defaults/Defaults.lua`, add a new entry under the relevant category's `strings` table:
    ```lua
    YOUR_GLOBAL_NAME = {
+       order = 18,
        label = "Friendly Label (Self)",
        default = "|cffff0000Loot|cffffffff | |cff93c47dYou|cffffffff | |cffffffff+ %s|cffffffff",
    },
    ```
    - `label` is what the panel shows as the string's **row in the tree** down the left of its category tab, and the Blizzard `GLOBALNAME` is that row's `value` — what the click reports back and what the editor shows beside the Enable tick. There is no heading above the editor — the entry that selects the string is its name.
+   - `order` is the entry's place in its category's list, which `/pc list` and `/pc test` print in too (`NS.SortedStringNames`). Display data, never a SavedVariables key: give it the slot that keeps the category's rule (kind first, then Self before Other, then single before Multiple, odd ones last) and renumber the entries after it. An entry left without one still appears, after every ranked one, by global name; `tests/test_defaults.lua` asks for one on every shipped entry, and `tests/test_override.lua` pins the curated order name by name.
    - `default` is the PrettyChat format. Match Blizzard's `%`-conversion signature exactly — see [Fix a broken format string](#fix-a-broken-format-string) below for what happens if you don't.
 2. `/reload` in-game. The schema rebuilds at file-load, so the new row appears in `/pc list <Category>`, on the category's tab of the Categories page, and the override pipeline starts targeting `_G[YOUR_GLOBAL_NAME]`.
 

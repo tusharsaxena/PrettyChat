@@ -18,7 +18,7 @@ works.
 |---|---|---|
 | INSTALL-1 – 7 | Install, load and persistence | First load, the TOC version, reload persistence, the SavedVariables shape, the schema v2 move |
 | SLASH-1 – 11 | Slash commands | Help, bare `/pc`, `list`, `get`, `set`, the format-string write gate, the blank-format refusal |
-| PANEL-1 – 22 | Settings panel | Landing page, rail, header, General, the Categories strip, string list and editor, panel and CLI sync, the descriptor's folder name |
+| PANEL-1 – 23 | Settings panel | Landing page, rail, header, General, the Categories strip, string list and editor, panel and CLI sync, the descriptor's folder name, the item 020 layout pass |
 | PROFILE-1 – 10 | Profiles | The Profiles page, per-profile settings, the `/pc profile` verb |
 | STATE-1 – 6 | Enable and stand-down | `/pc enable` / `/pc disable`, what answers while disabled, the combat watcher standing down |
 | COMBAT-1 – 4 | Combat | The panel's combat refusal and cover, the launcher in combat, diagnostics in combat |
@@ -206,11 +206,11 @@ Find the cause before changing anything; a fix that only makes the check pass is
   the General page is on." Result: pass (owner-marked 2026-10-10)
 - **PANEL-11. The string list.** Categories ▸ Loot → below *Enable Loot*, a bordered two-pane box
   (AceGUI's `TreeGroup`, as in any AceConfig window). The 200px left pane lists 17 entries by friendly
-  name in sorted order, and the selected one carries a highlight bar. The right pane holds one editor
+  name in the curated order PANEL-23 spells out, and the selected one carries a highlight bar. The right pane holds one editor
   with no heading. Click through several entries → the editor swaps, the highlight follows and the
   page does not shift. **Fail:** a wrapping strip of buttons; a bare column of colored text with no
   box; the longest label clipped (AceGUI's 175px default came back); a heading repeating the entry's
-  name. Result: pass (owner-marked 2026-10-10)
+  name. Result: not run (rewritten 2026-10-24, PC-LY: the list order is curated now)
 - **PANEL-12. The box fills the page.** On a fresh login open Categories before any other page → the
   box takes about 90% of the space under the Enable row, with a margin at the bottom. Drag the Settings
   window's edge → both panes follow, and the tree's scrollbar comes and goes with the height. **Fail:**
@@ -254,6 +254,21 @@ Find the cause before changing anything; a fix that only makes the check pass is
   page: the landing page, General, each Categories tab and Profiles → each renders as before. The debug
   console shows no `[Cfg] help art:` line. **Fail:** a Lua error, a page that is blank or laid out
   differently, or a `help art:` line. `/pc debug off`. Result: pass (owner-marked 2026-10-10)
+- **PANEL-23. The curated string list, and its hover (item 020).** Categories ▸ Loot → the list reads
+  *Item Looted (Self)*, *Item Looted Multiple (Self)*, *Item Looted (Other)*, *Item Looted Multiple
+  (Other)*, then the same four for *Item Pushed* and *Bonus Roll*, then *Battle Pet Loot*,
+  *Disenchant Credit*, *Item Refund*, *Item Refund (Multiple)*, *Currency Refund*. Money opens on
+  *Money Looted (Self)* and ends on *Money Gained (Quest Reward)*, *Money Gained (Generic)*; Honor opens
+  on *Honor Gain*; Tradeskill reads *Created Item* (Self, then Other), *Tradeskill Log* (Self, then
+  Other), *Open Lock* (Self, then Other). Experience shows *XP Gain (Kill, No Bonus)* and *XP Gain (No
+  Source)* (each with Group and Raid) and ends on *XP Loss*, with no *First Person* or *Unnamed* label
+  left. `/pc test category Loot` → the console's `Name:` lines come in the same order as the list.
+  Hover a list entry → **one** tooltip: the entry's label as the title, its `GLOBALNAME` in gray, and
+  Blizzard's original rendered with sample values; move off it → the tooltip goes. Then the settings
+  check: change one string's New format and untick another's checkbox, `/reload`, reopen → both
+  changes are still there, and `/pc get` on each path answers the same as before the update. **Fail:**
+  two tooltips stacked (AceGUI's own hover came back), a hover with no rendered line, a list in
+  global-name order, or a setting lost or reset by the update. Result: not run (added 2026-10-24, PC-LY)
 
 ## PROFILE
 
@@ -765,3 +780,5 @@ keeps it. A check added or rewritten after that date is listed here until its `R
 a pass.
 
 - DIAG-26 and DIAG-27 (added 2026-10-24, item PC-ZS: the console's layering on LibKa0s v1.77.0).
+- PANEL-11 (rewritten 2026-10-24) and PANEL-23 (added 2026-10-24), item PC-LY: item 020's settings
+  layout pass.

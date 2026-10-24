@@ -34,12 +34,13 @@ return function(NS)
         return layout and layout.buttons or {}
     end
 
-    -- The category's global names in the order the strip offers them, which is the
-    -- order the blocks used to be stacked in: sorted.
+    -- The category's global names in the order the list offers them: the curated
+    -- (order, GLOBALNAME) order NS.SortedStringNames decides (PRETTYCHAT-R-09), which
+    -- tests/test_override.lua pins name by name. A copy, so a case cannot mutate the
+    -- shared cache.
     local function sortedNames(category)
         local out = {}
-        for globalName in pairs(NS.Defaults[category].strings) do out[#out + 1] = globalName end
-        table.sort(out)
+        for i, globalName in ipairs(NS.SortedStringNames(category)) do out[i] = globalName end
         return out
     end
 

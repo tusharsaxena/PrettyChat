@@ -176,7 +176,7 @@ Total.
 - every recorded residue literal is still unrouted in the file that names it
 - the excluded data table holds only row labels and default format strings
 
-### test_defaults.lua (16)
+### test_defaults.lua (18)
 
 - the defaults table is non-empty and carries real entries
 - every defaults category appears in CATEGORY_ORDER
@@ -185,6 +185,8 @@ Total.
 - every category declares a boolean enabled flag and a strings table
 - every key is a Blizzard-style UPPERCASE global name
 - every entry carries a non-empty label and default
+- every entry carries a positive integer order, unique within its category
+- the item 020 labels read noun first and name the chat line
 - labels are unique within their category
 - every default format string renders with sample arguments
 - every default's conversion sequence is a positional prefix of Blizzard's
@@ -274,7 +276,7 @@ Total.
 - ResetString clears both the custom format and the per-string disable
 - the Tradeskill format is the one that reaches _G for LOOT_ITEM_CREATED_SELF
 
-### test_override.lua (44)
+### test_override.lua (46)
 
 - GetStringValue falls back to the defaults table until overridden
 - IsAddonEnabled treats an absent flag as default-true
@@ -317,8 +319,10 @@ Total.
 - Test warns when the addon is disabled but still previews
 - an unrenderable override is reported as an error line, not a crash
 - every Test line routes through the [PC] printer
-- the /pc test report lists each category's strings in sorted order
-- SortedStringNames answers the same sorted table on every call
+- the curated order names every shipped string exactly once
+- SortedStringNames ranks by order, then GLOBALNAME, and puts unranked names last
+- the /pc test report lists each category's strings in the curated order
+- SortedStringNames answers the same curated table on every call
 - a formatstring-filtered report does not shrink the cached list
 
 ### test_database.lua (27)
@@ -567,12 +571,13 @@ Total.
 - the landing logo is hidden when its group goes back to AceGUI's pool
 - the parent page shows the TOC tagline
 
-### test_panel_categories.lua (24)
+### test_panel_categories.lua (25)
 
 - a category tab builds a toggle, a secondary strip, and ONE string block
 - the category Enable stays ABOVE the tree
-- the list offers the strings in sorted global-name order
+- the list offers the strings in the curated order
 - the tree is handed one row per string, keyed by GLOBALNAME
+- hovering a list entry shows its label, its GLOBALNAME and the original rendered
 - the tree grows to fill the page when the canvas reports its height
 - the tree is told to stop managing its own height
 - the render schedules a fit for the frame after the layout
@@ -707,11 +712,11 @@ Total.
 | test_mediasetup.lua | 8 |
 | test_util.lua | 8 |
 | test_locale.lua | 12 |
-| test_defaults.lua | 16 |
+| test_defaults.lua | 18 |
 | test_schema.lua | 47 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
-| test_override.lua | 44 |
+| test_override.lua | 46 |
 | test_database.lua | 27 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
@@ -720,7 +725,7 @@ Total.
 | test_disabled.lua | 14 |
 | test_diagnostics.lua | 18 |
 | test_panel.lua | 25 |
-| test_panel_categories.lua | 24 |
+| test_panel_categories.lua | 25 |
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
 | test_doc_structure.lua | 13 |
@@ -729,4 +734,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **579** |
+| **Total** | **584** |

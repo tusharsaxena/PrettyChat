@@ -408,6 +408,28 @@ local function stringTree(catData, sortedNames)
     return tree
 end
 
+--- One list entry's hover (item 020, PRC-L04): the label as the title, the GLOBALNAME in
+--- gray, and Blizzard's original RENDERED with sample values, so the hover shows the chat
+--- line the game prints. It replaces AceGUI's own hover, which only repeated the label, and
+--- that one is switched off where the tree is built: with both on, two tooltips draw.
+--- GameTooltip, not AceGUI.tooltip, so it is the same tooltip every other control on this
+--- page draws through (H.AttachTooltip).
+local function showStringTooltip(owner, catData, globalName)
+    local strData = globalName and catData.strings[globalName]
+    if not (strData and GameTooltip) then return end
+    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+    GameTooltip:SetText(strData.label, 1, 1, 1)
+    GameTooltip:AddLine(Color.gray .. globalName .. Color.reset)
+    local original = NS.OriginalFormat(PrettyChat, globalName)
+    local body = Color.gray .. L["(original not available)"] .. Color.reset
+    if original ~= nil then
+        local rendered, err = NS.RenderSample(original)
+        body = rendered or (Color.gray .. tostring(err) .. Color.reset)
+    end
+    GameTooltip:AddLine(body, nil, nil, nil, true)
+    GameTooltip:Show()
+end
+
 --- How tall the widget asks to be BEFORE the canvas has a height, in whole tree
 --- lines, clamped. fitTree below replaces this with the real answer.
 local function treeHeight(count)
@@ -496,6 +518,14 @@ local function buildCategoryBody(ctx, scroll, category, catData)
     tree:SetTreeWidth(TREE_W, false)
     tree:SetHeight(treeHeight(#sortedNames))
     tree:SetTree(stringTree(catData, sortedNames))
+    -- AceGUI's hover repeats the label and nothing else; this page draws its own.
+    tree:EnableButtonTooltips(false)
+    tree:SetCallback("OnButtonEnter", function(_, _, value, button)
+        showStringTooltip(button or tree.frame, catData, value)
+    end)
+    tree:SetCallback("OnButtonLeave", function()
+        if GameTooltip then GameTooltip:Hide() end
+    end)
     scroll:AddChild(tree)
 
     -- SELECT FIRST, WIRE SECOND. SelectByValue fires OnGroupSelected in the real

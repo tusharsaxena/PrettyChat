@@ -92,6 +92,47 @@ test("every entry carries a non-empty label and default", function()
     end
 end)
 
+-- The curated list order (PC-LY, item 020's PRC-L01). `order` is display data, never a
+-- SavedVariables key: NS.SortedStringNames reads it, and nothing writes it.
+test("every entry carries a positive integer order, unique within its category", function()
+    local byCategory = {}
+    for _, e in ipairs(entries) do
+        local category, globalName, strData = e[1], e[2], e[3]
+        local where = category .. "." .. globalName
+        local n = strData.order
+        t.truthy(type(n) == "number" and n >= 1 and n == math.floor(n), where .. " has a positive integer order")
+        byCategory[category] = byCategory[category] or {}
+        t.falsy(byCategory[category][n], ("%s: order %s is not reused"):format(where, tostring(n)))
+        byCategory[category][n] = globalName
+    end
+end)
+
+-- The relabels item 020 made (PRC-L03: noun first, qualifier in parentheses; PRC-L04: the
+-- jargon labels). A label is display text: the paths these rows store under did not move.
+test("the item 020 labels read noun first and name the chat line", function()
+    local want = {
+        Money = {
+            GENERIC_MONEY_GAINED_RECEIPT = "Money Gained (Generic)",
+            ERR_QUEST_REWARD_MONEY_S     = "Money Gained (Quest Reward)",
+        },
+        Loot = { LOOT_ITEM_REFUND_MULTIPLE = "Item Refund (Multiple)" },
+        Experience = {
+            COMBATLOG_XPGAIN_FIRSTPERSON               = "XP Gain (Kill, No Bonus)",
+            COMBATLOG_XPGAIN_FIRSTPERSON_GROUP         = "XP Gain (Kill, No Bonus, Group)",
+            COMBATLOG_XPGAIN_FIRSTPERSON_RAID          = "XP Gain (Kill, No Bonus, Raid)",
+            COMBATLOG_XPGAIN_FIRSTPERSON_UNNAMED       = "XP Gain (No Source)",
+            COMBATLOG_XPGAIN_FIRSTPERSON_UNNAMED_GROUP = "XP Gain (No Source, Group)",
+            COMBATLOG_XPGAIN_FIRSTPERSON_UNNAMED_RAID  = "XP Gain (No Source, Raid)",
+            COMBATLOG_XPLOSS_FIRSTPERSON_UNNAMED       = "XP Loss",
+        },
+    }
+    for category, labels in pairs(want) do
+        for globalName, label in pairs(labels) do
+            t.eq(NS.Defaults[category].strings[globalName].label, label, category .. "." .. globalName)
+        end
+    end
+end)
+
 test("labels are unique within their category", function()
     local byCategory = {}
     for _, e in ipairs(entries) do

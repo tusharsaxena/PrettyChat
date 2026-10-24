@@ -63,6 +63,8 @@ read_globals = {
     "Settings",
     "StaticPopup_Show",
     "DEFAULT_CHAT_FRAME",
+    -- The Categories page's string-list hover (settings/Panel.lua, showStringTooltip).
+    "GameTooltip",
     -- The General visibility modes: read at every ApplyStrings pass, and the
     -- transition the combat watcher's two events answer.
     "UnitAffectingCombat",

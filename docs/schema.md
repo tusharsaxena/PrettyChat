@@ -202,7 +202,7 @@ Schema construction runs once at file-load (`settings/Schema.lua`). The order ma
 
 1. For each `category` in `CATEGORY_ORDER` (skipping `General`):
    - `buildCategoryRow(category)` — adds `<Cat>.enabled`.
-   - For each `globalName` in `NS.Defaults[Cat].strings` (sorted alphabetically): `buildStringRows(...)` — adds `<Cat>.<NAME>.enabled` *and* `<Cat>.<NAME>.format`.
+   - For each `globalName` in `NS.Defaults[Cat].strings` (in `NS.SortedStringNames` order: each entry's data-only `order`, then the global name): `buildStringRows(...)` — adds `<Cat>.<NAME>.enabled` *and* `<Cat>.<NAME>.format`.
 2. `Schema.InstallMasterControls(NS.Helpers)` — called from `settings/OptionsSetup.lua`, the **next** TOC entry, because the composers live on the Options instance and it does not exist yet while `settings/Schema.lua` is running. It calls `H.MasterControls(MASTER_SPEC)`, stamps each returned row with `category = "General"` and this addon's `kind` / `get` / `set`, and splices them in at the **head** of `rows` — which is what makes `Master controls` the General page's first tab and what puts those rows at the head of `/pc list`. The hook that draws the group's closing button comes back on `Schema.masterAfterGroup`. A canonical leaf the library emits that this addon has **not** wired is never installed as a control that reads and writes nothing; it is reported at load through the same channel an unresolved path takes.
 3. `runValidation()` runs again after the splice, so `Schema.validation` describes the schema the addon actually runs rather than one three rows short of it.
 

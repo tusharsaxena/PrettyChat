@@ -130,14 +130,14 @@ test("the category Enable stays ABOVE the tree", function()
     t.truthy(enableAt < treeAt, "with the toggle above it")
 end)
 
-test("the list offers the strings in sorted global-name order", function()
+test("the list offers the strings in the curated order", function()
     local sorted = sortedNames("Loot")
     local labels = {}
     for i, globalName in ipairs(sorted) do
         labels[i] = NS.Defaults.Loot.strings[globalName].label
     end
     t.eq(table.concat(listNames("Categories"), "|"), table.concat(labels, "|"),
-        "the list is the same sorted order the stack of blocks used to be")
+        "the list is the order NS.SortedStringNames decides, shared with /pc list and /pc test")
 end)
 
 -- THE LIST IS ACEGUI'S TreeGroup, which is the widget every AceConfig options
@@ -170,6 +170,33 @@ test("the tree is handed one row per string, keyed by GLOBALNAME", function()
     t.eq(tree.selected, pageCtx.activeSubTab.Loot, "the open string is the selected row")
     t.truthy(tree.treeWidth and tree.treeWidth > 175,
         "the pane is widened past AceGUI's 175 default, which clips this addon's longest label")
+end)
+
+-- THE LIST'S HOVER IS THE CHAT LINE (PC-LY, item 020's PRC-L04). AceGUI's built-in hover
+-- repeated the entry's label, so it carried nothing. It is switched off, and the page draws one
+-- tooltip of its own through GameTooltip: the label as the title, the GLOBALNAME in gray, and
+-- Blizzard's original rendered with sample values, the way the game prints it.
+--
+-- red under: leaving the built-in on (two tooltips draw); a hover with no body; a leave that
+-- leaves the tooltip up.
+test("hovering a list entry shows its label, its GLOBALNAME and the original rendered", function()
+    local tree  = stringTreeOf(NS.Helpers.__panelFor("Categories").scroll)
+    local g     = sortedNames("Loot")[2]
+    local tip   = env.GameTooltip
+    t.eq(tree.buttonTooltips, false, "AceGUI's own label-only hover is switched off")
+
+    tip.lines, tip.text = nil, nil
+    tree:Fire("OnButtonEnter", g, env.CreateFrame("Button"))
+    t.eq(tip.text, NS.Defaults.Loot.strings[g].label, "the title is the entry's label")
+    local lines = tip.lines or {}
+    t.truthy(lines[1] and lines[1]:find(g, 1, true), "the GLOBALNAME is the second line")
+    t.truthy(lines[1] and lines[1]:find(NS.Const.Color.gray, 1, true), "in gray")
+    t.eq(lines[2], (NS.RenderSample(NS.OriginalFormat(addon, g))),
+        "and the body is Blizzard's original, rendered")
+    t.truthy(tip:IsShown(), "the tooltip is up")
+
+    tree:Fire("OnButtonLeave", g)
+    t.falsy(tip:IsShown(), "and leaving the entry takes it down")
 end)
 
 -- THE TREE FILLS THE PAGE. It asked for a height clamped to [260, 380], which is
@@ -319,9 +346,7 @@ test("the string you were on is remembered per category, and heals when stale", 
     local fresh = ctx.loadAddon()
     panelFrame(fresh.env, "Categories"):Show()
     local pageCtx = fresh.NS.Helpers.__panelFor("Categories")
-    local lootSorted = {}
-    for g in pairs(fresh.NS.Defaults.Loot.strings) do lootSorted[#lootSorted + 1] = g end
-    table.sort(lootSorted)
+    local lootSorted = fresh.NS.SortedStringNames("Loot")
 
     -- Move to Loot's third string, leave for Money, come back.
     -- The FRESH instance's list, not the suite-wide one: `listEntries` reads the
@@ -384,9 +409,7 @@ test("the read-only Original row shows this client's snapshot, or degrades witho
     -- read the OnEnable snapshot of what THIS client loaded. Both go through
     -- NS.OriginalFormat now. The harness seeds every registered global as
     -- "ORIG:<NAME>" before OnEnable, so that is what the box must show.
-    local sorted = {}
-    for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
-    table.sort(sorted)
+    local sorted = sortedNames("Loot")
     local first = sorted[1]
     local orig = lootBlock.orig
 
@@ -434,9 +457,7 @@ test("the read-only Original row shows this client's snapshot, or degrades witho
 end)
 
 test("the per-string checkbox writes the string's enable path", function()
-    local sorted = {}
-    for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
-    table.sort(sorted)
+    local sorted = sortedNames("Loot")
     local globalName = sorted[1]
     local enable = lootBlock.enable
 
@@ -452,9 +473,7 @@ end)
 test("the New edit box unescapes || to | before storing", function()
     -- The panel shows `||` for a literal pipe (the same convention /pc set
     -- accepts), so the stored format must be the single-pipe form.
-    local sorted = {}
-    for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
-    table.sort(sorted)
+    local sorted = sortedNames("Loot")
     local globalName = sorted[1]
     local newInput = lootBlock.new
 
@@ -548,9 +567,7 @@ test("the Preview box surfaces an unrenderable format instead of blanking", func
 end)
 
 test("the per-string Reset button restores both dimensions", function()
-    local sorted = {}
-    for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
-    table.sort(sorted)
+    local sorted = sortedNames("Loot")
     local globalName = sorted[1]
     local block = lootBlock
 
@@ -593,9 +610,7 @@ end)
 
 test("a slash-command write re-syncs the open panel", function()
     -- The panel and /pc share one write path, so either surface updates the other.
-    local sorted = {}
-    for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
-    table.sort(sorted)
+    local sorted = sortedNames("Loot")
     local globalName = sorted[1]
 
     NS.Schema.Set("Loot." .. globalName .. ".format", "FROM SLASH")
@@ -608,9 +623,7 @@ test("no per-string enable tooltip carries a second-category note", function()
     -- PRETTYCHAT-R-02: no global is registered twice any more, so the in-page
     -- cross-registration warning (a gray paragraph naming the other category)
     -- has nothing to warn about and is gone.
-    local sorted = {}
-    for globalName in pairs(NS.Defaults.Loot.strings) do sorted[#sorted + 1] = globalName end
-    table.sort(sorted)
+    local sorted = sortedNames("Loot")
     local pageCtx = NS.Helpers.__panelFor("Categories")
     for index = 1, #sorted do
         selectEntry("Categories", index)
