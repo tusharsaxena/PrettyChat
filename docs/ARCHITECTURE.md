@@ -188,6 +188,10 @@ The watcher frame is **created lazily on the first combat-scoped write** and its
 
 The conformance suite is `tests/test_disabled.lua` (`§7`). Every assertion is made against the **registration set**, through the kit's recording mock, and never against a handler's return value: a suite that called a handler and asserted it returned early would certify the draw gate it exists to catch.
 
+## Frame layering
+
+**PrettyChat is a frameless addon and owns no strata** (`frame-layering-§5`). Its output is text in Blizzard's chat frames, and every visual surface belongs to someone else: settings widgets inherit the Settings canvas (`HIGH`), the debug console and copy window are LibKa0s's (`DIALOG` and `FULLSCREEN`; the console is toplevel from v1.77.0 and re-raises a shown confirmation), the reset confirmations are Blizzard StaticPopups, and pullouts, tooltips and the minimap button are AceGUI's, Blizzard's and LibDBIcon's. So `core/`, `modules/` and `settings/` call no `SetFrameStrata`, `SetFrameLevel`, `SetToplevel` or `Raise`, which `tests/test_layers.lua` pins. The addon's tiers, all of them inherited, are stated once in the header of `NS.Const.LAYERS` (`core/Constants.lua`), whose `STRATA` and `LEVEL` maps are empty by design; the library-owned values are `frame-layering-§6`'s, not copied here.
+
 ## Taint Notes
 
 - The panel-open guards on `InCombatLockdown()` before `Settings.OpenToCategory` — the protected category-switch taints the panel for the session if called under combat lockdown. The guard lives **inside the library's `OpenOptionsPanel`** rather than in the slash dispatcher, so every caller is gated; `PrettyChat:OpenConfig` is a one-line delegate and there is deliberately no second open path (options-ui-§2).

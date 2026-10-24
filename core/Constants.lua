@@ -73,3 +73,32 @@ NS.PREFIX    = Const.PREFIX
 -- registration happens the day LSM arrives, and nothing here has to decide.
 Const.FONT_MONO_NAME = "JetBrains Mono"
 Const.FONT_MONO      = NS.MediaFont and NS.MediaFont(Const.FONT_MONO_NAME) or _G.STANDARD_TEXT_FONT
+
+-- Frame layering (frame-layering-§5): the addon's one layers table, EMPTY BY DESIGN.
+--
+-- PrettyChat is a frameless addon. Its output is text in Blizzard's chat frames, and its
+-- only visual surfaces belong to someone else, so it sets no strata and no frame level of
+-- its own and MUST NOT call SetFrameStrata, SetFrameLevel, SetToplevel or Raise
+-- (tests/test_layers.lua pins that over core/, modules/ and settings/). The stack it relies
+-- on, every tier owned by the library, Blizzard or Ace3 (frame-layering-§6):
+--
+--   T0  none               PrettyChatCombatWatcher, the library's probe and event frames
+--   T1  MEDIUM, level 8    the LibDBIcon minimap button (fixed by LibDBIcon)
+--   T4  HIGH               Blizzard's Settings panel; every canvas, body, tab strip and AceGUI
+--                          widget inherits it, levels relative (tab buttons and tree buttons
+--                          +1, the library's combat cover max(panel + 100, deepest + 1))
+--   T6  DIALOG             the PRETTYCHAT_RESET_* StaticPopups (toplevel, Blizzard) and the
+--                          LibKa0s debug console (toplevel from v1.77.0; it re-raises a shown
+--                          StaticPopup on show, so a confirmation is never buried)
+--   T7  FULLSCREEN         the LibKa0s copy window, one strata over the console it opens from
+--   T8  FULLSCREEN_DIALOG  AceGUI dropdown pullouts (General visibility, Profiles)
+--   T9  TOOLTIP            GameTooltip, AceGUITooltip, and AceConfigDialog's Profiles
+--                          confirmation at level 100
+--
+-- The first strata or level this addon sets itself gets a key here, a §1 tier key in STRATA
+-- or a named offset in LEVEL, and tests/test_layers.lua's frameless case is changed in the
+-- same commit.
+Const.LAYERS = {
+    STRATA = {},
+    LEVEL  = {},
+}

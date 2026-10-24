@@ -132,6 +132,13 @@ Total.
 - the library publishes the layout constants a host page needs
 - FONT_MONO is whatever the media seam answers, never a literal path
 
+### test_layers.lua (4)
+
+- the addon's own code makes no strata, level, toplevel or raise call
+- the layers table declares the frameless shape: no strata, no level band
+- the combat watcher, the one frame the addon creates, is a T0 frame
+- docs/ARCHITECTURE.md carries the Frame layering section and points at the table
+
 ### test_mediasetup.lua (8)
 
 - MediaSetup: NS.Icon answers the vendored path, EXTENSIONLESS
@@ -695,6 +702,7 @@ Total.
 | test_surface_parity.lua | 7 |
 | test_envsetup.lua | 9 |
 | test_constants.lua | 8 |
+| test_layers.lua | 4 |
 | test_mediasetup.lua | 8 |
 | test_util.lua | 8 |
 | test_locale.lua | 12 |
@@ -720,4 +728,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **574** |
+| **Total** | **578** |

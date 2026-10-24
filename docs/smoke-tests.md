@@ -26,7 +26,7 @@ works.
 | TEST-1 – 6 | Test preview | `/pc test` and the Test button, the filters |
 | RESET-1 – 13 | Resets | Row Reset, the Defaults buttons, `/pc reset <path>`, reset all, the one log line |
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
-| DIAG-1 – 25 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console |
+| DIAG-1 – 27 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | RV-75 – 77 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
@@ -36,7 +36,7 @@ works.
 - Error display on: `/console scriptErrors 1` (or BugSack). Every check assumes it.
 - A character that can loot, gain XP and reputation, take money, craft and repair, and a training
   dummy nearby for COMBAT and the combat halves of other checks.
-- A second Ka0s addon installed for PANEL-6, DIAG-18, DIAG-20 and DEGRADED-1 (BankLedger or PanelMaster, which
+- A second Ka0s addon installed for PANEL-6, DIAG-18, DIAG-20, DIAG-26 and DEGRADED-1 (BankLedger or PanelMaster, which
   both draw wide AceGUI groups). Ka0s Loot History for OVR-9. A broker display (Titan Panel, Bazooka or
   ElvUI's data texts) for LAUNCH-7; skip that check if you run none.
 - Back up `WTF/Account/<acct>/SavedVariables/PrettyChatDB.lua` before INSTALL-1 (it deletes the file)
@@ -646,6 +646,17 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   `[Launcher] registered` line (or, on an install missing the broker libraries, the one line naming
   the missing library). `/pc debug off`, `/pc debug on` → it is not written again. **Fail:** no
   `[Launcher]` line after the first enable, or one on every enable. Result: pass (owner-marked 2026-10-10)
+- **DIAG-26. The console comes forward when clicked (LibKa0s v1.77.0, frame-layering-§4).** Open
+  PrettyChat's console (`/pc debug`) and the second Ka0s addon's console, and drag them so they
+  overlap. Click whichever is behind → it comes in front of the other. Click the other → that one comes
+  forward. With `/pc config` open, the console still draws over the Settings window. **Fail:** a
+  clicked console stays behind its peer (the console is not toplevel), or the console draws under the
+  Settings window. Result:
+- **DIAG-27. A reset confirmation is never buried by the console (LibKa0s v1.77.0, frame-layering-§4).**
+  `/pc config` ▸ General ▸ **Reset all settings** → the confirmation shows; do not answer it. With the
+  console closed, type `/pc debug` in chat → the console opens, and the confirmation still draws on top
+  of it wherever the two overlap. Click **Cancel** → nothing is reset. **Fail:** the console covers the
+  confirmation when it opens (the console's show did not re-raise the shown StaticPopup). Result:
 
 ## DEGRADED
 
@@ -748,7 +759,9 @@ Until the pass runs, record this section as unrun, not as coverage.
 
 ## Pending sign-off
 
-None. On 2026-10-10 the owner marked every check in this file as passed, recorded on its
+On 2026-10-10 the owner marked every check in this file as passed, recorded on its
 `Result:` line as `pass (owner-marked 2026-10-10)`; a check that already carried a dated owner pass
 keeps it. A check added or rewritten after that date is listed here until its `Result:` line records
 a pass.
+
+- DIAG-26 and DIAG-27 (added 2026-10-24, item PC-ZS: the console's layering on LibKa0s v1.77.0).
