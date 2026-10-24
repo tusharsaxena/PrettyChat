@@ -39,9 +39,10 @@ local enUS = {
     "Test",
     "Write a sample of every active format string to the debug console, so you can see what real loot/currency/XP messages will look like. `/pc test` writes the same report there.",
     "Reset this profile to the addon's defaults? Everything you have configured or added in it is discarded — your other profiles are not affected.",
-    -- The General page's header Defaults tooltip. The button is the same reset as
-    -- `Reset all settings` (options-ui-§12), confirmation included.
-    "Reset every setting to its default.",
+    -- The General sub-page's title and sidebar name (its page KEY stays the literal). Its
+    -- header Defaults tooltip is the library's (O.ResetAllTooltip), the words `Reset all
+    -- settings` carries, so it is not keyed here.
+    "General",
     -- Categories sub-page (the tab strip). The page name is a heading rather
     -- than a schema path segment, so unlike the category names interpolated
     -- below it is fully translatable.

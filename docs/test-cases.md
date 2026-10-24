@@ -543,7 +543,7 @@ Total.
 - diagnostics: a secret value in the store or in a global does not raise
 - diagnostics: the report writes nothing, anywhere, and clears nothing
 
-### test_panel.lua (25)
+### test_panel.lua (27)
 
 - registration builds the parent category and three sub-pages
 - the strip carries one tab per message category, in CATEGORY_ORDER
@@ -552,6 +552,8 @@ Total.
 - registration is a no-op on a client without the canvas Settings API
 - a second CreateOptionsPanel is a no-op, not a second Blizzard category
 - the General page builds its controls on first show
+- the General page's title and sidebar name are routed through L
+- Master controls packs Debug console and Minimap button on one line
 - the General page closes with [Test] [Reset all settings] on ONE row
 - the General page draws a strip whose first tab is Master controls
 - the Debug console toggle is a schema row, not a bespoke session checkbox
@@ -727,7 +729,7 @@ Total.
 | test_slash.lua | 54 |
 | test_disabled.lua | 14 |
 | test_diagnostics.lua | 18 |
-| test_panel.lua | 25 |
+| test_panel.lua | 27 |
 | test_panel_categories.lua | 28 |
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
@@ -737,4 +739,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **587** |
+| **Total** | **589** |

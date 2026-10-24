@@ -786,11 +786,17 @@ local LANDING_SPEC = {
 -- Two pages, registered in rail order: the addon-wide switches first, then
 -- everything this addon rewrites. The eight per-category registrations this loop
 -- used to run are one page with eight tabs (buildCategoriesBody above).
+-- The page KEY stays the literal "General" (options-ui-§5 names the first sub-page that); the
+-- title and the sidebar name are display text and go through L, like Categories and Profiles
+-- (item 020, PRC-L15).
 H.RegisterOptionsPage("General", "General", function(mainCategory)
-    local ctx = H.CreatePanel(nil, "General", {
+    local ctx = H.CreatePanel(nil, L["General"], {
         pageKey         = "General",
         defaultsButton  = true,
-        defaultsTooltip = L["Reset every setting to its default."],
+        -- The library's own words for the reset, the text Reset all settings carries
+        -- (options-ui-§12, U-04; item 020's PRC-L-new1). No tail: PrettyChat ships no key
+        -- bindings. The degradation stub answers nil, and the button then has no tooltip.
+        defaultsTooltip = H.ResetAllTooltip(),
     })
 
     -- options-ui-§5 gives every sub-page a header Defaults button, and §12 puts the
@@ -801,7 +807,7 @@ H.RegisterOptionsPage("General", "General", function(mainCategory)
     -- global store, which a profile reset does not reach (launcher-§3).
     ctx.panel.defaultsOnClick = function() PrettyChat:ConfirmResetAll() end
     H.SetRenderer(ctx, buildGeneralBody)
-    return Settings.RegisterCanvasLayoutSubcategory(mainCategory, ctx.panel, "General")
+    return Settings.RegisterCanvasLayoutSubcategory(mainCategory, ctx.panel, L["General"])
 end)
 
 H.RegisterOptionsPage(CATEGORY_PAGE, CATEGORY_PAGE, function(mainCategory)

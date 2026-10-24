@@ -18,7 +18,7 @@ works.
 |---|---|---|
 | INSTALL-1 – 7 | Install, load and persistence | First load, the TOC version, reload persistence, the SavedVariables shape, the schema v2 move |
 | SLASH-1 – 11 | Slash commands | Help, bare `/pc`, `list`, `get`, `set`, the format-string write gate, the blank-format refusal |
-| PANEL-1 – 24 | Settings panel | Landing page, rail, header, General, the Categories strip, string list and editor, panel and CLI sync, the descriptor's folder name, the item 020 layout pass |
+| PANEL-1 – 25 | Settings panel | Landing page, rail, header, General, the Categories strip, string list and editor, panel and CLI sync, the descriptor's folder name, the item 020 layout pass |
 | PROFILE-1 – 10 | Profiles | The Profiles page, per-profile settings, the `/pc profile` verb |
 | STATE-1 – 6 | Enable and stand-down | `/pc enable` / `/pc disable`, what answers while disabled, the combat watcher standing down |
 | COMBAT-1 – 4 | Combat | The panel's combat refusal and cover, the launcher in combat, diagnostics in combat |
@@ -186,9 +186,9 @@ Find the cause before changing anything; a fix that only makes the check pass is
   every addon). Result: pass (owner-marked 2026-10-10)
 - **PANEL-7. The General page.** Open General → one tab, **Master controls**, in the same band and art
   as the Categories strip, and below it: *Enable PrettyChat · General visibility*, then *Debug
-  console*, then *Minimap button*, then **Test** · **Reset all settings** on one row with Test on the
+  console · Minimap button* on one line (the frameless packing, LibKa0s v1.77.0), then **Test** · **Reset all settings** on one row with Test on the
   left. The paired controls sit at a true 50/50, and nothing but the strip is above them. **Fail:** no
-  strip; a tab named `General`; Test or Reset missing; Test and Reset on separate rows. Result: pass (owner-marked 2026-10-10)
+  strip; a tab named `General`; Test or Reset missing; Test and Reset on separate rows. Result: not run (rewritten 2026-10-24, PC-LY: Debug console and Minimap button share a line)
 - **PANEL-8. The Categories tab strip.** Open Categories → eight tabs in the order Loot, Currency,
   Money, Reputation, Experience, Honor, Tradeskill, Misc (the order `/pc list` and `/pc test` print).
   The selected tab reads as attached to the page and does not highlight on hover; the others do. Click
@@ -286,6 +286,12 @@ Find the cause before changing anything; a fix that only makes the check pass is
   on the page and in `/pc get`. **Fail:** a wrapped or clipped first line, a tooltip title that differs
   from its control, a tab without a tooltip, or a setting lost or moved. Result: not run (added
   2026-10-24, PC-LY)
+- **PANEL-25. The General page after item 020.** Open General → the sidebar entry and the page title
+  both read **General**, and the page is the Master controls tab PANEL-7 describes. Hover the header
+  **Defaults** and then **Reset all settings** → the two tooltips read the same sentence, word for word.
+  Then the settings check: note *Enable PrettyChat*, *General visibility* and *Minimap button*, `/reload`
+  → all three read the same. **Fail:** a different tooltip on the two reset controls, a blank title,
+  or a value that did not survive the reload. Result: not run (added 2026-10-24, PC-LY)
 
 ## PROFILE
 
@@ -492,8 +498,9 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   every string ticked; `/pc list` reads all defaults. Result: pass (owner-marked 2026-10-10)
 - **RESET-9. General's Defaults button is the same reset.** Edit a Loot format and set *General
   visibility* to *Never*. On General click the header **Defaults** → the same popup as RESET-8, and
-  **Yes** → Loot at default, visibility *Always*. Hovering Defaults reads "Reset every setting to its
-  default." **Fail:** no popup. Result: pass (owner-marked 2026-10-10)
+  **Yes** → Loot at default, visibility *Always*. Hovering Defaults reads exactly what hovering *Reset all
+  settings* reads: "Reset the current profile to its defaults — the same thing Profiles -> Reset
+  Profile does. Your other profiles are not affected." **Fail:** no popup. Result: not run (rewritten 2026-10-24, PC-LY: the Defaults tooltip is the library reset wording)
 - **RESET-10. `/pc resetall`.** Scatter changes across categories and `/pc disable`, then
   `/pc resetall` → `all settings reset to defaults`, `/pc get General.enabled` → `true`, and
   `/pc list` reads all defaults. Result: pass (owner-marked 2026-10-10)
@@ -797,6 +804,6 @@ keeps it. A check added or rewritten after that date is listed here until its `R
 a pass.
 
 - DIAG-26 and DIAG-27 (added 2026-10-24, item PC-ZS: the console's layering on LibKa0s v1.77.0).
-- SLASH-11, PANEL-10, PANEL-11, PANEL-14, PANEL-16, PANEL-18, PANEL-20, RESET-1, RESET-2, RESET-11,
-  RESET-12 and RESET-13 (rewritten 2026-10-24) and PANEL-23 and PANEL-24 (added 2026-10-24), item
-  PC-LY: item 020's settings layout pass.
+- SLASH-11, PANEL-7, PANEL-10, PANEL-11, PANEL-14, PANEL-16, PANEL-18, PANEL-20, RESET-1, RESET-2,
+  RESET-9, RESET-11, RESET-12 and RESET-13 (rewritten 2026-10-24) and PANEL-23 to PANEL-25 (added
+  2026-10-24), item PC-LY: item 020's settings layout pass.
