@@ -195,7 +195,7 @@ Total.
 - each format row's schema default is the defaults-table default
 - defaults are declared only in defaults/Profile.lua
 
-### test_schema.lua (46)
+### test_schema.lua (47)
 
 - resolves known setting paths and returns nil for unknown ones
 - resolves categories case-insensitively and by prefix
@@ -243,6 +243,7 @@ Total.
 - seam: the [Set] line is written before the re-apply (JC-4)
 - seam, library absent: /pc disable and /pc enable still write the master switch
 - seam, library absent: a category reset and the format gate still work
+- the stored setting paths and their defaults match the pinned snapshot
 
 ### test_render.lua (12)
 
@@ -707,7 +708,7 @@ Total.
 | test_util.lua | 8 |
 | test_locale.lua | 12 |
 | test_defaults.lua | 16 |
-| test_schema.lua | 46 |
+| test_schema.lua | 47 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
 | test_override.lua | 44 |
@@ -728,4 +729,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **578** |
+| **Total** | **579** |

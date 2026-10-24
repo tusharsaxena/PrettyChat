@@ -719,3 +719,21 @@ test("seam, library absent: a category reset and the format gate still work", fu
     t.eq(BS.Get(SIG), BS.FindByPath(SIG).default, "and the format")
     t.nilv(B.addon.db.profile.categories.Loot, "leaving no category table")
 end)
+
+-- ---- the stored surface is pinned (PC-LY, item 020) -----------------------
+--
+-- Item 020 moved, regrouped and relabeled rows and changed no key, default or set of
+-- settings. tests/settings_snapshot.lua is that surface as it stood before the item; a path
+-- that appears, vanishes or ships another default fails here, whatever else moved.
+test("the stored setting paths and their defaults match the pinned snapshot", function()
+    local pinned = dofile(ctx.root .. "/tests/settings_snapshot.lua")
+    local seen = {}
+    for _, r in ipairs(Schema.AllRows()) do
+        t.truthy(pinned[r.path] ~= nil, "path " .. r.path .. " is in the snapshot")
+        t.eq(r.default, pinned[r.path], "and " .. r.path .. " keeps its default")
+        seen[r.path] = true
+    end
+    for path in pairs(pinned) do
+        t.truthy(seen[path], "pinned path " .. path .. " is still a setting")
+    end
+end)
