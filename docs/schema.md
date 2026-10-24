@@ -65,7 +65,7 @@ runtime's own `Set` (LibKa0s's `docs/api/Schema/version-2-docs.md`, "A gate in f
 `tests/test_schema.lua` drives the refusal through the `/pc set` dispatcher.
 
 One rule runs before the comparison: a **blank** format (empty or whitespace only) is refused with
-`Not saved — <path>: a format can't be blank. Use Reset to restore the default.` and a
+`Not saved — <path>: a format can't be blank. Use Reset message to restore it.` and a
 `[Set] <path> refused: blank format` trace (PC-R-02). The signature check alone would accept it, since
 the empty sequence is a prefix of every sequence, and the panel's New box hands `Schema.Set` whatever
 is left in it — so clearing the box and pressing Enter used to store `""` and print that message
@@ -166,7 +166,7 @@ Three reset verbs on `PrettyChat`. `ResetString` and `ResetCategoriesPage` write
 
 They are reachable from:
 
-- The per-string `Reset` button on each panel row (`ResetString` — always visible, a no-op when the string is already at default), the `Categories` page's `Defaults` button (`ResetCategoriesPage`, in the page header, acting on every category tab — the header click is gated by the `PRETTYCHAT_RESET_CATEGORIES` StaticPopup through `PrettyChat:ConfirmResetCategories`; the Settings window's footer control, already confirmed by Blizzard, resets directly), and the `Master controls` tab's composed "Reset all settings" button and the General page's header `Defaults` button (both gated by the `PRETTYCHAT_RESET_ALL` StaticPopup, through `PrettyChat:ConfirmResetAll`).
+- The per-string `Reset message` button on each panel row (`ResetString` — always visible, a no-op when the string is already at default), the `Categories` page's `Defaults` button (`ResetCategoriesPage`, in the page header, acting on every category tab — the header click is gated by the `PRETTYCHAT_RESET_CATEGORIES` StaticPopup through `PrettyChat:ConfirmResetCategories`; the Settings window's footer control, already confirmed by Blizzard, resets directly), and the `Master controls` tab's composed "Reset all settings" button and the General page's header `Defaults` button (both gated by the `PRETTYCHAT_RESET_ALL` StaticPopup, through `PrettyChat:ConfirmResetAll`).
 - `/pc reset <path>` (one row, through `Schema.ApplyDefault` → the single write seam) and `/pc resetall` (no in-chat confirmation — typing the command is itself the assertion). There is no category-scoped reset in chat or on the panel; `/pc reset` has taken a path rather than a category since `LIBKA0S-10`.
 
 ## SavedVariables shape

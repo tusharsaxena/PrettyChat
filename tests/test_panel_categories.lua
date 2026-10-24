@@ -631,7 +631,7 @@ test("no per-string enable tooltip carries a second-category note", function()
         env.GameTooltip.lines = nil
         block.enable:Fire("OnEnter")
         local joined = table.concat(env.GameTooltip.lines or {}, "\n")
-        t.truthy(joined:find("rewritten format", 1, true), "the enable tooltip rendered")
+        t.truthy(joined:find("Rewrite this message", 1, true), "the enable tooltip rendered")
         t.falsy(joined:find("Blizzard global", 1, true), sorted[index] .. " carries no shared-global note")
         t.falsy(joined:find("Tradeskill", 1, true), sorted[index] .. " names no other category")
     end
@@ -640,14 +640,78 @@ end)
 test("the page says its controls are read only while the master switch is on", function()
     -- The footnote the strip earns: every switch and every format box on every tab
     -- is dead while the master Enable is off, and that toggle lives on another
-    -- page. Above the controls, not after them.
+    -- page. Above the controls, not after them. Item 020 (PRC-L05) names both gates by
+    -- their on-screen labels and says where they are; it stays static and gray.
     local labels = {}
     for _, child in ipairs(lootScroll.children) do
         if child.type == "Label" and child.text then labels[#labels + 1] = child.text end
     end
-    t.truthy(labels[1] and labels[1]:find(
-        L["Strings on these tabs are rewritten only while the master Enable on the General page is on."],
-        1, true), "the note is the first thing on the page")
+    local note = "Messages are rewritten only while Enable PrettyChat is on and General "
+        .. "visibility allows it (General page > Master controls)."
+    t.truthy(labels[1] and labels[1]:find(L[note], 1, true), "the note is the first thing on the page")
+    t.truthy(labels[1]:find(NS.Const.Color.gray, 1, true), "and it is still gray")
+end)
+
+-- ---- item 020's words on this page (PRC-L07/L08/L09/L13/L14) --------------------
+--
+-- Wording and widths only: no row moved, and no key, default or behavior changed (the
+-- pinned-snapshot case in tests/test_schema.lua). One vocabulary, "rewrite", and every
+-- tooltip title equal to its control's label.
+
+--- Hover a widget the way AttachTooltip wires it, and read back what GameTooltip shows.
+local function hover(widget)
+    env.GameTooltip.lines, env.GameTooltip.text = nil, nil
+    widget:Fire("OnEnter")
+    return env.GameTooltip.text, (env.GameTooltip.lines or {})[1]
+end
+
+test("the editor's controls say what they do, and their tooltip titles match", function()
+    local block = paneParts(stringSplit(NS.Helpers.__panelFor("Categories").scroll).pane)
+    t.eq(block.enable.labelText, "Rewrite this message", "the per-string checkbox names its act")
+    t.eq(block.enable.relativeWidth, 0.5, "the tick takes half the line")
+    t.eq(block.caption.relativeWidth, 0.5, "and the GLOBALNAME caption the other half")
+    local title, body = hover(block.enable)
+    t.eq(title, "Rewrite this message", "the tick's tooltip title is its label")
+    t.eq(body, "Rewrite this message. When off, Blizzard's original wording is used.", "and its body")
+    t.eq((hover(block.orig)), "Original", "Original's tooltip title is its label")
+    title, body = hover(block.new)
+    t.eq(title, "New", "New's tooltip title is its label")
+    t.eq(body, "Your rewritten format. Type `||` for a literal `|` (color codes use this).", "New's body")
+    title, body = hover(block.preview)
+    t.eq(title, "Preview", "Preview keeps its label")
+    t.eq(body, "Your rewritten format, rendered with sample values. Hover the entry in the list to "
+        .. "see Blizzard's original rendered the same way.", "and says what it renders")
+    t.eq(block.reset.text, "Reset message", "the per-string reset names its object")
+    t.eq((hover(block.reset)), "Reset message", "and its tooltip title matches")
+    t.eq(block.reset.relativeWidth, 0.4, "at the same 40% width")
+end)
+
+test("the category toggle's tooltip says what off means", function()
+    t.eq(Schema.FindByPath("Loot.enabled").tooltip,
+        "Rewrite Loot messages. When off, every Loot message uses Blizzard's original wording, "
+        .. "whatever the switches below say.", "both placeholders take the category")
+end)
+
+test("every category tab carries a tooltip naming what it covers", function()
+    local want = {
+        Loot = "Item pickups, your own and group loot, bonus rolls, refunds. Crafted items are "
+            .. "under Tradeskill.",
+        Currency = "Currency gained and lost. Currency refunds are under Loot.",
+        Money = "Gold looted, split, refunded or rewarded.",
+        Reputation = "Faction standing going up and down.",
+        Experience = "XP from kills and quests, by rest state, solo, group or raid. Quest-reward and "
+            .. "exploration XP lines are under Misc.",
+        Honor = "Honor you earn.",
+        Tradeskill = "Professions: crafting (yours and others') and opening locks.",
+        Misc = "Quest-reward XP and zone exploration XP.",
+    }
+    local n = 0
+    for _, b in ipairs(tabButtons("Categories")) do
+        n = n + 1
+        t.truthy(want[b.text], "tab " .. tostring(b.text) .. " keeps its raw category label")
+        t.eq(b.__ka0sTabTip, want[b.text], tostring(b.text) .. "'s tooltip")
+    end
+    t.eq(n, 8, "all eight tabs")
 end)
 
 test("clicking a tab swaps the body and drops the tab it left", function()

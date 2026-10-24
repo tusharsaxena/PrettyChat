@@ -83,9 +83,9 @@ The General sub-page's header `Defaults` button (`options-ui-§5`) sits behind t
 `buildCategoriesBody(ctx)` draws the whole page:
 
 1. **The primary strip** — `H.TabStrip(ctx, { tabs, value, onSelect })`, one tab per message category, in `CATEGORY_ORDER` minus the virtual `General`. The tab order is *derived* from that array rather than restated, so the strip, `/pc list` and `/pc test` cannot disagree about what comes first. Loot leads because it is what a player opens the page to change; Misc trails because it is the drawer.
-2. **One footnote line**, gray, above the controls: *"Strings on these tabs are rewritten only while the master Enable on the General page is on."* Every switch and every format box on every tab is inert while the master is off, and that toggle lives on the other page — a player who enables a category, sees nothing change in chat and has no sentence to explain it has been misled by the page rather than by the setting.
+2. **One footnote line**, gray, above the controls: *"Messages are rewritten only while Enable PrettyChat is on and General visibility allows it (General page > Master controls)."* Every switch and every format box on every tab is inert while either gate is closed, and both live on the other page — a player who enables a category, sees nothing change in chat and has no sentence to explain it has been misled by the page rather than by the setting. It names both gates by their on-screen labels (item 020, PRC-L05; it used to say "the master Enable", a word on no control, and left out General visibility) and is **static**: drawn on every tab, whatever the gates say. A footnote that came and went with state was proposed and left out of 020, because it is behavior rather than layout.
 3. **The active tab's body**, `buildCategoryBody(ctx, scroll, category, catData)`:
-   1. **Enable `<Category>`** checkbox, bound to the `<Cat>.enabled` schema row. It stays **above** the two columns, because it governs every string in the category rather than the one on screen.
+   1. **Enable `<Category>`** checkbox, bound to the `<Cat>.enabled` schema row. It stays **above** the two columns, because it governs every string in the category rather than the one on screen. Its tooltip: "Rewrite `<Category>` messages. When off, every `<Category>` message uses Blizzard's original wording, whatever the switches below say." The page's one verb is **rewrite** (item 020, PRC-L07): the category, the per-string switch, New and Preview all say it, where they used to say *overrides*, *rewritten* and *replacement* for one thing.
    2. A 2× row spacer.
    3. **The `TreeGroup`** — full width, `SetTreeWidth(TREE_W, false)` (200px, past AceGUI's 175 default, which clips *Item Looted Multiple (Other)*), and a height it has to be **told**, because a `TreeGroup` inside a scroll has no natural one.
 
@@ -109,16 +109,23 @@ are `settings/Schema.lua`'s. It lived in the README until `M5-03`; `documentatio
 settings table in the README at all, so both granularities live here — the page summary at the top
 of this file, the per-tab breakdown below.
 
-| Tab | Covers |
+Since item 020 (PRC-L09) the sentence is also **the tab's tooltip** (`tabs[i].tooltip`, which
+`H.TabStrip` draws under the tab's label as its title), so a player reads it on hover rather than
+here, cross-tab pointers included. The tab **labels** stay the raw category keys, because they are the
+schema path segments `/pc set`, `/pc list` and `/pc test category` take (the `localization-§1` row in
+[ARCHITECTURE.md](./ARCHITECTURE.md#documented-deviations)); the Tradeskill tooltip is how the client's
+own word, *Professions*, reaches the player without renaming a CLI-visible tab.
+
+| Tab | Covers (the tab's tooltip) |
 |-----|--------|
-| **Loot** | Item pickups, your own and group loot, bonus rolls, and currency from loot. |
-| **Currency** | Currency gained and lost. |
-| **Money** | Gold, silver, and copper: pickups, loot splits, guild bank deposits, and quest rewards. |
+| **Loot** | Item pickups, your own and group loot, bonus rolls, refunds. Crafted items are under Tradeskill. |
+| **Currency** | Currency gained and lost. Currency refunds are under Loot. |
+| **Money** | Gold looted, split, refunded or rewarded. |
 | **Reputation** | Faction standing going up and down. |
-| **Experience** | The different ways you gain XP (rested, group, raid, and so on). |
+| **Experience** | XP from kills and quests, by rest state, solo, group or raid. Quest-reward and exploration XP lines are under Misc. |
 | **Honor** | Honor you earn. |
-| **Tradeskill** | Crafting items and opening locks. |
-| **Misc** | A couple of leftovers: quest XP rewards and zone exploration. |
+| **Tradeskill** | Professions: crafting (yours and others') and opening locks. |
+| **Misc** | Quest-reward XP and zone exploration XP. |
 
 ### Why a list, not a second strip
 
@@ -138,7 +145,7 @@ The entry that selects a string *is* its name, which is why the `Heading` each b
 
 **Refresher hygiene.** `Schema.refreshers` is keyed by *category*, not by page, so an entry left behind by the tab the player just left is a closure over released AceGUI widgets that the next master-toggle fan-out would still reach. `buildCategoriesBody` drops every category's entry before it draws, and the body it draws re-registers the one now on screen.
 
-**The Defaults button** in the header is **page-wide** (`options-ui-§13`: a page's Defaults MUST NOT narrow to the visible tab). Clicking it asks first: `PrettyChat:ConfirmResetCategories()` raises the `PRETTYCHAT_RESET_CATEGORIES` StaticPopup ("Reset the strings on every category tab to their defaults? Your edits in every category are discarded.", Yes/No, Escape dismisses), and nothing changes until Accept runs `PrettyChat:ResetCategoriesPage()`, which hands `Schema.ResetRows` the rows of every message category (`CATEGORY_ORDER` minus the virtual `General`) as one batch: one `ApplyStrings` pass and one `[Set] reset Categories: N rows` line. The canvas's `OnDefault` forwards to the same `defaultsOnClick`, so the Settings window's footer control reaches the same body, but **without** the popup: Blizzard's own Defaults dialog has already asked, and a second confirmation would make the player answer twice. The handler tells the two paths apart by argument count: the library calls the header button's handler as `onClick(widget, event, ...)` and the footer forwarder as `defaultsOnClick()` with no arguments. The library refuses both in combat. Its tooltip reads "Reset the strings on every category tab to their defaults." Per-row reset is preserved via the per-string `Reset` button (see below), and the master `Reset all settings` on General has the popup.
+**The Defaults button** in the header is **page-wide** (`options-ui-§13`: a page's Defaults MUST NOT narrow to the visible tab). Clicking it asks first: `PrettyChat:ConfirmResetCategories()` raises the `PRETTYCHAT_RESET_CATEGORIES` StaticPopup ("Reset the strings on every category tab to their defaults? Your edits in every category are discarded.", Yes/No, Escape dismisses), and nothing changes until Accept runs `PrettyChat:ResetCategoriesPage()`, which hands `Schema.ResetRows` the rows of every message category (`CATEGORY_ORDER` minus the virtual `General`) as one batch: one `ApplyStrings` pass and one `[Set] reset Categories: N rows` line. The canvas's `OnDefault` forwards to the same `defaultsOnClick`, so the Settings window's footer control reaches the same body, but **without** the popup: Blizzard's own Defaults dialog has already asked, and a second confirmation would make the player answer twice. The handler tells the two paths apart by argument count: the library calls the header button's handler as `onClick(widget, event, ...)` and the footer forwarder as `defaultsOnClick()` with no arguments. The library refuses both in combat. Its tooltip reads "Reset the strings on every category tab to their defaults." Per-row reset is preserved via the per-string `Reset message` button (see below), and the master `Reset all settings` on General has the popup.
 
 ## The `Profiles` sub-page
 
@@ -151,33 +158,33 @@ The draw is the page's `H.SetRenderer` body, so the combat cover applies here as
 The selected format string renders in the **right-hand column** — the `TreeGroup`'s content pane, whatever width the page leaves beside the `TREE_W` (200px) tree. Its **`Heading` is gone** — the list entry that selects the string is its name now:
 
 ```
-[Enable]  GLOBALNAME (gray)
+[Rewrite this message]  GLOBALNAME (gray)
 Original  [disabled EditBox]
 New       [editable EditBox]
 Preview   [disabled EditBox]
-[Reset]
+[Reset message]
 ```
 
 | Row | Contents |
 |-----|----------|
-| 1 | `[Enable]` checkbox at `TICK_W` (30% of the pane) beside the `GLOBALNAME` caption at `CAPTION_W` (70%) — the global is long, and it is what `/pc set` and `/pc test formatstring` take |
+| 1 | `[Rewrite this message]` checkbox at `TICK_W` (50% of the pane) beside the `GLOBALNAME` caption at `CAPTION_W` (50%) — the global is long, and it is what `/pc set` and `/pc test formatstring` take. It was a bare *Enable* at 30/70 until item 020 (PRC-L08): directly under the full-width *Enable `<Category>`*, two "Enable" checkboxes were told apart only by position |
 | 2 | Original format `EditBox`, full width (disabled, `:SetLabel("Original")`), seeded from `NS.OriginalFormat(PrettyChat, globalName)` — the `OnEnable` snapshot of this client's `_G`, the same source `/pc test` prints (PC-R-04) |
 | 3 | New format `EditBox`, full width (editable, `:SetLabel("New")`, commits on Enter) |
 | 4 | Preview `EditBox`, full width (disabled, `:SetLabel("Preview")`, `NS.RenderSample` output) |
-| 5 | `[Reset]` button at `RESET_W` (40% of the pane), on a row of its own, held off the fields by `Const.STRING_VSPACER` — the gap that used to separate one whole string block from the next |
+| 5 | `[Reset message]` button at `RESET_W` (40% of the pane), on a row of its own, held off the fields by `Const.STRING_VSPACER` — the gap that used to separate one whole string block from the next |
 
-The three format boxes are **full width inside the pane**, which is the width the `options-ui-§6` deviation exists to buy: they hold color-escaped format strings that a half-width cell clips. Their labels sit above each input via AceGUI's built-in label slot. **Reset moved to the foot** — it used to sit level with the read-only Original box, which put a destructive act beside the one control that cannot change; under the three fields it undoes, it reads as what it is.
+The three format boxes are **full width inside the pane**, which is the width the `options-ui-§6` deviation exists to buy: they hold color-escaped format strings that a half-width cell clips. Their labels sit above each input via AceGUI's built-in label slot. **Every tooltip title on the pane is its control's label** (*Rewrite this message*, *Original*, *New*, *Preview*, *Reset message*); *Original* and *New* used to title theirs *Original Format String* and *New Format String*, two names for one control. Preview's tooltip says what it renders and where the other half is: "Your rewritten format, rendered with sample values. Hover the entry in the list to see Blizzard's original rendered the same way." **Reset moved to the foot** — it used to sit level with the read-only Original box, which put a destructive act beside the one control that cannot change; under the three fields it undoes, it reads as what it is.
 
 State derived per block in the block's `refresh()` closure (run on first build and on every `Schema.NotifyPanelChange`):
 
-- `[Enable]` checkbox: `enable:SetValue(strEnabled)` and disabled when master OR category is off.
+- `[Rewrite this message]` checkbox: `enable:SetValue(strEnabled)` and disabled when master OR category is off.
 - New format `EditBox`: `:SetText` from the schema; disabled when master, category, or per-string is off.
 - Preview `EditBox`: always shows `NS.RenderSample(current)` — the rendered sample with sample args substituted in. The backing `InputBoxTemplate` FontString renders WoW `|c…|r` color escapes, so the preview shows with its formatting intact. On `string.format` failure, the error message is shown instead.
-- `[Reset]` button: always visible. Clicking when the value already equals the default is a harmless no-op (the schema's auto-clear-on-default short-circuits to nil).
+- `[Reset message]` button: always visible. Clicking when the value already equals the default is a harmless no-op (the schema's auto-clear-on-default short-circuits to nil).
 
 The new-format `EditBox` commits on `OnEnterPressed` through `NS.Schema.Set(formatPath, …)` after un-escaping `||` → `|`. The schema runs `PrettyChat:ApplyStrings()` and calls `Schema.NotifyPanelChange(category)`, which dispatches to the category's refresher (see below).
 
-A commit whose conversion signature is not a positional prefix of the shipped default's is **refused** (see [schema.md](./schema.md)): nothing is stored, `NS.Print` names both signatures, and the refresher still runs — which is what snaps the box back from the rejected text to the value that is actually stored. The Preview cannot stand in for this check, because it synthesizes its sample arguments from the format it is handed. A cleared box committed with Enter is refused the same way, by the gate's blank-format rule (`Not saved — <path>: a format can't be blank. …`, PC-R-02), and snaps back to the stored format; **Reset** is how a string goes back to its default.
+A commit whose conversion signature is not a positional prefix of the shipped default's is **refused** (see [schema.md](./schema.md)): nothing is stored, `NS.Print` names both signatures, and the refresher still runs — which is what snaps the box back from the rejected text to the value that is actually stored. The Preview cannot stand in for this check, because it synthesizes its sample arguments from the format it is handed. A cleared box committed with Enter is refused the same way, by the gate's blank-format rule (`Not saved — <path>: a format can't be blank. Use Reset message to restore it.`, PC-R-02), and snaps back to the stored format; **Reset message** is how a string goes back to its default, and the refusal names it by that label.
 
 ## Edit-box pipe escaping
 

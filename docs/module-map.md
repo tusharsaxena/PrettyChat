@@ -20,7 +20,7 @@ defaults/Defaults.lua  ──▶ NS.Defaults (categories + format strings)
 GlobalStrings/  ──▶ NOT LOADED (PC-R-05) — repo-only reference data for tests/test_defaults.lua
 
 OnEnable snapshot ──▶ addon.originalStrings ──▶ NS.OriginalFormat(addon, GLOBALNAME)
-                       ├──▶ settings/Panel.lua "Original Format String" disabled input
+                       ├──▶ settings/Panel.lua "Original" disabled input
                        └──▶ /pc test's Original line
 ```
 
@@ -54,7 +54,7 @@ Public surfaces are exposed on `NS`:
 | `NS.GeneralDefaults` | `defaults/Profile.lua` | `settings/Schema.lua` (`MASTER_SPEC.defaults` and the `General.visibility` row's clearing `set`), `modules/Override.lua` (`IsAddonEnabled` / `GetVisibility` answer a nil stored key with it) — `enabled = true`, `visibility = "always"`, declared once (savedvariables-§2, PC-94) |
 | `NS.Defaults` | `defaults/Defaults.lua` | `settings/Schema.lua`, `modules/Override.lua`, `settings/Slash.lua`, `settings/Panel.lua` (category → format-string defaults) |
 | `NS.L` | `locales/enUS.lua` | `settings/Panel.lua`, `settings/Slash.lua`, `settings/Schema.lua` (English-key localization; `__index` returns the key) |
-| `NS.OriginalFormat(addon, name)` | `modules/Override.lua` | `settings/Panel.lua` ("Original Format String" display) and `/pc test`'s Original line — one reader for both |
+| `NS.OriginalFormat(addon, name)` | `modules/Override.lua` | `settings/Panel.lua` (the "Original" box) and `/pc test`'s Original line — one reader for both |
 | `NS.RejectedEvents` | `modules/Override.lua` (published at file load as an empty array; appended by `NS.Util.SafeRegisterEvents` in `SyncCombatWatch`, each refused name once) | `core/DebugLogSetup.lua` (`sessionSummary` appends `, rejected events: <names>` to the `[Init]` line when it is non-empty) and `modules/Override.lua` itself (the one `[Events] rejected …` debug line). The player-reachable record of event names the client refused (`events-frames-taint-§1`, PC-85) |
 | `NS.SortedStringNames(category)` | `modules/Override.lua` | `modules/Override.lua` itself (`ApplyStrings`, and `collectNames` for the `/pc test` report, which filters into a new table), `settings/Schema.lua` (the file-load schema build) and `settings/Panel.lua` (a category page's string tree). The ONE place a category's string order is decided (PC-16): each defaults entry's data-only `order`, ties and unranked entries by GLOBALNAME, every unranked entry after the ranked ones (item 020): built on first ask from the static `NS.Defaults` and cached, so the returned array is **read-only** (PRETTYCHAT-R-09) |
 | `NS.Schema` | `settings/Schema.lua` | `settings/Slash.lua` (slash dispatch), `settings/Panel.lua` (every widget get/set; registers a refresh closure per drawn category tab via `Schema.RegisterRefresher`, and drops the previous tab's on every re-render) |

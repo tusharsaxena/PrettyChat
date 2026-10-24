@@ -160,11 +160,11 @@ end
 
 -- ---------------------------------------------------------------------
 -- Per-string editor, in the content pane of the category's TreeGroup.
---   [Enable]  GLOBALNAME (gray)                    one line
+--   [Rewrite this message]  GLOBALNAME (gray)      one line
 --   Original  [disabled EditBox]                   full width
 --   New       [editable EditBox]                   full width
 --   Preview   [disabled EditBox, color rendered]   full width
---   [Reset]
+--   [Reset message]
 --
 -- The string is chosen in the tree pane beside it, one row per string, drawn by
 -- buildCategoryBody below (the options-ui-§13 row in docs/ARCHITECTURE.md). The
@@ -221,12 +221,13 @@ local TREE_MIN_H = 260
 local TREE_MAX_H = 380
 local TREE_FILL  = 0.9
 
--- Inside the pane: the Enable tick and the GLOBALNAME caption share a line, and
--- everything else is full width. The caption is the wider half because a Blizzard
--- global is long (COMBATLOG_XPGAIN_FIRSTPERSON_RAID) and the tick's label is one
--- word.
-local TICK_W    = 0.3
-local CAPTION_W = 0.7
+-- Inside the pane: the per-string tick and the GLOBALNAME caption share a line, and
+-- everything else is full width. Half and half since item 020 (PRC-L08): the tick's
+-- label became "Rewrite this message", which at 0.3 would wrap, and a Blizzard
+-- global is long too (COMBATLOG_XPGAIN_FIRSTPERSON_UNNAMED_GROUP, the longest, is a
+-- smoke check for the wrap in the gray caption font).
+local TICK_W    = 0.5
+local CAPTION_W = 0.5
 
 -- How wide Reset is inside the pane. Not full width: it is one act at the foot of
 -- a column of fields, and a full-width red bar under four boxes reads as the
@@ -243,20 +244,23 @@ local function buildStringRow(pane, category, globalName, refreshers)
     local enabledPath = category .. "." .. globalName .. ".enabled"
     local formatPath  = category .. "." .. globalName .. ".format"
 
-    -- Row 1: Enable | GLOBALNAME
+    -- Row 1: Rewrite this message | GLOBALNAME. Not a bare "Enable": the category's own
+    -- full-width "Enable <Category>" sits right above this pane, and two checkboxes
+    -- stacked with one word between them were told apart only by position (PRC-L08).
     local row1 = AceGUI:Create("SimpleGroup")
     row1:SetLayout("Flow")
     row1:SetFullWidth(true)
 
     local enable = AceGUI:Create("CheckBox")
-    enable:SetLabel(L["Enable"])
+    enable:SetLabel(L["Rewrite this message"])
     enable:SetRelativeWidth(TICK_W)
     enable:SetCallback("OnValueChanged", function(_, _, value)
         NS.Schema.Set(enabledPath, value and true or false)
     end)
 
-    H.AttachTooltip(enable, L["Enable"],
-        L["Use the rewritten format for this message. When unchecked, Blizzard's original is used."])
+    -- Every tooltip title on this pane is its control's label (one name per control).
+    H.AttachTooltip(enable, L["Rewrite this message"],
+        L["Rewrite this message. When off, Blizzard's original wording is used."])
     row1:AddChild(enable)
 
     -- The Blizzard GLOBALNAME, beside the tick rather than under it. It is what
@@ -281,7 +285,7 @@ local function buildStringRow(pane, category, globalName, refreshers)
     -- Parenthesized: gsub returns (string, count) and SetText would otherwise be
     -- handed the count as a second argument (PC-R-10).
     origInput:SetText((origValue:gsub("|", "||")))
-    H.AttachTooltip(origInput, L["Original Format String"],
+    H.AttachTooltip(origInput, L["Original"],
         L["Blizzard's original format. Read-only."])
     pane:AddChild(origInput)
 
@@ -292,8 +296,8 @@ local function buildStringRow(pane, category, globalName, refreshers)
         -- Parenthesized so gsub's count never reaches Set as instanceId (PC-R-10).
         NS.Schema.Set(formatPath, ((value or ""):gsub("||", "|")))
     end)
-    H.AttachTooltip(newInput, L["New Format String"],
-        L["Your replacement. Type `||` for a literal `|` (color codes use this)."])
+    H.AttachTooltip(newInput, L["New"],
+        L["Your rewritten format. Type `||` for a literal `|` (color codes use this)."])
     pane:AddChild(newInput)
 
     local previewInput = AceGUI:Create("EditBox")
@@ -301,7 +305,7 @@ local function buildStringRow(pane, category, globalName, refreshers)
     previewInput:SetFullWidth(true)
     previewInput:SetDisabled(true)
     H.AttachTooltip(previewInput, L["Preview"],
-        L["The current format rendered with sample arguments."])
+        L["Your rewritten format, rendered with sample values. Hover the entry in the list to see Blizzard's original rendered the same way."])
     pane:AddChild(previewInput)
 
     -- Reset LAST, under the three fields it undoes, and held off them by the gap
@@ -313,12 +317,14 @@ local function buildStringRow(pane, category, globalName, refreshers)
     resetRow:SetLayout("Flow")
     resetRow:SetFullWidth(true)
     local resetBtn = AceGUI:Create("Button")
-    resetBtn:SetText(L["Reset"])
+    -- "Reset message", not a bare "Reset" beside Preview, which can read as "reset the
+    -- preview" (PRC-L14). The blank-format refusal in settings/Schema.lua names it.
+    resetBtn:SetText(L["Reset message"])
     resetBtn:SetRelativeWidth(RESET_W)
     resetBtn:SetCallback("OnClick", function()
         PrettyChat:ResetString(category, globalName)
     end)
-    H.AttachTooltip(resetBtn, L["Reset"],
+    H.AttachTooltip(resetBtn, L["Reset message"],
         L["Restore this string to its default."])
     resetRow:AddChild(resetBtn)
     pane:AddChild(resetRow)
@@ -638,6 +644,21 @@ end
 -- The visible tab, healed against a category that no longer exists — the same
 -- stale-pointer guard RenderTabbedSchema applies to ctx.activeTab, and for the
 -- same reason: a pointer at a missing group renders an empty page under a strip.
+-- What each tab covers, and where its look-alikes went, on hover (item 020, PRC-L09).
+-- The labels stay the raw category keys: they are the schema path segments `/pc set`,
+-- `/pc list` and `/pc test category` take (the localization-§1 row in
+-- docs/ARCHITECTURE.md), so a tooltip is how "Professions" reaches the player.
+local TAB_TOOLTIPS = {
+    Loot       = L["Item pickups, your own and group loot, bonus rolls, refunds. Crafted items are under Tradeskill."],
+    Currency   = L["Currency gained and lost. Currency refunds are under Loot."],
+    Money      = L["Gold looted, split, refunded or rewarded."],
+    Reputation = L["Faction standing going up and down."],
+    Experience = L["XP from kills and quests, by rest state, solo, group or raid. Quest-reward and exploration XP lines are under Misc."],
+    Honor      = L["Honor you earn."],
+    Tradeskill = L["Professions: crafting (yours and others') and opening locks."],
+    Misc       = L["Quest-reward XP and zone exploration XP."],
+}
+
 local function activeCategory(ctx)
     local key = ctx.activeTab
     if key and NS.Defaults[key] then return key end
@@ -664,7 +685,7 @@ function buildCategoriesBody(ctx)
 
     local tabs = {}
     for i, name in ipairs(TAB_ORDER) do
-        tabs[i] = { key = name, label = name }
+        tabs[i] = { key = name, label = name, tooltip = TAB_TOOLTIPS[name] }
     end
     H.TabStrip(ctx, {
         tabs     = tabs,
@@ -678,12 +699,14 @@ function buildCategoriesBody(ctx)
     })
 
     -- The page's one footnote, above the controls rather than after them: every
-    -- switch and every format box on every tab is read only while the master
-    -- Enable is on, and that switch is on another page. A player who turns a
-    -- category on, sees nothing change in chat and has no sentence to explain it
-    -- has been misled by the page.
+    -- switch and every format box on every tab is read only while both master gates
+    -- are open, and they are on another page. A player who turns a category on, sees
+    -- nothing change in chat and has no sentence to explain it has been misled by the
+    -- page. It names both gates by their on-screen labels and says where they are
+    -- (item 020, PRC-L05), and it stays static: a notice that comes and goes with
+    -- state is behavior, not layout, and was left out of 020 (PRC-L06, XC-34).
     H.TextRow(ctx, Color.gray
-        .. L["Strings on these tabs are rewritten only while the master Enable on the General page is on."]
+        .. L["Messages are rewritten only while Enable PrettyChat is on and General visibility allows it (General page > Master controls)."]
         .. Color.reset)
     H.AddSpacer(scroll, H.ROW_VSPACER)
 

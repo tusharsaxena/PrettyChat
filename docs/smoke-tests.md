@@ -18,7 +18,7 @@ works.
 |---|---|---|
 | INSTALL-1 – 7 | Install, load and persistence | First load, the TOC version, reload persistence, the SavedVariables shape, the schema v2 move |
 | SLASH-1 – 11 | Slash commands | Help, bare `/pc`, `list`, `get`, `set`, the format-string write gate, the blank-format refusal |
-| PANEL-1 – 23 | Settings panel | Landing page, rail, header, General, the Categories strip, string list and editor, panel and CLI sync, the descriptor's folder name, the item 020 layout pass |
+| PANEL-1 – 24 | Settings panel | Landing page, rail, header, General, the Categories strip, string list and editor, panel and CLI sync, the descriptor's folder name, the item 020 layout pass |
 | PROFILE-1 – 10 | Profiles | The Profiles page, per-profile settings, the `/pc profile` verb |
 | STATE-1 – 6 | Enable and stand-down | `/pc enable` / `/pc disable`, what answers while disabled, the combat watcher standing down |
 | COMBAT-1 – 4 | Combat | The panel's combat refusal and cover, the launcher in combat, diagnostics in combat |
@@ -148,9 +148,9 @@ Find the cause before changing anything; a fix that only makes the check pass is
   equality rather than a positional prefix. `/pc reset Loot.LOOT_ITEM_SELF.format`. Result: pass (owner-marked 2026-10-10)
 - **SLASH-11. A blank format is refused.** `/pc config` → Categories → Loot, select any string, clear
   its New box and press Enter → `Not saved — Loot.<GLOBAL>.format: a format can't be blank. Use Reset
-  to restore the default.`, and the box snaps back to the stored format. `/pc test category Loot` → in the
+  message to restore it.`, and the box snaps back to the stored format. `/pc test category Loot` → in the
   debug console, that message still prints formatted, not blank. **Fail:** the box stays empty, or the test line is
-  blank; the cleared box stored `""` (PC-R-02). Result: pass (owner-marked 2026-10-10)
+  blank; the cleared box stored `""` (PC-R-02). Result: not run (rewritten 2026-10-24, PC-LY: the refusal names Reset message)
 
 ## PANEL
 
@@ -202,8 +202,9 @@ Find the cause before changing anything; a fix that only makes the check pass is
   carried over, a highlight on the wrong button, a body under the wrong tab, or a band that changes
   height; each is the library's pool handing back a frame it did not finish dressing. Result: pass (owner-marked 2026-10-10)
 - **PANEL-10. The Categories footnote.** Open Categories → the first thing on every tab, above the
-  Enable checkbox, is a gray line: "Strings on these tabs are rewritten only while the master Enable on
-  the General page is on." Result: pass (owner-marked 2026-10-10)
+  *Enable <Category>* checkbox, is a gray line: "Messages are rewritten only while Enable PrettyChat is
+  on and General visibility allows it (General page > Master controls)." It is there on every tab
+  whatever the two switches say. Result: not run (rewritten 2026-10-24, PC-LY: the footnote names both gates)
 - **PANEL-11. The string list.** Categories ▸ Loot → below *Enable Loot*, a bordered two-pane box
   (AceGUI's `TreeGroup`, as in any AceConfig window). The 200px left pane lists 17 entries by friendly
   name in the curated order PANEL-23 spells out, and the selected one carries a highlight bar. The right pane holds one editor
@@ -220,32 +221,33 @@ Find the cause before changing anything; a fix that only makes the check pass is
   and the tree pane scrolls itself rather than growing the page. Pick a string there, go to Loot → the
   Loot string you left is selected. Close and reopen the panel → every category is back on its first
   string (the pointer is session-only by design). Result: pass (owner-marked 2026-10-10)
-- **PANEL-14. The editor layout.** Pick any string → `[Enable]` beside the gray `GLOBALNAME` caption
-  (30% and 70% of the pane), then **Original** (disabled), **New** and **Preview** (disabled), each
-  full pane width with its label above, then **Reset** on its own row at 40% of the pane. **Fail:**
-  format boxes narrower than the pane. Result: pass (owner-marked 2026-10-10)
+- **PANEL-14. The editor layout.** Pick any string → `[Rewrite this message]` beside the gray
+  `GLOBALNAME` caption (half the pane each), then **Original** (disabled), **New** and **Preview** (disabled), each
+  full pane width with its label above, then **Reset message** on its own row at 40% of the pane. **Fail:**
+  format boxes narrower than the pane. Result: not run (rewritten 2026-10-24, PC-LY: the tick is Rewrite this message at 50/50)
 - **PANEL-15. The Preview renders color.** Loot ▸ `LOOT_ITEM_SELF`, read Preview → colored text (red
   `Loot`, green `You`), not raw `|cffff0000Loot|r`. **Fail:** raw escape codes; `InputBoxTemplate`'s
   color handling changed and the Preview needs a label-in-a-frame fallback. Result: pass (owner-marked 2026-10-10)
-- **PANEL-16. Enter commits, and the row's Enable acts at once.** In `LOOT_ITEM_SELF`'s New box add a
+- **PANEL-16. Enter commits, and the row's switch acts at once.** In `LOOT_ITEM_SELF`'s New box add a
   word at the front and press Enter → the Preview re-renders with the new format, and the next item you
-  loot uses it. Untick the row's **Enable** and loot again → that line is Blizzard's own
+  loot uses it. Untick the row's **Rewrite this message** and loot again → that line is Blizzard's own
   `You receive loot: …` at once, with no `/reload`. Tick it again and loot → your edited format is
-  back. Press the row's Reset. **Fail:** the looted line keeps PrettyChat's format after the untick
-  until a `/reload`, or the edit is gone after the re-tick. Result: pass (owner-marked 2026-10-10)
+  back. Press the row's **Reset message**. **Fail:** the looted line keeps PrettyChat's format after the untick
+  until a `/reload`, or the edit is gone after the re-tick. Result: not run (rewritten 2026-10-24, PC-LY: the per-string controls were relabeled)
 - **PANEL-17. The pipe convention.** Read `LOOT_ITEM_SELF`'s New box → color codes show doubled pipes
   (`||cffff0000`). `/pc get Loot.LOOT_ITEM_SELF.format` → single pipes (`|cffff0000`), the stored form.
   Result: pass (owner-marked 2026-10-10)
 - **PANEL-18. A disabled category grays its strings.** On Loot untick *Enable Loot* → the string's
-  Enable checkbox and New box are disabled, Original stays disabled, and Reset stays clickable. Tick it
-  again. Result: pass (owner-marked 2026-10-10)
+  *Rewrite this message* checkbox and New box are disabled, Original stays disabled, and *Reset
+  message* stays clickable. Tick it
+  again. Result: not run (rewritten 2026-10-24, PC-LY: the per-string controls were relabeled)
 - **PANEL-19. A master change reaches every tab.** Leave Categories ▸ Loot open and
   `/pc set General.enabled false` → the Loot tab grays without a click, and every tab you then click is
   already gray. `/pc set General.enabled true` → the visible tab is live again, and so is each tab you
   visit after. Result: pass (owner-marked 2026-10-10)
 - **PANEL-20. A slash write reaches the open panel.** Leave Loot ▸ `LOOT_ITEM_SELF` open and
-  `/pc set Loot.LOOT_ITEM_SELF.enabled false` → its Enable checkbox unticks and New is disabled
-  without a reopen. Set it back to `true`. Result: pass (owner-marked 2026-10-10)
+  `/pc set Loot.LOOT_ITEM_SELF.enabled false` → its *Rewrite this message* checkbox unticks and New is disabled
+  without a reopen. Set it back to `true`. Result: not run (rewritten 2026-10-24, PC-LY: the per-string controls were relabeled)
 - **PANEL-21. A panel write reaches the CLI.** Change a value on the panel and press Enter, then
   `/pc get` its path → the new value. Result: pass (owner-marked 2026-10-10)
 - **PANEL-22. The panel still opens with the folder name on its descriptor.** `settings/OptionsSetup.lua`
@@ -269,6 +271,21 @@ Find the cause before changing anything; a fix that only makes the check pass is
   changes are still there, and `/pc get` on each path answers the same as before the update. **Fail:**
   two tooltips stacked (AceGUI's own hover came back), a hover with no rendered line, a list in
   global-name order, or a setting lost or reset by the update. Result: not run (added 2026-10-24, PC-LY)
+- **PANEL-24. The Categories page's words (item 020).** Categories → hover each of the eight tabs → each
+  shows its name and one sentence of what it covers (Loot points at Tradeskill for crafted items,
+  Currency at Loot for refunds, Experience at Misc, Tradeskill opens "Professions:"); the tab labels
+  are still Loot, Currency, Money, Reputation, Experience, Honor, Tradeskill, Misc. Hover *Enable Loot*
+  → "Rewrite Loot messages. When off, every Loot message uses Blizzard's original wording, whatever the
+  switches below say." Pick Experience ▸ *XP Gain (No Source, Group)*, whose global
+  `COMBATLOG_XPGAIN_FIRSTPERSON_UNNAMED_GROUP` is the longest → *Rewrite this message* and the gray
+  global share one line with neither wrapped nor clipped; record the window width you checked at.
+  Hover each control in the editor → the tooltip titles read *Rewrite this message*, *Original*,
+  *New*, *Preview* and *Reset message*, the same as the controls, and New's and Preview's bodies say
+  "rewritten format". Clear New and press Enter → the refusal ends "Use Reset message to restore it."
+  Then the settings check: `/reload`, and every value you set before the update still reads the same
+  on the page and in `/pc get`. **Fail:** a wrapped or clipped first line, a tooltip title that differs
+  from its control, a tab without a tooltip, or a setting lost or moved. Result: not run (added
+  2026-10-24, PC-LY)
 
 ## PROFILE
 
@@ -437,14 +454,14 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
 `ApplyStrings`, refreshes the panel, and writes one `[Set]` line counting the rows it changed
 (debug-logging-§10).
 
-- **RESET-1. The row Reset is always there.** Open Categories ▸ Loot → every string's editor shows
-  Reset. Click it on a string already at its default → it stays visible, nothing changes, no error.
-  Result: pass (owner-marked 2026-10-10)
-- **RESET-2. The row Reset restores format and Enable.** On `LOOT_ITEM_SELF` edit New and press Enter,
-  then untick its Enable. Click Reset → Enable is ticked again, New holds the default text and is
+- **RESET-1. The row's Reset message is always there.** Open Categories ▸ Loot → every string's editor shows
+  **Reset message**. Click it on a string already at its default → it stays visible, nothing changes, no error.
+  Result: not run (rewritten 2026-10-24, PC-LY: the per-string controls were relabeled)
+- **RESET-2. The row's Reset message restores format and switch.** On `LOOT_ITEM_SELF` edit New and press Enter,
+  then untick its *Rewrite this message*. Click **Reset message** → the checkbox is ticked again, New holds the default text and is
   editable, Preview re-renders it, and your own loot line uses PrettyChat's default (not Blizzard's).
-  `/pc get Loot.LOOT_ITEM_SELF.enabled` → `true`, `.format` → the default. **Fail:** Enable stays
-  unticked; the `disabledStrings` clear regressed. Result: pass (owner-marked 2026-10-10)
+  `/pc get Loot.LOOT_ITEM_SELF.enabled` → `true`, `.format` → the default. **Fail:** the checkbox stays
+  unticked; the `disabledStrings` clear regressed. Result: not run (rewritten 2026-10-24, PC-LY: the per-string controls were relabeled)
 - **RESET-3. The Categories Defaults button asks, then covers every tab.** Edit a Loot format, untick a
   Loot string and edit a Money format. On Loot click the header **Defaults** → a popup: *Reset the
   strings on every category tab to their defaults? Your edits in every category are discarded.*
@@ -481,23 +498,23 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   `/pc resetall` → `all settings reset to defaults`, `/pc get General.enabled` → `true`, and
   `/pc list` reads all defaults. Result: pass (owner-marked 2026-10-10)
 - **RESET-11. Nothing lingers after a reset.** Untick `LOOT_ITEM_SELF` and edit its format, clear both
-  with the row Reset, and `/reload`. Repeat three times, clearing them with the Categories Defaults
+  with the row's **Reset message**, and `/reload`. Repeat three times, clearing them with the Categories Defaults
   button, with `/pc reset Loot.LOOT_ITEM_SELF.enabled` followed by
   `/pc reset Loot.LOOT_ITEM_SELF.format`, and with `/pc resetall` → each time, before the `/reload`,
   `/pc list Loot` reads all defaults, and after it `profiles.Default.categories.Loot` in
   `PrettyChatDB.lua` is absent or empty. **Fail:** a leftover `disabledStrings` entry or override
-  after any one of the four. Result: pass (owner-marked 2026-10-10)
-- **RESET-12. One log line per reset.** `/pc debug on`, open the console, then a row Reset, the
+  after any one of the four. Result: not run (rewritten 2026-10-24, PC-LY: the per-string controls were relabeled)
+- **RESET-12. One log line per reset.** `/pc debug on`, open the console, then a row's **Reset message**, the
   Categories Defaults button, the Settings window's footer defaults control and `/pc resetall` →
   exactly one line each and nothing else: `[Set] reset Loot.LOOT_ITEM_SELF: N rows`,
   `[Set] reset Categories: N rows` (for the button and again for the footer control), and
   `[Set] reset profile 'Default' to defaults (N rows)`. N counts only rows that differed, so a reset of
   untouched rows reads `0 rows`. No `[Reset]` line. **Fail:** a line ending ` (stopped by an error)`;
-  the reset raised partway, and the error it names is a bug. Result: pass (owner-marked 2026-10-10)
+  the reset raised partway, and the error it names is a bug. Result: not run (rewritten 2026-10-24, PC-LY: the per-string controls were relabeled)
 - **RESET-13. A reset shows in an open panel.** Leave Categories ▸ Loot ▸ `LOOT_ITEM_SELF` open, untick
-  its Enable and edit its format, then from chat `/pc reset Loot.LOOT_ITEM_SELF.enabled` and
+  its *Rewrite this message* and edit its format, then from chat `/pc reset Loot.LOOT_ITEM_SELF.enabled` and
   `/pc reset Loot.LOOT_ITEM_SELF.format` → the checkbox ticks and New shows the default, with no reopen.
-  Change it again and `/pc resetall` → the visible tab refreshes the same way. Result: pass (owner-marked 2026-10-10)
+  Change it again and `/pc resetall` → the visible tab refreshes the same way. Result: not run (rewritten 2026-10-24, PC-LY: the per-string controls were relabeled)
 
 ## LAUNCH
 
@@ -780,5 +797,6 @@ keeps it. A check added or rewritten after that date is listed here until its `R
 a pass.
 
 - DIAG-26 and DIAG-27 (added 2026-10-24, item PC-ZS: the console's layering on LibKa0s v1.77.0).
-- PANEL-11 (rewritten 2026-10-24) and PANEL-23 (added 2026-10-24), item PC-LY: item 020's settings
-  layout pass.
+- SLASH-11, PANEL-10, PANEL-11, PANEL-14, PANEL-16, PANEL-18, PANEL-20, RESET-1, RESET-2, RESET-11,
+  RESET-12 and RESET-13 (rewritten 2026-10-24) and PANEL-23 and PANEL-24 (added 2026-10-24), item
+  PC-LY: item 020's settings layout pass.

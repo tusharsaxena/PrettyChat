@@ -351,7 +351,7 @@ end
 local function refusedBySignature(row, value)
     if row.kind ~= "string_format" or type(value) ~= "string" then return false end
     if value:match("^%s*$") then
-        NS.Print(NS.L["Not saved — %s: a format can't be blank. Use Reset to restore the default."]
+        NS.Print(NS.L["Not saved — %s: a format can't be blank. Use Reset message to restore it."]
             :format(row.path))
         return true, "blank format"
     end
@@ -407,7 +407,9 @@ local function buildCategoryRow(category)
         -- interpolated here is still English — see the `localization-§1` row in
         -- docs/ARCHITECTURE.md's deviations register.
         label    = NS.L["Enable %s"]:format(category),
-        tooltip  = NS.L["Enable or disable all %s string overrides."]:format(category),
+        -- Two placeholders, both the category (item 020, PRC-L07: one word, "rewrite").
+        tooltip  = NS.L["Rewrite %s messages. When off, every %s message uses Blizzard's original wording, whatever the switches below say."]
+            :format(category, category),
         default  = default,
         get      = function() return PrettyChat:IsCategoryEnabled(category) end,
         set      = batched(function(v)
@@ -1018,7 +1020,7 @@ end
 -- effects ONCE: one ApplyStrings pass, one panel refresh, and ONE
 -- `[Set] reset <label>: N rows` line in place of a [Set] line per row
 -- (debug-logging-§10). PrettyChat:ResetCategoriesPage (the Categories page's
--- Defaults button) and PrettyChat:ResetString (the per-string Reset button) are its
+-- Defaults button) and PrettyChat:ResetString (the per-string Reset message button) are its
 -- callers.
 --
 -- The act is the schema runtime's own (issue #18): one S.BulkRun('reset', label)

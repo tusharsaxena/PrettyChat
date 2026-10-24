@@ -109,6 +109,9 @@ test("a blank or whitespace-only format write is refused (PC-R-02)", function()
         t.eq(Schema.Get(sigRow.path), stored, ("%q stored nothing"):format(blank))
         t.eq(env[sigRow.globalName], stored, ("%q never reached _G"):format(blank))
         t.truthy(saidSince(at, "can't be blank"), ("%q prints the blank refusal"):format(blank))
+        -- It names the per-string button by its on-screen label (item 020, PRC-L14).
+        t.truthy(saidSince(at, "Use Reset message to restore it."),
+            ("%q names the Reset message button"):format(blank))
     end
     -- Non-vacuity: a non-blank valid format through the same write is stored.
     t.truthy(Schema.Set(sigRow.path, "Loot | %s"), "a non-blank format still sets")

@@ -571,7 +571,7 @@ Total.
 - the landing logo is hidden when its group goes back to AceGUI's pool
 - the parent page shows the TOC tagline
 
-### test_panel_categories.lua (25)
+### test_panel_categories.lua (28)
 
 - a category tab builds a toggle, a secondary strip, and ONE string block
 - the category Enable stays ABOVE the tree
@@ -597,6 +597,9 @@ Total.
 - a slash-command write re-syncs the open panel
 - no per-string enable tooltip carries a second-category note
 - the page says its controls are read only while the master switch is on
+- the editor's controls say what they do, and their tooltip titles match
+- the category toggle's tooltip says what off means
+- every category tab carries a tooltip naming what it covers
 - clicking a tab swaps the body and drops the tab it left
 
 ### test_debug_coverage.lua (23)
@@ -725,7 +728,7 @@ Total.
 | test_disabled.lua | 14 |
 | test_diagnostics.lua | 18 |
 | test_panel.lua | 25 |
-| test_panel_categories.lua | 25 |
+| test_panel_categories.lua | 28 |
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
 | test_doc_structure.lua | 13 |
@@ -734,4 +737,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **584** |
+| **Total** | **587** |
