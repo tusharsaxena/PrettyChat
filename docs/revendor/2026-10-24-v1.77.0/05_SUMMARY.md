@@ -51,3 +51,26 @@
 - **Gates:** `ka0s-bounded luacheck .` 0 warnings / 0 errors in 57 files;
   `ka0s-bounded lua tests/run.lua` 578 passed, 0 failed, 1 skipped (579), `test_vendor_sync` and
   `test_layout_cap` green.
+
+## Re-vendor after the tag moved again (one key button)
+
+- **Tag moved:** LK-96 re-closed the local annotated tag v1.77.0 with the owner's one-key-button
+  follow-up to 015. Old: tag object `b2b8ee2`, LibKa0s commit `afae2f7`
+  (`afae2f75cb7ff61c57156d9a3d8a6b2b9f4c5e10`). New: tag object `e9b126d`
+  (`e9b126d961c2970e5b14d0566480f7c1d8b5e5e8`), LibKa0s commit `2f2b2e2`
+  (`2f2b2e22b4c9219cd8a4101d7e894681c7aea16e`). The provenance line stays v1.77.0; it records no
+  sha and no kit revision, so nothing rolls there.
+- **Per-file minors that moved:** OptionsKeybinds 3 -> 4 (one key button and Clear per row on the
+  in-addon Keybindings tab; the second key stays on Options -> Keybindings). No other file under
+  `LibKa0s/` changed. In `testkit/`, `bindings_xml.lua` and `README.md` changed
+  (`Kit.keybindThroughTab` slot 2 on a one-button row); the kit revision stays 42.
+- **Contract:** no new public member, so `tests/test_surface_parity.lua` stays green and the
+  Options degradation stub in `settings/OptionsSetup.lua` is unchanged. PrettyChat draws no
+  Keybindings tab, so nothing here consumes the moved surface.
+- **Declaration and prune:** `LibKa0s icons: clear, close, copy.` kept; the tag's
+  `tools/prune-icons.lua` kept 4 files and removed 5836 (`media/icons/` unchanged in git).
+- **Adopted:** nothing. **Standard:** WS-41 touched only `library-stack-§7`; the three-place
+  reference has no drift.
+- **Gates:** `ka0s-bounded luacheck .` 0 warnings / 0 errors in 58 files;
+  `ka0s-bounded lua tests/run.lua` 589 passed, 0 failed, 1 skipped (590), `test_vendor_sync` and
+  `test_layout_cap` green; the README badge and `docs/test-cases.md` total stay 589.
