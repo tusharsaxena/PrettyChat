@@ -641,9 +641,6 @@ for _, category in ipairs(CATEGORY_ORDER) do
     end
 end
 
--- The visible tab, healed against a category that no longer exists — the same
--- stale-pointer guard RenderTabbedSchema applies to ctx.activeTab, and for the
--- same reason: a pointer at a missing group renders an empty page under a strip.
 -- What each tab covers, and where its look-alikes went, on hover (item 020, PRC-L09).
 -- The labels stay the raw category keys: they are the schema path segments `/pc set`,
 -- `/pc list` and `/pc test category` take (the localization-§1 row in
@@ -659,6 +656,9 @@ local TAB_TOOLTIPS = {
     Misc       = L["Quest-reward XP and zone exploration XP."],
 }
 
+-- The visible tab, healed against a category that no longer exists — the same
+-- stale-pointer guard RenderTabbedSchema applies to ctx.activeTab, and for the
+-- same reason: a pointer at a missing group renders an empty page under a strip.
 local function activeCategory(ctx)
     local key = ctx.activeTab
     if key and NS.Defaults[key] then return key end
