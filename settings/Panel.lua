@@ -147,6 +147,19 @@ local function generalAfterGroup(ctx)
     Schema.masterAfterGroup(ctx)
 end
 
+-- skinning-§3: the Skin tab (key "Appearance"), the library's own entry (O.AppearanceTab): the
+-- skin source, the nine skins, the Scope, the font and texture overrides, "Copy to every Ka0s
+-- addon..." and the note, drawn from LibKa0s-Skin-1.0 for the owner core/SkinSetup.lua registered.
+-- `get` and `set` are that file's read and write seams, so a pick lands through NS.Schema.Set like
+-- every other setting; the tab calls Skin:SetChoice first, so the live repaint is the library's and
+-- the rows' onChange finds nothing left to apply. A host tab keyed by a group's name replaces that
+-- group's tab, so it IS the group of the skipRender skin.* rows (settings/Schema.lua). This page has
+-- no Keybindings tab (PrettyChat binds no key), so `before` places it last. On the degraded path the
+-- stub's entry draws nothing.
+local GENERAL_OPTS = { tabs = {
+    H.AppearanceTab({ owner = addonName, get = NS.SkinChoice, set = NS.WriteSkinChoice }),
+} }
+
 local function buildGeneralBody(ctx)
     H.ClearScroll(ctx)
     local scroll = H.EnsureScroll(ctx)
@@ -155,7 +168,7 @@ local function buildGeneralBody(ctx)
     -- The group NAME is the hook key (options-ui-§15). Renaming the group would
     -- detach the closing button and nothing would error, which is why the name
     -- comes off the library rather than being spelled out again here.
-    H.RenderTabbedSchema(ctx, "General", { [H.MASTER_GROUP] = generalAfterGroup }, nil)
+    H.RenderTabbedSchema(ctx, "General", { [H.MASTER_GROUP] = generalAfterGroup }, nil, GENERAL_OPTS)
 end
 
 -- ---------------------------------------------------------------------

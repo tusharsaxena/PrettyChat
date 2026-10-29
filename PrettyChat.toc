@@ -5,7 +5,7 @@
 ## Version: 1.7.0
 ## IconTexture: Interface\AddOns\PrettyChat\media\logos\prettychat.logo.128.tga
 ## SavedVariables: PrettyChatDB
-## OptionalDeps: Ace3, LibStub, CallbackHandler-1.0, LibDataBroker-1.1, LibDBIcon-1.0
+## OptionalDeps: Ace3, LibStub, CallbackHandler-1.0, LibDataBroker-1.1, LibDBIcon-1.0, EllesmereUI
 ## DefaultState: enabled
 ## Category-enUS: Chat & Communication
 ## X-License: MIT
@@ -62,6 +62,12 @@ core\PrettyChat.lua
 # reclaims it (anti-pattern #36). Moved earlier, nothing errors, but every chat line turns
 # AceConsole-green.
 core\CoreSetup.lua
+# core\SkinSetup.lua loads AFTER core\CoreSetup.lua and BEFORE settings\Schema.lua, and the position
+# is load-bearing: it registers the LibKa0s-Skin-1.0 owner at file load (skinning-§1, so the
+# EllesmereUI provider can offer it before EllesmereUI dispatches its skins) and publishes
+# NS.SKIN_OPTIONS and NS.SKIN_SOURCE_OPTIONS, which settings\Schema.lua's skin.* rows read at file
+# load. NS.Print, NS.Schema and the profile store are read at call time only.
+core\SkinSetup.lua
 # core\DebugLogSetup.lua loads AFTER core\Constants.lua and the position is load-bearing: its
 # file-scope lib:New descriptor reads NS.Const.FONT_MONO. NS.State and NS.Print are read at call
 # time, so they do not pin it.

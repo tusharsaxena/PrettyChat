@@ -39,6 +39,11 @@ function PrettyChat:OnInitialize()
         NS.Database.RunMigrations(self.db)
     end
 
+    -- The skin the active profile names (core/SkinSetup.lua), right after the store exists and
+    -- before any settings page or the debug console is built, so the first paint is already the
+    -- profile's skin. RegisterOwner ran at file load with Ka0s Default.
+    NS.ApplySkinChoice()
+
     -- PROFILE CALLBACKS, and this addon had none.
     --
     -- Every override this addon applies is READ from db.profile and WRITTEN onto a
@@ -78,6 +83,12 @@ local function reloadProfile(self)
     if NS.Database and NS.Database.RunMigrations then
         NS.Database.RunMigrations(self.db)
     end
+    -- The incoming profile's skin, with its Scope and overrides (skinning-§2: a profile switch,
+    -- copy or reset re-applies the choice). Skin:SetChoice repaints this owner's recorded frames
+    -- and the library re-renders a shown settings page a frame later; it is idempotent, so a
+    -- profile with the same skin repaints nothing. Before the latch: the skin is setup, not a
+    -- feature, and a stood-down addon still wears it.
+    NS.ApplySkinChoice()
     -- THE LATCH FIRST, because a profile switch can flip the enable path with no
     -- verb and no checkbox touched, and slash-commands-§7 makes re-evaluating it on
     -- these three callbacks a MUST — a player switching to a profile where the addon

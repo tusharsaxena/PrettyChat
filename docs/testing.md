@@ -65,7 +65,7 @@ Both `lua tests/run.lua` and `luacheck .` must be green before any commit. Lint 
 luacheck . --formatter plain | tail -1     # and read the file count it reports
 ```
 
-A warning inside `core/EnvSetup.lua`, `core/MediaSetup.lua`, `core/CoreSetup.lua`, `core/DebugLogSetup.lua`, `core/LifecycleSetup.lua`, `core/LauncherSetup.lua`, `settings/Schema.lua`, `settings/OptionsSetup.lua` or `settings/Slash.lua` is an adoption defect. A warning elsewhere is pre-existing host hygiene. Neither statement means anything if the lint never opened the file.
+A warning inside `core/EnvSetup.lua`, `core/MediaSetup.lua`, `core/CoreSetup.lua`, `core/SkinSetup.lua`, `core/DebugLogSetup.lua`, `core/LifecycleSetup.lua`, `core/LauncherSetup.lua`, `settings/Schema.lua`, `settings/OptionsSetup.lua` or `settings/Slash.lua` is an adoption defect. A warning elsewhere is pre-existing host hygiene. Neither statement means anything if the lint never opened the file.
 
 ## The vendor gate — four diffs, and they answer two different questions
 

@@ -60,9 +60,27 @@ local function regKey(r)
     return ("%s|%s|%s|%s"):format(tostring(name), r.kind, tostring(r.event), tostring(r.unit))
 end
 
+-- THE LIBRARY'S OWN SETUP FRAME, AND ONLY IT, IS LEFT OUT. LibKa0s-Skin-1.0 makes one frame at the
+-- first RegisterOwner (core/SkinSetup.lua, at file load) and registers ADDON_LOADED and
+-- PLAYER_LOGIN on it, so its EllesmereUI provider can offer every registered owner to EllesmereUI
+-- (LibKa0s SkinEUI.lua). It is the library's, shared by every Ka0s addon on the client, not this
+-- addon's feature: no stand-down of one addon may take it down. Excluded by IDENTITY, the frame the
+-- library publishes as `__euiEventFrame`, so a registration this addon makes on a frame of its own
+-- is still counted, ADDON_LOADED or not.
+local function libraryTargets(env)
+    local out = {}
+    local ls = env.LibStub
+    local skin = type(ls) == "table" and ls.GetLibrary and ls:GetLibrary("LibKa0s-Skin-1.0", true)
+    if skin and skin.__euiEventFrame then out[skin.__euiEventFrame] = true end
+    return out
+end
+
 local function regSet(env)
     local out, list = {}, env.__registrations()
-    for i = 1, #list do out[#out + 1] = regKey(list[i]) end
+    local skip = libraryTargets(env)
+    for i = 1, #list do
+        if not skip[list[i].target] then out[#out + 1] = regKey(list[i]) end
+    end
     table.sort(out)
     return out
 end

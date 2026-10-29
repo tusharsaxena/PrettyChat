@@ -652,6 +652,27 @@ Total.
 - /pc profile refuses to switch in combat, and still lists
 - /pc profile answers while the addon is disabled, and can bring it back up
 
+### test_skinsetup.lua (18)
+
+- Skin seam: the owner is the folder name, and NS.Skin is its facade
+- Skin seam: the read answers Ka0s Default before the profile store exists
+- Skin seam: the owner tokens keep Ka0s Default's #aaaaaa and follow the skin elsewhere
+- Skin seam: the seven skin keys default to Ka0s Default, as skipRender Skin-tab rows
+- Skin seam: the skin row's values are every registered skin, in the library's order
+- Skin seam: /pc list category never offers skin as a message category
+- Skin seam: /pc set refuses an unknown skin and applies a registered one, one repaint
+- Skin seam: a skin write re-applies no chat string (D8), and still refreshes the panel
+- Skin seam: WriteSkinChoice writes every half through the schema, and the overrides as keys
+- Skin seam: one Skin tab pick is one effective SetChoice and one repaint
+- Skin seam: another addon's copy to every Ka0s addon repaints PrettyChat once
+- Skin seam: a profile switch, copy and reset each apply the incoming profile's skin
+- Skin seam: a profile's stored exceptions and overrides are applied with its skin
+- Skin seam: a skin write still lands while the addon is stood down
+- Skin seam: the library-absent load has no Skin major and falls back to the host facade
+- Skin seam: the degraded facade answers every name the live facade carries
+- Skin seam: the seam publishes the same NS members on both paths
+- Skin seam: each host-copy skin token is the live library's Ka0s Default value
+
 ### test_doc_structure.lua (13)
 
 - docs/ARCHITECTURE.md carries the ten sections documentation-§3 names
@@ -733,10 +754,11 @@ Total.
 | test_panel_categories.lua | 28 |
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
+| test_skinsetup.lua | 18 |
 | test_doc_structure.lua | 13 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **589** |
+| **Total** | **607** |

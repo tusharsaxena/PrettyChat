@@ -141,5 +141,27 @@ local enUS = {
     "sample of every format string (preview ignores enable toggles):",
     "(addon is currently disabled — these formats aren't being applied to live chat)",
     "(no matching strings)",
+    -- General ▸ Skin: the skin.* rows (settings/Schema.lua). The tab itself is the library's
+    -- (O.AppearanceTab), which draws these rows from its own words; these are the rows' labels
+    -- and tooltips as `/pc list` and the schema carry them.
+    "Skin source",
+    -- The source row's first value (core/SkinSetup.lua NS.SKIN_SOURCE_OPTIONS); the second,
+    -- EllesmereUI, is a proper name.
+    "Ka0s skins",
+    "Where this addon's look comes from: the Ka0s skin chosen below, or EllesmereUI.",
+    "Skin",
+    "The Ka0s skin this addon wears. Changes its settings pages and the debug console right away.",
+    "Ignore settings panel",
+    "Keep this addon's settings panel in the game's own look. The debug console still wears the skin.",
+    "Ignore fonts",
+    "Keep every font in this addon as the game draws it. The skin still colors the text.",
+    "Font",
+    "The font this addon's text uses, over the skin's own. Empty keeps the skin's.",
+    "Texture",
+    "The texture this addon's bars use, over the skin's own. Empty keeps the skin's.",
+    "Skin picker seen",
+    "Whether the first-run skin picker was closed on this profile.",
+    -- core/SkinSetup.lua: the one line a reload request earns on a profile event.
+    "Reload your interface (/reload) to finish changing the skin.",
 }
 for _, s in ipairs(enUS) do L[s] = s end

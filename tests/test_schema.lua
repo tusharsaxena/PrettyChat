@@ -162,7 +162,14 @@ test("exactly one addon-wide row exists, under the virtual General category", fu
     -- console toggle used to be a bespoke SessionCheckbox settings/Panel.lua drew
     -- through `pairWith`, and the Minimap button row is the composer's own at
     -- minor 7. There is exactly one declaration of each.
-    t.eq(#Schema.RowsByCategory("General"), 4, "and General hosts the whole block")
+    -- Eleven General rows since PC-01: the block's four, then the Skin tab's seven skin.* rows,
+    -- which are General-page settings but no part of the block.
+    local block, skin = 0, 0
+    for _, r in ipairs(Schema.RowsByCategory("General")) do
+        if r.kind == "skin" then skin = skin + 1 else block = block + 1 end
+    end
+    t.eq(block, 4, "and General hosts the whole block")
+    t.eq(skin, 7, "beside the Skin tab's seven rows")
 end)
 
 test("the Master controls block is the composed one, in canonical order", function()
@@ -170,9 +177,10 @@ test("the Master controls block is the composed one, in canonical order", functi
     -- what is pinned here is the LEAVES, their ORDER, and PrettyChat's frameless
     -- omission — master scale, master alpha and lock frame. Dies if a leaf is
     -- added by hand, reordered, or if `frameless` is dropped from the spec.
-    local generalRows = Schema.RowsByCategory("General")
     local paths = {}
-    for i, r in ipairs(generalRows) do paths[i] = r.path end
+    for _, r in ipairs(Schema.RowsByCategory("General")) do
+        if r.group == "Master controls" then paths[#paths + 1] = r.path end
+    end
     t.eq(table.concat(paths, ","),
         "General.enabled,General.visibility,state.debugConsole,global.minimap.shown",
         "enable, visibility, console, minimap — the frameless block, in that order")
@@ -385,9 +393,14 @@ end)
 -- differ on exactly one tab, and listing both is the point: the General page's
 -- rows are stored under the virtual "General" category and drawn under a tab
 -- called "Master controls".
+--
+-- The General page's second tab (PC-01) is the Skin tab: its group is "Appearance", the key
+-- O.AppearanceTab answers (labeled "Skin"), and its seven skin.* rows are stored under the same
+-- virtual category, so a tab is counted by its category AND its group.
 local PARTITION = {
     { page = "General", tabs = {
         { tab = "Master controls", category = "General", rows = 4 },
+        { tab = "Appearance",      category = "General", rows = 7 },
     } },
     { page = "Categories", tabs = {
         { tab = "Loot",       category = "Loot",       rows = 35 },
@@ -401,12 +414,20 @@ local PARTITION = {
     } },
 }
 
+local function rowsOfTab(tab)
+    local out = {}
+    for _, r in ipairs(Schema.RowsByCategory(tab.category)) do
+        if r.group == tab.tab then out[#out + 1] = r end
+    end
+    return out
+end
+
 test("every page's tabs hold the designed number of rows", function()
     for _, page in ipairs(PARTITION) do
         for _, tab in ipairs(page.tabs) do
-            t.eq(#Schema.RowsByCategory(tab.category), tab.rows,
+            t.eq(#rowsOfTab(tab), tab.rows,
                 ("%s > %s holds %d rows"):format(page.page, tab.tab, tab.rows))
-            for _, r in ipairs(Schema.RowsByCategory(tab.category)) do
+            for _, r in ipairs(rowsOfTab(tab)) do
                 t.eq(r.group, tab.tab, r.path .. " declares the tab it is drawn on")
                 t.eq(r.page, page.page, r.path .. " declares the page it is drawn on")
             end
@@ -418,14 +439,15 @@ test("the partition is total and disjoint — every row on exactly one tab", fun
     local seen, total = {}, 0
     for _, page in ipairs(PARTITION) do
         for _, tab in ipairs(page.tabs) do
-            t.falsy(seen[tab.category], tab.tab .. " appears on exactly one tab")
-            seen[tab.category] = true
+            local key = tab.category .. "/" .. tab.tab
+            t.falsy(seen[key], tab.tab .. " appears on exactly one tab")
+            seen[key] = true
             total = total + tab.rows
         end
     end
     t.eq(total, #Schema.AllRows(), "the tabs account for every schema row, and no more")
     for _, r in ipairs(Schema.AllRows()) do
-        t.truthy(seen[r.category], r.path .. " belongs to a tab the panel draws")
+        t.truthy(seen[r.category .. "/" .. tostring(r.group)], r.path .. " belongs to a tab the panel draws")
     end
 end)
 
