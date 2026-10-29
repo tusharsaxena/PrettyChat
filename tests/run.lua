@@ -151,6 +151,10 @@ Kit.run{
         -- The colors this addon writes itself on the settings pages and on GameTooltip (PC-02):
         -- each a token through the facade. After test_skinsetup, whose seam it reads.
         "test_skin_surfaces",
+        -- The first-run skin picker and this addon's own AceGUI widgets on the skin (PC-04):
+        -- the picker's spec and triggers, the Categories tree and the Profiles page painted, the
+        -- debug console owned. After test_skin_surfaces, which builds the same Categories page.
+        "test_skin_picker",
         "test_doc_structure",
         "test_register",
         -- The kit has shipped one suite of its own since revision 15: the working-tree

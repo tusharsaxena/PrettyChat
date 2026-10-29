@@ -36,7 +36,8 @@ local addonName, NS = ...
 --
 -- Down: the combat watcher's two event registrations (modules/Override.lua's
 -- SyncCombatWatch, which reads this latch), and every `_G[GLOBALNAME]` override
--- restored to this client's pristine value. There is nothing else — this addon arms
+-- restored to this client's pristine value, and the first-run skin picker taken down unmarked if it
+-- is up or queued (core/SkinSetup.lua's NS.HideSkinPicker). There is nothing else — this addon arms
 -- no AceTimer, no C_Timer ticker and no OnUpdate, it registers no message and no
 -- bucket, it draws no display frame (it is `frameless`; its display IS the chat text),
 -- and it installs no hook, secure or otherwise. It also performs NO secure or

@@ -232,10 +232,19 @@ test("disabled/5: nothing is drawn — and for THIS addon that is the globals", 
 
     disable(i)
 
-    -- The frame half. PrettyChat is frameless — it shows nothing while running, so
-    -- there is nothing to hide — and the assertion is written anyway, against the
-    -- kit's survey, so an addon that grows a display frame later reddens here.
-    t.eq(#i.env.__shownFrames(), #F_on, "no frame this addon owns is left shown")
+    -- The frame half. PrettyChat is frameless — it draws no display of its own —
+    -- and the assertion is written anyway, against the
+    -- kit's survey, so an addon that grows a display frame later reddens here. The one
+    -- window it does show while running is the library's first-run skin picker (a fresh
+    -- profile has not seen it, core/SkinSetup.lua), and the stand-down takes that DOWN,
+    -- so the survey after is a subset of the one before, never a frame more.
+    local wasShown = {}
+    for _, f in ipairs(F_on) do wasShown[f] = true end
+    local F_off = i.env.__shownFrames()
+    for _, f in ipairs(F_off) do
+        t.truthy(wasShown[f], "no frame this addon owns is newly shown by the stand-down")
+    end
+    t.truthy(#F_off < #F_on, "the first-run skin picker went down with the addon")
     -- The half that is actually this addon's screen.
     t.eq(overridesLive(i), 0, "every Blizzard original is back — the display is blank")
 end)

@@ -682,6 +682,23 @@ Total.
 - Skin surfaces: under another skin the tooltip lines take gtip.value and pc.tipNote
 - Skin surfaces: settings/ writes no typed gray and no typed tooltip color
 
+### test_skin_picker.lua (14)
+
+- Skin picker: the spec names this owner, its seams and the Skin tab, with no eye
+- Skin picker: a fresh profile shows it at OnEnable, with no timer and no event armed
+- Skin picker: an unseen profile shows it; a seen one does not, and takes it down
+- Skin picker: never in combat; the next start out of combat shows it
+- Skin picker: never while the addon is switched off; the stand-down takes it down unmarked
+- Skin picker: a new profile and a reset profile show it again; a seen one stays down
+- Skin picker: a profile event takes a shown picker down before the new skin is applied
+- Skin picker: the player's close marks it seen; this addon's own hide does not
+- Skin picker: a pick previews unsaved; Apply saves it through the write seam, seen
+- Skin widgets: the Categories tree and its editor are painted for this owner, past the proxy
+- Skin widgets: while the Scope ignores the settings panel (the default) nothing is painted
+- Skin widgets: a release hands the tree back stock
+- Skin widgets: the Profiles page paints what AceConfigDialog drew, and a skin switch re-opens it
+- Skin tools: the debug console is owned by this addon
+
 ### test_doc_structure.lua (13)
 
 - docs/ARCHITECTURE.md carries the ten sections documentation-§3 names
@@ -765,10 +782,11 @@ Total.
 | test_profiles.lua | 19 |
 | test_skinsetup.lua | 18 |
 | test_skin_surfaces.lua | 6 |
+| test_skin_picker.lua | 14 |
 | test_doc_structure.lua | 13 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **613** |
+| **Total** | **627** |

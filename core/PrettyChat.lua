@@ -83,6 +83,11 @@ local function reloadProfile(self)
     if NS.Database and NS.Database.RunMigrations then
         NS.Database.RunMigrations(self.db)
     end
+    -- FIRST, the first-run skin picker down, quietly (core/SkinSetup.lua): a showing belongs to the
+    -- profile it opened on, and taking it down puts back a pending preview (the stored skin,
+    -- through the library's revert), so it lands before the re-apply below and the new profile's
+    -- whole choice is the last skin written. A new or reset profile shows it again, fresh, below.
+    if NS.HideSkinPicker then NS.HideSkinPicker() end
     -- The incoming profile's skin, with its Scope and overrides (skinning-§2: a profile switch,
     -- copy or reset re-applies the choice). Skin:SetChoice repaints this owner's recorded frames
     -- and the library re-renders a shown settings page a frame later; it is idempotent, so a
@@ -100,6 +105,10 @@ local function reloadProfile(self)
     -- exists for.
     NS.Lifecycle:Set(NS.HOLD_DISABLED, not self:IsAddonEnabled())
     NS.Lifecycle:Reevaluate()
+    -- The first-run skin picker (core/SkinSetup.lua): a new or reset profile starts from the
+    -- defaults, `skin.pickerSeen` false, so it shows; one that has seen it stays down. After the
+    -- latch, so a profile with the addon switched off shows nothing.
+    if NS.MaybeShowSkinPicker then NS.MaybeShowSkinPicker() end
     -- Then the rest of the incoming profile, which the latch knows nothing about:
     -- the visibility mode the combat watcher has to be armed for, and every
     -- per-string format. Reapply is idempotent and is the same body both latch arms
@@ -255,6 +264,13 @@ function PrettyChat:OnEnable()
     -- back (slash-commands-§2's one-way-switch rule, and the same reason
     -- OnInitialize registers /pc unconditionally).
     if NS.Launcher then NS.Launcher:Register() end
+
+    -- The first-run skin picker (owner ruling O3, core/SkinSetup.lua), on a profile that has not
+    -- closed it: after the latch has its answer, so a stood-down addon shows nothing, and after
+    -- the panels are registered, so its gear can open the Skin tab. Not deferred and not held
+    -- through combat: this addon arms no timer and registers no event of its own, so a login in
+    -- combat skips it and the next one shows it.
+    if NS.MaybeShowSkinPicker then NS.MaybeShowSkinPicker() end
     -- No boot-summary debug line here: the session-only debug flag is off at load, so it
     -- would never render. The self-identifying [Init] summary rides the DebugLog:SetEnabled
     -- seam instead (debug-logging-§5/§8).

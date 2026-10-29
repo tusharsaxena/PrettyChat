@@ -34,6 +34,14 @@ local addonName, NS = ...
 --   NS.SkinPaintAceTree(c)  (`Skin:PaintAce` / `Skin:PaintAceTree`, the owner bound); release
 --                           restores stock.
 --   NS.SkinOnRelease(w, fn) host release work chained onto the widget's own OnRelease.
+--   NS.MaybeShowSkinPicker() the first-run skin picker (LibKa0s OptionsSkinPicker, owner ruling
+--                           O3): `O.SkinPicker` while the profile's `skin.pickerSeen` is false, the
+--                           addon stands up and the player is out of combat. Answers the frame, or
+--                           nil, "queued" behind another Ka0s addon's picker, or nil.
+--   NS.HideSkinPicker()     takes a shown picker down (its pending preview put back) or out of the
+--                           queue WITHOUT marking it seen: the stand-down, a profile that has seen
+--                           it, and first on every profile event.
+--   NS.SkinPickerSpec()     the spec NS.MaybeShowSkinPicker hands O.SkinPicker.
 --
 -- ── WHERE IT LOADS ───────────────────────────────────────────────────────────────────────────
 --
@@ -175,6 +183,85 @@ local function releaseByCallback(widget, fn)
     end
     widget:SetCallback("OnRelease", function(w) fn(w) end)
     return fn
+end
+
+-- ── the first-run skin picker (LibKa0s OptionsSkinPicker, owner ruling O3, decision X6) ───────
+--
+-- WHEN. Once at login, from PrettyChat:OnEnable after the latch has its answer (OnInitialize
+-- applied the stored skin), and again after every profile event (core/PrettyChat.lua's shared
+-- adopt path), because a new, copied or reset profile carries its own `pickerSeen`. Never while
+-- the addon stands down, and never in combat.
+--
+-- WHY NOT DEFERRED. LootHistory lights a two-second fuse at login and holds a start in combat for
+-- PLAYER_REGEN_ENABLED on an AceEvent target. PrettyChat arms no timer and registers no event of
+-- its own while running (core/LifecycleSetup.lua; tests/test_disabled.lua pins both), and it has
+-- no AceEvent to embed. So it shows at OnEnable, the way the frameless LibKa0sSkinTester does, and
+-- a login in combat (a /reload mid-fight) simply skips: `pickerSeen` is still false, so the next
+-- login or profile event out of combat shows it.
+--
+-- SEEN. The library calls `onClose` once per showing, by any route the player takes (Apply, its
+-- close control, the gear, Escape), and once for a picker still queued behind another Ka0s addon's
+-- when that addon's "Apply to all Ka0s addons" dismisses it unshown; that is the one write of
+-- `skin.pickerSeen`, through NS.Schema.Set. A close this addon makes itself (NS.HideSkinPicker:
+-- the stand-down, a profile event) is not the player's and writes nothing.
+--
+-- NO EYE (decision X6). PrettyChat has no window and no test mode to preview in, so `onPreview`
+-- is omitted: the library hides the eye, and only the `settings` icon is declared (CLAUDE.md).
+-- A pick previews on the open settings pages and the debug console, which follow the skin live.
+--
+-- QUEUED. One picker is up at a time across every Ka0s addon: while another addon's is up,
+-- O.SkinPicker queues this one and answers nil, "queued", which is passed through.
+
+local PICKER_PATH = "skin.pickerSeen"
+local quietClose = false -- true while NS.HideSkinPicker takes the picker down
+
+--- The player's close: the picker seen, and nothing else. The library's put-back already wears the
+--- stored choice (it reads `get` at the close), so the skin is not this callback's to move.
+local function pickerClosed()
+    if quietClose then return end
+    local S = NS.Schema
+    if not (NS.db and S and S.Set) then return end
+    S.Set(PICKER_PATH, true)
+end
+
+function NS.SkinPickerSpec()
+    return {
+        owner = addonName, get = NS.SkinChoice, set = NS.WriteSkinChoice,
+        -- The gear opens the General page (its own subcategory) on the Skin tab, whose key is
+        -- "Appearance" (settings/Panel.lua's GENERAL_OPTS).
+        page = "General", tab = "Appearance",
+        onClose = pickerClosed,
+    }
+end
+
+--- True while this profile has not closed the picker and the addon stands up.
+local function pickerDue()
+    if not (NS.db and NS.Schema and NS.Schema.Get) then return false end
+    if NS.Lifecycle and NS.Lifecycle:IsDown() then return false end
+    return schemaGet(PICKER_PATH) == false
+end
+
+function NS.HideSkinPicker()
+    local O = NS.Helpers
+    if not (O and type(O.HideSkinPicker) == "function") then return end
+    quietClose = true
+    local ok, err = pcall(O.HideSkinPicker)
+    quietClose = false
+    if not ok then error(err, 0) end
+end
+
+--- Show the picker when this profile has not seen it: answers O.SkinPicker's frame, or nil, "queued"
+--- while another Ka0s addon's picker is up (it shows when that one closes), or nil.
+function NS.MaybeShowSkinPicker()
+    local O = NS.Helpers
+    if not (O and type(O.SkinPicker) == "function") then return nil end
+    if not pickerDue() then
+        NS.HideSkinPicker()
+        return nil
+    end
+    local inCombat = _G.InCombatLockdown
+    if inCombat and inCombat() then return nil end
+    return O.SkinPicker(NS.SkinPickerSpec())
 end
 
 -- ── the degraded arm ─────────────────────────────────────────────────────────────────────────

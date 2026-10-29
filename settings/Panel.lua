@@ -567,6 +567,15 @@ local function buildCategoryBody(ctx, scroll, category, catData)
         buildStringRow(tree, category, selected, refreshers)
     end
 
+    -- The skin (skinning-§3). This file acquires its widgets from AceGUI itself, past the Options
+    -- instance's owner proxy, so the library paints none of them: the whole tree is painted here,
+    -- after the editor is in it. PaintAceTree paints the TreeGroup (both panes, the row buttons,
+    -- the selection and the tree's scroll bar, in nav.*; decision X11) and recurses into the editor
+    -- rows. Nothing while the owner ignores its settings panel. Each widget goes back to AceGUI's
+    -- pool stock when this page's next render releases it, and a skin switch re-renders the page,
+    -- which paints the fresh ones.
+    NS.SkinPaintAceTree(tree)
+
     -- Parked for the fit, which runs later and on a hook that outlives this
     -- render. The remembered height is cleared with it: a new tree has not been
     -- fitted yet, whatever the last one measured.
