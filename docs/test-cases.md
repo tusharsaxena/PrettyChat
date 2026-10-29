@@ -673,13 +673,16 @@ Total.
 - Skin seam: the seam publishes the same NS members on both paths
 - Skin seam: each host-copy skin token is the live library's Ka0s Default value
 
-### test_skin_surfaces.lua (7)
+### test_skin_surfaces.lua (10)
 
 - Skin surfaces: the page notes are today's #aaaaaa under Ka0s Default
 - Skin surfaces: under another skin the page notes take that skin's pc.note
 - Skin surfaces: the landing page's alias row takes the skin's pc.note
+- Skin surfaces: while the Scope ignores the settings panel the page notes keep #aaaaaa
+- Skin surfaces: unticking Ignore settings panel recolors the open page's notes live
 - Skin surfaces: a list entry's tooltip lines are Ka0s Default's exact values
 - Skin surfaces: under another skin the tooltip lines take gtip.value and pc.tipNote
+- Skin surfaces: the tooltip lines follow the skin whatever the Scope says
 - Skin surfaces: a note token that does not resolve still builds every page, in today's gray
 - Skin surfaces: settings/ writes no typed gray and no typed tooltip color
 
@@ -782,7 +785,7 @@ Total.
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
 | test_skinsetup.lua | 18 |
-| test_skin_surfaces.lua | 7 |
+| test_skin_surfaces.lua | 10 |
 | test_skin_picker.lua | 14 |
 | test_doc_structure.lua | 13 |
 | test_register.lua | 1 |
@@ -790,4 +793,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **628** |
+| **Total** | **631** |

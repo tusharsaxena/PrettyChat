@@ -7,7 +7,9 @@
 -- footnote, the landing alias row) and the lines it writes onto GameTooltip for a list entry.
 -- Each reads a token through the facade, so it is today's exact pixel under Ka0s Default and the
 -- skin's own under any other: pc.note (follows text.muted), pc.tipNote (follows gtip.subtle) and
--- gtip.value for the tooltip title (decision D2).
+-- gtip.value for the tooltip title (decision D2). The page notes are the settings panel's, so they
+-- keep today's #aaaaaa while the Scope's "Ignore settings panel" is ticked (a new profile's
+-- default); the tooltip lines are written onto Blizzard's GameTooltip, outside that Scope.
 --
 -- Not here, by decision: chat output and the /pc test report (X7, D3, the report's gray is
 -- report content shared with chat), the player's own formats and their rendered samples (E7).
@@ -19,10 +21,12 @@ local test = ctx.test
 local OWNER = "PrettyChat"
 local SKIN  = "obsidian"
 
---- A fresh live instance with its Categories page built, the skin switched to `skin` first.
-local function categories(skin)
+--- A fresh live instance with its Categories page built, the skin switched to `skin` first. The
+--- Scope paints the settings panel unless `ignorePanel`, which keeps a new profile's default.
+local function categories(skin, ignorePanel)
     local inst = ctx.loadAddon()
     local Skin = inst.env.LibStub("LibKa0s-Skin-1.0")
+    if not ignorePanel then Skin:SetIgnore(OWNER, false) end
     if skin then Skin:SetChoice(OWNER, "ka0s", skin) end
     local fixture = dofile(ctx.root .. "/tests/panel_fixture.lua")(inst.NS)
     fixture.panelFrame(inst.env, "Categories"):Show()
@@ -68,6 +72,7 @@ end)
 
 test("Skin surfaces: the landing page's alias row takes the skin's pc.note", function()
     local inst = ctx.loadAddon()
+    inst.env.LibStub("LibKa0s-Skin-1.0"):SetIgnore(OWNER, false)
     inst.env.LibStub("LibKa0s-Skin-1.0"):SetChoice(OWNER, "ka0s", SKIN)
     local fixture = dofile(ctx.root .. "/tests/panel_fixture.lua")(inst.NS)
     local mark = #inst.env._widgets
@@ -79,6 +84,34 @@ test("Skin surfaces: the landing page's alias row takes the skin's pc.note", fun
     t.truthy(alias, "the alias row is on the landing page")
     t.truthy(alias:find(inst.NS.SkinEscape("pc.note"), 1, true), "in the skin's note color: " .. alias)
     t.falsy(alias:find("|cffaaaaaa", 1, true), "and no typed gray")
+end)
+
+test("Skin surfaces: while the Scope ignores the settings panel the page notes keep #aaaaaa", function()
+    -- red under: a note that reads the skin's pc.note whatever the Scope says, which recolors this
+    -- addon's notes while every other piece of the page stays the client's.
+    local inst, scroll, tree = categories(SKIN, true)
+    t.truthy(select(1, inst.env.LibStub("LibKa0s-Skin-1.0"):GetIgnore(OWNER)), "the default ignores the panel")
+    t.truthy(inst.NS.SkinEscape("pc.note") ~= "|cffaaaaaa", "the test skin must move pc.note")
+    local caption = tree.children[1].children[2]
+    t.truthy(caption.text:find("|cffaaaaaa", 1, true), "the GLOBALNAME caption is #aaaaaa: " .. caption.text)
+    t.truthy(labelsOf(scroll.children)[1]:find("|cffaaaaaa", 1, true), "the footnote is #aaaaaa")
+    local fixture = dofile(ctx.root .. "/tests/panel_fixture.lua")(inst.NS)
+    local mark = #inst.env._widgets
+    inst.env._settings.categories[1].frame:Show()
+    local alias
+    for _, text in ipairs(labelsOf(fixture.widgetsSince(inst.env, mark))) do
+        if text:find("/prettychat is an alias for /pc", 1, true) then alias = text end
+    end
+    t.truthy(alias and alias:find("|cffaaaaaa", 1, true), "the alias row is #aaaaaa")
+end)
+
+test("Skin surfaces: unticking Ignore settings panel recolors the open page's notes live", function()
+    local inst = categories(SKIN, true)
+    local want = inst.NS.SkinEscape("pc.note")
+    inst.env.LibStub("LibKa0s-Skin-1.0"):SetIgnore(OWNER, false)
+    inst.env.__fireTimers() -- the library re-renders the open pages one frame later
+    local scroll = inst.NS.Helpers.__panelFor("Categories").scroll
+    t.truthy(labelsOf(scroll.children)[1]:find(want, 1, true), "the footnote follows the skin once painted")
 end)
 
 -- ── the tooltip lines ───────────────────────────────────────────────────────────────────────
@@ -114,6 +147,14 @@ test("Skin surfaces: under another skin the tooltip lines take gtip.value and pc
     t.truthy(color[1] == r and color[2] == gg and color[3] == b, "the title is the skin's gtip.value")
     local want = inst.NS.SkinEscape("pc.tipNote")
     t.truthy(want ~= "|cffaaaaaa", "the test skin must move pc.tipNote, or this case asserts nothing")
+    t.truthy(lines[1]:find(want .. g, 1, true), "the GLOBALNAME line follows the skin: " .. lines[1])
+end)
+
+test("Skin surfaces: the tooltip lines follow the skin whatever the Scope says", function()
+    -- GameTooltip is Blizzard's frame, not the settings panel, so "Ignore settings panel" leaves it.
+    local inst, _, tree, fixture = categories(SKIN, true)
+    local g, _, lines = hoverEntry(inst, tree, fixture, 2)
+    local want = inst.NS.SkinEscape("pc.tipNote")
     t.truthy(lines[1]:find(want .. g, 1, true), "the GLOBALNAME line follows the skin: " .. lines[1])
 end)
 

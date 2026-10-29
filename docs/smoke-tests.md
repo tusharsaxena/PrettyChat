@@ -802,12 +802,13 @@ change under Ka0s Default is the library's own, on the debug console (SKIN-1).
   a touch lighter than the old black. **Fail:** a color change in the list beyond the edge and the track,
   or a list entry clipped by the wider face. Result:
 - **SKIN-6. The notes and tooltip lines follow the skin (PC-02).** On **Azeroth**, open Categories → the
-  GLOBALNAME caption and the footnote are in Azeroth's own muted text color, not `#aaaaaa`, and so is the
-  landing page's alias row; they follow the skin whether or not **Ignore settings panel** is ticked.
-  Hover a list entry → the tooltip's title, the GLOBALNAME line and an "(original not available)" or
-  error line take Azeroth's tooltip colors, the rendered sample keeps the format's own colors, and the
-  tooltip frame is the game's. **Fail:** a note still `#aaaaaa` on Azeroth, a recolored sample, or a
-  restyled tooltip frame. Result:
+  GLOBALNAME caption and the footnote are in `#aaaaaa` while **Ignore settings panel** is ticked, like
+  the rest of the page, and so is the landing page's alias row. Untick it → the open page's notes
+  change to Azeroth's own muted text color, and so does the alias row. Hover a list entry, with the box
+  ticked or not → the tooltip's title, the GLOBALNAME line and an "(original not available)" or error
+  line take Azeroth's tooltip colors, the rendered sample keeps the format's own colors, and the
+  tooltip frame is the game's. **Fail:** a note recolored while the box is ticked, a note still
+  `#aaaaaa` with it unticked, a recolored sample, or a restyled tooltip frame. Result:
 - **SKIN-7. Other addons stay stock (PC-04).** On a non-default skin with **Ignore settings panel** off,
   open PrettyChat's Categories page, then another AceGUI addon's options with a tree on the left, then
   PrettyChat's Profiles page, then the other addon again, a few times → PrettyChat's tree, editor and

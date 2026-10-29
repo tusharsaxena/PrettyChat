@@ -302,7 +302,7 @@ end)
 test("Skin seam: the seam publishes the same NS members on both paths", function()
     local inst = live()
     for _, name in ipairs({
-        "Skin", "SKIN_TOKENS", "SKIN_FALLBACK", "SkinColor", "SkinEscape", "SKIN_SOURCE_OPTIONS",
+        "Skin", "SKIN_TOKENS", "SKIN_FALLBACK", "SkinColor", "SkinEscape", "PanelEscape", "SKIN_SOURCE_OPTIONS",
         "SKIN_OPTIONS", "SkinChoice", "WriteSkinChoice", "SkinOverride", "ApplySkinChoice",
         "ApplySkinIgnore", "ApplySkinOverride", "SkinPaintAce", "SkinPaintAceTree", "SkinOnRelease",
     }) do

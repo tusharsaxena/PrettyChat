@@ -13,6 +13,9 @@ local addonName, NS = ...
 --   NS.SkinColor(name)      a color token as a call site writes it (three components when opaque).
 --   NS.SkinEscape(name)     a color token as a "|cffrrggbb" escape, rounded to the byte, so markup
 --                           written as a literal keeps its bytes on Ka0s Default (|cffaaaaaa).
+--   NS.PanelEscape(name)    the same for a settings-panel note: the token's Ka0s Default copy
+--                           while the Scope's "Ignore settings panel" is ticked, so the notes stay
+--                           in the client's look with the rest of the page.
 --   NS.SKIN_SOURCE_OPTIONS  the source row's values, and NS.SKIN_OPTIONS the skin row's (every
 --   NS.SKIN_OPTIONS         registered skin, in the library's order). settings/Schema.lua reads both.
 --   NS.SkinChoice()         the stored (source, skin) pair, read through NS.Schema.Get; "ka0s",
@@ -107,6 +110,11 @@ end
 --- answer, so it is never nil: a token the facade does not resolve (an owner-token definition
 --- RegisterOwner refused, or a skin entry that leaves the token alone) takes its Ka0s Default copy
 --- in NS.SKIN_FALLBACK, and a token with no copy answers "" (the text in the frame's own color).
+local function escape(r, g, b)
+    local function byte(v) return math.floor(v * 255 + 0.5) end
+    return ("|cff%02x%02x%02x"):format(byte(r), byte(g), byte(b))
+end
+
 function NS.SkinEscape(name)
     local r, g, b = NS.Skin.Color(name)
     if r == nil then
@@ -114,8 +122,20 @@ function NS.SkinEscape(name)
         if not c then return "" end
         r, g, b = c[1], c[2], c[3]
     end
-    local function byte(v) return math.floor(v * 255 + 0.5) end
-    return ("|cff%02x%02x%02x"):format(byte(r), byte(g), byte(b))
+    return escape(r, g, b)
+end
+
+--- A settings-panel note's escape. The notes are text on the settings pages, so the Scope's "Ignore
+--- settings panel" (a new profile's default) keeps them in the client's look with every other
+--- piece of the page: the token's Ka0s Default copy, today's #aaaaaa. Otherwise NS.SkinEscape.
+--- Read at build time; a Scope change re-renders the open pages a frame later (OptionsScroll).
+--- Not for the list tooltip's lines, which are Blizzard's GameTooltip and outside the Scope.
+function NS.PanelEscape(name)
+    local c = NS.SKIN_FALLBACK[name]
+    if c and Skin and type(Skin.GetIgnore) == "function" and (Skin:GetIgnore(addonName)) then
+        return escape(c[1], c[2], c[3])
+    end
+    return NS.SkinEscape(name)
 end
 
 NS.SKIN_SOURCE_OPTIONS = {
