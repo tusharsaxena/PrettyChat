@@ -81,6 +81,8 @@ NS.SKIN_TOKENS = {
 -- change.
 NS.SKIN_FALLBACK = NS.SKIN_FALLBACK or {}
 for name, def in pairs(NS.SKIN_TOKENS) do NS.SKIN_FALLBACK[name] = def.default end
+-- The list entry's tooltip title (settings/Panel.lua, decision D2): WHITE, the 1, 1, 1 it typed.
+NS.SKIN_FALLBACK["gtip.value"] = { 1, 1, 1, 1 }
 
 --- A color token's components AS A CALL SITE WRITES THEM: r, g, b for an opaque color and r, g, b,
 --- a otherwise, so a site that passed three components before it read a token still passes three

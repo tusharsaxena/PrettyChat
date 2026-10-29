@@ -673,6 +673,15 @@ Total.
 - Skin seam: the seam publishes the same NS members on both paths
 - Skin seam: each host-copy skin token is the live library's Ka0s Default value
 
+### test_skin_surfaces.lua (6)
+
+- Skin surfaces: the page notes are today's #aaaaaa under Ka0s Default
+- Skin surfaces: under another skin the page notes take that skin's pc.note
+- Skin surfaces: the landing page's alias row takes the skin's pc.note
+- Skin surfaces: a list entry's tooltip lines are Ka0s Default's exact values
+- Skin surfaces: under another skin the tooltip lines take gtip.value and pc.tipNote
+- Skin surfaces: settings/ writes no typed gray and no typed tooltip color
+
 ### test_doc_structure.lua (13)
 
 - docs/ARCHITECTURE.md carries the ten sections documentation-§3 names
@@ -755,10 +764,11 @@ Total.
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
 | test_skinsetup.lua | 18 |
+| test_skin_surfaces.lua | 6 |
 | test_doc_structure.lua | 13 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **607** |
+| **Total** | **613** |
