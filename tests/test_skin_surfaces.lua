@@ -117,6 +117,36 @@ test("Skin surfaces: under another skin the tooltip lines take gtip.value and pc
     t.truthy(lines[1]:find(want .. g, 1, true), "the GLOBALNAME line follows the skin: " .. lines[1])
 end)
 
+-- ── a token that does not resolve ───────────────────────────────────────────────────────────
+
+test("Skin surfaces: a note token that does not resolve still builds every page, in today's gray", function()
+    -- A refused owner-token definition (RegisterOwner only logs it) or a skin entry that leaves the
+    -- token alone answers nil from the facade. red under: an escape that answers nil, which raises
+    -- "attempt to concatenate a nil value" building the Categories page and the landing page.
+    local inst = ctx.loadAddon()
+    local NS = inst.NS
+    local color = NS.Skin.Color
+    NS.Skin.Color = function(name)
+        if name == "pc.note" or name == "pc.tipNote" then return nil end
+        return color(name)
+    end
+    t.eq(NS.SkinEscape("pc.note"), "|cffaaaaaa", "the Ka0s Default copy answers for the owner token")
+    t.eq(NS.SkinEscape("no.such.token"), "", "a token with no copy writes no escape")
+    local fixture = dofile(ctx.root .. "/tests/panel_fixture.lua")(NS)
+    local mark = #inst.env._widgets
+    local ok, err = pcall(function()
+        inst.env._settings.categories[1].frame:Show()
+        fixture.panelFrame(inst.env, "Categories"):Show()
+    end)
+    NS.Skin.Color = color
+    t.truthy(ok, "the pages build: " .. tostring(err))
+    local alias
+    for _, text in ipairs(labelsOf(fixture.widgetsSince(inst.env, mark))) do
+        if text:find("/prettychat is an alias for /pc", 1, true) then alias = text end
+    end
+    t.truthy(alias and alias:find("|cffaaaaaa", 1, true), "the alias row keeps today's gray")
+end)
+
 -- ── nothing typed is left ───────────────────────────────────────────────────────────────────
 
 test("Skin surfaces: settings/ writes no typed gray and no typed tooltip color", function()

@@ -103,11 +103,17 @@ function NS.SkinColor(name)
 end
 
 --- A color token as a "|cffrrggbb" escape, each channel rounded to the nearest byte, so markup a
---- call site wrote as a literal keeps its bytes on Ka0s Default. nil for a token the skin leaves
---- alone.
+--- call site wrote as a literal keeps its bytes on Ka0s Default. Every call site concatenates the
+--- answer, so it is never nil: a token the facade does not resolve (an owner-token definition
+--- RegisterOwner refused, or a skin entry that leaves the token alone) takes its Ka0s Default copy
+--- in NS.SKIN_FALLBACK, and a token with no copy answers "" (the text in the frame's own color).
 function NS.SkinEscape(name)
     local r, g, b = NS.Skin.Color(name)
-    if r == nil then return nil end
+    if r == nil then
+        local c = NS.SKIN_FALLBACK[name]
+        if not c then return "" end
+        r, g, b = c[1], c[2], c[3]
+    end
     local function byte(v) return math.floor(v * 255 + 0.5) end
     return ("|cff%02x%02x%02x"):format(byte(r), byte(g), byte(b))
 end
