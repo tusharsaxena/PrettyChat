@@ -282,6 +282,13 @@ local RESIDUE = {
      .. "in one sentence; routing it through L would let this one drift"},
     {"core/DebugLogSetup.lua", "Pretty Chat",
      "the same brand name, handed to LibKa0s-DebugLog-1.0 as its window title"},
+    {"core/SkinSetup.lua", "Ka0s Pretty Chat",
+     "the same brand name, handed to LibKa0s-Skin-1.0 as the owner's `label`, which the "
+     .. "Skin tab's copy confirmation and the EllesmereUI provider name the addon by"},
+    {"core/SkinSetup.lua", "Ka0s Default",
+     "the name of LibKa0s-Skin-1.0's first skin, a proper name the library registers and "
+     .. "draws itself; this copy is only the degraded skin row's one value, read when the "
+     .. "library is absent and no Skin tab is drawn"},
     {"core/DebugLogSetup.lua", "Ka0s Pretty Chat",
      "the plain-text brand again, handed to LibKa0s-DebugLog-1.0 as `brandName`, which "
      .. "both diagnostics report markers carry (debug-logging-§14). The same string as "

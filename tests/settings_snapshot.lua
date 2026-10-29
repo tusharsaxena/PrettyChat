@@ -9,6 +9,11 @@
 --
 -- Generated from Schema.AllRows() at f7ad704, sorted by path.
 
+--
+-- PC-01 (Ka0sAddonsCommonTasks docs/2026-10-29-SKINNING_ROLLOUT/) ADDS the seven skin.* paths at
+-- the foot, the Skin tab's rows, stored at db.profile.skin (defaults/Profile.lua). New keys with
+-- defaults; no existing path or default moved.
+
 return {
     ["Currency.CURRENCY_GAINED.enabled"] = true,
     ["Currency.CURRENCY_GAINED.format"] = "|cffff9900Currency|cffffffff | |cffffffff+ %s|cffffffff",
@@ -180,4 +185,11 @@ return {
     ["Tradeskill.enabled"] = true,
     ["global.minimap.shown"] = true,
     ["state.debugConsole"] = false,
+    ["skin.source"] = "ka0s",
+    ["skin.skin"] = "ka0s",
+    ["skin.ignorePanel"] = true,
+    ["skin.ignoreFonts"] = false,
+    ["skin.font"] = "",
+    ["skin.texture"] = "",
+    ["skin.pickerSeen"] = false,
 }

@@ -6,7 +6,7 @@
 
 | Page | Covers |
 |------|--------|
-| **General** | One tab, **Master controls**: the master **Enable PrettyChat** switch (turn it off and every message goes back to its original wording), a **General visibility** dropdown (*Always*, *Only in combat*, *Only out of combat*, *Never* — a second master switch, so you can have PrettyChat only while you are fighting), a **Debug console** toggle (shows or hides a small on-screen log window for troubleshooting), a **Minimap button** toggle (show or hide PrettyChat's button on the minimap), a **Test** button that previews every message into that console, and **Reset all settings**. |
+| **General** | Two tabs. **Master controls**: the master **Enable PrettyChat** switch (turn it off and every message goes back to its original wording), a **General visibility** dropdown (*Always*, *Only in combat*, *Only out of combat*, *Never* — a second master switch, so you can have PrettyChat only while you are fighting), a **Debug console** toggle (shows or hides a small on-screen log window for troubleshooting), a **Minimap button** toggle (show or hide PrettyChat's button on the minimap), a **Test** button that previews every message into that console, and **Reset all settings**. **Skin**: the look of PrettyChat's settings pages and debug console, from the Ka0s skins or EllesmereUI, with a font and texture of your own and the choice to leave the settings panel or the fonts as the game draws them. |
 | **Categories** | Everything PrettyChat rewrites, one tab per kind of message — and inside each, a list of that kind's messages down the left, so you pick the line you want to change instead of scrolling past twenty of them. |
 | **Profiles** | Ace3's standard profile controls: switch to another profile, create one, copy settings from one, reset or delete one, and choose whether a character, class, realm or faction gets its own. Every setting on the other two pages belongs to the active profile; the minimap button does not. |
 
@@ -14,7 +14,7 @@
 
 | Page | Primary tabs (strip order) | Secondary tabs | Rows |
 |---|---|---|---|
-| `General` | `Master controls` | — | 4 |
+| `General` | `Master controls` (4), `Skin` (7) | — | 11 |
 | `Categories` | Loot (35), Currency (9), Money (17), Reputation (29), Experience (41), Honor (13), Tradeskill (17), Misc (5) | one per format string: Loot 17, Currency 4, Money 8, Reputation 14, Experience 20, Honor 6, Tradeskill 8, Misc 2 | 166 |
 
 Row counts are schema rows (`Schema.RowsByCategory`), i.e. one category `enabled` plus two per format string, and are pinned by the page/tab partition case in `tests/test_schema.lua`. Every tab's controls are the same shape, so the numbers are the only thing that differs between them. **Every row carries a `page` and a `group`** — the group IS the tab it is drawn under — which `tests/test_schema.lua` also pins; a page whose rows carry no group is reported by the library and rendered strip-less.
@@ -23,7 +23,7 @@ The primary strip is `H.TabStrip`'s. The string list beside the editor is AceGUI
 
 The `General` page drew **no strip at all** until this pass: one group, one row, `H.RenderRows`. A one-group page draws a one-tab strip as of `OptionsWidgets` minor 13, and this page is why the rule matters — it was the page that read as broken beside `Categories` rather than as simpler.
 
-This doc covers: the canvas-layout framework, the unified per-page header, the `General` page's `Master controls` tab, the `Categories` page's two strips, what each category tab covers, the `Profiles` page, the per-string editor, the Test button, and the color palette.
+This doc covers: the canvas-layout framework, the unified per-page header, the `General` page's `Master controls` tab, its `Skin` tab and the first-run skin picker, the `Categories` page's two strips, what each category tab covers, the `Profiles` page, the per-string editor, the Test button, and the color palette.
 
 ## Canvas-layout framework
 
@@ -59,7 +59,7 @@ All panel layout dimensions live in **`LibKa0s-Options-1.0`'s `LAYOUT` table**, 
 
 ## The `General` sub-page and its `Master controls` tab
 
-`General` is a *virtual category* — no entry in `NS.Defaults`, no per-string rows. It is built by `buildGeneralBody(ctx)`, which hands the page to `H.RenderTabbedSchema` and draws nothing of its own. Its one tab is `Master controls`, and **every control on it is composed, not hand-written**: `H.MasterControls` (`OptionsCompose 7`) owns the row set, its order and its wording, and `settings/Schema.lua` splices the result in at the head of the schema with the stored paths and defaults this addon already shipped.
+`General` is a *virtual category* — no entry in `NS.Defaults`, no per-string rows. It is built by `buildGeneralBody(ctx)`, which hands the page to `H.RenderTabbedSchema` and draws nothing of its own. Its first tab is `Master controls`, and **every control on it is composed, not hand-written**: `H.MasterControls` (`OptionsCompose 7`) owns the row set, its order and its wording, and `settings/Schema.lua` splices the result in at the head of the schema with the stored paths and defaults this addon already shipped.
 
 **PrettyChat is frameless.** `grep -rn SetMovable core/ modules/ settings/` returns nothing but the two comments that say so (`modules/Override.lua`, `settings/Schema.lua`) — the addon calls it nowhere and draws no positionable frame of any kind; its one `CreateFrame` is the eventless-by-default `PrettyChatCombatWatcher`, which has no size, no anchor and never becomes a display frame — so the composer omits **exactly** master scale, master alpha and lock frame, and the closing button is `Reset all settings` alone with no `Reset position` beside it. Nothing else is omitted.
 
@@ -146,6 +146,55 @@ The entry that selects a string *is* its name, which is why the `Heading` each b
 **Refresher hygiene.** `Schema.refreshers` is keyed by *category*, not by page, so an entry left behind by the tab the player just left is a closure over released AceGUI widgets that the next master-toggle fan-out would still reach. `buildCategoriesBody` drops every category's entry before it draws, and the body it draws re-registers the one now on screen.
 
 **The Defaults button** in the header is **page-wide** (`options-ui-§13`: a page's Defaults MUST NOT narrow to the visible tab). Clicking it asks first: `PrettyChat:ConfirmResetCategories()` raises the `PRETTYCHAT_RESET_CATEGORIES` StaticPopup ("Reset the strings on every category tab to their defaults? Your edits in every category are discarded.", Yes/No, Escape dismisses), and nothing changes until Accept runs `PrettyChat:ResetCategoriesPage()`, which hands `Schema.ResetRows` the rows of every message category (`CATEGORY_ORDER` minus the virtual `General`) as one batch: one `ApplyStrings` pass and one `[Set] reset Categories: N rows` line. The canvas's `OnDefault` forwards to the same `defaultsOnClick`, so the Settings window's footer control reaches the same body, but **without** the popup: Blizzard's own Defaults dialog has already asked, and a second confirmation would make the player answer twice. The handler tells the two paths apart by argument count: the library calls the header button's handler as `onClick(widget, event, ...)` and the footer forwarder as `defaultsOnClick()` with no arguments. The library refuses both in combat. Its tooltip reads "Reset the strings on every category tab to their defaults." Per-row reset is preserved via the per-string `Reset message` button (see below), and the master `Reset all settings` on General has the popup.
+
+## The `Skin` tab and the first-run skin picker
+
+The General page's second tab is the library's own (`O.AppearanceTab`, skinning-§3), handed to
+`H.RenderTabbedSchema` through `opts.tabs` in `settings/Panel.lua`'s `GENERAL_OPTS`. Its key,
+`Appearance`, is the group of the seven `skipRender` `skin.*` rows ([schema.md](schema.md#row-kinds)),
+so the host tab replaces that group's tab. This page has no Keybindings tab (PrettyChat binds no key),
+so the Skin tab is last. `get` and `set` are `core/SkinSetup.lua`'s read and write seams, so a pick
+lands through `NS.Schema.Set` like every other setting, and the tab calls `Skin:SetChoice` first, so
+the live repaint is the library's. It draws **Skin source** (the Ka0s skins or EllesmereUI), the
+nine skins under **Look**, **Font** and **Texture** (*Skin's own* in a new profile), the Scope
+(**Ignore settings panel**, on in a new profile, and **Ignore fonts**, off), **Copy to every Ka0s
+addon…** and the library's note. PrettyChat has no bars, so a texture override has nothing of this
+addon's to draw on. On the library-absent path the stub's entry draws nothing.
+
+**What follows the skin.** Every library surface this addon shows follows the owner with no host
+code: the debug console and its copy window always, and, while **Ignore settings panel** is off, the
+settings chrome, tab strips, composed rows, landing page and combat cover. The rest is the host's:
+
+- **The Categories page's AceGUI widgets.** `settings/Panel.lua` acquires the `TreeGroup` and the
+  editor's check box, labels, edit boxes and button from AceGUI itself, past the Options instance's
+  owner proxy, so `NS.SkinPaintAceTree(tree)` paints the whole tree after the editor is built (both
+  panes, the row buttons, the selection and the tree's scroll bar, then each editor widget). Every
+  widget goes back to AceGUI's pool stock when the page's next render releases it, and a skin switch
+  re-renders the page, which paints the fresh ones. Under Ka0s Default the TreeGroup keeps its
+  colors and takes the library's flat edge in place of AceGUI's tooltip-style one (decision X11).
+- **The Profiles page** gets `NS.SkinPaintAceTree(container)` after every `AceConfigDialog:Open`
+  ([profiles.md](profiles.md#the-profiles-page)).
+- **The gray notes** (the GLOBALNAME caption, the Categories footnote, the landing alias row) read
+  the owner token `pc.note`, and the list entry's tooltip reads `pc.tipNote` for its gray lines and
+  `gtip.value` for its title. Under Ka0s Default both are today's `#aaaaaa` and white; every other
+  skin draws its own muted text. These are colors rather than panel paint, so they follow the skin
+  whatever the Scope says. The tooltip frame stays Blizzard's, and the rendered sample keeps the
+  player's own colors.
+
+Nothing here paints with the Scope's **Ignore settings panel** on: every `PaintAceTree` call is a
+no-op for an owner that ignores its panel.
+
+**The first-run skin picker** (owner ruling O3; LibKa0s `OptionsSkinPicker`). While the active
+profile's `skin.pickerSeen` is false, `NS.MaybeShowSkinPicker` shows the library's picker at the end
+of `OnEnable` and after every profile event, unless the addon stands down or the player is in
+combat (a login in combat skips it, and the next login out of combat shows it). PrettyChat has no
+window or test mode to preview a skin in, so the picker has no eye (`onPreview` is omitted) and
+draws only the `settings` gear, which opens this page on the Skin tab (`page = "General"`,
+`tab = "Appearance"`). A pick previews on whatever is open, the debug console and, with the panel
+skinned, these pages; **Apply** and the gear save it, and the close control and Escape put the
+stored skin back. Any of those closes marks the profile as having seen the picker (the spec's
+`onClose`, the one write of `skin.pickerSeen`). A close this addon makes itself, on a stand-down or
+a profile event, writes nothing, so the picker comes back.
 
 ## The `Profiles` sub-page
 
@@ -269,8 +318,8 @@ The default formats in `defaults/Defaults.lua` use this palette. Edit `defaults/
 | `cccccc` | Generic / secondary labels |
 | `ffffff` | Default / value text |
 | `ffd700` | Gold — panel string labels (per-string title) |
-| `aaaaaa` | Gray — panel captions, slash alias note, default-state sample line |
+| `aaaaaa` | Gray — panel captions, the landing page's alias note, default-state sample line. Under Ka0s Default only: on the settings pages it is the owner token `pc.note` (and `pc.tipNote` on the list tooltip), which every other skin draws in its own muted text |
 
 WoW color escapes use `|cAARRGGBB...|r` (AA = alpha, always `ff`). The house style for new defaults is `Category | Context | Source | +/- value`, each segment color-coded.
 
-Addon UI escapes (slash output, `[PC]` prefix, panel gray captions, command-list colors, `/pc test` block markers) are centralized in `NS.Const.Color` (`core/Constants.lua`) — `cyan`/`reset` build the `[PC]` prefix, `yellow`/`white` color the slash-help command names + descriptions (and the gold-key / white-value `/pc list` / `get` / `set` rows), `gray` colors the alias note and the per-string GLOBALNAME caption, `gold` is used for the `Category:` header in `/pc test` output, `green` is used for the `Name:` / `Original:` / `Formatted:` labels in the same. The mandated slash-commands-§5 output palette adds `listHead` (green "Available settings" / count headers) and `azure` (the `[Category]` group headers) — these exact codes are fixed across every Ka0s addon and must not be substituted. Edit `core/Constants.lua` to retune the addon UI palette; this table above governs the chat-message palette.
+Addon UI escapes (slash output, `[PC]` prefix, panel gray captions, command-list colors, `/pc test` block markers) are centralized in `NS.Const.Color` (`core/Constants.lua`) — `cyan`/`reset` build the `[PC]` prefix, `yellow`/`white` color the slash-help command names + descriptions (and the gold-key / white-value `/pc list` / `get` / `set` rows), `gray` colors the `/pc test` report's error text (the panel's notes, the alias note and the per-string GLOBALNAME caption read the skin tokens above instead), `gold` is used for the `Category:` header in `/pc test` output, `green` is used for the `Name:` / `Original:` / `Formatted:` labels in the same. The mandated slash-commands-§5 output palette adds `listHead` (green "Available settings" / count headers) and `azure` (the `[Category]` group headers) — these exact codes are fixed across every Ka0s addon and must not be substituted. Edit `core/Constants.lua` to retune the addon UI palette; this table above governs the chat-message palette.

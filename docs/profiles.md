@@ -22,9 +22,12 @@ Everything a player can set lives in `db.profile`, so a profile carries all of i
 | `categories[<Cat>].enabled` | Each message category's Enable |
 | `categories[<Cat>].disabledStrings[<NAME>]` | Each format string's Enable (stored inverted) |
 | `categories[<Cat>].strings[<NAME>]` | Each format-string override |
+| `skin.*` | The skin this addon wears and the Skin tab's other choices (`skin.source`, `skin.skin`, `skin.ignorePanel`, `skin.ignoreFonts`, `skin.font`, `skin.texture`), and `skin.pickerSeen`, whether the first-run skin picker was closed on this profile |
 
 A profile stores only what differs from the defaults (auto-clear, [schema.md](schema.md)), so a new
-profile is an empty table until a player changes something in it.
+profile is an empty table until a player changes something in it. The `skin.*` keys are the
+exception: a skin row stores what it is given, default or not, and closing the first-run picker
+writes `skin.pickerSeen`, so a profile that has shown it holds that key.
 
 Three things are deliberately **not** in a profile, and none of them moves when one does:
 
@@ -45,7 +48,7 @@ Three things are deliberately **not** in a profile, and none of them moves when 
 copy, reset and delete, plus the per-character, per-class, per-realm, per-faction and default scope
 choices.
 
-Five decisions in that file are deliberate:
+Six decisions in that file are deliberate:
 
 - **It is the one place AceConfig is used** (`options-ui-§3`, `library-stack-§2`). Every other page
   is drawn from `NS.Schema`. The options table here is Ace's, and re-expressing it as schema rows
@@ -71,6 +74,12 @@ Five decisions in that file are deliberate:
   is drawn twice, once by AceConfigDialog's own re-open after every control it activates and once
   by the deferred pass; the second is redundant and harmless. Several events in one frame queue
   one pass.
+- **Painted for the skin after every draw.** `AceConfigDialog:Open` acquires its widgets from AceGUI
+  itself, past the Options instance's owner proxy, so the library paints none of them;
+  `NS.SkinPaintAceTree(container)` paints the tree after each `Open`, and nothing while the Scope
+  ignores the settings panel. A skin, Scope or override change bumps a second count beside the
+  profile-event count (`NS.Skin.OnLooksChanged`), so the library's re-render after it re-opens the
+  page in the new look while a structural refresh still draws nothing.
 - **No tab strip.** It carries no schema rows, so there is nothing for a strip to partition. It is
   one of the two pages `options-ui-§13` exempts, the landing page being the other.
 
@@ -88,15 +97,21 @@ has to follow. `OnInitialize` registers **one** reaction for all three AceDB cal
 1. **Migrations**, `Database.RunMigrations`. The version walk is a no-op here (the stamp is already
    at target); the work is the orphan repair, `Database.PruneOrphans`, on the incoming profile
    (`savedvariables-§1`).
-2. **The latch.** `enabled` is a profile value, so a switch can turn the addon on or off with no
+2. **The skin.** The first-run skin picker goes down first, quietly (`NS.HideSkinPicker`), so a
+   pending preview is put back before anything else; then `NS.ApplySkinChoice()` applies the
+   incoming profile's skin, Scope and overrides (skinning-§2). Before the latch, because the skin is
+   setup and a stood-down addon still wears it.
+3. **The latch.** `enabled` is a profile value, so a switch can turn the addon on or off with no
    verb and no checkbox touched. The `disabled` hold is re-taken from the incoming profile and the
-   latch re-evaluated (`slash-commands-§7`). A `perf` hold, if one were held, would survive.
-3. **The re-apply**, `PrettyChat.Reapply`: the combat watcher re-armed for the incoming visibility
+   latch re-evaluated (`slash-commands-§7`). A `perf` hold, if one were held, would survive. Then
+   `NS.MaybeShowSkinPicker()`: a new or reset profile has `skin.pickerSeen` false and shows the
+   picker, unless the incoming profile has the addon switched off.
+4. **The re-apply**, `PrettyChat.Reapply`: the combat watcher re-armed for the incoming visibility
    mode, every format string re-applied or restored, and every schema-drawn widget refreshed
    (`Schema.NotifyPanelChange`).
-4. **The Profiles page**, `NS.Config.RefreshProfilesPage`: redrawn a frame later if it is on
+5. **The Profiles page**, `NS.Config.RefreshProfilesPage`: redrawn a frame later if it is on
    screen, on its next show if not.
-5. **One debug line**, worded by the event (`debug-logging-§10`):
+6. **One debug line**, worded by the event (`debug-logging-§10`):
    - a switch: `[Profile] switched → applied N restored M`;
    - a copy: `[Set] copied profile 'A' → 'B'`;
    - a reset: `[Set] reset profile '<name>' to defaults (N rows)`, the count present only when
@@ -143,7 +158,7 @@ LibKa0s-Slash's `CliProfile` (Slash minor 17) over `PrettyChat.db`, which the de
 - **It answers while the addon is disabled.** `profile` is a host verb, not one of the standard's
   reserved thirteen, so `settings/Slash.lua` passes a `liveVerbs` built from `lib.LIVE_VERBS` plus
   `profile`. A profile holds its own `enabled`, so switching to one where the addon is on brings it
-  back up through the latch (step 2 above).
+  back up through the latch (step 3 above).
 - **With LibKa0s absent** the verb answers the one missing-library line and switches nothing.
 
 `/pc resetall` is the profile reset above. Every verb that reads or writes a setting (`get`, `set`,

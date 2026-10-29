@@ -523,7 +523,11 @@ test("Launcher: the row is the FOURTH of the composed block, after the console",
     -- as in tests/test_schema.lua because THIS is the file that would be read after
     -- a composer minor moved it.
     local inst = wired()
-    local rows = inst.NS.Schema.RowsByCategory("General")
+    -- The block's own rows: the Skin tab's skin.* rows follow it under the same category (PC-01).
+    local rows = {}
+    for _, r in ipairs(inst.NS.Schema.RowsByCategory("General")) do
+        if r.group == "Master controls" then rows[#rows + 1] = r end
+    end
     t.eq(rows[#rows].path, MINIMAP_PATH, "last, because there is no Test mode beside it")
     t.eq(rows[#rows].group, "Master controls", "on the Master controls tab")
 end)

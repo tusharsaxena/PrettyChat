@@ -652,6 +652,57 @@ Total.
 - /pc profile refuses to switch in combat, and still lists
 - /pc profile answers while the addon is disabled, and can bring it back up
 
+### test_skinsetup.lua (18)
+
+- Skin seam: the owner is the folder name, and NS.Skin is its facade
+- Skin seam: the read answers Ka0s Default before the profile store exists
+- Skin seam: the owner tokens keep Ka0s Default's #aaaaaa and follow the skin elsewhere
+- Skin seam: the seven skin keys default to Ka0s Default, as skipRender Skin-tab rows
+- Skin seam: the skin row's values are every registered skin, in the library's order
+- Skin seam: /pc list category never offers skin as a message category
+- Skin seam: /pc set refuses an unknown skin and applies a registered one, one repaint
+- Skin seam: a skin write re-applies no chat string (D8), and still refreshes the panel
+- Skin seam: WriteSkinChoice writes every half through the schema, and the overrides as keys
+- Skin seam: one Skin tab pick is one effective SetChoice and one repaint
+- Skin seam: another addon's copy to every Ka0s addon repaints PrettyChat once
+- Skin seam: a profile switch, copy and reset each apply the incoming profile's skin
+- Skin seam: a profile's stored exceptions and overrides are applied with its skin
+- Skin seam: a skin write still lands while the addon is stood down
+- Skin seam: the library-absent load has no Skin major and falls back to the host facade
+- Skin seam: the degraded facade answers every name the live facade carries
+- Skin seam: the seam publishes the same NS members on both paths
+- Skin seam: each host-copy skin token is the live library's Ka0s Default value
+
+### test_skin_surfaces.lua (10)
+
+- Skin surfaces: the page notes are today's #aaaaaa under Ka0s Default
+- Skin surfaces: under another skin the page notes take that skin's pc.note
+- Skin surfaces: the landing page's alias row takes the skin's pc.note
+- Skin surfaces: while the Scope ignores the settings panel the page notes keep #aaaaaa
+- Skin surfaces: unticking Ignore settings panel recolors the open page's notes live
+- Skin surfaces: a list entry's tooltip lines are Ka0s Default's exact values
+- Skin surfaces: under another skin the tooltip lines take gtip.value and pc.tipNote
+- Skin surfaces: the tooltip lines follow the skin whatever the Scope says
+- Skin surfaces: a note token that does not resolve still builds every page, in today's gray
+- Skin surfaces: settings/ writes no typed gray and no typed tooltip color
+
+### test_skin_picker.lua (14)
+
+- Skin picker: the spec names this owner, its seams and the Skin tab, with no eye
+- Skin picker: a fresh profile shows it at OnEnable, with no timer and no event armed
+- Skin picker: an unseen profile shows it; a seen one does not, and takes it down
+- Skin picker: never in combat; the next start out of combat shows it
+- Skin picker: never while the addon is switched off; the stand-down takes it down unmarked
+- Skin picker: a new profile and a reset profile show it again; a seen one stays down
+- Skin picker: a profile event takes a shown picker down before the new skin is applied
+- Skin picker: the player's close marks it seen; this addon's own hide does not
+- Skin picker: a pick previews unsaved; Apply saves it through the write seam, seen
+- Skin widgets: the Categories tree and its editor are painted for this owner, past the proxy
+- Skin widgets: while the Scope ignores the settings panel (the default) nothing is painted
+- Skin widgets: a release hands the tree back stock
+- Skin widgets: the Profiles page paints what AceConfigDialog drew, and a skin switch re-opens it
+- Skin tools: the debug console is owned by this addon
+
 ### test_doc_structure.lua (13)
 
 - docs/ARCHITECTURE.md carries the ten sections documentation-§3 names
@@ -733,10 +784,13 @@ Total.
 | test_panel_categories.lua | 28 |
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
+| test_skinsetup.lua | 18 |
+| test_skin_surfaces.lua | 10 |
+| test_skin_picker.lua | 14 |
 | test_doc_structure.lua | 13 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **589** |
+| **Total** | **631** |

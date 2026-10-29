@@ -153,6 +153,18 @@ if not lib then
         -- page render. No page here draws that header yet, so the same inert no-op
         -- applies.
         ResetAllTooltip      = function() return nil end,
+        -- The Skin tab (LibKa0s v1.78.0, OptionsAppearance minor 1; labeled "Skin" since
+        -- minor 3, the key stays "Appearance"). Without the library there is no skin to
+        -- pick: the tab entry renders nothing and AppearanceRows draws nothing.
+        AppearanceTab        = function()
+            return { key = "Appearance", label = "Skin", render = function() end }
+        end,
+        AppearanceRows       = function() return nil end,
+        -- The first-run skin picker (LibKa0s v1.79.0, OptionsSkinPicker minor 1).
+        -- SkinPicker draws nothing and answers nil (never the live one's second value,
+        -- "queued": there is no queue); HideSkinPicker is a no-op.
+        SkinPicker           = function() return nil end,
+        HideSkinPicker       = function() end,
         -- ── the ONE stub member that is reached at LOAD ──────────────────
         --
         -- options-ui-§1's degradation rule is LOAD-COMPLETING, and the measured

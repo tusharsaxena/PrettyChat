@@ -81,7 +81,7 @@ See [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patc
 
 ## Add an addon-wide setting
 
-Addon-wide settings live on the General page's one tab, `Master controls`, and that tab is **composed** — `H.MasterControls` owns its rows, their order and their wording (options-ui-§15). Do **not** hand-write a row into it.
+Addon-wide settings live on the General page's first tab, `Master controls`, and that tab is **composed** — `H.MasterControls` owns its rows, their order and their wording (options-ui-§15). Do **not** hand-write a row into it.
 
 - A row the canonical block already has (a leaf this addon omits today: master scale, master alpha, lock frame) arrives by dropping `frameless = true` from `MASTER_SPEC` in `settings/Schema.lua`, and it is only correct to do that if the addon has grown a positionable frame. Add the leaf's wiring to `MASTER_WIRING` in the same change, or the install reports it as unwired at load and the row is never registered.
 - A row the canonical block does **not** have goes in `MASTER_SPEC.extra`, which the composer appends after the mandated rows and never interleaves with them.

@@ -36,7 +36,16 @@ local _, NS = ...
 -- once by the deferred pass, which is redundant but harmless. The page redraws on profile events
 -- and on nothing else: SetRenderer also puts it on the library's structural fan-out, and a
 -- renderer that re-opened on each of those would tear AceConfigDialog's tree down under an open
--- dropdown (options-ui-§11). So the renderer draws once per profile event, counted.
+-- dropdown (options-ui-§11). So the renderer draws once per profile event, counted, and once per
+-- skin change, counted the same way (below).
+--
+-- THE SKIN. AceConfigDialog acquires the manager's widgets from AceGUI itself, past the Options
+-- instance's owner proxy, so the tree is painted for this addon's skin right after each Open
+-- (NS.SkinPaintAceTree; nothing while the owner ignores its settings panel). Each widget goes back
+-- to the shared pool stock when the next Open releases it. A painted widget is never repainted in
+-- place: the library answers a skin switch by re-rendering the open pages a frame later, and this
+-- renderer would skip that re-render as structural, so OnLooksChanged bumps its own count and the
+-- re-render that follows re-opens the page in the new skin.
 --
 -- Optional dependency: without AceDBOptions, AceConfig, AceConfigDialog or AceGUI the page opts
 -- out (a nil return) and nothing else is lost. Every lookup is silent (library-stack-§4).
@@ -51,6 +60,14 @@ local APP  = "PrettyChat-Profiles"
 -- this one; the first show counts as behind.
 local profileEvents = 0
 local page
+
+-- Bumped by every change of this owner's looks (a skin, Scope or override switch). Listened for at
+-- file load, before the Options instance installs its own listener on the first page paint, so the
+-- count has moved by the time that listener's re-render reaches the renderer.
+local looksEvents = 0
+if NS.Skin and NS.Skin.OnLooksChanged then
+    NS.Skin.OnLooksChanged(function() looksEvents = looksEvents + 1 end)
+end
 
 --- The four libraries this page needs, or nil when any is missing.
 local function aceLibs()
@@ -97,10 +114,10 @@ local function Build(mainCategory)
         defaultsButton = false,
     })
 
-    local container, drawnAt
+    local container, drawnAt, paintedAt
     H.SetRenderer(ctx, function()
-        if drawnAt == profileEvents then return end
-        drawnAt = profileEvents
+        if drawnAt == profileEvents and paintedAt == looksEvents then return end
+        drawnAt, paintedAt = profileEvents, looksEvents
         container = container or newContainer(libs.gui, ctx)
         -- SHOWN EXPLICITLY, every draw. AceGUI:Release hides a frame before pooling it, and
         -- neither AceGUI:Create nor AceConfigDialog:Open shows it again; whenever the
@@ -109,6 +126,7 @@ local function Build(mainCategory)
         -- nobody can see: a blank Profiles page.
         container.frame:Show()
         libs.dialog:Open(APP, container)
+        NS.SkinPaintAceTree(container)
     end)
     page = ctx
 

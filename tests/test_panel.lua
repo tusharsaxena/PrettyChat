@@ -209,8 +209,10 @@ test("the General page draws a strip whose first tab is Master controls", functi
     -- with one group still draws a one-tab strip (options-ui-§13), and this is the
     -- page the rule was written for. Dies if the page goes back to RenderRows or
     -- if the group is renamed out from under the afterGroup hook.
-    t.eq(table.concat(tabNames("General"), ","), "Master controls",
-        "one tab, and it is the canonical name")
+    -- Two tabs since PC-01: the library's Skin tab (key "Appearance", skinning-§3) follows it,
+    -- last, because this page has no Keybindings tab.
+    t.eq(table.concat(tabNames("General"), ","), "Master controls,Skin",
+        "Master controls first, by its canonical name, then the Skin tab")
     t.eq(NS.Helpers.__panelFor("General").activeTab, "Master controls",
         "and the page opens on it")
 end)

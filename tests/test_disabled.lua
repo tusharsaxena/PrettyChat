@@ -60,9 +60,27 @@ local function regKey(r)
     return ("%s|%s|%s|%s"):format(tostring(name), r.kind, tostring(r.event), tostring(r.unit))
 end
 
+-- THE LIBRARY'S OWN SETUP FRAME, AND ONLY IT, IS LEFT OUT. LibKa0s-Skin-1.0 makes one frame at the
+-- first RegisterOwner (core/SkinSetup.lua, at file load) and registers ADDON_LOADED and
+-- PLAYER_LOGIN on it, so its EllesmereUI provider can offer every registered owner to EllesmereUI
+-- (LibKa0s SkinEUI.lua). It is the library's, shared by every Ka0s addon on the client, not this
+-- addon's feature: no stand-down of one addon may take it down. Excluded by IDENTITY, the frame the
+-- library publishes as `__euiEventFrame`, so a registration this addon makes on a frame of its own
+-- is still counted, ADDON_LOADED or not.
+local function libraryTargets(env)
+    local out = {}
+    local ls = env.LibStub
+    local skin = type(ls) == "table" and ls.GetLibrary and ls:GetLibrary("LibKa0s-Skin-1.0", true)
+    if skin and skin.__euiEventFrame then out[skin.__euiEventFrame] = true end
+    return out
+end
+
 local function regSet(env)
     local out, list = {}, env.__registrations()
-    for i = 1, #list do out[#out + 1] = regKey(list[i]) end
+    local skip = libraryTargets(env)
+    for i = 1, #list do
+        if not skip[list[i].target] then out[#out + 1] = regKey(list[i]) end
+    end
     table.sort(out)
     return out
 end
@@ -214,10 +232,19 @@ test("disabled/5: nothing is drawn — and for THIS addon that is the globals", 
 
     disable(i)
 
-    -- The frame half. PrettyChat is frameless — it shows nothing while running, so
-    -- there is nothing to hide — and the assertion is written anyway, against the
-    -- kit's survey, so an addon that grows a display frame later reddens here.
-    t.eq(#i.env.__shownFrames(), #F_on, "no frame this addon owns is left shown")
+    -- The frame half. PrettyChat is frameless — it draws no display of its own —
+    -- and the assertion is written anyway, against the
+    -- kit's survey, so an addon that grows a display frame later reddens here. The one
+    -- window it does show while running is the library's first-run skin picker (a fresh
+    -- profile has not seen it, core/SkinSetup.lua), and the stand-down takes that DOWN,
+    -- so the survey after is a subset of the one before, never a frame more.
+    local wasShown = {}
+    for _, f in ipairs(F_on) do wasShown[f] = true end
+    local F_off = i.env.__shownFrames()
+    for _, f in ipairs(F_off) do
+        t.truthy(wasShown[f], "no frame this addon owns is newly shown by the stand-down")
+    end
+    t.truthy(#F_off < #F_on, "the first-run skin picker went down with the addon")
     -- The half that is actually this addon's screen.
     t.eq(overridesLive(i), 0, "every Blizzard original is back — the display is blank")
 end)

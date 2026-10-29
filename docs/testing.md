@@ -59,13 +59,13 @@ What the mocks deliberately do *not* model is layout: they answer "which widget,
 
 Both `lua tests/run.lua` and `luacheck .` must be green before any commit. Lint config is `.luacheckrc` (`std=lua51`; excludes `libs/`, `GlobalStrings/`, `tests/_kit/`, `docs/audits`, `docs/reviews`). The suites register named `test(name, fn)` cases; the `Tests` badge in the README badge row shows the pass/total.
 
-**The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 58 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the nine seam files are inside the set that was actually checked:
+**The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 62 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the ten seam files are inside the set that was actually checked:
 
 ```sh
 luacheck . --formatter plain | tail -1     # and read the file count it reports
 ```
 
-A warning inside `core/EnvSetup.lua`, `core/MediaSetup.lua`, `core/CoreSetup.lua`, `core/DebugLogSetup.lua`, `core/LifecycleSetup.lua`, `core/LauncherSetup.lua`, `settings/Schema.lua`, `settings/OptionsSetup.lua` or `settings/Slash.lua` is an adoption defect. A warning elsewhere is pre-existing host hygiene. Neither statement means anything if the lint never opened the file.
+A warning inside `core/EnvSetup.lua`, `core/MediaSetup.lua`, `core/CoreSetup.lua`, `core/SkinSetup.lua`, `core/DebugLogSetup.lua`, `core/LifecycleSetup.lua`, `core/LauncherSetup.lua`, `settings/Schema.lua`, `settings/OptionsSetup.lua` or `settings/Slash.lua` is an adoption defect. A warning elsewhere is pre-existing host hygiene. Neither statement means anything if the lint never opened the file.
 
 ## The vendor gate — four diffs, and they answer two different questions
 
@@ -122,7 +122,7 @@ Run **both** of each pair and read the difference between them:
 ## The 1500-line cap gate
 
 `tests/_kit/test_layout_cap.lua` — the kit's gate since LibKa0s v1.55.0 (kit revision 25), and still
-the gate in the vendored LibKa0s v1.77.0 (kit revision 42), declared in `tests/run.lua` as
+the gate in the vendored LibKa0s v1.80.0 (kit revision 44), declared in `tests/run.lua` as
 `{ name = "test_layout_cap", dir = "tests/_kit/" }` — compares two things: every authored
 `.lua` git tracks, and the census under *Files over the 1500-line cap* in
 [ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both directions, so a file that crosses the

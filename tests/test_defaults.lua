@@ -306,6 +306,10 @@ end)
 -- its default lives in defaults/Profile.lua's NS.GlobalDefaults rather than in NS.Defaults,
 -- which is exactly why the defaults table cannot imply it either.
 local MASTER_ROWS = 4
+-- The Skin tab's seven skin.* rows (settings/Schema.lua, PC-01): source, skin, the Scope's two
+-- exceptions, the font and texture overrides and pickerSeen. Written out for the reason the block
+-- above is: their defaults live in defaults/Profile.lua's profile.skin, not in NS.Defaults.
+local SKIN_ROWS = 7
 
 test("the schema builds exactly the rows the defaults imply", function()
     -- the Master controls block + 1 row per backed category + 2 rows per string
@@ -314,7 +318,7 @@ test("the schema builds exactly the rows the defaults imply", function()
     for _, c in ipairs(ORDER) do
         if NS.Defaults[c] then backedCategories = backedCategories + 1 end
     end
-    local expected = MASTER_ROWS + backedCategories + (#entries * 2)
+    local expected = MASTER_ROWS + SKIN_ROWS + backedCategories + (#entries * 2)
 
     local actual = 0
     for _, c in ipairs(ORDER) do

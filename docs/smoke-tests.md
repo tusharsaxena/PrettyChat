@@ -29,6 +29,7 @@ works.
 | DIAG-1 – 27 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | RV-75 – 77 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position |
+| SKIN-1 – 17 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
 ## Before you start
@@ -44,6 +45,9 @@ works.
 - Unless a check says otherwise, start on the `Default` profile, enabled, with every setting at its
   default (`/pc resetall`). Most steps use `LOOT_ITEM_SELF` (Categories ▸ Loot ▸ *Item Looted (Self)*):
   loot an item yourself to see its chat line.
+- For SKIN-14, EllesmereUI installed and enabled; SKIN-15 is run without it. For SKIN-6 and SKIN-12, a
+  second skinned Ka0s addon (Ka0s Loot History) and another AceGUI addon with a tree (any addon whose
+  options open through AceConfigDialog with a tree on the left).
 - For DEGRADED, quit the game and rename `Interface/AddOns/PrettyChat/libs/LibKa0s` to
   `libs/LibKa0s.off`; DEGRADED-10 renames it back.
 
@@ -59,7 +63,8 @@ Which checks to run. Every row after the first also runs the routine row's four 
 | A reset path (`ResetString` / `ResetCategoriesPage` / `ResetAll`) or a Reset / Defaults button | RESET |
 | `core/DebugLogSetup.lua`, `media/`, or panel chrome (fonts, textures, borders) | DEGRADED, DIAG-9 – 21, PANEL-1 – 9, PANEL-14, RESET-3 – 7, RESET-10, COMBAT-1 – 2, INSTALL-2, OVR-8 |
 | `core/LauncherSetup.lua`, the minimap row, `media/logos/` or the TOC's `## IconTexture` | LAUNCH, STATE, COMBAT-3 |
-| The Profiles page or `/pc profile` | PROFILE, LAUNCH-6 |
+| The Profiles page or `/pc profile` | PROFILE, LAUNCH-6, SKIN-9 |
+| `core/SkinSetup.lua`, a `skin.*` row, the Skin tab or picker wiring, a skin token at a call site, or `NS.SkinPaintAceTree` in `settings/Panel.lua` / `settings/Profiles.lua` | SKIN, PANEL-7, SLASH-3, DIAG-16 – 18 |
 | A re-vendor of `libs/LibKa0s/`, or a `core/*Setup.lua` seam file | DEGRADED, DIAG-16 – 21, PANEL-1 – 9, PANEL-14, RESET-3 – 7, RESET-10, COMBAT-1 – 2, INSTALL-2 |
 | `ApplyStrings`, the combat watcher or `General.visibility`, or a sibling addon that parses loot or currency chat | OVR-4 – 6, OVR-9, STATE-5 – 6 |
 | Before a tag, or after a client patch | Everything; after a patch also regenerate `GlobalStrings/` per [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patch) |
@@ -107,10 +112,12 @@ Find the cause before changing anything; a fix that only makes the check pass is
 - **SLASH-2. Bare `/pc` and an unknown verb.** `/pc`, then `/pc` followed by a few spaces → each opens
   the settings panel on the Ka0s Pretty Chat landing page, as `/pc config` does, and prints no help.
   `/pc bogus` → `unknown command 'bogus'` and then the help index. Result: pass (owner-marked 2026-10-10)
-- **SLASH-3. `/pc list`.** → `Available settings`, then nine bracketed group headings and 170 setting
-  rows, 180 lines in all: `[General]` first with its four Master controls rows, then `[Loot]` and the
-  rest in category order, each category its `.enabled` row and then an `.enabled` and a `.format` row
-  per string. Result: pass (owner-marked 2026-10-10)
+- **SLASH-3. `/pc list`.** → `Available settings`, then nine bracketed group headings and 177 setting
+  rows, 187 lines in all: `[General]` first with its four Master controls rows and then its seven
+  `skin.*` rows (`skin.source`, `skin.skin`, `skin.ignorePanel`, `skin.ignoreFonts`, `skin.font`,
+  `skin.texture`, `skin.pickerSeen`), then `[Loot]` and the rest in category order, each category its
+  `.enabled` row and then an `.enabled` and a `.format` row per string. (Amended by PC-05 of the
+  skinning rollout, 2026-10-29: the seven skin rows.) Result:
 - **SLASH-4. `/pc list <Category>`.** `/pc list loot`, `/pc list LOOT`, `/pc list Loot` → three
   identical Loot listings. `/pc list nope` → `unknown category 'nope'. Valid: General, Loot, Currency, …`.
   Result: pass (owner-marked 2026-10-10)
@@ -184,11 +191,12 @@ Find the cause before changing anything; a fix that only makes the check pass is
   page of either addon. **Fail:** the landing body is drawing its own logo again instead of
   `H.BuildLandingPage`, or the library's `OnRelease` is no longer set (AceGUI pools that frame across
   every addon). Result: pass (owner-marked 2026-10-10)
-- **PANEL-7. The General page.** Open General → one tab, **Master controls**, in the same band and art
-  as the Categories strip, and below it: *Enable PrettyChat · General visibility*, then *Debug
+- **PANEL-7. The General page.** Open General → two tabs, **Master controls** and then **Skin** (SKIN-2
+  covers the second), in the same band and art as the Categories strip, and on Master controls: *Enable PrettyChat · General visibility*, then *Debug
   console · Minimap button* on one line (the frameless packing, LibKa0s v1.77.0), then **Test** · **Reset all settings** on one row with Test on the
   left. The paired controls sit at a true 50/50, and nothing but the strip is above them. **Fail:** no
-  strip; a tab named `General`; Test or Reset missing; Test and Reset on separate rows. Result: pass (owner, 2026-10-24)
+  strip; a tab named `General`; Test or Reset missing; Test and Reset on separate rows; the Skin tab
+  missing or not last. (Amended by PC-05 of the skinning rollout, 2026-10-29: the Skin tab.) Result:
 - **PANEL-8. The Categories tab strip.** Open Categories → eight tabs in the order Loot, Currency,
   Money, Reputation, Experience, Honor, Tradeskill, Misc (the order `/pc list` and `/pc test` print).
   The selected tab reads as attached to the page and does not highlight on hover; the others do. Click
@@ -742,6 +750,129 @@ prunes `libs/LibKa0s/media/icons/` to the `LibKa0s icons: clear, close, copy.` l
   page, scroll down and change a setting that re-renders the page → the scroll position is kept, not
   reset to the top. **Fail:** the page jumps back to the top after the change. Result: pass (owner-marked 2026-10-23)
 
+## SKIN
+
+The skinning rollout's checks (Ka0sAddonsCommonTasks `docs/2026-10-29-SKINNING_ROLLOUT/`, items PC-01 to
+PC-05, LibKa0s v1.80.0). Start from a **fresh client start** on the branch, and pick skins on `/pc config`
+→ General → **Skin** unless a check says otherwise. Open the debug console (`/pc debug`) and type
+`/pc test category Loot` first in any check that looks at it, so it has lines. The nine skins are Ka0s
+Default, Obsidian, Azeroth, Glass, High Contrast, Ember, WoW Default, WoW Midnight and WoW Forever. Every
+check also fails on a Lua error or a taint warning.
+
+PrettyChat has **no HUD**: no bar, icon, glow or HUD style option. So the one-time reset of HUD styles to
+the skin (owner ruling O2) has nothing to reset here, and no check below looks for it. The one visible
+change under Ka0s Default is the library's own, on the debug console (SKIN-1).
+
+- **SKIN-1. Ka0s Default looks as before (PC-01, PC-02, PC-04).** On a profile that has never changed
+  its skin (Ka0s Default, **Ignore settings panel** on), open the landing page, General, Categories (walk
+  a few tabs and list entries) and Profiles → each looks exactly as it did before the rollout: the same
+  colors, edges, spacing and Friz Quadrata text, and the gray notes (the GLOBALNAME caption beside
+  *Rewrite this message*, the Categories footnote, the landing page's `/prettychat is an alias for /pc`)
+  still the same `#aaaaaa` gray. Hover a list entry → the title is white and the GLOBALNAME line gray, as
+  before. Then the debug console → its log is still JetBrains Mono, monospaced (decision D4), and its
+  chrome wears **Ka0s Default** as LibKa0s v1.79.0 draws it for an addon that registers a skin: the title
+  bar text and the controls in **Oxanium**, not Friz Quadrata. That face is the expected change (the
+  owner's v1.79.0 Ka0s Default), not a fail. **Fail:** any change on a settings page; a note in a
+  lighter or bluer gray; a console log in a proportional face; Friz Quadrata on the console's title.
+  Result:
+- **SKIN-2. The Skin tab (PC-01).** General → **Skin**, the last tab → **Skin source** (*Ka0s skins*,
+  EllesmereUI), the nine skins with their swatches under a **Look** heading, **Font and texture** (**Font**
+  and **Texture**, both *Skin's own* in a new profile), **Scope** (**Ignore settings panel** ticked,
+  **Ignore fonts** not), **Copy to every Ka0s addon…** and the note that skins change every visual element.
+  No heading repeats the tab's name. **Fail:** a missing control, a Scope default other than these, or
+  the tab anywhere but last. Result:
+- **SKIN-3. Each skin, live (PC-01, PC-02).** With the console open, pick each skin in turn and then Ka0s
+  Default again → with **no reload**, the console's backdrop, border, title bar, buttons, toggle and
+  scroll bar repaint each time, its text stays readable, and the log stays monospaced. Open the copy
+  window from the console's copy mark under two of them → it wears the same skin. **Fail:** a surface that
+  keeps the old skin until `/reload`, or text the skin makes unreadable. Result:
+- **SKIN-4. The settings pages on a skin (PC-01, PC-04).** Untick **Ignore settings panel**, pick
+  **Obsidian** → with no reload the landing page, General (both tabs), Categories and Profiles repaint:
+  the page chrome, the tab strips, the check boxes, dropdowns and buttons. On Categories the string list
+  (both panes, the row buttons, the selected row and the list's scroll bar) and the editor beside it
+  (*Rewrite this message*, Original, New, Preview, **Reset message**) all wear Obsidian. Pick another
+  list entry and another tab → the fresh widgets are skinned too. Tick **Ignore settings panel** again →
+  every page goes back to the game's look, live. **Fail:** a stock control on a skinned page, a part of
+  the string list left stock, or a page that needs a reload to follow. Result:
+- **SKIN-5. The Categories tree under Ka0s Default, panel skinned (PC-04, decision X11).** On Ka0s
+  Default, untick **Ignore settings panel** and open Categories → the string list and editor keep their
+  colors (dark panes, gold entries, white selected text, the blue selection), and the list's two panes
+  take a **thin flat edge** in place of the old rounded tooltip-style one, with the entries in Oxanium.
+  This is the expected Ka0s Default shape (X11). The list's scroll bar track is the skin's (decision D5),
+  a touch lighter than the old black. **Fail:** a color change in the list beyond the edge and the track,
+  or a list entry clipped by the wider face. Result:
+- **SKIN-6. The notes and tooltip lines follow the skin (PC-02).** On **Azeroth**, open Categories → the
+  GLOBALNAME caption and the footnote are in `#aaaaaa` while **Ignore settings panel** is ticked, like
+  the rest of the page, and so is the landing page's alias row. Untick it → the open page's notes
+  change to Azeroth's own muted text color, and so does the alias row. Hover a list entry, with the box
+  ticked or not → the tooltip's title, the GLOBALNAME line and an "(original not available)" or error
+  line take Azeroth's tooltip colors, the rendered sample keeps the format's own colors, and the
+  tooltip frame is the game's. **Fail:** a note recolored while the box is ticked, a note still
+  `#aaaaaa` with it unticked, a recolored sample, or a restyled tooltip frame. Result:
+- **SKIN-7. Other addons stay stock (PC-04).** On a non-default skin with **Ignore settings panel** off,
+  open PrettyChat's Categories page, then another AceGUI addon's options with a tree on the left, then
+  PrettyChat's Profiles page, then the other addon again, a few times → PrettyChat's tree, editor and
+  Profiles controls are skinned every time; the other addon's tree, buttons and boxes are **stock** every
+  time (the AceGUI pool leak check). **Fail:** any skinned widget in the other addon. Result:
+- **SKIN-8. Fonts, Ignore fonts and the overrides (PC-01).** On **WoW Forever**, with **Ignore settings
+  panel** off → the console's chrome and the settings controls read in Fira Sans. Tick **Ignore fonts**
+  → they go back to the game's faces live, the colors stay WoW Forever's, and the console log is still
+  monospaced. Untick it. Pick a **Font** of your own → the skinned text takes it live; *Skin's own* puts
+  it back. Pick a **Texture** → nothing of PrettyChat's changes (it draws no bars) and nothing errors.
+  **Fail:** a face that does not follow, Ignore fonts losing to the Font override, or an error from the
+  texture. Result:
+- **SKIN-9. Profiles (PC-01, PC-04).** Pick **Ember** on `Default`. On the Profiles page create a
+  profile `Skins` and switch to it → the console and (panel skinned) the pages go to Ka0s Default live,
+  and the first-run picker appears (a new profile has not seen it); close it. Switch back to `Default` →
+  Ember again, no picker. **Copy From** `Default` into `Skins` → Ember on `Skins`. **Reset Profile** on
+  `Skins` → Ka0s Default and the picker again. Delete `Skins` afterwards. **Fail:** a skin that stays
+  behind after a switch, or a picker on a profile that has closed it. Result:
+- **SKIN-10. The first-run picker on a fresh profile (PC-04, owner ruling O3).** Make a new profile and
+  `/reload` while standing out of combat → the picker shows at login, high on the screen, titled
+  *Choose a skin for Ka0s Pretty Chat*, with a dropdown of the skin worn now and a **gear** beside it,
+  **no eye** (PrettyChat has no window or test mode to preview in), **Apply**, **Apply to all Ka0s
+  addons** (only while another skinned Ka0s addon is loaded) and a close control. Open the console, then
+  pick **Glass** from the dropdown → the dropdown lists the nine skins, and the console wears Glass at once, and nothing is saved yet (the Skin tab still reads the old skin). Press
+  **Apply** → saved. `/reload` → no picker. **Fail:** an eye, a picker that comes back after Apply, or a
+  pick that saves without Apply. Result:
+- **SKIN-11. The picker's close, Escape and gear (PC-04).** On a new profile each time: pick a skin and
+  close the picker → the old skin comes back and the picker stays away after `/reload`. Again with
+  Escape → the same. Again with the gear → the skin is saved and the settings open on General at the
+  **Skin** tab. **Fail:** a close that keeps the previewed skin, a picker that comes back after any of
+  the three, or the gear opening another page. Result:
+- **SKIN-12. One picker at a time across Ka0s addons (PC-04).** With Ka0s Loot History also on a fresh
+  profile, log in → one picker shows, then the other after it closes, never both. Press **Apply to all
+  Ka0s addons** on the first → both addons take that skin (source and skin only; each keeps its own
+  Scope, font and texture) and the second picker never shows. **Fail:**
+  two pickers on screen, or a second picker after Apply to all. Result:
+- **SKIN-13. Not while stood down, and not in combat (PC-04).** On a new profile, `/pc disable` and
+  `/reload` → no picker. `/pc enable` → nothing appears until the next login or profile event; `/reload`
+  → the picker. With the picker up, `/pc disable` → it goes down, and after `/pc enable` and `/reload`
+  it shows again (the stand-down does not mark it seen). On a new profile, `/reload` while in combat with
+  the training dummy → no picker; `/reload` out of combat → the picker. The Skin tab works while
+  disabled: pick a skin with the addon off → the console follows. **Fail:** a picker while disabled or
+  in combat, a picker marked seen by the stand-down, or a skin pick refused while disabled. Result:
+- **SKIN-14. EllesmereUI on (PC-01).** With EllesmereUI loaded and its third-party skinning on, set
+  **Skin source** to EllesmereUI → the console (and the pages, panel skinned) take EllesmereUI's look
+  live, and **Ka0s Pretty Chat** is listed in EllesmereUI's third-party addons. Switch PrettyChat off in
+  that list → the Skin tab names the failing condition and PrettyChat wears its Ka0s skin. Set the
+  source back to the Ka0s skins → a reload is asked for (*Reload now* / *Later*); after it, the Ka0s
+  skin. **Fail:** EllesmereUI's look while its gate fails, no reload request on the way back, or an error.
+  Result:
+- **SKIN-15. EllesmereUI off (PC-01).** With EllesmereUI not installed (or disabled), set **Skin source**
+  to EllesmereUI → the tab says EllesmereUI cannot skin this addon and names why, PrettyChat keeps its
+  Ka0s skin, and nothing errors. Set it back. **Fail:** an error, or a look that is neither. Result:
+- **SKIN-16. The CLI (PC-01).** `/pc set skin.skin obsidian` → the console repaints live, and the Skin tab
+  shows Obsidian. `/pc get skin.skin` → `obsidian`. `/pc set skin.skin nope` → `Invalid value for skin.skin` and the allowed keys (`ka0s, obsidian,
+  azeroth, glass, contrast, ember, wow, midnight, forever`), nothing changes. `/pc list category` → the
+  nine categories, no `skin`; `/pc list General` → the seven `skin.*` rows after the Master controls rows.
+  `/pc reset skin.skin` → `skin.skin = ka0s`, Ka0s Default. **Fail:** a write that does not repaint, a `skin`
+  message category, or an invalid skin accepted. Result:
+- **SKIN-17. A degraded install (PC-01).** With `libs/LibKa0s` renamed aside (the DEGRADED setup) → no
+  picker and no error at login (there is no console or panel to skin, DEGRADED-3 and DEGRADED-4).
+  `/pc resetall` → still runs with nothing raised from the skin rows. Rename it back → SKIN-1 again.
+  **Fail:** any Lua error naming a skin function. Result:
+
 ## Non-English client
 
 Run on a client set to **deDE or frFR**, the two the collection's other locale checks use
@@ -802,4 +933,12 @@ On 2026-10-10 the owner marked every check in this file as passed, recorded on i
 keeps it. A check added or rewritten after that date is listed here until its `Result:` line records
 a pass. On 2026-10-24 the owner reported that every check of the keybindings, settings layout and
 frame layering run passed (items PC-LY and PC-ZS), recorded on each `Result:` line as
-`pass (owner, 2026-10-24)`. No sign-off is owed.
+`pass (owner, 2026-10-24)`.
+
+Owed from the skinning rollout (Ka0sAddonsCommonTasks `docs/2026-10-29-SKINNING_ROLLOUT/`, PC-01 to
+PC-05, 2026-10-29): SLASH-3 (amended: the seven `skin.*` rows), PANEL-7 (amended: the Skin tab), and
+SKIN-1 to SKIN-17 (new: Ka0s Default as before with the console's Oxanium chrome, the Skin tab, each
+skin live, the settings pages and the Categories tree skinned, the tree's flat edge under Ka0s Default,
+the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker and
+its close, Escape and gear, one picker across Ka0s addons, the stand-down and combat, EllesmereUI on and
+off, the CLI, and a degraded install).

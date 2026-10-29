@@ -147,6 +147,19 @@ local function generalAfterGroup(ctx)
     Schema.masterAfterGroup(ctx)
 end
 
+-- skinning-§3: the Skin tab (key "Appearance"), the library's own entry (O.AppearanceTab): the
+-- skin source, the nine skins, the Scope, the font and texture overrides, "Copy to every Ka0s
+-- addon..." and the note, drawn from LibKa0s-Skin-1.0 for the owner core/SkinSetup.lua registered.
+-- `get` and `set` are that file's read and write seams, so a pick lands through NS.Schema.Set like
+-- every other setting; the tab calls Skin:SetChoice first, so the live repaint is the library's and
+-- the rows' onChange finds nothing left to apply. A host tab keyed by a group's name replaces that
+-- group's tab, so it IS the group of the skipRender skin.* rows (settings/Schema.lua). This page has
+-- no Keybindings tab (PrettyChat binds no key), so `before` places it last. On the degraded path the
+-- stub's entry draws nothing.
+local GENERAL_OPTS = { tabs = {
+    H.AppearanceTab({ owner = addonName, get = NS.SkinChoice, set = NS.WriteSkinChoice }),
+} }
+
 local function buildGeneralBody(ctx)
     H.ClearScroll(ctx)
     local scroll = H.EnsureScroll(ctx)
@@ -155,7 +168,7 @@ local function buildGeneralBody(ctx)
     -- The group NAME is the hook key (options-ui-§15). Renaming the group would
     -- detach the closing button and nothing would error, which is why the name
     -- comes off the library rather than being spelled out again here.
-    H.RenderTabbedSchema(ctx, "General", { [H.MASTER_GROUP] = generalAfterGroup }, nil)
+    H.RenderTabbedSchema(ctx, "General", { [H.MASTER_GROUP] = generalAfterGroup }, nil, GENERAL_OPTS)
 end
 
 -- ---------------------------------------------------------------------
@@ -268,7 +281,7 @@ local function buildStringRow(pane, category, globalName, refreshers)
     -- this pane a player has to be able to copy out of it.
     local captionLbl = AceGUI:Create("Label")
     captionLbl:SetRelativeWidth(CAPTION_W)
-    captionLbl:SetText(Color.gray .. globalName .. Color.reset)
+    captionLbl:SetText(NS.PanelEscape("pc.note") .. globalName .. Color.reset)
     row1:AddChild(captionLbl)
     pane:AddChild(row1)
 
@@ -424,13 +437,16 @@ local function showStringTooltip(owner, catData, globalName)
     local strData = globalName and catData.strings[globalName]
     if not (strData and GameTooltip) then return end
     GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
-    GameTooltip:SetText(strData.label, 1, 1, 1)
-    GameTooltip:AddLine(Color.gray .. globalName .. Color.reset)
+    -- The lines are this addon's; the frame stays Blizzard's (skinning-§7, decision X8). Read
+    -- at hover, so a skin switch reaches the next one. The body keeps the sample's own colors.
+    local note = NS.SkinEscape("pc.tipNote")
+    GameTooltip:SetText(strData.label, NS.SkinColor("gtip.value"))
+    GameTooltip:AddLine(note .. globalName .. Color.reset)
     local original = NS.OriginalFormat(PrettyChat, globalName)
-    local body = Color.gray .. L["(original not available)"] .. Color.reset
+    local body = note .. L["(original not available)"] .. Color.reset
     if original ~= nil then
         local rendered, err = NS.RenderSample(original)
-        body = rendered or (Color.gray .. tostring(err) .. Color.reset)
+        body = rendered or (note .. tostring(err) .. Color.reset)
     end
     GameTooltip:AddLine(body, nil, nil, nil, true)
     GameTooltip:Show()
@@ -550,6 +566,15 @@ local function buildCategoryBody(ctx, scroll, category, catData)
     if selected then
         buildStringRow(tree, category, selected, refreshers)
     end
+
+    -- The skin (skinning-§3). This file acquires its widgets from AceGUI itself, past the Options
+    -- instance's owner proxy, so the library paints none of them: the whole tree is painted here,
+    -- after the editor is in it. PaintAceTree paints the TreeGroup (both panes, the row buttons,
+    -- the selection and the tree's scroll bar, in nav.*; decision X11) and recurses into the editor
+    -- rows. Nothing while the owner ignores its settings panel. Each widget goes back to AceGUI's
+    -- pool stock when this page's next render releases it, and a skin switch re-renders the page,
+    -- which paints the fresh ones.
+    NS.SkinPaintAceTree(tree)
 
     -- Parked for the fit, which runs later and on a hook that outlives this
     -- render. The remembered height is cleared with it: a new tree has not been
@@ -705,7 +730,7 @@ function buildCategoriesBody(ctx)
     -- page. It names both gates by their on-screen labels and says where they are
     -- (item 020, PRC-L05), and it stays static: a notice that comes and goes with
     -- state is behavior, not layout, and was left out of 020 (PRC-L06, XC-34).
-    H.TextRow(ctx, Color.gray
+    H.TextRow(ctx, NS.PanelEscape("pc.note")
         .. L["Messages are rewritten only while Enable PrettyChat is on and General visibility allows it (General page > Master controls)."]
         .. Color.reset)
     H.AddSpacer(scroll, H.ROW_VSPACER)
@@ -758,7 +783,7 @@ end
 --- passes no `self` and works only because today's body ignores it (PC-R-08).
 --- The degradation stub in settings/Slash.lua is a method too.
 local function landingCommandRows()
-    local rows = { Color.gray .. L["/prettychat is an alias for /pc"] .. Color.reset }
+    local rows = { NS.PanelEscape("pc.note") .. L["/prettychat is an alias for /pc"] .. Color.reset }
     for _, line in ipairs(NS.SlashCommands:LandingRows()) do
         rows[#rows + 1] = line
     end
