@@ -6,7 +6,7 @@ This doc covers: the six row kinds, the single write path that every panel and s
 
 ## Row kinds
 
-Seven row kinds, addressed by dot path. The first four are the **composed** `Master controls` block (`H.MasterControls`, options-ui-§15); the last three are this addon's own:
+Eight row kinds, addressed by dot path. The first four are the **composed** `Master controls` block (`H.MasterControls`, options-ui-§15); the next three are this addon's own message rows, and the last is the skin this addon wears (skinning-§3):
 
 | Path | Kind | Type | Backed by |
 |------|------|------|-----------|
@@ -17,6 +17,7 @@ Seven row kinds, addressed by dot path. The first four are the **composed** `Mas
 | `<Category>.enabled` | `category_enabled` | bool | `db.profile.categories[Cat].enabled` (via `IsCategoryEnabled` / `EnsureCategoryDB`) |
 | `<Category>.<GLOBALNAME>.enabled` | `string_enabled` | bool | `db.profile.categories[Cat].disabledStrings[NAME]` (**inverted**: `disabledStrings[NAME] = true` means *disabled*) |
 | `<Category>.<GLOBALNAME>.format` | `string_format` | string | `db.profile.categories[Cat].strings[NAME]` (with `NS.Defaults[Cat].strings[NAME].default` fallback) |
+| `skin.source`, `skin.skin`, `skin.ignorePanel`, `skin.ignoreFonts`, `skin.font`, `skin.texture`, `skin.pickerSeen` | `skin` | string / bool | `db.profile.skin.<leaf>`, declared in `NS.ProfileDefaults.profile.skin` (`defaults/Profile.lua`): `ka0s` / `ka0s` (Ka0s Default), Ignore settings panel on, Ignore fonts off, `""` for the skin's own font and texture, `pickerSeen` false. Category `General`, page `General`, group `Appearance`, **`skipRender`**: the library's Skin tab (`O.AppearanceTab`, settings/Panel.lua) draws them, and they stay rows so the defaults resolve, every reset reaches them and `/pc get\|set skin.skin` validates against `values`. Each `onChange` applies only its own half through `core/SkinSetup.lua`'s `Apply*` seams. **`noReapply`** (decision D8 of the skinning rollout): a skin write changes no chat string, so the write seam's `announce` and `Schema.ResetRows` skip the `ApplyStrings` pass for it. `pickerSeen` is drawn by nothing; the picker's close writes it |
 
 Each row carries its own `get()` and `set(value)` closures. PrettyChat's storage layout doesn't map 1:1 onto the path structure — the inverted `disabledStrings` table, the virtual `General` category, the default-fallback for formats — so a generic dot-walker (KickCD's `Helpers.Resolve` style) doesn't fit. Closures are simpler than a special-case resolver.
 
@@ -30,7 +31,7 @@ Every settings mutation goes through `Schema.Set(path, value)`. `/pc reset <path
 local S = SchemaLib:New({
     rows     = rows,                                  -- the live array, by reference
     announce = function(row)                          -- the write's tail
-        if not row.sessionOnly then PrettyChat:ApplyStrings() end   -- console toggle stores nothing
+        if not (row.sessionOnly or row.noReapply) then PrettyChat:ApplyStrings() end   -- console / skin rows
         Schema.NotifyPanelChange(row.category)        -- refresh the affected page / tab
     end,
     debug    = function(tag, fmt, ...) return NS.Debug(tag, fmt, ...) end,
@@ -104,7 +105,7 @@ function Schema.ResetRows(list, label)
     -- then, inside NS.SchemaRuntime.BulkRun("reset", label, walk):
     --   for each kept row: before = row.get(); row.set(row.default)
     --                      if row.get() ~= before then S.BulkAdd(1) end   -- N by read-back
-    --   once: ApplyStrings (unless every row was session-only),
+    --   once: ApplyStrings (unless every row was session-only or noReapply),
     --         NotifyPanelChange(the rows' shared category, or nil for every page)
     -- the bracket's close logs "[Set] reset <label>: N rows"; a raise anywhere in walk
     --        still gets that one line, ending " (stopped by an error)", then is raised again
@@ -176,11 +177,12 @@ PrettyChatDB.profile.enabled                                         -- bool (ad
 PrettyChatDB.profile.categories[catName].enabled                     -- bool (nil = default true, sourced from NS.Defaults[Cat].enabled)
 PrettyChatDB.profile.categories[catName].strings[globalName]         -- string override (nil = use PrettyChat default)
 PrettyChatDB.profile.categories[catName].disabledStrings[globalName] -- true = disabled (absent / nil = enabled)
+PrettyChatDB.profile.skin.{source,skin,ignorePanel,ignoreFonts,font,texture,pickerSeen} -- the skin (defaults in NS.ProfileDefaults)
 ```
 
 **`enabled` defaults follow the `nil → true` contract.** Neither the addon-wide master toggle nor per-category `enabled` flags appear in the `defaults` table — they're created on first user write and read via `IsAddonEnabled` / `IsCategoryEnabled` which return `true` when the value is `nil`. This keeps SavedVariables empty until the user disables something, and it makes a category reset (`ResetCategoriesPage`) coherent: writing the default clears the flag (`= nil`), which genuinely returns it to default-true rather than relying on AceDB to re-merge a populated default.
 
-Only user-modified values are stored. The schema's auto-clear keeps `strings[...]` lean — it never collects "override that happens to equal the default".
+Only user-modified values are stored. The schema's auto-clear keeps `strings[...]` lean — it never collects "override that happens to equal the default". The `skin.*` rows are the exception: their `set` stores the value it is given, default or not, so a profile that has picked a skin or closed the first-run picker holds those keys.
 
 `db.profile.categories[catName]` is created lazily by `EnsureCategoryDB` on first write. `disabledStrings` and `strings` sub-tables are created lazily inside the row's `set()` closures, and dropped again by the same closures once a write empties them. So is the category table.
 
@@ -203,6 +205,7 @@ Schema construction runs once at file-load (`settings/Schema.lua`). The order ma
 1. For each `category` in `CATEGORY_ORDER` (skipping `General`):
    - `buildCategoryRow(category)` — adds `<Cat>.enabled`.
    - For each `globalName` in `NS.Defaults[Cat].strings` (in `NS.SortedStringNames` order: each entry's data-only `order`, then the global name): `buildStringRows(...)` — adds `<Cat>.<NAME>.enabled` *and* `<Cat>.<NAME>.format`.
+   Then the seven `skin.*` rows, declared after the message categories so the General page's groups read in strip order (Master controls, spliced in at the head below, then Skin).
 2. `Schema.InstallMasterControls(NS.Helpers)` — called from `settings/OptionsSetup.lua`, the **next** TOC entry, because the composers live on the Options instance and it does not exist yet while `settings/Schema.lua` is running. It calls `H.MasterControls(MASTER_SPEC)`, stamps each returned row with `category = "General"` and this addon's `kind` / `get` / `set`, and splices them in at the **head** of `rows` — which is what makes `Master controls` the General page's first tab and what puts those rows at the head of `/pc list`. The hook that draws the group's closing button comes back on `Schema.masterAfterGroup`. A canonical leaf the library emits that this addon has **not** wired is never installed as a control that reads and writes nothing; it is reported at load through the same channel an unresolved path takes.
 3. `runValidation()` runs again after the splice, so `Schema.validation` describes the schema the addon actually runs rather than one three rows short of it.
 

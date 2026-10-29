@@ -33,6 +33,8 @@ Changing how a message reads takes four steps. The first three happen on the **C
 
 Your version is only used while three switches are on: **Enable PrettyChat** on the General page, the category's switch on its tab, and the message's own **Rewrite this message**. Turn any of them off and the game's original comes back, while your wording stays saved. The **General visibility** dropdown next to the master switch can also limit PrettyChat to combat, or to the time outside it.
 
+The first time you log in on a profile, a small window asks you to pick a skin. The skin is the look of PrettyChat's debug console and, if you want, its settings pages. It doesn't touch your chat lines, which keep the colors in their wording. You can change it any time on the General page's **Skin** tab, along with the font and whether the settings pages keep the game's own look, which they do until you say otherwise. The Ka0s skins are built in, and with EllesmereUI installed PrettyChat can wear its look instead.
+
 Everything else is on the addon's page under Settings → AddOns, which `/pc` (or `/prettychat`) also opens, and `/pc help` lists every command.
 
 ## How it works
