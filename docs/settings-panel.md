@@ -162,8 +162,10 @@ addon…** and the library's note. PrettyChat has no bars, so a texture override
 addon's to draw on. On the library-absent path the stub's entry draws nothing.
 
 **What follows the skin.** Every library surface this addon shows follows the owner with no host
-code: the debug console and its copy window always, and, while **Ignore settings panel** is off, the
-settings chrome, tab strips, composed rows, landing page and combat cover. The rest is the host's:
+code: the debug console and its copy window always (they are windows, so **Ignore settings panel**
+never reaches them, while **Ignore fonts** gives every label they draw its own face back, LibKa0s
+v1.81.0), and, while **Ignore settings panel** is off, the settings chrome, tab strips, composed rows,
+landing page and combat cover. The rest is the host's:
 
 - **The Categories page's AceGUI widgets.** `settings/Panel.lua` acquires the `TreeGroup` and the
   editor's check box, labels, edit boxes and button from AceGUI itself, past the Options instance's
@@ -175,16 +177,20 @@ settings chrome, tab strips, composed rows, landing page and combat cover. The r
 - **The Profiles page** gets `NS.SkinPaintAceTree(container)` after every `AceConfigDialog:Open`
   ([profiles.md](profiles.md#the-profiles-page)).
 - **The gray notes** (the GLOBALNAME caption, the Categories footnote, the landing alias row) read
-  the owner token `pc.note`, and the list entry's tooltip reads `pc.tipNote` for its gray lines and
+  `NS.PanelEscape("pc.note")`, and the list entry's tooltip reads `pc.tipNote` for its gray lines and
   `gtip.value` for its title. Under Ka0s Default both are today's `#aaaaaa` and white; every other
-  skin draws its own muted text. These are colors rather than panel paint, so they follow the skin
-  whatever the Scope says. The tooltip frame stays Blizzard's, and the rendered sample keeps the
-  player's own colors.
+  skin draws its own muted text. The notes are text on the settings pages, so while **Ignore settings
+  panel** is on they keep the token's Ka0s Default copy (`#aaaaaa`) with the rest of the page, gated
+  on the public `Skin:GetIgnore(owner)` as the library's own settings-page paints are. The tooltip
+  lines are Blizzard's GameTooltip, outside the Scope, so they follow the skin whatever it says. The
+  tooltip frame stays Blizzard's, and the rendered sample keeps the player's own colors.
 
 Nothing here paints with the Scope's **Ignore settings panel** on: every `PaintAceTree` call is a
 no-op for an owner that ignores its panel.
 
-**The first-run skin picker** (owner ruling O3; LibKa0s `OptionsSkinPicker`). While the active
+**The first-run skin picker** (owner ruling O3; LibKa0s `OptionsSkinPicker`). The library titles it
+*Choose a skin* and puts this addon's label, *Ka0s Pretty Chat* (`Skin:OwnerLabel`), on its own line
+above the dropdown (`frame.ownerLabel`, LibKa0s v1.81.0). While the active
 profile's `skin.pickerSeen` is false, `NS.MaybeShowSkinPicker` shows the library's picker at the end
 of `OnEnable` and after every profile event, unless the addon stands down or the player is in
 combat (a login in combat skips it, and the next login out of combat shows it). PrettyChat has no

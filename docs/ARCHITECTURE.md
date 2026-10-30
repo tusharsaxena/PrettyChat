@@ -198,7 +198,8 @@ The conformance suite is `tests/test_disabled.lua` (`§7`). Every assertion is m
 ## Skins
 
 PrettyChat wears a skin (skinning-§3; Ka0sAddonsCommonTasks `docs/2026-10-29-SKINNING_ROLLOUT/`, items
-PC-01 to PC-04) through `LibKa0s-Skin-1.0`, with this addon as the **owner** `PrettyChat`. It draws
+PC-01 to PC-04, and its library follow-ups `docs/2026-10-30-SKIN_LIBRARY_FOLLOWUPS/`, which re-vendored
+LibKa0s v1.81.0 with nothing to delete here) through `LibKa0s-Skin-1.0`, with this addon as the **owner** `PrettyChat`. It draws
 no frame of its own, so almost everything a skin changes is a library surface that follows the owner
 with no host code: the settings chrome, tab strips and composed rows, the combat cover, the debug
 console and its copy window, the Skin tab and the first-run picker. What is the host's:
@@ -220,7 +221,9 @@ console and its copy window, the Skin tab and the first-run picker. What is the 
   skins the panel, and the token's Ka0s Default copy (`#aaaaaa`) while **Ignore settings panel** is
   ticked, so they stay in the client's look with the rest of the page. The list entry's GameTooltip
   lines read `pc.tipNote` and the title `gtip.value` whatever the Scope says, and the tooltip frame
-  stays Blizzard's (X8). A token the facade does not resolve takes its `NS.SKIN_FALLBACK` copy, so
+  stays Blizzard's (X8). `NS.PanelEscape` is the host-side gate the library's Scope asks of a host
+  that paints a settings-page surface from tokens itself (decision D-03 of the follow-ups): it reads
+  the public `Skin:GetIgnore(owner)`. A token the facade does not resolve takes its `NS.SKIN_FALLBACK` copy, so
   an escape is never nil. The
   Categories `TreeGroup` and its editor widgets, and the Profiles page's AceConfigDialog tree, are
   acquired past the Options owner proxy, so `NS.SkinPaintAceTree` paints them after every build
@@ -230,11 +233,14 @@ console and its copy window, the Skin tab and the first-run picker. What is the 
   the end of `OnEnable` and after every profile event while the profile's `pickerSeen` is false,
   the addon stands up and the player is out of combat; a login in combat skips it until the next.
   No `onPreview` (no window or test mode), so the picker has no eye and only the `settings` icon is
-  declared. Its `onClose` is the one write of `pickerSeen`; `NS.HideSkinPicker` (the stand-down, a
+  declared. The library titles it *Choose a skin*, with the owner label on its own line above the
+  dropdown (v1.81.0). Its `onClose` is the one write of `pickerSeen`; `NS.HideSkinPicker` (the stand-down, a
   profile event) takes it down without writing it.
 - **No HUD.** Nothing here has a bar, icon, glow or HUD style row, so there is no `fromSkin`
   companion and no one-time reset to the skin (owner ruling O2 has nothing to reset; PC-03 is a
-  recorded exception of the rollout).
+  recorded exception of the rollout). For the same reason v1.81.0's HUD rulings (Ignore fonts
+  reaching HUD text, a HUD face per skin) and its retired stock look under Ka0s Default reach nothing
+  of this addon's.
 
 Left alone on purpose: chat output, the `[PC]` tag and the slash-commands-§5 palette (X7); the
 `/pc test` report's markup, which the same lines carry to chat (D3); the shipped and player formats
@@ -409,7 +415,7 @@ rather than missed; nothing in it needs a disposition until it crosses.
 
 ## External dependencies
 
-Vendored under `libs/` (the BigWigs packager pulls nothing — no `externals`): LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, **AceConfig-3.0** (Registry, Cmd, Dialog) and **AceDBOptions-3.0** (the Profiles page and nothing else, `options-ui-§3`), **LibDataBroker-1.1** and **LibDBIcon-1.0** (the launcher's pair, `launcher-§1` — neither is LibKa0s's dependency; it resolves both with `LibStub(…, true)` at `Register` time and degrades by name), and **[LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.80.0** (`libs/LibKa0s/`, listed in the TOC as `libs\LibKa0s\LibKa0s.xml` after Ace3).
+Vendored under `libs/` (the BigWigs packager pulls nothing — no `externals`): LibStub, CallbackHandler-1.0, AceAddon-3.0, AceDB-3.0, AceConsole-3.0, AceGUI-3.0, **AceConfig-3.0** (Registry, Cmd, Dialog) and **AceDBOptions-3.0** (the Profiles page and nothing else, `options-ui-§3`), **LibDataBroker-1.1** and **LibDBIcon-1.0** (the launcher's pair, `launcher-§1` — neither is LibKa0s's dependency; it resolves both with `LibStub(…, true)` at `Register` time and degrades by name), and **[LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.81.0** (`libs/LibKa0s/`, listed in the TOC as `libs\LibKa0s\LibKa0s.xml` after Ace3).
 
 Ten of LibKa0s's nineteen majors are adopted: **Core**, **Env**, **Media**, **DebugLog**, **Slash**, **Options**, **Launcher**, **Lifecycle** (`core/LifecycleSetup.lua`, the stand-down latch of `slash-commands-§7`), **Schema** (`settings/Schema.lua`, the settings schema's runtime, since v1.55.0) and **Skin** (`core/SkinSetup.lua`, the look of every surface this addon owns, since v1.80.0; [§ Skins](#skins)). **Compat** and **Bus** are declined as structural misfits: the addon reads no spell, specialization or secret value, and it publishes no message (`## Message Bus`). Each decline is a `state:will-not-do` issue, recorded in `docs/revendor/2026-09-23-v1.55.0/`. **Perf is declined** under a recorded `performance-§12` no-combat-path exemption — the register row above, with its sweep in [performance-sweep.md](./performance-sweep.md) and its reasoning at [LIBKA0S-12](https://github.com/tusharsaxena/PrettyChat/issues/10). **Item**, **Pool**, **Widgets**, **Glow**, **Sim** and **Toast** are not consumed by this addon's own code: nothing PrettyChat authors `LibStub`s any of the six (Glow and Sim arrived at v1.75.0 and Toast at v1.79.0, and adoption of none is required of any addon; this one has no frame to glow, nothing to simulate and no notice to raise). Vendored LibKa0s files do resolve some of them internally (as of v1.75.0, `DebugLog.lua` and `SimPanel.lua` reach Widgets, `OptionsNav.lua`, `OptionsTabs.lua` and `OptionsWidgets.lua` reach Pool, and `OptionsIds.lua` and `OptionsIdList.lua` reach Item), which is the library's business, not this addon's. Every LibKa0s file is vendored, used or not, because the folder is copied whole and never file by file, except `media/icons/`, which is pruned to the `LibKa0s icons:` declaration under the root [CLAUDE.md](../CLAUDE.md)'s provenance line (`library-stack-§7`; here `clear, close, copy, settings`: the debug console's three marks and the first-run skin picker's gear; no `eye`, since the addon has no window or test mode to preview a skin in).
 
