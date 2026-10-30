@@ -793,9 +793,9 @@ never asked for it, so a player who wants the client's look picks **WoW Default*
   buttons, toggle and scroll bar repaint each time, its text stays readable, and the log stays
   monospaced. The size grip in the bottom-right corner takes each skin's icon tint, except under Ka0s
   Default and WoW Default, where it is the client's own art. Open the copy window from the console's
-  copy mark under two of them → it wears the same skin, its grip included. Tick **Ignore settings
-  panel** on one of them → the console and the copy window keep the skin (they are windows, not the
-  settings panel). **Fail:** a surface that keeps the old skin until `/reload`, text the skin makes
+  copy mark under two of them → it wears the same skin, its grip included. On one of them, with the
+  console and the copy window open, untick **Ignore settings panel** and then tick it again → both
+  windows keep the skin throughout (they are windows, not the settings panel). **Fail:** a surface that keeps the old skin until `/reload`, text the skin makes
   unreadable, a grip left in the client's art under Obsidian, or a window that goes stock with
   **Ignore settings panel**. Result:
 - **SKIN-4. The settings pages on a skin (PC-01, PC-04).** Untick **Ignore settings panel**, pick
@@ -892,9 +892,9 @@ never asked for it, so a player who wants the client's look picks **WoW Default*
 - **SKIN-18. The console's close mark gets its own color back (follow-ups PC-02, ruling R-3).** With
   EllesmereUI loaded and its third-party skinning on (as in SKIN-14), pick **Obsidian** and open the
   console → its close mark wears Obsidian's close color. Set **Skin source** to EllesmereUI → the close
-  mark leaves Obsidian's color for EllesmereUI's look, and hovering it still reddens it; move off → it
-  settles again. **Fail:** the close mark keeping Obsidian's color under EllesmereUI, or a close mark
-  that no longer reacts to the pointer. Result:
+  mark no longer wears Obsidian's close color; whatever look EllesmereUI gives it, hovering it still
+  changes it, and moving off settles it again. **Fail:** the close mark keeping Obsidian's color under
+  EllesmereUI, or a close mark that no longer reacts to the pointer. Result:
 
 ## Non-English client
 
