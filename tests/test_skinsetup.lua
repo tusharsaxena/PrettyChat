@@ -2,7 +2,7 @@
 --
 -- What this addon owes the skin engine, and nothing the library pins itself: the owner is
 -- registered under the folder name with this addon's read and write seams and its two owner
--- tokens; the seven skin.* keys default to Ka0s Default and are skipRender schema rows on the
+-- tokens; the eight skin.* keys default to Ka0s Default and are skipRender schema rows on the
 -- General page's Skin tab (group "Appearance"); a skin write changes no chat string, so it skips
 -- the ApplyStrings pass (decision D8); the profile's skin is applied right after AceDB exists and
 -- on every profile event; one pick, from this addon's tab or from another addon's copy, is ONE
@@ -38,7 +38,7 @@ end
 
 local SKIN_PATHS = {
     "skin.source", "skin.skin", "skin.ignorePanel", "skin.ignoreFonts", "skin.font", "skin.texture",
-    "skin.pickerSeen",
+    "skin.outline", "skin.pickerSeen",
 }
 
 -- ── the owner ────────────────────────────────────────────────────────────────────────────────
@@ -90,7 +90,7 @@ end)
 
 -- ── the keys and the rows ────────────────────────────────────────────────────────────────────
 
-test("Skin seam: the seven skin keys default to Ka0s Default, as skipRender Skin-tab rows", function()
+test("Skin seam: the eight skin keys default to Ka0s Default, as skipRender Skin-tab rows", function()
     -- red under: a default other than today's look, a row that renders itself on top of the
     -- library's tab, or a row on some other page or tab.
     local inst = live()
@@ -102,6 +102,7 @@ test("Skin seam: the seven skin keys default to Ka0s Default, as skipRender Skin
     t.eq(d.ignoreFonts, false, "and skins the fonts")
     t.eq(d.font, "")
     t.eq(d.texture, "")
+    t.eq(d.outline, "all", "D-06: All text")
     t.eq(d.pickerSeen, false, "O3: the first-run picker shows on every profile")
     for _, path in ipairs(SKIN_PATHS) do
         local row = NS.Schema.FindByPath(path)
@@ -304,7 +305,8 @@ test("Skin seam: the seam publishes the same NS members on both paths", function
     for _, name in ipairs({
         "Skin", "SKIN_TOKENS", "SKIN_FALLBACK", "SkinColor", "SkinEscape", "PanelEscape", "SKIN_SOURCE_OPTIONS",
         "SKIN_OPTIONS", "SkinChoice", "WriteSkinChoice", "SkinOverride", "ApplySkinChoice",
-        "ApplySkinIgnore", "ApplySkinOverride", "SkinPaintAce", "SkinPaintAceTree", "SkinOnRelease",
+        "ApplySkinIgnore", "ApplySkinOverride", "SkinOutline", "ApplySkinOutline", "SKIN_OUTLINE_OPTIONS",
+        "SkinPaintAce", "SkinPaintAceTree", "SkinOnRelease",
     }) do
         t.truthy(inst.NS[name] ~= nil, "live: NS." .. name)
         t.eq(type(bare.NS[name]), type(inst.NS[name]), "degraded: NS." .. name)

@@ -151,14 +151,17 @@ The entry that selects a string *is* its name, which is why the `Heading` each b
 
 The General page's second tab is the library's own (`O.AppearanceTab`, skinning-§3), handed to
 `H.RenderTabbedSchema` through `opts.tabs` in `settings/Panel.lua`'s `GENERAL_OPTS`. Its key,
-`Appearance`, is the group of the seven `skipRender` `skin.*` rows ([schema.md](schema.md#row-kinds)),
+`Appearance`, is the group of the eight `skipRender` `skin.*` rows ([schema.md](schema.md#row-kinds)),
 so the host tab replaces that group's tab. This page has no Keybindings tab (PrettyChat binds no key),
 so the Skin tab is last. `get` and `set` are `core/SkinSetup.lua`'s read and write seams, so a pick
 lands through `NS.Schema.Set` like every other setting, and the tab calls `Skin:SetChoice` first, so
 the live repaint is the library's. It draws **Skin source** (the Ka0s skins or EllesmereUI), the
-nine skins under **Look**, **Font** and **Texture** (*Skin's own* in a new profile), the Scope
+nine skins under **Look**, **Font** and **Texture** (*Skin's own* in a new profile) with their
+**Reset font** and **Reset texture** buttons, **Font outline** (*All text* in a new profile, or
+*HUD text only* or *Off*: LibKa0s v1.82.0, stored as `skin.outline`), the Scope
 (**Ignore settings panel**, on in a new profile, and **Ignore fonts**, off), **Copy to every Ka0s
-addon…** and the library's note. PrettyChat has no bars, so a texture override has nothing of this
+addon…** under its own **Other Ka0s addons** heading, and the library's note. Picking a skin that
+draws a different look resets the font and texture overrides (LibKa0s v1.82.0). PrettyChat has no bars, so a texture override has nothing of this
 addon's to draw on. On the library-absent path the stub's entry draws nothing.
 
 **What follows the skin.** Every library surface this addon shows follows the owner with no host

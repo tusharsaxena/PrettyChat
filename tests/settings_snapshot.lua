@@ -13,6 +13,10 @@
 -- PC-01 (Ka0sAddonsCommonTasks docs/2026-10-29-SKINNING_ROLLOUT/) ADDS the seven skin.* paths at
 -- the foot, the Skin tab's rows, stored at db.profile.skin (defaults/Profile.lua). New keys with
 -- defaults; no existing path or default moved.
+--
+-- PC-01 (Ka0sAddonsCommonTasks docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK/) ADDS skin.outline, the
+-- Font outline (LibKa0s v1.82.0, ruling D-06), default "all". A new key with a default; no existing
+-- path or default moved.
 
 return {
     ["Currency.CURRENCY_GAINED.enabled"] = true,
@@ -191,5 +195,6 @@ return {
     ["skin.ignoreFonts"] = false,
     ["skin.font"] = "",
     ["skin.texture"] = "",
+    ["skin.outline"] = "all",
     ["skin.pickerSeen"] = false,
 }

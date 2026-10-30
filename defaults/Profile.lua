@@ -60,6 +60,7 @@ NS.GeneralDefaults = {
 -- (leave the settings panel the client's, leave every font the client's; a new profile leaves the
 -- panel the client's and skins the fonts, the owner's call for LootHistory on 2026-10-27, taken
 -- for the collection); the font and texture overrides, an LSM key each or "" for the skin's own;
+-- the Font outline (LibKa0s v1.82.0, ruling D-06: "all" text, "hud" text only, or "off");
 -- and `pickerSeen`, whether the first-run skin picker was closed on this profile (false on every
 -- profile, old and new: owner ruling O3). New keys with defaults, so AceDB merges them into every
 -- existing profile and no migration is owed.
@@ -73,6 +74,7 @@ NS.ProfileDefaults = {
             ignoreFonts = false,
             font        = "",
             texture     = "",
+            outline     = "all",
             pickerSeen  = false,
         },
     },

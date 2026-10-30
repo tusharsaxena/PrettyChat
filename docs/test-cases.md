@@ -657,7 +657,7 @@ Total.
 - Skin seam: the owner is the folder name, and NS.Skin is its facade
 - Skin seam: the read answers Ka0s Default before the profile store exists
 - Skin seam: the owner tokens keep Ka0s Default's #aaaaaa and follow the skin elsewhere
-- Skin seam: the seven skin keys default to Ka0s Default, as skipRender Skin-tab rows
+- Skin seam: the eight skin keys default to Ka0s Default, as skipRender Skin-tab rows
 - Skin seam: the skin row's values are every registered skin, in the library's order
 - Skin seam: /pc list category never offers skin as a message category
 - Skin seam: /pc set refuses an unknown skin and applies a registered one, one repaint
@@ -672,6 +672,18 @@ Total.
 - Skin seam: the degraded facade answers every name the live facade carries
 - Skin seam: the seam publishes the same NS members on both paths
 - Skin seam: each host-copy skin token is the live library's Ka0s Default value
+
+### test_skin_outline.lua (9)
+
+- Skin outline: a fresh profile stores All text, the library's default
+- Skin outline: the schema row is a skipRender Skin-tab row with the library's three modes
+- Skin outline: the write seam stores media.outline, and leaves it alone when it is nil
+- Skin outline: another addon's copy reaches the store through WriteChoice
+- Skin outline: the row's write applies the mode live
+- Skin outline: /pc set refuses a mode the library does not know
+- Skin outline: the stored mode is applied with the stored choice
+- Skin outline: a profile switch applies the incoming profile's mode, and back
+- Skin outline: without the skin engine the apply is a quiet no-op and the store still takes it
 
 ### test_skin_surfaces.lua (10)
 
@@ -785,6 +797,7 @@ Total.
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
 | test_skinsetup.lua | 18 |
+| test_skin_outline.lua | 9 |
 | test_skin_surfaces.lua | 10 |
 | test_skin_picker.lua | 14 |
 | test_doc_structure.lua | 13 |
@@ -793,4 +806,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **631** |
+| **Total** | **640** |
