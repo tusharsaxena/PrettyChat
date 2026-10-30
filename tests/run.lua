@@ -161,6 +161,9 @@ Kit.run{
         -- The reserved `skin` verb (LibKa0s v1.82.0's O.SkinVerb): /pc skin shows the picker on
         -- demand. After test_skin_picker, whose spec and picker queue it reads.
         "test_skin_verb",
+        -- The display-glyph guard (kit revision 45, PC-02): every string literal outside libs/,
+        -- tests/ and tools/ draws in every shipped skin face. Reads the source, loads no addon.
+        "test_glyphs",
         "test_doc_structure",
         "test_register",
         -- The kit has shipped one suite of its own since revision 15: the working-tree

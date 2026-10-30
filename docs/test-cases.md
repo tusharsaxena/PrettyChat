@@ -725,6 +725,10 @@ Total.
 - Skin verb: refused while the addon is disabled, and no picker shows
 - Skin verb: without LibKa0s the verb prints the library-absent line
 
+### test_glyphs.lua (1)
+
+- glyphs: display strings use only characters every shipped skin face draws
+
 ### test_doc_structure.lua (13)
 
 - docs/ARCHITECTURE.md carries the ten sections documentation-§3 names
@@ -811,10 +815,11 @@ Total.
 | test_skin_surfaces.lua | 10 |
 | test_skin_picker.lua | 14 |
 | test_skin_verb.lua | 6 |
+| test_glyphs.lua | 1 |
 | test_doc_structure.lua | 13 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **647** |
+| **Total** | **648** |

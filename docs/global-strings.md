@@ -48,6 +48,8 @@ The script:
 
 After regenerating, run `lua tests/run.lua` — `tests/test_defaults.lua` is what reads the chunks, so a re-split that changed a Blizzard signature shows up there rather than in game. If a Blizzard format-string signature changed (e.g. `%s` → `%2$s`), the corresponding `NS.Defaults` entry in `defaults/Defaults.lua` needs updating to match — see [common-tasks.md](./common-tasks.md#fix-a-broken-format-string). Run the full [smoke-test suite](./smoke-tests.md) — a client patch can shift behavior anywhere in the override pipeline, not just in the keys you re-split.
 
+A re-split also drops the `-- glyph: data` marks on the two `BLIZZARD_STORE_CURRENCY_FORMAT_EURO` lines (`GlobalStrings.lua` and `GlobalStrings_003.lua`), and `tests/test_glyphs.lua` goes red naming them: the `€` is a character some shipped skin face cannot draw, and the marks record that this dump is data, never drawn. Put each mark back on the line the guard names.
+
 ## The cap exemption
 
 `GlobalStrings/GlobalStrings.lua` (23,842 lines) is the one tracked `.lua` file over `layout-§1`'s 1500-line cap. The census in [ARCHITECTURE.md](./ARCHITECTURE.md#files-over-the-1500-line-cap) records it as `exempt` under the generated-data carve-out; this section is the reasoning behind that row.
