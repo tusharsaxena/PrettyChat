@@ -652,7 +652,7 @@ Total.
 - /pc profile refuses to switch in combat, and still lists
 - /pc profile answers while the addon is disabled, and can bring it back up
 
-### test_skinsetup.lua (18)
+### test_skinsetup.lua (19)
 
 - Skin seam: the owner is the folder name, and NS.Skin is its facade
 - Skin seam: the read answers Ka0s Default before the profile store exists
@@ -670,6 +670,7 @@ Total.
 - Skin seam: a skin write still lands while the addon is stood down
 - Skin seam: the library-absent load has no Skin major and falls back to the host facade
 - Skin seam: the degraded facade answers every name the live facade carries
+- Skin seam: the degraded FontFlags and HudFontSize answer real values, never nil
 - Skin seam: the seam publishes the same NS members on both paths
 - Skin seam: each host-copy skin token is the live library's Ka0s Default value
 
@@ -805,7 +806,7 @@ Total.
 | test_panel_categories.lua | 28 |
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
-| test_skinsetup.lua | 18 |
+| test_skinsetup.lua | 19 |
 | test_skin_outline.lua | 9 |
 | test_skin_surfaces.lua | 10 |
 | test_skin_picker.lua | 14 |
@@ -816,4 +817,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **646** |
+| **Total** | **647** |

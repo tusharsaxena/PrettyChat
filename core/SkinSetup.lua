@@ -356,11 +356,14 @@ if not Skin then
         "BarTexture", "FontFlags", "HudFontSize",
     }) do S[name] = noop end
     -- The two answers a font setting draws with (LibKa0s v1.82.0, SkinPaintExtras minor 7), never
-    -- nil, so a caller's SetFont never reads "no flags" or "no size": a picked flag as stored and
-    -- "OUTLINE" for From skin or nothing stored (the library's default outline mode, All text); a
-    -- stored size above 0 as is, else 12. PrettyChat draws no font of its own today.
-    S.FontFlags = function(value)
+    -- nil, so a caller's SetFont never reads "no flags" or "no size": a picked flag as stored; From
+    -- skin or nothing stored through the stored Font outline, as the library reads it ("OUTLINE"
+    -- under "all", "" under "off", and under "hud" "OUTLINE" for the HUD but "" for
+    -- `where == "window"`); a stored size above 0 as is, else 12. PrettyChat draws no font of its own.
+    S.FontFlags = function(value, where)
         if type(value) == "string" and value ~= S.FROM_SKIN then return value end
+        local mode = NS.SkinOutline()
+        if mode == "off" or (mode == "hud" and where == "window") then return "" end
         return "OUTLINE"
     end
     S.HudFontSize = function(size)

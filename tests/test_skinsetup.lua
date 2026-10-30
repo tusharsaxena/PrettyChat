@@ -300,6 +300,32 @@ test("Skin seam: the degraded facade answers every name the live facade carries"
     ctx.assertSurfaceParity(inst.NS.Skin, bare.NS.Skin, "Skin facade vs host stub", {})
 end)
 
+test("Skin seam: the degraded FontFlags and HudFontSize answer real values, never nil", function()
+    -- Parity checks names and types only, so a regression to the no-op (nil, which SetFont
+    -- refuses) would pass it. These are the values, in the library's own shape: a picked flag as
+    -- stored; From skin (or nothing stored) through the Font outline, with `where == "window"`
+    -- reading the window text's half.
+    local inst = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    local S = inst.NS.Skin
+    t.eq(S.FontFlags("THICKOUTLINE"), "THICKOUTLINE", "a picked flag answers as stored")
+    t.eq(S.FontFlags(""), "", "a picked none answers as stored")
+    t.eq(S.FontFlags(S.FROM_SKIN), "OUTLINE", "From skin under All text")
+    t.eq(S.FontFlags(nil), "OUTLINE", "nothing stored under All text")
+    t.eq(S.FontFlags(nil, "window"), "OUTLINE", "window text under All text")
+    inst.NS.Schema.Set("skin.outline", "hud")
+    t.eq(S.FontFlags(S.FROM_SKIN), "OUTLINE", "the HUD under HUD only")
+    t.eq(S.FontFlags(S.FROM_SKIN, "window"), "", "window text under HUD only")
+    t.eq(S.FontFlags("MONOCHROME", "window"), "MONOCHROME", "a picked flag wins under HUD only")
+    inst.NS.Schema.Set("skin.outline", "off")
+    t.eq(S.FontFlags(nil), "", "the HUD under Off")
+    t.eq(S.FontFlags(nil, "window"), "", "window text under Off")
+    t.eq(S.HudFontSize(18), 18, "a stored size above 0 as is")
+    t.eq(S.HudFontSize(0), 12, "0 counts as none")
+    t.eq(S.HudFontSize(-3), 12, "a negative size counts as none")
+    t.eq(S.HudFontSize("x"), 12, "a non-number counts as none")
+    t.eq(S.HudFontSize(nil), 12, "nothing stored")
+end)
+
 test("Skin seam: the seam publishes the same NS members on both paths", function()
     local inst = live()
     for _, name in ipairs({
