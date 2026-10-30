@@ -244,6 +244,15 @@ console and its copy window, the Skin tab and the first-run picker. What is the 
   recorded exception of the rollout). For the same reason v1.81.0's HUD rulings (Ignore fonts
   reaching HUD text, a HUD face per skin) and its retired stock look under Ka0s Default reach nothing
   of this addon's.
+- **No font setting** (checked for v1.82.0, ruling D-07 of Ka0sAddonsCommonTasks
+  `docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK/`, item PC-01). Every font setting must carry size, color
+  with a class-color option, flags with *From skin* as the default, and shadow; PrettyChat has none to
+  hold to that set. Its output is chat lines in the chat frame's own font, and the one face it names,
+  the debug console's JetBrains Mono (`NS.Const.FONT_MONO`), is the console's mono role, handed to
+  the library and never outlined. So there are no stored flags to move onto *From skin* and no HUD size
+  to scale (`S.HudFontSize`). The degraded facade still answers `FontFlags` and `HudFontSize`, so the
+  facade parity holds. The Skin tab's **Font outline** (`skin.outline`, above) is the one font choice,
+  and it reaches only the library's surfaces.
 
 Left alone on purpose: chat output, the `[PC]` tag and the slash-commands-§5 palette (X7); the
 `/pc test` report's markup, which the same lines carry to chat (D3); the shipped and player formats

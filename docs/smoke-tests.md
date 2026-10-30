@@ -29,7 +29,7 @@ works.
 | DIAG-1 – 27 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | RV-75 – 77 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position |
-| SKIN-1 – 18 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back |
+| SKIN-1 – 23 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
 ## Before you start
@@ -106,18 +106,22 @@ Find the cause before changing anything; a fix that only makes the check pass is
 ## SLASH
 
 - **SLASH-1. Both prefixes and the help index.** `/pc help`, then `/prettychat help` → identical
-  output; the header reads `v<version> — slash commands (/prettychat is an alias for /pc)`; fourteen
-  commands in this order: `help`, `config`, `version`, `list`, `get`, `set`, `reset`, `resetall`,
-  `profile`, `test`, `debug`, `diagnostics`, `enable`, `disable`. Result: pass (owner-marked 2026-10-10)
+  output; the header reads `v<version> — slash commands (/prettychat is an alias for /pc)`; fifteen
+  commands in this order: `help`, `config`, `skin`, `version`, `list`, `get`, `set`, `reset`, `resetall`,
+  `profile`, `test`, `debug`, `diagnostics`, `enable`, `disable`; the `skin` row reads *Choose a skin:
+  open the skin picker*. (Re-opened by PC-01 of Ka0sAddonsCommonTasks `docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK/`, 2026-10-30: the
+  `skin` verb; it passed with fourteen on 2026-10-10.) Result:
 - **SLASH-2. Bare `/pc` and an unknown verb.** `/pc`, then `/pc` followed by a few spaces → each opens
   the settings panel on the Ka0s Pretty Chat landing page, as `/pc config` does, and prints no help.
   `/pc bogus` → `unknown command 'bogus'` and then the help index. Result: pass (owner-marked 2026-10-10)
-- **SLASH-3. `/pc list`.** → `Available settings`, then nine bracketed group headings and 177 setting
-  rows, 187 lines in all: `[General]` first with its four Master controls rows and then its seven
+- **SLASH-3. `/pc list`.** → `Available settings`, then nine bracketed group headings and 178 setting
+  rows, 188 lines in all: `[General]` first with its four Master controls rows and then its eight
   `skin.*` rows (`skin.source`, `skin.skin`, `skin.ignorePanel`, `skin.ignoreFonts`, `skin.font`,
-  `skin.texture`, `skin.pickerSeen`), then `[Loot]` and the rest in category order, each category its
-  `.enabled` row and then an `.enabled` and a `.format` row per string. (Amended by PC-05 of the
-  skinning rollout, 2026-10-29: the seven skin rows.) Result: pass (owner-marked 2026-10-30)
+  `skin.texture`, `skin.outline`, `skin.pickerSeen`), then `[Loot]` and the rest in category order, each
+  category its `.enabled` row and then an `.enabled` and a `.format` row per string. (Amended by PC-05 of
+  the skinning rollout, 2026-10-29: the seven skin rows. Re-opened by PC-01 of
+  Ka0sAddonsCommonTasks `docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK/`, 2026-10-30: `skin.outline` the eighth; it passed with
+  seven on 2026-10-30.) Result:
 - **SLASH-4. `/pc list <Category>`.** `/pc list loot`, `/pc list LOOT`, `/pc list Loot` → three
   identical Loot listings. `/pc list nope` → `unknown category 'nope'. Valid: General, Loot, Currency, …`.
   Result: pass (owner-marked 2026-10-10)
@@ -882,9 +886,12 @@ never asked for it, so a player who wants the client's look picks **WoW Default*
 - **SKIN-16. The CLI (PC-01).** `/pc set skin.skin obsidian` → the console repaints live, and the Skin tab
   shows Obsidian. `/pc get skin.skin` → `obsidian`. `/pc set skin.skin nope` → `Invalid value for skin.skin` and the allowed keys (`ka0s, obsidian,
   azeroth, glass, contrast, ember, wow, midnight, forever`), nothing changes. `/pc list category` → the
-  nine categories, no `skin`; `/pc list General` → the seven `skin.*` rows after the Master controls rows.
+  nine categories, no `skin`; `/pc list General` → the eight `skin.*` rows after the Master controls rows
+  (`skin.outline = all` among them).
   `/pc reset skin.skin` → `skin.skin = ka0s`, Ka0s Default. **Fail:** a write that does not repaint, a `skin`
-  message category, or an invalid skin accepted. Result: pass (owner-marked 2026-10-30)
+  message category, or an invalid skin accepted. (Re-opened by PC-01 of
+  Ka0sAddonsCommonTasks `docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK/`, 2026-10-30: eight skin rows; it passed with seven on
+  2026-10-30.) Result:
 - **SKIN-17. A degraded install (PC-01).** With `libs/LibKa0s` renamed aside (the DEGRADED setup) → no
   picker and no error at login (there is no console or panel to skin, DEGRADED-3 and DEGRADED-4).
   `/pc resetall` → still runs with nothing raised from the skin rows. Rename it back → SKIN-1 again.
@@ -895,6 +902,49 @@ never asked for it, so a player who wants the client's look picks **WoW Default*
   mark no longer wears Obsidian's close color; whatever look EllesmereUI gives it, hovering it still
   changes it, and moving off settles it again. **Fail:** the close mark keeping Obsidian's color under
   EllesmereUI, or a close mark that no longer reacts to the pointer. Result: pass (owner-marked 2026-10-30)
+
+The skin fonts and feedback run (Ka0sAddonsCommonTasks `docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK/`, item PC-01, LibKa0s v1.82.0):
+the re-vendor, the Font outline, the `/pc skin` verb and the new faces. Start from a fresh client start
+on the branch, with **Ignore settings panel** unticked on the Skin tab so the settings pages wear the
+skin, unless a check says otherwise.
+
+- **SKIN-19. The Font outline setting (PC-01, ruling D-06).** On the Skin tab, under **Font** and
+  **Texture** and their **Reset font** / **Reset texture** row, **Font outline** reads *All text* on a
+  fresh profile. With it on *All text*, the settings pages' labels and the skin picker's text are
+  drawn outlined. Pick *HUD text only* → those window texts lose the outline at once (PrettyChat has no
+  HUD text); pick *Off* → still none. `/reload` → the choice is kept. `/pc get skin.outline` names it;
+  `/pc set skin.outline thick` is refused and changes nothing; `/pc set skin.outline all` puts the
+  outline back live. Switch to a fresh profile → *All text*; switch back → your choice. Tick **Ignore
+  fonts** → the dropdown grays out. **Fail:** a choice that does not apply live, does not survive a
+  reload or a profile switch, or an outline that stays under *Off*. Result:
+- **SKIN-20. From skin, and nothing of PrettyChat's to store (PC-01, ruling D-07).** PrettyChat has no
+  font setting of its own (no font, size, color, flags or shadow row anywhere on its pages: the text it
+  writes is chat lines in the chat frame's own font). Confirm that on General, Categories and Profiles.
+  With **Font outline** on *All text*, the debug console's log lines (JetBrains Mono, the mono role)
+  stay unoutlined in every skin. **Fail:** a font setting row on any page, or outlined console log
+  lines. Result:
+- **SKIN-21. `/pc skin` (PC-01, ruling D-16).** On a profile that has closed the first-run picker,
+  `/pc skin` → the *Choose a skin* picker opens, the same one a new profile shows; pick a skin and Apply
+  → it is worn. `/pc skin` in combat (a training dummy) → a gray *cannot open the skin picker during
+  combat* line on every try, and no picker. `/pc disable`, then `/pc skin` → one line saying Ka0s Pretty
+  Chat is disabled, and no picker; `/pc enable`. With another Ka0s addon's picker up, `/pc skin` → it
+  says the picker is queued and shows it when the other closes. **Fail:** no picker, a picker in combat
+  or while disabled, or an `unknown command`. Result:
+- **SKIN-22. Width parity of its windows (PC-01, ruling D-08).** In each of the nine skins, with **Font
+  outline** on *All text*: the debug console's title (`Ka0s Pretty Chat`) and its copy window's title fit
+  their title bars; the skin picker's owner line, dropdown text and buttons fit; on the Skin tab every
+  label, dropdown value and button (Reset font, Reset texture, Copy to every Ka0s addon) reads in full;
+  Ka0s Default draws Prototype, Obsidian Expressway and WoW Forever Fira Sans Medium. Text in each skin is
+  about as wide as Ka0s Default's. **Fail:** a clipped or ellipsized label, or text in one skin visibly
+  wider than the others. Result:
+- **SKIN-23. The v1.82.0 Skin tab and a clean load (PC-01).** `/reload` → no Lua error naming a file
+  under `libs/LibKa0s/`. On the Skin tab: **Reset font** and **Reset texture** sit side by side under the
+  dropdowns, each grayed while its half is the skin's own; the Scope check boxes line up with the
+  dropdowns above; **Copy to every Ka0s addon** sits under its own **Other Ka0s addons** heading. Set a
+  font override, then pick a skin with a different look → the override resets to *Skin's own*; re-pick
+  the same skin → an override you set again stays. The console's copy, clear and close marks and the
+  picker's settings mark still draw (the icon prune). **Fail:** an error, a misplaced control, an
+  override that survives a change of look, or a blank mark. Result:
 
 ## Non-English client
 
@@ -963,3 +1013,7 @@ On 2026-10-30 the owner reported that every check of the skinning rollout (Ka0sA
 (Ka0sAddonsCommonTasks `docs/2026-10-30-SKIN_LIBRARY_FOLLOWUPS/`, PC-RV and PC-02, LibKa0s v1.81.0)
 passed: SLASH-3, PANEL-7 and SKIN-1 to SKIN-18, each recorded on its `Result:` line as
 `pass (owner-marked 2026-10-30)`.
+
+Pending from the skin fonts and feedback run (Ka0sAddonsCommonTasks
+`docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK/`, PC-01, LibKa0s v1.82.0): SLASH-1, SLASH-3 and SKIN-16
+(re-opened, their `Result:` lines empty again) and the new SKIN-19 to SKIN-23.
