@@ -198,7 +198,8 @@ The conformance suite is `tests/test_disabled.lua` (`§7`). Every assertion is m
 ## Skins
 
 PrettyChat wears a skin (skinning-§3; Ka0sAddonsCommonTasks `docs/2026-10-29-SKINNING_ROLLOUT/`, items
-PC-01 to PC-04) through `LibKa0s-Skin-1.0`, with this addon as the **owner** `PrettyChat`. It draws
+PC-01 to PC-04, and its library follow-ups `docs/2026-10-30-SKIN_LIBRARY_FOLLOWUPS/`, which re-vendored
+LibKa0s v1.81.0 with nothing to delete here) through `LibKa0s-Skin-1.0`, with this addon as the **owner** `PrettyChat`. It draws
 no frame of its own, so almost everything a skin changes is a library surface that follows the owner
 with no host code: the settings chrome, tab strips and composed rows, the combat cover, the debug
 console and its copy window, the Skin tab and the first-run picker. What is the host's:
@@ -220,7 +221,9 @@ console and its copy window, the Skin tab and the first-run picker. What is the 
   skins the panel, and the token's Ka0s Default copy (`#aaaaaa`) while **Ignore settings panel** is
   ticked, so they stay in the client's look with the rest of the page. The list entry's GameTooltip
   lines read `pc.tipNote` and the title `gtip.value` whatever the Scope says, and the tooltip frame
-  stays Blizzard's (X8). A token the facade does not resolve takes its `NS.SKIN_FALLBACK` copy, so
+  stays Blizzard's (X8). `NS.PanelEscape` is the host-side gate the library's Scope asks of a host
+  that paints a settings-page surface from tokens itself (decision D-03 of the follow-ups): it reads
+  the public `Skin:GetIgnore(owner)`. A token the facade does not resolve takes its `NS.SKIN_FALLBACK` copy, so
   an escape is never nil. The
   Categories `TreeGroup` and its editor widgets, and the Profiles page's AceConfigDialog tree, are
   acquired past the Options owner proxy, so `NS.SkinPaintAceTree` paints them after every build
@@ -230,11 +233,14 @@ console and its copy window, the Skin tab and the first-run picker. What is the 
   the end of `OnEnable` and after every profile event while the profile's `pickerSeen` is false,
   the addon stands up and the player is out of combat; a login in combat skips it until the next.
   No `onPreview` (no window or test mode), so the picker has no eye and only the `settings` icon is
-  declared. Its `onClose` is the one write of `pickerSeen`; `NS.HideSkinPicker` (the stand-down, a
+  declared. The library titles it *Choose a skin*, with the owner label on its own line above the
+  dropdown (v1.81.0). Its `onClose` is the one write of `pickerSeen`; `NS.HideSkinPicker` (the stand-down, a
   profile event) takes it down without writing it.
 - **No HUD.** Nothing here has a bar, icon, glow or HUD style row, so there is no `fromSkin`
   companion and no one-time reset to the skin (owner ruling O2 has nothing to reset; PC-03 is a
-  recorded exception of the rollout).
+  recorded exception of the rollout). For the same reason v1.81.0's HUD rulings (Ignore fonts
+  reaching HUD text, a HUD face per skin) and its retired stock look under Ka0s Default reach nothing
+  of this addon's.
 
 Left alone on purpose: chat output, the `[PC]` tag and the slash-commands-§5 palette (X7); the
 `/pc test` report's markup, which the same lines carry to chat (D3); the shipped and player formats

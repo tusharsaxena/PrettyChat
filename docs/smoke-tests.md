@@ -29,7 +29,7 @@ works.
 | DIAG-1 – 27 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | RV-75 – 77 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position |
-| SKIN-1 – 17 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install |
+| SKIN-1 – 18 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
 ## Before you start
@@ -753,7 +753,8 @@ prunes `libs/LibKa0s/media/icons/` to the `LibKa0s icons: clear, close, copy.` l
 ## SKIN
 
 The skinning rollout's checks (Ka0sAddonsCommonTasks `docs/2026-10-29-SKINNING_ROLLOUT/`, items PC-01 to
-PC-05, LibKa0s v1.80.0). Start from a **fresh client start** on the branch, and pick skins on `/pc config`
+PC-05, LibKa0s v1.80.0), amended for its library follow-ups (`docs/2026-10-30-SKIN_LIBRARY_FOLLOWUPS/`,
+items PC-RV and PC-02, LibKa0s v1.81.0; a check citing them says "follow-ups"). Start from a **fresh client start** on the branch, and pick skins on `/pc config`
 → General → **Skin** unless a check says otherwise. Open the debug console (`/pc debug`) and type
 `/pc test category Loot` first in any check that looks at it, so it has lines. The nine skins are Ka0s
 Default, Obsidian, Azeroth, Glass, High Contrast, Ember, WoW Default, WoW Midnight and WoW Forever. Every
@@ -761,9 +762,12 @@ check also fails on a Lua error or a taint warning.
 
 PrettyChat has **no HUD**: no bar, icon, glow or HUD style option. So the one-time reset of HUD styles to
 the skin (owner ruling O2) has nothing to reset here, and no check below looks for it. The one visible
-change under Ka0s Default is the library's own, on the debug console (SKIN-1).
+change under Ka0s Default is the library's own, on the debug console (SKIN-1). The follow-ups' HUD
+rulings (Ignore fonts reaching HUD text, a HUD face of its own per skin) have nothing to act on here
+for the same reason, and no check below looks at the retired stock look under Ka0s Default: PrettyChat
+never asked for it, so a player who wants the client's look picks **WoW Default**, as everywhere.
 
-- **SKIN-1. Ka0s Default looks as before (PC-01, PC-02, PC-04).** On a profile that has never changed
+- **SKIN-1. Ka0s Default looks as before (PC-01, PC-02, PC-04; follow-ups PC-02).** On a profile that has never changed
   its skin (Ka0s Default, **Ignore settings panel** on), open the landing page, General, Categories (walk
   a few tabs and list entries) and Profiles → each looks exactly as it did before the rollout: the same
   colors, edges, spacing and Friz Quadrata text, and the gray notes (the GLOBALNAME caption beside
@@ -771,9 +775,12 @@ change under Ka0s Default is the library's own, on the debug console (SKIN-1).
   still the same `#aaaaaa` gray. Hover a list entry → the title is white and the GLOBALNAME line gray, as
   before. Then the debug console → its log is still JetBrains Mono, monospaced (decision D4), and its
   chrome wears **Ka0s Default** as LibKa0s v1.79.0 draws it for an addon that registers a skin: the title
-  bar text and the controls in **Oxanium**, not Friz Quadrata. That face is the expected change (the
-  owner's v1.79.0 Ka0s Default), not a fail. **Fail:** any change on a settings page; a note in a
-  lighter or bluer gray; a console log in a proportional face; Friz Quadrata on the console's title.
+  bar text and the controls in **Oxanium**, not Friz Quadrata. Since LibKa0s v1.81.0 that includes the
+  title bar's `Debug: ON` / `Debug: OFF` label and the **Diagnostics** link (decision D-13 of the
+  follow-ups), and the size grip in the bottom-right corner is the client's own art, untinted. That
+  face is the expected change (the owner's Ka0s Default), not a fail. **Fail:** any change on a
+  settings page; a note in a lighter or bluer gray; a console log in a proportional face; Friz
+  Quadrata on the console's title, its toggle label or its Diagnostics link; a tinted grip.
   Result:
 - **SKIN-2. The Skin tab (PC-01).** General → **Skin**, the last tab → **Skin source** (*Ka0s skins*,
   EllesmereUI), the nine skins with their swatches under a **Look** heading, **Font and texture** (**Font**
@@ -781,11 +788,16 @@ change under Ka0s Default is the library's own, on the debug console (SKIN-1).
   **Ignore fonts** not), **Copy to every Ka0s addon…** and the note that skins change every visual element.
   No heading repeats the tab's name. **Fail:** a missing control, a Scope default other than these, or
   the tab anywhere but last. Result:
-- **SKIN-3. Each skin, live (PC-01, PC-02).** With the console open, pick each skin in turn and then Ka0s
-  Default again → with **no reload**, the console's backdrop, border, title bar, buttons, toggle and
-  scroll bar repaint each time, its text stays readable, and the log stays monospaced. Open the copy
-  window from the console's copy mark under two of them → it wears the same skin. **Fail:** a surface that
-  keeps the old skin until `/reload`, or text the skin makes unreadable. Result:
+- **SKIN-3. Each skin, live (PC-01, PC-02; follow-ups PC-02).** With the console open, pick each skin in
+  turn and then Ka0s Default again → with **no reload**, the console's backdrop, border, title bar,
+  buttons, toggle and scroll bar repaint each time, its text stays readable, and the log stays
+  monospaced. The size grip in the bottom-right corner takes each skin's icon tint, except under Ka0s
+  Default and WoW Default, where it is the client's own art. Open the copy window from the console's
+  copy mark under two of them → it wears the same skin, its grip included. Tick **Ignore settings
+  panel** on one of them → the console and the copy window keep the skin (they are windows, not the
+  settings panel). **Fail:** a surface that keeps the old skin until `/reload`, text the skin makes
+  unreadable, a grip left in the client's art under Obsidian, or a window that goes stock with
+  **Ignore settings panel**. Result:
 - **SKIN-4. The settings pages on a skin (PC-01, PC-04).** Untick **Ignore settings panel**, pick
   **Obsidian** → with no reload the landing page, General (both tabs), Categories and Profiles repaint:
   the page chrome, the tab strips, the check boxes, dropdowns and buttons. On Categories the string list
@@ -814,10 +826,11 @@ change under Ka0s Default is the library's own, on the debug console (SKIN-1).
   PrettyChat's Profiles page, then the other addon again, a few times → PrettyChat's tree, editor and
   Profiles controls are skinned every time; the other addon's tree, buttons and boxes are **stock** every
   time (the AceGUI pool leak check). **Fail:** any skinned widget in the other addon. Result:
-- **SKIN-8. Fonts, Ignore fonts and the overrides (PC-01).** On **WoW Forever**, with **Ignore settings
-  panel** off → the console's chrome and the settings controls read in Fira Sans. Tick **Ignore fonts**
-  → they go back to the game's faces live, the colors stay WoW Forever's, and the console log is still
-  monospaced. Untick it. Pick a **Font** of your own → the skinned text takes it live; *Skin's own* puts
+- **SKIN-8. Fonts, Ignore fonts and the overrides (PC-01; follow-ups PC-02).** On **WoW Forever**, with
+  **Ignore settings panel** off → the console's chrome and the settings controls read in Fira Sans, the
+  console's `Debug: ON` / `Debug: OFF` label and **Diagnostics** link included. Tick **Ignore fonts** →
+  they go back to the game's faces live, that label and link included, the colors stay WoW Forever's,
+  and the console log is still monospaced. Untick it. Pick a **Font** of your own → the skinned text takes it live; *Skin's own* puts
   it back. Pick a **Texture** → nothing of PrettyChat's changes (it draws no bars) and nothing errors.
   **Fail:** a face that does not follow, Ignore fonts losing to the Font override, or an error from the
   texture. Result:
@@ -827,21 +840,25 @@ change under Ka0s Default is the library's own, on the debug console (SKIN-1).
   Ember again, no picker. **Copy From** `Default` into `Skins` → Ember on `Skins`. **Reset Profile** on
   `Skins` → Ka0s Default and the picker again. Delete `Skins` afterwards. **Fail:** a skin that stays
   behind after a switch, or a picker on a profile that has closed it. Result:
-- **SKIN-10. The first-run picker on a fresh profile (PC-04, owner ruling O3).** Make a new profile and
-  `/reload` while standing out of combat → the picker shows at login, high on the screen, titled
-  *Choose a skin for Ka0s Pretty Chat*, with a dropdown of the skin worn now and a **gear** beside it,
+- **SKIN-10. The first-run picker on a fresh profile (PC-04, owner ruling O3; follow-ups PC-02, ruling
+  R-11).** Make a new profile and `/reload` while standing out of combat → the picker shows at login,
+  high on the screen, titled *Choose a skin*, with **Ka0s Pretty Chat** whole on its own line above
+  the dropdown (the window is wide enough for it; nothing cut off), a dropdown of the skin worn now and
+  a **gear** beside it,
   **no eye** (PrettyChat has no window or test mode to preview in), **Apply**, **Apply to all Ka0s
   addons** (only while another skinned Ka0s addon is loaded) and a close control. Open the console, then
   pick **Glass** from the dropdown → the dropdown lists the nine skins, and the console wears Glass at once, and nothing is saved yet (the Skin tab still reads the old skin). Press
-  **Apply** → saved. `/reload` → no picker. **Fail:** an eye, a picker that comes back after Apply, or a
-  pick that saves without Apply. Result:
+  **Apply** → saved. `/reload` → no picker. **Fail:** the old *Choose a skin for …* title, the addon's
+  name missing or cut off, an eye, a picker that comes back after Apply, or a pick that saves without
+  Apply. Result:
 - **SKIN-11. The picker's close, Escape and gear (PC-04).** On a new profile each time: pick a skin and
   close the picker → the old skin comes back and the picker stays away after `/reload`. Again with
   Escape → the same. Again with the gear → the skin is saved and the settings open on General at the
   **Skin** tab. **Fail:** a close that keeps the previewed skin, a picker that comes back after any of
   the three, or the gear opening another page. Result:
-- **SKIN-12. One picker at a time across Ka0s addons (PC-04).** With Ka0s Loot History also on a fresh
-  profile, log in → one picker shows, then the other after it closes, never both. Press **Apply to all
+- **SKIN-12. One picker at a time across Ka0s addons (PC-04; follow-ups PC-02).** With Ka0s Loot History
+  also on a fresh profile, log in → one picker shows, naming its addon on the line above the dropdown,
+  then the other after it closes, naming the other addon, never both. Press **Apply to all
   Ka0s addons** on the first → both addons take that skin (source and skin only; each keeps its own
   Scope, font and texture) and the second picker never shows. **Fail:**
   two pickers on screen, or a second picker after Apply to all. Result:
@@ -872,6 +889,12 @@ change under Ka0s Default is the library's own, on the debug console (SKIN-1).
   picker and no error at login (there is no console or panel to skin, DEGRADED-3 and DEGRADED-4).
   `/pc resetall` → still runs with nothing raised from the skin rows. Rename it back → SKIN-1 again.
   **Fail:** any Lua error naming a skin function. Result:
+- **SKIN-18. The console's close mark gets its own color back (follow-ups PC-02, ruling R-3).** With
+  EllesmereUI loaded and its third-party skinning on (as in SKIN-14), pick **Obsidian** and open the
+  console → its close mark wears Obsidian's close color. Set **Skin source** to EllesmereUI → the close
+  mark leaves Obsidian's color for EllesmereUI's look, and hovering it still reddens it; move off → it
+  settles again. **Fail:** the close mark keeping Obsidian's color under EllesmereUI, or a close mark
+  that no longer reacts to the pointer. Result:
 
 ## Non-English client
 
@@ -942,3 +965,10 @@ skin live, the settings pages and the Categories tree skinned, the tree's flat e
 the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker and
 its close, Escape and gear, one picker across Ka0s addons, the stand-down and combat, EllesmereUI on and
 off, the CLI, and a degraded install).
+
+Owed from the skinning rollout's library follow-ups (Ka0sAddonsCommonTasks
+`docs/2026-10-30-SKIN_LIBRARY_FOLLOWUPS/`, PC-RV and PC-02, LibKa0s v1.81.0, 2026-10-30): SKIN-1,
+SKIN-3, SKIN-8, SKIN-10 and SKIN-12 (amended: the console's toggle label and Diagnostics link in the
+skin's face and given back by Ignore fonts, the size grip tinted by the skin, the windows keeping the
+skin under Ignore settings panel, and the picker titled *Choose a skin* with the addon's name on its
+own line above the dropdown), and SKIN-18 (new: the console's close mark given its own color back).
