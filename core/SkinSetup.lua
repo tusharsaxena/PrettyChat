@@ -309,8 +309,21 @@ if not Skin then
         "GetAccentColor", "GetPanelColor", "GetFont",
         "TitleBar", "Divider", "Footer", "Card", "Slider", "NavItem", "Drawer", "ListRow", "MenuFrame",
         "Tooltip", "Strip", "Cover", "Text", "ChartStyle", "BarStyle", "IconBorder", "GlowColor",
-        "BarTexture",
+        "BarTexture", "FontFlags", "HudFontSize",
     }) do S[name] = noop end
+    -- The two answers a font setting draws with (LibKa0s v1.82.0, SkinPaintExtras minor 7), never
+    -- nil, so a caller's SetFont never reads "no flags" or "no size": a picked flag as stored and
+    -- "OUTLINE" for From skin or nothing stored (the library's default outline mode, All text); a
+    -- stored size above 0 as is, else 12. PrettyChat draws no font of its own today.
+    S.FontFlags = function(value)
+        if type(value) == "string" and value ~= S.FROM_SKIN then return value end
+        return "OUTLINE"
+    end
+    S.HudFontSize = function(size)
+        local n = tonumber(size)
+        if n and n > 0 then return n end
+        return 12
+    end
 
     S.Token = function(name) return NS.SKIN_FALLBACK[name] end
     S.Color = color

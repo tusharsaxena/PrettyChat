@@ -165,6 +165,9 @@ if not lib then
         -- "queued": there is no queue); HideSkinPicker is a no-op.
         SkinPicker           = function() return nil end,
         HideSkinPicker       = function() end,
+        -- The reserved `skin` verb (LibKa0s v1.82.0, OptionsSkinPicker minor 3): no
+        -- picker on this path, so SkinVerb opens nothing and answers nil, "absent".
+        SkinVerb             = function() return nil, "absent" end,
         -- ── the ONE stub member that is reached at LOAD ──────────────────
         --
         -- options-ui-§1's degradation rule is LOAD-COMPLETING, and the measured
