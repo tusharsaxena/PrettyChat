@@ -48,6 +48,11 @@ local COMMANDS = {
         function() Sl:PrintHelp() end},
     {"config",   L["Open the settings panel"],
         function() PrettyChat:OpenConfig() end},
+    -- The reserved `skin` verb (LibKa0s v1.82.0's O.SkinVerb, ruling D-16), right after
+    -- config; its help is the library's VERB_HELP, one wording for every Ka0s addon. A
+    -- feature verb, so the gate refuses it while disabled.
+    {"skin",     L["Choose a skin: open the skin picker"],
+        function() NS.RunSkinVerb() end},
     {"version",  L["Print the addon version"],
         function() Sl:CliVersion() end},
     {"list",     L["List settings — `/pc list [<Category> | category | formatstring]`"],

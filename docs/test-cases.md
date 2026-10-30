@@ -454,7 +454,7 @@ Total.
 - NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
 - a bare /pc opens the settings panel through config
 - a whitespace-only /pc is bare too
-- COMMANDS is the fourteen verbs, in their order, and help prints one row each
+- COMMANDS is the fifteen verbs, in their order, and help prints one row each
 - /pc help prints the help index
 - /pc help lists every command with its description
 - the resetall help row says it resets every setting
@@ -715,6 +715,15 @@ Total.
 - Skin widgets: the Profiles page paints what AceConfigDialog drew, and a skin switch re-opens it
 - Skin tools: the debug console is owned by this addon
 
+### test_skin_verb.lua (6)
+
+- Skin verb: the row sits right after config, with the library's help words
+- Skin verb: /pc skin shows the picker on a profile that has closed it
+- Skin verb: NS.RunSkinVerb hands O.SkinVerb this addon's first-run spec
+- Skin verb: in combat every call prints the library's gray line and shows nothing
+- Skin verb: refused while the addon is disabled, and no picker shows
+- Skin verb: without LibKa0s the verb prints the library-absent line
+
 ### test_doc_structure.lua (13)
 
 - docs/ARCHITECTURE.md carries the ten sections documentation-§3 names
@@ -800,10 +809,11 @@ Total.
 | test_skin_outline.lua | 9 |
 | test_skin_surfaces.lua | 10 |
 | test_skin_picker.lua | 14 |
+| test_skin_verb.lua | 6 |
 | test_doc_structure.lua | 13 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **640** |
+| **Total** | **646** |

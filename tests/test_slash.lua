@@ -111,9 +111,10 @@ end)
 -- The verb list by value, so adding, dropping or moving a verb is a deliberate edit here and
 -- not a silent drift of the help index, the landing page and the docs that quote the count.
 -- red under: a `profile` row placed anywhere but beside the other settings verbs.
-test("COMMANDS is the fourteen verbs, in their order, and help prints one row each", function()
+test("COMMANDS is the fifteen verbs, in their order, and help prints one row each", function()
+    -- `skin` right after `config` since LibKa0s v1.82.0 (the reserved verb, ruling D-16).
     local ORDER = {
-        "help", "config", "version", "list", "get", "set", "reset", "resetall", "profile",
+        "help", "config", "skin", "version", "list", "get", "set", "reset", "resetall", "profile",
         "test", "debug", "diagnostics", "enable", "disable",
     }
     local got = {}

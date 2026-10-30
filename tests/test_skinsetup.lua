@@ -306,7 +306,7 @@ test("Skin seam: the seam publishes the same NS members on both paths", function
         "Skin", "SKIN_TOKENS", "SKIN_FALLBACK", "SkinColor", "SkinEscape", "PanelEscape", "SKIN_SOURCE_OPTIONS",
         "SKIN_OPTIONS", "SkinChoice", "WriteSkinChoice", "SkinOverride", "ApplySkinChoice",
         "ApplySkinIgnore", "ApplySkinOverride", "SkinOutline", "ApplySkinOutline", "SKIN_OUTLINE_OPTIONS",
-        "SkinPaintAce", "SkinPaintAceTree", "SkinOnRelease",
+        "SkinPaintAce", "SkinPaintAceTree", "SkinOnRelease", "RunSkinVerb",
     }) do
         t.truthy(inst.NS[name] ~= nil, "live: NS." .. name)
         t.eq(type(bare.NS[name]), type(inst.NS[name]), "degraded: NS." .. name)

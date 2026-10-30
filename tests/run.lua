@@ -158,6 +158,9 @@ Kit.run{
         -- the picker's spec and triggers, the Categories tree and the Profiles page painted, the
         -- debug console owned. After test_skin_surfaces, which builds the same Categories page.
         "test_skin_picker",
+        -- The reserved `skin` verb (LibKa0s v1.82.0's O.SkinVerb): /pc skin shows the picker on
+        -- demand. After test_skin_picker, whose spec and picker queue it reads.
+        "test_skin_verb",
         "test_doc_structure",
         "test_register",
         -- The kit has shipped one suite of its own since revision 15: the working-tree

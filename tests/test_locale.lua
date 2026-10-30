@@ -280,6 +280,10 @@ local RESIDUE = {
      .. "library-absent stub (debug-logging-§14). Like DISABLED_LINE_FORMAT above it is "
      .. "the collection's wording, so every Ka0s addon answers a report it cannot write "
      .. "in one sentence; routing it through L would let this one drift"},
+    {"core/SkinSetup.lua", "%s is unavailable: the LibKa0s library did not load.",
+     "NS.RunSkinVerb's library-absent line for `/pc skin` (LibKa0s v1.82.0's reserved verb), "
+     .. "the same collection placeholder sentence as the DebugLog stub's above, so every Ka0s "
+     .. "addon answers a verb it cannot run without the library in one sentence"},
     {"core/DebugLogSetup.lua", "Pretty Chat",
      "the same brand name, handed to LibKa0s-DebugLog-1.0 as its window title"},
     {"core/SkinSetup.lua", "Ka0s Pretty Chat",
