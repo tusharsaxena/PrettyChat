@@ -76,9 +76,9 @@ The addon object **is** the `NS` table itself — `core/PrettyChat.lua` passes `
 
 ### Seams published without a caller
 
-Five members of the table above have no call site anywhere in `core/`, `defaults/`, `locales/`,
+Three members of the table above have no call site anywhere in `core/`, `defaults/`, `locales/`,
 `modules/` or `settings/`, and that is deliberate in each case rather than left over from something
-deleted. Each is argued at its definition; this is the list, so a dead-code sweep finds all five in
+deleted. Each is argued at its definition; this is the list, so a dead-code sweep finds all three in
 one place instead of meeting them one at a time.
 
 | Seam | Defined at | Why it stays |
@@ -87,8 +87,8 @@ one place instead of meeting them one at a time.
 | `NS.MakeCloseButton(parent, onClick)` | `core/CoreSetup.lua`, both arms | It carries the addon-folder name a vendored library cannot derive and a call site would have to remember. Deleting it moves that argument back to whoever builds the next window, and getting it wrong is invisible except side by side with a sibling addon. |
 | `NS.Format(fmt, …)` | `core/CoreSetup.lua`, both arms | Published on **both** arms, and the symmetry is the value: a first caller added later would work in every install that has LibKa0s and be nil in exactly the install the degraded arm exists for. |
 
-None of the five costs anything to keep — `NS.Icon` and `NS.MakeCloseButton` are frame-build calls
-that never happen, `NS.Format` and the two skin helpers are closures. What a deletion would cost is the
+None of the three costs anything to keep — `NS.Icon` and `NS.MakeCloseButton` are frame-build calls
+that never happen, `NS.Format` is a closure. What a deletion would cost is the
 re-derivation, and in most of the cases a wrong re-derivation is silent.
 
 **A sweep that wants one of these gone has to answer the argument in its row, not the call count** —
