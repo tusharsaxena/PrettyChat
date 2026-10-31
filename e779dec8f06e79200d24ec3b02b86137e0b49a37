@@ -1,0 +1,14 @@
+PC-F02 independent review, one finding.
+
+CONFIRMED and FIXED (medium, core/MediaSetup.lua:99): the file-load RegisterLSM
+was the only registration, so an LSM embedded by an addon loading after
+PrettyChat never received the Ka0s catalog. NS.RegisterMedia is published and
+PrettyChat:OnEnable repeats it; RegisterLSM skips held keys. LibSharedMedia-3.0
+added to the TOC OptionalDeps. Three new tests; the OnEnable test was seen red
+without the call. Smoke SKIN-24 gains the load-after case (open, not passed).
+
+Not fixed: the suggested alternative, vendoring LSM. The run forbids touching
+libs/ other than by the re-vendor, so it is left to the owner. Consequently
+PrettyChat alone (no LSM anywhere) still lists the leading row alone and draws
+no Ka0s skin face, and an LSM first arriving via a load-on-demand addon after
+login is not caught.
