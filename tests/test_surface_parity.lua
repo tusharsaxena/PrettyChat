@@ -78,7 +78,7 @@ local parityBare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
 -- Read, Write, SameValue, New), which is what the major publishes. Its instance
 -- surface is not in the major's member manifest, so it is pinned with the two-table
 -- form in its own case below, against the live instance (LibKa0s docs/api/
--- Schema/version-2-docs.md, "Pinning it").
+-- Schema/version-3-docs.md, "Pinning it").
 ctx.setSurfaceSource{
     ["LibKa0s-Options-1.0"]   = parityLive.NS.Helpers,
     ["LibKa0s-DebugLog-1.0"]  = parityLive.NS.DebugLog,

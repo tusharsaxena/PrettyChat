@@ -5,7 +5,7 @@ local _, NS = ...
 
 -- THE DEGRADATION STUB, for a load with no LibKa0s (every major floors on Core, so
 -- they are absent together). WRITE-COMPLETING AND LOG-SILENT, the class the
--- library's document names (LibKa0s docs/api/Schema/version-2-docs.md, "The
+-- library's document names (LibKa0s docs/api/Schema/version-3-docs.md, "The
 -- degradation stub"): reads, writes, the row's `validate` (so the PC-R-01 gate still refuses),
 -- `announce` (so the re-apply still happens) and the sweep veto all work, because a
 -- player still reaches them through `/pc enable` / `/pc disable` (slash-commands-§1)

@@ -19,6 +19,7 @@
   `docs/debug.md` (DebugLogDiagnostics 6).
 - **Smoke checks added:** SKIN-26 (the moved files) and DIAG-28 (Charts in the header). Result empty.
 - **Adopted:** nothing. **Declined:** the four class B candidates and Charts, in `03_DECISIONS.md`, with
-  no issues filed, as the run brief says. **Unreached:** none.
+  no issues filed, as the run's dispatch said (not the bundle; see `03_DECISIONS.md`).
+  **Unreached:** none.
 - **Gate:** `ka0s-bounded lua tests/run.lua` 656 passed, 0 failed, 1 skipped (657 total);
   `ka0s-bounded luacheck .` 0 warnings / 0 errors in 67 files.

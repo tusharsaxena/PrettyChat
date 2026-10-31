@@ -369,7 +369,7 @@ end
 -- player's write, `/pc set`, `/pc reset` (ApplyDefault), a page reset and both
 -- value-bound descriptors. It used to be a wrapper in front of Schema.Set, and a
 -- wrapper is exactly what LibKa0s-Schema-1.0's ApplyDefault bypasses, because it
--- calls the runtime's own Set (LibKa0s docs/api/Schema/version-2-docs.md, "A gate in
+-- calls the runtime's own Set (LibKa0s docs/api/Schema/version-3-docs.md, "A gate in
 -- front of the seam"). The refusal keeps its two side effects: the panel refresh that
 -- snaps the New box back to what is actually stored (the `/pc set` echo re-reads
 -- too), and the one debug line saying why.
