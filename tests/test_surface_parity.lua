@@ -77,8 +77,8 @@ local parityBare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
 -- deliberately: its by-name case compares the host stub's LIBRARY level (SplitPath,
 -- Read, Write, SameValue, New), which is what the major publishes. Its instance
 -- surface is not in the major's member manifest, so it is pinned with the two-table
--- form in its own case below, against the live instance (docs/api/Schema/
--- version-2-docs.md, "Pinning it").
+-- form in its own case below, against the live instance (LibKa0s docs/api/
+-- Schema/version-3-docs.md, "Pinning it").
 ctx.setSurfaceSource{
     ["LibKa0s-Options-1.0"]   = parityLive.NS.Helpers,
     ["LibKa0s-DebugLog-1.0"]  = parityLive.NS.DebugLog,
@@ -107,7 +107,7 @@ local function coreSurface(instance)
         MakeCloseButton = instance.NS.MakeCloseButton,
         -- Core minor 8's pcalled event registration helper (events-frames-taint-§1).
         -- The live arm binds the library's three; the stub carries the one-rung
-        -- bodies docs/api/Core/version-10-docs.md "Degradation" prescribes.
+        -- bodies LibKa0s docs/api/Core/version-10-docs.md "Degradation" prescribes.
         SafeRegisterEvent     = instance.NS.Util.SafeRegisterEvent,
         SafeRegisterUnitEvent = instance.NS.Util.SafeRegisterUnitEvent,
         SafeRegisterEvents    = instance.NS.Util.SafeRegisterEvents,
@@ -165,9 +165,10 @@ test("the Options stub carries the whole live surface", function()
         PatchAlwaysShowScrollbar = true,
         -- OptionsCompose 1. Four of the five composers are live-only because this
         -- addon has none of the surfaces they compose: `grep -rn 'type = "color"'
-        -- settings defaults` is empty, and so is `grep -rn 'LSM30_' settings` —
-        -- the schema is bool and string only, with no swatch, no font picker, no
-        -- border and no status bar anywhere in it. MasterControls is the one this
+        -- settings defaults` is empty, and `grep -rn 'Ka0sMedia_' settings` finds
+        -- only a comment — the schema is bool and string only, with no swatch, no
+        -- border and no status bar, and its font and texture rows are drawn by the
+        -- library's Skin tab, never composed here. MasterControls is the one this
         -- addon does call, and it is NOT here: it is in the stub, doing real work,
         -- because settings/Schema.lua composes the General page through it at
         -- load. The five published CONSTANTS go with the four composers, for the

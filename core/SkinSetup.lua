@@ -17,7 +17,7 @@ local addonName, NS = ...
 --                           while the Scope's "Ignore settings panel" is ticked, so the notes stay
 --                           in the client's look with the rest of the page.
 --   NS.SKIN_SOURCE_OPTIONS  the source row's values, and NS.SKIN_OPTIONS the skin row's (every
---   NS.SKIN_OPTIONS         registered skin, in the library's order). settings/Schema.lua reads both.
+--   NS.SKIN_OPTIONS         registered skin, in the library's order). settings/SchemaSkin.lua reads both.
 --   NS.SkinChoice()         the stored (source, skin) pair, read through NS.Schema.Get; "ka0s",
 --                           "ka0s" before AceDB has built the profile store.
 --   NS.WriteSkinChoice(s,k,i,m) THE WRITE SEAM (architecture-§5): every half through NS.Schema.Set,
@@ -37,10 +37,9 @@ local addonName, NS = ...
 --   NS.ApplySkinOutline(m)  moves the applied font outline (`Skin:SetOutline`, LibKa0s v1.82.0,
 --                           Skin minor 9, ruling D-06), live; no argument applies the stored mode.
 --   NS.SKIN_OUTLINE_OPTIONS the outline row's values: "all", "hud", "off", the library's order.
---   NS.SkinPaintAce(w)      an AceGUI widget this addon acquired itself, painted for this owner
---   NS.SkinPaintAceTree(c)  (`Skin:PaintAce` / `Skin:PaintAceTree`, the owner bound); release
+--   NS.SkinPaintAceTree(c)  the AceGUI widgets under a container this addon acquired itself,
+--                           painted for this owner (`Skin:PaintAceTree`, the owner bound); release
 --                           restores stock.
---   NS.SkinOnRelease(w, fn) host release work chained onto the widget's own OnRelease.
 --   NS.MaybeShowSkinPicker() the first-run skin picker (LibKa0s OptionsSkinPicker, owner ruling
 --                           O3): `O.SkinPicker` while the profile's `skin.pickerSeen` is false, the
 --                           addon stands up and the player is out of combat. Answers the frame, or
@@ -56,7 +55,8 @@ local addonName, NS = ...
 -- ── WHERE IT LOADS ───────────────────────────────────────────────────────────────────────────
 --
 -- After core/CoreSetup.lua (NS.Print, which the reload line goes through at call time) and before
--- settings/Schema.lua, which reads NS.SKIN_OPTIONS and NS.SKIN_SOURCE_OPTIONS at file load.
+-- settings/Schema.lua, whose load runs settings/SchemaSkin.lua's Schema.InstallSkinRows, which
+-- reads NS.SKIN_OPTIONS and NS.SKIN_SOURCE_OPTIONS.
 -- Registered at FILE LOAD (skinning-§1), so the EllesmereUI provider can offer the owner before
 -- EllesmereUI dispatches its skins. RegisterOwner calls `get` once, before AceDB exists, and it
 -- answers Ka0s Default; the profile's choice is applied by NS.ApplySkinChoice right after AceDB:New
@@ -225,16 +225,6 @@ local function storedIgnore()
     return schemaGet(PANEL_PATH) == true, schemaGet(FONTS_PATH) == true
 end
 
--- AceGUI keeps ONE callback per event name (options-ui-§19). Without the library's chain there is
--- no skin restore to share the release with, so the host's work takes the callback.
-local function releaseByCallback(widget, fn)
-    if type(widget) ~= "table" or type(fn) ~= "function" or type(widget.SetCallback) ~= "function" then
-        return nil
-    end
-    widget:SetCallback("OnRelease", function(w) fn(w) end)
-    return fn
-end
-
 -- ── the first-run skin picker (LibKa0s OptionsSkinPicker, owner ruling O3, decision X6) ───────
 --
 -- WHEN. Once at login, from PrettyChat:OnEnable after the latch has its answer (OnInitialize
@@ -388,9 +378,7 @@ if not Skin then
     function NS.ApplySkinOverride() return false end
     function NS.ApplySkinOutline() return false end
     -- Nothing to paint an AceGUI row with: stock AceGUI, as the client draws it.
-    function NS.SkinPaintAce() return false end
     function NS.SkinPaintAceTree() return 0 end
-    NS.SkinOnRelease = releaseByCallback
     return
 end
 
@@ -412,21 +400,11 @@ Skin:RegisterOwner(addonName, {
 -- its own picks.
 local RELOAD_LINE = NS.L["Reload your interface (/reload) to finish changing the skin."]
 
--- The AceGUI rows (SkinAce.lua). Each guards on the member, so a copy whose SkinAce secondary did
+-- The AceGUI rows (SkinAce.lua). It guards on the member, so a copy whose SkinAce secondary did
 -- not attach paints nothing.
-function NS.SkinPaintAce(widget)
-    if type(Skin.PaintAce) ~= "function" then return false end
-    return Skin:PaintAce(addonName, widget)
-end
-
 function NS.SkinPaintAceTree(container)
     if type(Skin.PaintAceTree) ~= "function" then return 0 end
     return Skin:PaintAceTree(addonName, container)
-end
-
-function NS.SkinOnRelease(widget, fn)
-    if type(Skin.OnRelease) ~= "function" then return releaseByCallback(widget, fn) end
-    return Skin:OnRelease(widget, fn)
 end
 
 --- No argument applies the stored exceptions; a nil half keeps that half.

@@ -55,7 +55,7 @@ installed, at runtime or at build time.
 
 ## 2. Development — the contributor toolchain
 
-This is the set you need to run the gate (`lua tests/run.lua` + `luacheck .`) and the complexity
+This is the set you need to run the gate (`lua tests/run.lua` + `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .`) and the complexity
 report. Install all of it; it is small.
 
 ### Lua 5.1 — a hard version requirement, not a preference
@@ -75,11 +75,20 @@ ahead of it. Do not "upgrade" to make the version banner look modern.
 | | |
 |---|---|
 | **Version** | **Any recent.** Verified here with 1.2.0; the config uses nothing version-specific, so pinning would be false precision. |
-| **Why** | `luacheck .` is one of the two green-gate commands (`CLAUDE.md`, "Green gate before every commit"; `docs/testing.md`, "The gate"). Its configuration is `.luacheckrc` (`std = "lua51"`, with `libs/`, `GlobalStrings/`, the vendored `tests/_kit/` and the frozen `docs/audits/`, `docs/reviews/` bundles excluded; the rest of `tests/` is in lint scope). |
+| **Why** | `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` is one of the two green-gate commands (`CLAUDE.md`, "Green gate before every commit"; `docs/testing.md`, "The gate"). Its configuration is `.luacheckrc` (`std = "lua51"`, with `libs/`, `GlobalStrings/`, the vendored `tests/_kit/` and the frozen `docs/audits/`, `docs/reviews/` bundles excluded; the rest of `tests/` is in lint scope). |
 | **Install** | `sudo apt install -y lua5.1 luarocks && sudo luarocks install luacheck` |
 | **Verify** | `luacheck --version` |
 
 `luarocks` is pulled in only as luacheck's installer — nothing in this repo calls it.
+
+### ka0s-bounded — the bound on the lint
+
+| | |
+|---|---|
+| **Version** | Whatever the installed plugin ships. It has no version of its own. |
+| **Why** | `~/.claude/dev-copilot/bin/ka0s-bounded` caps a command's memory, time and concurrency (`testing-§15`). The kit bounds `lua tests/run.lua` on load, but `luacheck` loads no kit, so the lint half of the gate runs through this script (`CLAUDE.md`, "Green gate before every commit"). |
+| **Install** | Install the `dev-copilot` Claude Code plugin, which puts the script there. |
+| **Verify** | `ls ~/.claude/dev-copilot/bin/ka0s-bounded` |
 
 ### lizard — the complexity report
 
@@ -187,7 +196,7 @@ Run these from the repo root. All three should be green.
 
 ```sh
 lua tests/run.lua                                     # headless suite — exits non-zero on failure
-luacheck .                                            # lint (config: .luacheckrc)
+~/.claude/dev-copilot/bin/ka0s-bounded luacheck .   # lint (config: .luacheckrc)
 bash tests/_kit/run-automated-tests.sh --suite complexity   # sighted complexity report (automated-tests-§3)
 ```
 

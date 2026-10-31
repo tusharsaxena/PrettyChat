@@ -378,8 +378,11 @@ test("Options cannot express the L trap either — its own, different tripwire",
     -- LibKa0s v1.62.0 moved the id surface out of OptionsWidgets.lua into OptionsIds.lua and
     -- OptionsIdList.lua, and the page registry out of Options.lua into OptionsRegistry.lua, so the
     -- check follows the code it already covered to its new files.
+    -- v1.84.0 peeled the flow engine, the tabbed page and the id suggestions out, so they join it.
     for _, rel in ipairs({ "libs/LibKa0s/Options.lua", "libs/LibKa0s/OptionsWidgets.lua",
-                           "libs/LibKa0s/OptionsIds.lua", "libs/LibKa0s/OptionsIdList.lua",
+                           "libs/LibKa0s/OptionsFlow.lua", "libs/LibKa0s/OptionsTabbed.lua",
+                           "libs/LibKa0s/OptionsIds.lua", "libs/LibKa0s/OptionsIdSuggest.lua",
+                           "libs/LibKa0s/OptionsIdList.lua",
                            "libs/LibKa0s/OptionsRegistry.lua",
                            "libs/LibKa0s/OptionsScroll.lua" }) do
         local src = readFile(rel)
@@ -831,7 +834,7 @@ test("the degraded secret guard still neutralizes a protected value", function()
 end)
 
 test("degraded SetMany is all-or-nothing", function()
-    -- red under: drop S.SetMany from settings/Schema.lua's SchemaStub.New (the call
+    -- red under: drop S.SetMany from settings/SchemaStub.lua's SchemaStub.New (the call
     -- raises), or store inside stubSetMany's phase 1 (Loot.enabled moves on a refusal).
     local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
     local BS, RT, FMT = bare.NS.Schema, bare.NS.SchemaRuntime, "Loot.LOOT_ITEM_SELF.format"
@@ -893,7 +896,7 @@ test("degraded SafeRegisterEvents records a rejected name and registers the rest
 end)
 
 test("degraded Get forwards the instance id", function()
-    -- red under: settings/Schema.lua's stub S.Get calling row.get() with no argument,
+    -- red under: settings/SchemaStub.lua's stub S.Get calling row.get() with no argument,
     -- or its S.ApplyDefault(row, id) dropping id on the way to S.Set.
     local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
     local RT = bare.NS.SchemaRuntime

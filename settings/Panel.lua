@@ -153,7 +153,7 @@ end
 -- `get` and `set` are that file's read and write seams, so a pick lands through NS.Schema.Set like
 -- every other setting; the tab calls Skin:SetChoice first, so the live repaint is the library's and
 -- the rows' onChange finds nothing left to apply. A host tab keyed by a group's name replaces that
--- group's tab, so it IS the group of the skipRender skin.* rows (settings/Schema.lua). This page has
+-- group's tab, so it IS the group of the skipRender skin.* rows (settings/SchemaSkin.lua). This page has
 -- no Keybindings tab (PrettyChat binds no key), so `before` places it last. On the degraded path the
 -- stub's entry draws nothing.
 local GENERAL_OPTS = { tabs = {

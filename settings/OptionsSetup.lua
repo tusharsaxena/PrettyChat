@@ -91,6 +91,9 @@ if not lib then
         TabStrip             = function() return nil end,
         PageBanner           = function() return nil end,
         RenderTabbedSchema   = function() return {} end,
+        -- OptionsCompose 15 (LibKa0s v1.84.0): this addon is frameless and composes no
+        -- Position block, so the stub answers no rows and no hook.
+        PositionBlock        = function() return {}, nil end,
         -- OptionsWidgets 13 — the page-header block and the SECONDARY strip the
         -- Categories page draws one of per string. Both sit after the same
         -- EnsureScroll guard, so the degraded page returns before either is
