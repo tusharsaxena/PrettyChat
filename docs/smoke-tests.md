@@ -29,7 +29,7 @@ works.
 | DIAG-1 – 27 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | RV-75 – 77 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position |
-| SKIN-1 – 23 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab |
+| SKIN-1 – 24 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
 ## Before you start
@@ -948,6 +948,14 @@ skin, unless a check says otherwise.
   the same skin → an override you set again stays. The console's copy, clear and close marks and the
   picker's settings mark still draw (the icon prune). **Fail:** an error, a misplaced control, an
   override that survives a change of look, or a blank mark. Result:
+- **SKIN-24. The media pickers (PC-F02; LibKa0s v1.83.0, options-ui-§23).** Fully restart the client
+  (new font files) with an addon that carries LibSharedMedia enabled, then open General → **Skin**.
+  Open **Font** → the leading "Skin's default (<key>)" row and every entry draw in their own face, the
+  Ka0s faces among them, on the first open. Open **Texture** → the same, each entry beside its bar. Pick
+  one of each → the closed row shows it, the font applies live, and a `/reload` keeps both. With no
+  addon carrying LibSharedMedia, each list holds the leading row alone and nothing errors. With the
+  settings panel skinned, the pull-outs wear the skin. **Fail:** a list of plain names, a blank row, a
+  face that only appears on a second open, or an error. Result:
 
 ## Non-English client
 
@@ -1024,4 +1032,4 @@ Pending from the skin fonts and feedback run (Ka0sAddonsCommonTasks
 Pending from the font pickers and skin faces run (Ka0sAddonsCommonTasks
 `docs/2026-10-31-FONT_PICKERS_AND_SKIN_FACES/`, PC-F01, LibKa0s v1.83.0): SKIN-1, SKIN-2 and SKIN-8
 (re-opened). SKIN-16, SKIN-19, SKIN-22 and SKIN-23 stay open and now state v1.83.0's faces, "Skin's
-default" and the HUD text only default.
+default" and the HUD text only default. PC-F02 adds SKIN-24.

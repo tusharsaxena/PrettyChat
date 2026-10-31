@@ -701,7 +701,7 @@ Total.
 - Skin surfaces: a note token that does not resolve still builds every page, in today's gray
 - Skin surfaces: settings/ writes no typed gray and no typed tooltip color
 
-### test_skin_picker.lua (14)
+### test_skin_picker.lua (17)
 
 - Skin picker: the spec names this owner, its seams and the Skin tab, with no eye
 - Skin picker: a fresh profile shows it at OnEnable, with no timer and no event armed
@@ -717,6 +717,9 @@ Total.
 - Skin widgets: a release hands the tree back stock
 - Skin widgets: the Profiles page paints what AceConfigDialog drew, and a skin switch re-opens it
 - Skin tools: the debug console is owned by this addon
+- Skin media: the descriptor passes getLSM, so a media list reads LibSharedMedia
+- Skin media: with no LibSharedMedia a media list still answers its no-media row
+- Skin media: the media rows are the Skin tab's, and no schema row is a plain media dropdown
 
 ### test_skin_verb.lua (6)
 
@@ -815,7 +818,7 @@ Total.
 | test_skinsetup.lua | 19 |
 | test_skin_outline.lua | 11 |
 | test_skin_surfaces.lua | 10 |
-| test_skin_picker.lua | 14 |
+| test_skin_picker.lua | 17 |
 | test_skin_verb.lua | 6 |
 | test_glyphs.lua | 1 |
 | test_doc_structure.lua | 13 |
@@ -824,4 +827,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **650** |
+| **Total** | **653** |

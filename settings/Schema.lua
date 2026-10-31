@@ -569,8 +569,8 @@ addSkinRow("ignoreFonts", {
     tooltip = NS.L["Keep every font in this addon as the game draws it. The skin still colors the text."],
     onChange = function(v) NS.ApplySkinIgnore(nil, v) end,
 })
--- The font and texture overrides (LibKa0s-Skin-1.0 minor 6), drawn by the same tab as dropdowns of
--- LibSharedMedia keys. Free text, not `values`: a media pack may register its keys after this file
+-- The font and texture overrides (LibKa0s-Skin-1.0 minor 6), drawn by the same tab as the library's
+-- previewing pickers of LibSharedMedia keys (options-ui-§23). Free text, not `values`: a media pack may register its keys after this file
 -- loads, and `/pc set` takes any key. "" is the skin's own.
 addSkinRow("font", {
     type = "string", widget = "EditBox",

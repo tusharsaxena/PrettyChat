@@ -161,7 +161,11 @@ nine skins under **Look**, **Font** and **Texture** (*Skin's default* in a new p
 v1.83.0, or *All text* or *Off*: LibKa0s v1.82.0, stored as `skin.outline`), the Scope
 (**Ignore settings panel**, on in a new profile, and **Ignore fonts**, off), **Copy to every Ka0s
 addon…** under its own **Other Ka0s addons** heading, and the library's note. Picking a skin that
-draws a different look resets the font and texture overrides (LibKa0s v1.82.0). PrettyChat has no bars, so a texture override has nothing of this
+draws a different look resets the font and texture overrides (LibKa0s v1.82.0). **Font** and **Texture** are
+the library's `Ka0sMedia_*` pickers (LibKa0s v1.83.0, options-ui-§23): each entry draws in its face or
+beside its bar, the leading row too, and the descriptor's `getLSM` feeds them. LibSharedMedia is not
+vendored here, so with no other addon loading it they list the leading row alone. They are this
+addon's only media pickers. PrettyChat has no bars, so a texture override has nothing of this
 addon's to draw on. On the library-absent path the stub's entry draws nothing.
 
 **What follows the skin.** Every library surface this addon shows follows the owner with no host

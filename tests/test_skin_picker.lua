@@ -342,3 +342,40 @@ test("Skin tools: the debug console is owned by this addon", function()
     t.truthy(rec ~= nil, "the console window was painted through the skin")
     t.eq(rec and rec.owner, OWNER)
 end)
+
+-- options-ui-§23: every media picker previews its entries. PrettyChat's only two are the Skin tab's
+-- Font and Texture, the library's Ka0sMedia_* pickers. What the addon owes them is the descriptor's
+-- getLSM, which O.LSMValues and the panel's font preload read.
+test("Skin media: the descriptor passes getLSM, so a media list reads LibSharedMedia", function()
+    -- red under: a descriptor with no getLSM, whose LSMValues answers the one "no media" row.
+    local inst = ctx.loadAddon()
+    local LSM = inst.env.LibStub:NewLibrary("LibSharedMedia-3.0", 1)
+    LSM.HashTable = function(_, kind) return { [kind .. " one"] = "path" } end
+    local list = inst.NS.Helpers.LSMValues("font")()
+    t.eq(list["font one"], "font one")
+end)
+
+test("Skin media: with no LibSharedMedia a media list still answers its no-media row", function()
+    local inst = ctx.loadAddon()
+    local list = inst.NS.Helpers.LSMValues("font")()
+    local n = 0
+    for _ in pairs(list) do n = n + 1 end
+    t.eq(n, 1, "never an empty list")
+end)
+
+test("Skin media: the media rows are the Skin tab's, and no schema row is a plain media dropdown", function()
+    -- red under: a font, texture, border, background or sound row of the addon's own in a stock
+    -- Dropdown, which shows names and no preview.
+    local inst = ctx.loadAddon()
+    local media = 0
+    for _, row in ipairs(inst.NS.Schema.AllRows()) do
+        local leaf = tostring(row.path):match("[^.]+$"):lower()
+        if leaf == "font" or leaf == "texture" or leaf == "statusbar" or leaf == "border"
+            or leaf == "background" or leaf == "sound" then
+            media = media + 1
+            t.truthy(row.skipRender == true, row.path .. ": the library's picker draws it")
+            t.truthy(row.widget ~= "Dropdown", row.path .. ": not a stock Dropdown")
+        end
+    end
+    t.eq(media, 2, "skin.font and skin.texture")
+end)
