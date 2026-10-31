@@ -1,6 +1,6 @@
 -- tests/test_skin_outline.lua — the font outline (LibKa0s v1.82.0, Skin minor 9; PC-01 of
 -- Ka0sAddonsCommonTasks docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK, ruling D-06): stored as skin.outline
--- ("all", the default, "hud", "off"), written only through the skin write seam (NS.WriteSkinChoice's
+-- ("all", "hud", the default since LibKa0s v1.83.0 and ruling D-10, "off"), written only through the skin write seam (NS.WriteSkinChoice's
 -- `media.outline`, the same seam the font and texture overrides go through), and applied with
 -- Skin:SetOutline with the rest of the stored choice (load, every profile event) and on the row's
 -- own write. The reference is LibKa0sSkinTester 7d736c2.
@@ -26,11 +26,32 @@ local function slash(inst, line)
     if not ok then error(err, 0) end
 end
 
-test("Skin outline: a fresh profile stores All text, the library's default", function()
+test("Skin outline: a fresh profile stores HUD text only, the library's default", function()
     local inst, Skin = live()
-    t.eq(inst.NS.ProfileDefaults.profile.skin.outline, "all")
+    t.eq(inst.NS.ProfileDefaults.profile.skin.outline, "hud")
     t.eq(inst.NS.db.profile.skin.outline, Skin.OUTLINE_DEFAULT)
-    t.eq(Skin:GetOutline(OWNER), "all", "the default mode is applied")
+    t.eq(Skin:GetOutline(OWNER), "hud", "the default mode is applied")
+end)
+
+test("Skin outline: the seam's own default is the library's, with no profile store", function()
+    -- red under: core/SkinSetup.lua's fallback staying "all" when the library moved (D-10).
+    local inst, Skin = live()
+    local NS = inst.NS
+    local db = NS.db
+    NS.db = nil
+    local got = NS.SkinOutline()
+    NS.db = db
+    t.eq(got, Skin.OUTLINE_DEFAULT)
+end)
+
+test("Skin outline: a stored All text stays, never migrated to the new default", function()
+    -- D-10: the default only reaches an owner that never set one.
+    local inst, Skin = live()
+    inst.NS.db.profile.skin.outline = "all"
+    inst.NS.ApplySkinChoice()
+    t.eq(inst.NS.SkinOutline(), "all")
+    t.eq(Skin:GetOutline(OWNER), "all")
+    t.eq(inst.NS.Skin.Token("font.outline"), "OUTLINE", "window text keeps its outline")
 end)
 
 test("Skin outline: the schema row is a skipRender Skin-tab row with the library's three modes", function()
@@ -79,7 +100,7 @@ end)
 test("Skin outline: /pc set refuses a mode the library does not know", function()
     local inst = live()
     slash(inst, "set skin.outline thick")
-    t.eq(inst.NS.db.profile.skin.outline, "all")
+    t.eq(inst.NS.db.profile.skin.outline, "hud")
 end)
 
 test("Skin outline: the stored mode is applied with the stored choice", function()
@@ -94,11 +115,11 @@ end)
 test("Skin outline: a profile switch applies the incoming profile's mode, and back", function()
     local inst, Skin = live()
     local db = inst.addon.db
-    inst.NS.Schema.Set("skin.outline", "hud")
+    inst.NS.Schema.Set("skin.outline", "off")
     db:SetProfile("OutlineProbe")
-    t.eq(Skin:GetOutline(OWNER), "all", "the new profile keeps the default")
+    t.eq(Skin:GetOutline(OWNER), "hud", "the new profile keeps the default")
     db:SetProfile("Default")
-    t.eq(Skin:GetOutline(OWNER), "hud", "Default's mode is back")
+    t.eq(Skin:GetOutline(OWNER), "off", "Default's mode is back")
 end)
 
 test("Skin outline: without the skin engine the apply is a quiet no-op and the store still takes it", function()

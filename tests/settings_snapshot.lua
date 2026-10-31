@@ -17,6 +17,9 @@
 -- PC-01 (Ka0sAddonsCommonTasks docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK/) ADDS skin.outline, the
 -- Font outline (LibKa0s v1.82.0, ruling D-06), default "all". A new key with a default; no existing
 -- path or default moved.
+--
+-- PC-F01 (Ka0sAddonsCommonTasks docs/2026-10-31-FONT_PICKERS_AND_SKIN_FACES/) MOVES skin.outline's
+-- default to "hud" with the library's OUTLINE_DEFAULT (LibKa0s v1.83.0, ruling D-10).
 
 return {
     ["Currency.CURRENCY_GAINED.enabled"] = true,
@@ -195,6 +198,6 @@ return {
     ["skin.ignoreFonts"] = false,
     ["skin.font"] = "",
     ["skin.texture"] = "",
-    ["skin.outline"] = "all",
+    ["skin.outline"] = "hud",
     ["skin.pickerSeen"] = false,
 }

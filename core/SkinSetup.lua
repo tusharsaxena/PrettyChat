@@ -33,7 +33,7 @@ local addonName, NS = ...
 --                           half (each Skin tab row's onChange).
 --   NS.ApplySkinIgnore(p,f) moves the applied exceptions (`Skin:SetIgnore`), live.
 --   NS.ApplySkinOverride(f,t) moves the applied overrides (`Skin:SetOverride`), live.
---   NS.SkinOutline()        the stored font outline mode, "all" until the profile store exists.
+--   NS.SkinOutline()        the stored font outline mode, "hud" until the profile store exists.
 --   NS.ApplySkinOutline(m)  moves the applied font outline (`Skin:SetOutline`, LibKa0s v1.82.0,
 --                           Skin minor 9, ruling D-06), live; no argument applies the stored mode.
 --   NS.SKIN_OUTLINE_OPTIONS the outline row's values: "all", "hud", "off", the library's order.
@@ -77,7 +77,7 @@ local SOURCE_PATH, SKIN_PATH = "skin.source", "skin.skin"
 local PANEL_PATH, FONTS_PATH = "skin.ignorePanel", "skin.ignoreFonts"
 local FONT_PATH, TEXTURE_PATH = "skin.font", "skin.texture"
 local OUTLINE_PATH = "skin.outline"
-local OUTLINE_DEFAULT = "all"
+local OUTLINE_DEFAULT = "hud"
 local DEFAULT = "ka0s"
 local LABEL = "Ka0s Pretty Chat"
 
@@ -445,7 +445,7 @@ function NS.ApplySkinOverride(font, texture)
     return Skin:SetOverride(addonName, font, texture)
 end
 
---- No argument applies the stored outline; the library reads an unknown mode as "all".
+--- No argument applies the stored outline; the library reads an unknown mode as "hud".
 function NS.ApplySkinOutline(mode)
     if type(Skin.SetOutline) ~= "function" then return false end
     if mode == nil then mode = NS.SkinOutline() end

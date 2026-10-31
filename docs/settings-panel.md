@@ -156,9 +156,9 @@ so the host tab replaces that group's tab. This page has no Keybindings tab (Pre
 so the Skin tab is last. `get` and `set` are `core/SkinSetup.lua`'s read and write seams, so a pick
 lands through `NS.Schema.Set` like every other setting, and the tab calls `Skin:SetChoice` first, so
 the live repaint is the library's. It draws **Skin source** (the Ka0s skins or EllesmereUI), the
-nine skins under **Look**, **Font** and **Texture** (*Skin's own* in a new profile) with their
-**Reset font** and **Reset texture** buttons, **Font outline** (*All text* in a new profile, or
-*HUD text only* or *Off*: LibKa0s v1.82.0, stored as `skin.outline`), the Scope
+nine skins under **Look**, **Font** and **Texture** (*Skin's default* in a new profile) with their
+**Reset font** and **Reset texture** buttons, **Font outline** (*HUD text only* in a new profile since LibKa0s
+v1.83.0, or *All text* or *Off*: LibKa0s v1.82.0, stored as `skin.outline`), the Scope
 (**Ignore settings panel**, on in a new profile, and **Ignore fonts**, off), **Copy to every Ka0s
 addon…** under its own **Other Ka0s addons** heading, and the library's note. Picking a skin that
 draws a different look resets the font and texture overrides (LibKa0s v1.82.0). PrettyChat has no bars, so a texture override has nothing of this

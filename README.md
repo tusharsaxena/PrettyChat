@@ -4,7 +4,7 @@
 ![CurseForge Version](https://img.shields.io/curseforge/v/919766)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-648%2F648_passing-green)
+![Tests](https://img.shields.io/badge/Tests-650%2F650_passing-green)
 
 World of Warcraft tells you about loot, currency, gold, reputation, experience, honor and crafting in a stream of sentences that all look alike. PrettyChat rewrites them. The information doesn't change, but it's laid out and color-coded, so you can find the line you actually cared about while the chat window scrolls past you.
 
@@ -97,32 +97,6 @@ Bugs and feature requests are tracked on GitHub: [https://github.com/tusharsaxen
 
 ## Credits
 
-The debug console uses [JetBrains Mono](https://www.jetbrains.com/lp/mono/), licensed under the SIL
-Open Font License 1.1.
-
-Ka0s Default, the skin every profile starts on, draws [Prototype](https://www.dafont.com/prototype.font)
-v2.0 (2001). It is not under the Open Font License: it is "free for personal use, freely
-distributed with Prototype.txt", so the author's `Prototype.txt` ships beside it unchanged.
-
-Obsidian draws [Expressway](https://www.dafont.com/expressway.font) Rg Bold 2.100 (2005) by Ray
-Larabie, Typodermic. It is not under the Open Font License either, and it ships against its own
-terms: its name table reads "Do not distribute", and the Typodermic Desktop EULA 2026 puts
-embedding in software outside the free license. It ships on the owner's ruling of 2026-10-30,
-"Ship it anyways.", with the EULA (`Expressway-EULA.pdf`) and its quick guide
-(`Expressway-EULA-Guide.html`) beside it as the record of the terms that ruling overrode.
-Expressway is a trademark of Typodermic.
-
-The other skins draw on six SIL Open Font License 1.1 families, one per skin:
-[Nunito](https://github.com/googlefonts/nunito) by The Nunito Project Authors,
-[Vollkorn](https://github.com/FAlthausen/Vollkorn-Typeface) by The Vollkorn Project Authors,
-[Bitter](https://github.com/solmatas/BitterPro) by The Bitter Project Authors,
-[Philosopher](https://github.com/alexeiva/philosopher) by The Philosopher Project Authors,
-[Fira Sans](https://github.com/mozilla/Fira) (Medium and SemiBold) by The Mozilla Foundation and
-Telefonica S.A., and [Atkinson Hyperlegible](https://www.brailleinstitute.org/freefont/) by the
-Braille Institute of America. Nunito, Vollkorn and Bitter are static weights cut from upstream's
-variable fonts.
-
 The debug console's copy, clear and close marks and the skin picker's settings mark are from
 [Open Iconic](https://github.com/iconic/open-iconic) by Waybury, licensed under the MIT License.
-The fonts and the icons ship inside the bundled LibKa0s payload, each with its license or terms
-beside it.
+The icons ship inside the bundled LibKa0s payload, with their license beside them.

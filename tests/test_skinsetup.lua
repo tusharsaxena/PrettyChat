@@ -102,7 +102,7 @@ test("Skin seam: the eight skin keys default to Ka0s Default, as skipRender Skin
     t.eq(d.ignoreFonts, false, "and skins the fonts")
     t.eq(d.font, "")
     t.eq(d.texture, "")
-    t.eq(d.outline, "all", "D-06: All text")
+    t.eq(d.outline, "hud", "D-10: HUD text only")
     t.eq(d.pickerSeen, false, "O3: the first-run picker shows on every profile")
     for _, path in ipairs(SKIN_PATHS) do
         local row = NS.Schema.FindByPath(path)
@@ -309,6 +309,9 @@ test("Skin seam: the degraded FontFlags and HudFontSize answer real values, neve
     local S = inst.NS.Skin
     t.eq(S.FontFlags("THICKOUTLINE"), "THICKOUTLINE", "a picked flag answers as stored")
     t.eq(S.FontFlags(""), "", "a picked none answers as stored")
+    t.eq(S.FontFlags(nil), "OUTLINE", "the HUD under the default, HUD only (D-10)")
+    t.eq(S.FontFlags(nil, "window"), "", "window text under the default, HUD only (D-10)")
+    inst.NS.Schema.Set("skin.outline", "all")
     t.eq(S.FontFlags(S.FROM_SKIN), "OUTLINE", "From skin under All text")
     t.eq(S.FontFlags(nil), "OUTLINE", "nothing stored under All text")
     t.eq(S.FontFlags(nil, "window"), "OUTLINE", "window text under All text")

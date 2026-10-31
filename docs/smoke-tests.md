@@ -778,20 +778,21 @@ never asked for it, so a player who wants the client's look picks **WoW Default*
   *Rewrite this message*, the Categories footnote, the landing page's `/prettychat is an alias for /pc`)
   still the same `#aaaaaa` gray. Hover a list entry → the title is white and the GLOBALNAME line gray, as
   before. Then the debug console → its log is still JetBrains Mono, monospaced (decision D4), and its
-  chrome wears **Ka0s Default** as LibKa0s v1.79.0 draws it for an addon that registers a skin: the title
-  bar text and the controls in **Oxanium**, not Friz Quadrata. Since LibKa0s v1.81.0 that includes the
+  chrome wears **Ka0s Default** as LibKa0s v1.83.0 draws it for an addon that registers a skin: the title
+  bar text and the controls in **Prototype** with no outline (the Font outline's default is *HUD text
+  only* since v1.83.0), not Friz Quadrata. Since LibKa0s v1.81.0 that includes the
   title bar's `Debug: ON` / `Debug: OFF` label and the **Diagnostics** link (decision D-13 of the
   follow-ups), and the size grip in the bottom-right corner is the client's own art, untinted. That
   face is the expected change (the owner's Ka0s Default), not a fail. **Fail:** any change on a
   settings page; a note in a lighter or bluer gray; a console log in a proportional face; Friz
   Quadrata on the console's title, its toggle label or its Diagnostics link; a tinted grip.
-  Result: pass (owner-marked 2026-10-30)
+  (Re-opened by PC-F01, LibKa0s v1.83.0: the console's chrome loses its outline.) Result:
 - **SKIN-2. The Skin tab (PC-01).** General → **Skin**, the last tab → **Skin source** (*Ka0s skins*,
   EllesmereUI), the nine skins with their swatches under a **Look** heading, **Font and texture** (**Font**
-  and **Texture**, both *Skin's own* in a new profile), **Scope** (**Ignore settings panel** ticked,
+  and **Texture**, both *Skin's default* in a new profile), **Scope** (**Ignore settings panel** ticked,
   **Ignore fonts** not), **Copy to every Ka0s addon…** and the note that skins change every visual element.
   No heading repeats the tab's name. **Fail:** a missing control, a Scope default other than these, or
-  the tab anywhere but last. Result: pass (owner-marked 2026-10-30)
+  the tab anywhere but last. (Re-opened by PC-F01, LibKa0s v1.83.0: the wording.) Result:
 - **SKIN-3. Each skin, live (PC-01, PC-02; follow-ups PC-02).** With the console open, pick each skin in
   turn and then Ka0s Default again → with **no reload**, the console's backdrop, border, title bar,
   buttons, toggle and scroll bar repaint each time, its text stays readable, and the log stays
@@ -834,10 +835,10 @@ never asked for it, so a player who wants the client's look picks **WoW Default*
   **Ignore settings panel** off → the console's chrome and the settings controls read in Fira Sans, the
   console's `Debug: ON` / `Debug: OFF` label and **Diagnostics** link included. Tick **Ignore fonts** →
   they go back to the game's faces live, that label and link included, the colors stay WoW Forever's,
-  and the console log is still monospaced. Untick it. Pick a **Font** of your own → the skinned text takes it live; *Skin's own* puts
+  and the console log is still monospaced. Untick it. Pick a **Font** of your own → the skinned text takes it live; *Skin's default* puts
   it back. Pick a **Texture** → nothing of PrettyChat's changes (it draws no bars) and nothing errors.
   **Fail:** a face that does not follow, Ignore fonts losing to the Font override, or an error from the
-  texture. Result: pass (owner-marked 2026-10-30)
+  texture. (Re-opened by PC-F01, LibKa0s v1.83.0: the wording.) Result:
 - **SKIN-9. Profiles (PC-01, PC-04).** Pick **Ember** on `Default`. On the Profiles page create a
   profile `Skins` and switch to it → the console and (panel skinned) the pages go to Ka0s Default live,
   and the first-run picker appears (a new profile has not seen it); close it. Switch back to `Default` →
@@ -887,7 +888,7 @@ never asked for it, so a player who wants the client's look picks **WoW Default*
   shows Obsidian. `/pc get skin.skin` → `obsidian`. `/pc set skin.skin nope` → `Invalid value for skin.skin` and the allowed keys (`ka0s, obsidian,
   azeroth, glass, contrast, ember, wow, midnight, forever`), nothing changes. `/pc list category` → the
   nine categories, no `skin`; `/pc list General` → the eight `skin.*` rows after the Master controls rows
-  (`skin.outline = all` among them).
+  (`skin.outline = hud` among them).
   `/pc reset skin.skin` → `skin.skin = ka0s`, Ka0s Default. **Fail:** a write that does not repaint, a `skin`
   message category, or an invalid skin accepted. (Re-opened by PC-01 of
   Ka0sAddonsCommonTasks `docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK/`, 2026-10-30: eight skin rows; it passed with seven on
@@ -909,12 +910,12 @@ on the branch, with **Ignore settings panel** unticked on the Skin tab so the se
 skin, unless a check says otherwise.
 
 - **SKIN-19. The Font outline setting (PC-01, ruling D-06).** On the Skin tab, under **Font** and
-  **Texture** and their **Reset font** / **Reset texture** row, **Font outline** reads *All text* on a
-  fresh profile. With it on *All text*, the settings pages' labels and the skin picker's text are
-  drawn outlined. Pick *HUD text only* → those window texts lose the outline at once (PrettyChat has no
-  HUD text); pick *Off* → still none. `/reload` → the choice is kept. `/pc get skin.outline` names it;
+  **Texture** and their **Reset font** / **Reset texture** row, **Font outline** reads *HUD text only* on a
+  fresh profile (the default since LibKa0s v1.83.0; a profile that stored *All text* keeps it), and the
+  settings pages' labels and the skin picker's text are drawn with no outline (PrettyChat has no HUD
+  text). Pick *All text* → those window texts take the outline at once; pick *Off* → none. `/reload` → the choice is kept. `/pc get skin.outline` names it;
   `/pc set skin.outline thick` is refused and changes nothing; `/pc set skin.outline all` puts the
-  outline back live. Switch to a fresh profile → *All text*; switch back → your choice. Tick **Ignore
+  outline back live. Switch to a fresh profile → *HUD text only*; switch back → your choice. Tick **Ignore
   fonts** → the dropdown grays out. **Fail:** a choice that does not apply live, does not survive a
   reload or a profile switch, or an outline that stays under *Off*. Result:
 - **SKIN-20. From skin, and nothing of PrettyChat's to store (PC-01, ruling D-07).** PrettyChat has no
@@ -934,14 +935,16 @@ skin, unless a check says otherwise.
   outline** on *All text*: the debug console's title (`Ka0s Pretty Chat`) and its copy window's title fit
   their title bars; the skin picker's owner line, dropdown text and buttons fit; on the Skin tab every
   label, dropdown value and button (Reset font, Reset texture, Copy to every Ka0s addon) reads in full;
-  Ka0s Default draws Prototype, Obsidian Expressway and WoW Forever Fira Sans Medium. Text in each skin is
+  Ka0s Default draws Prototype, Obsidian Expressway, WoW Forever Fira Sans Medium, WoW Midnight Segoe UI
+  Semibold, Azeroth Open Sans Semibold, Ember Emblem, High Contrast Doris PP, Glass Avant Garde and WoW
+  Default Ka0s Friz Quadrata TT (visibly unlike Prototype; LibKa0s v1.83.0). Text in each skin is
   about as wide as Ka0s Default's. **Fail:** a clipped or ellipsized label, or text in one skin visibly
   wider than the others. Result:
 - **SKIN-23. The v1.82.0 Skin tab and a clean load (PC-01).** `/reload` → no Lua error naming a file
   under `libs/LibKa0s/`. On the Skin tab: **Reset font** and **Reset texture** sit side by side under the
-  dropdowns, each grayed while its half is the skin's own; the Scope check boxes line up with the
+  dropdowns, each grayed while its half is the skin's default; the Scope check boxes line up with the
   dropdowns above; **Copy to every Ka0s addon** sits under its own **Other Ka0s addons** heading. Set a
-  font override, then pick a skin with a different look → the override resets to *Skin's own*; re-pick
+  font override, then pick a skin with a different look → the override resets to *Skin's default*; re-pick
   the same skin → an override you set again stays. The console's copy, clear and close marks and the
   picker's settings mark still draw (the icon prune). **Fail:** an error, a misplaced control, an
   override that survives a change of look, or a blank mark. Result:
@@ -1017,3 +1020,8 @@ passed: SLASH-3, PANEL-7 and SKIN-1 to SKIN-18, each recorded on its `Result:` l
 Pending from the skin fonts and feedback run (Ka0sAddonsCommonTasks
 `docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK/`, PC-01, LibKa0s v1.82.0): SLASH-1, SLASH-3 and SKIN-16
 (re-opened, their `Result:` lines empty again) and the new SKIN-19 to SKIN-23.
+
+Pending from the font pickers and skin faces run (Ka0sAddonsCommonTasks
+`docs/2026-10-31-FONT_PICKERS_AND_SKIN_FACES/`, PC-F01, LibKa0s v1.83.0): SKIN-1, SKIN-2 and SKIN-8
+(re-opened). SKIN-16, SKIN-19, SKIN-22 and SKIN-23 stay open and now state v1.83.0's faces, "Skin's
+default" and the HUD text only default.

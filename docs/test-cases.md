@@ -674,9 +674,11 @@ Total.
 - Skin seam: the seam publishes the same NS members on both paths
 - Skin seam: each host-copy skin token is the live library's Ka0s Default value
 
-### test_skin_outline.lua (9)
+### test_skin_outline.lua (11)
 
-- Skin outline: a fresh profile stores All text, the library's default
+- Skin outline: a fresh profile stores HUD text only, the library's default
+- Skin outline: the seam's own default is the library's, with no profile store
+- Skin outline: a stored All text stays, never migrated to the new default
 - Skin outline: the schema row is a skipRender Skin-tab row with the library's three modes
 - Skin outline: the write seam stores media.outline, and leaves it alone when it is nil
 - Skin outline: another addon's copy reaches the store through WriteChoice
@@ -811,7 +813,7 @@ Total.
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
 | test_skinsetup.lua | 19 |
-| test_skin_outline.lua | 9 |
+| test_skin_outline.lua | 11 |
 | test_skin_surfaces.lua | 10 |
 | test_skin_picker.lua | 14 |
 | test_skin_verb.lua | 6 |
@@ -822,4 +824,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **648** |
+| **Total** | **650** |
