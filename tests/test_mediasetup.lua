@@ -132,6 +132,42 @@ test("MediaSetup: the vendored face is on disk where the seam says it is", funct
     if fh then fh:close() end
 end)
 
+-- ── a LibSharedMedia that arrives after this addon ─────────────────────────
+
+local function fakeLSM(instance)
+    local LSM = instance.env.LibStub:NewLibrary("LibSharedMedia-3.0", 1)
+    LSM.held = {}
+    function LSM:Register(kind, key, path) self.held[kind .. "/" .. key] = path; return true end
+    function LSM:IsValid(kind, key) return self.held[kind .. "/" .. key] ~= nil end
+    return LSM
+end
+
+test("MediaSetup: OnEnable registers the Ka0s faces with an LSM that loaded after this file",
+function()
+    -- red under: only the file-load call. PrettyChat vendors no LSM, so at that call an addon
+    -- that embeds it and loads later is not there yet, and nothing else would ever register.
+    local late = ctx.loadAddon()
+    local LSM = fakeLSM(late)
+    t.nilv(LSM.held["font/Ka0s Prototype"])
+    late.addon:OnEnable()
+    t.truthy(LSM.held["font/Ka0s Prototype"] ~= nil, "OnEnable did not offer the Ka0s faces")
+end)
+
+test("MediaSetup: a key LSM already holds is not offered again", function()
+    -- red under: a repeat that overwrites another copy's path, or reports the file as invalid.
+    local late = ctx.loadAddon()
+    local LSM = fakeLSM(late)
+    LSM.held["font/Ka0s Prototype"] = "held"
+    late.NS.RegisterMedia()
+    t.eq(LSM.held["font/Ka0s Prototype"], "held")
+end)
+
+test("MediaSetup: with no library NS.RegisterMedia does nothing and raises nothing", function()
+    local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Media.lua" } })
+    bare.NS.RegisterMedia()
+    t.truthy(true)
+end)
+
 -- ── degraded ────────────────────────────────────────────────────────────────
 
 test("MediaSetup: with no library there is no art and no face, and that is not an error",

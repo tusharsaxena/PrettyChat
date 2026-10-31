@@ -90,10 +90,22 @@ end
 -- too — deferring opens a window in which a default names a face LSM has never
 -- heard of.
 --
--- PrettyChat does not vendor LibSharedMedia-3.0, so this call is a documented
--- no-op here: `lib.RegisterLSM` opens by resolving LSM optionally and returns 0, 0
--- when it is absent. It is still written, because it costs nothing, because it
--- starts working the day LSM arrives in this install, and because the alternative
--- is every consumer deciding separately whether registration is worth it — which
--- is how six addons ended up with six answers about one font.
-if Media then Media.RegisterLSM(addonName) end
+-- PrettyChat does not vendor LibSharedMedia-3.0, so that premise does not hold here:
+-- `lib.RegisterLSM` opens by resolving LSM optionally and returns 0, 0 when it is
+-- absent, and LSM may reach this client through an addon that loads AFTER this file.
+-- Nothing in the library retries (Skin.lua's and OptionsScroll.lua's subscriptions
+-- only hear LATER registrations), so without a second call an addon that embeds LSM
+-- and loads after this one would leave the Skin tab's pickers without the Ka0s faces
+-- and every skin face unresolved. PrettyChat:OnEnable makes that second call: by then
+-- every enabled non-LoD addon has loaded, and nothing has painted yet. The call is
+-- safe to repeat: a key LSM already holds is never offered again. An LSM that first
+-- arrives with a load-on-demand addon after login is still not caught.
+--
+-- With no LSM anywhere the call stays a no-op, and each picker lists its leading row.
+
+--- Offer the library's media to LibSharedMedia, if it has arrived.
+function NS.RegisterMedia()
+    if Media then Media.RegisterLSM(addonName) end
+end
+
+NS.RegisterMedia()

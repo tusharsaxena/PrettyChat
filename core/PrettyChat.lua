@@ -219,6 +219,10 @@ function PrettyChat:SnapshotOriginals()
 end
 
 function PrettyChat:OnEnable()
+    -- LibSharedMedia is not vendored here, so an addon that embeds it may have loaded after
+    -- core/MediaSetup.lua's file-load call. First, so the first-run picker below sees the faces.
+    NS.RegisterMedia()
+
     self:SnapshotOriginals()
 
     -- THE LATCH, ARMED FROM THE STORED PATH (slash-commands-§7). `disabled` is the

@@ -69,8 +69,9 @@ NS.PREFIX    = Const.PREFIX
 --
 -- LibSharedMedia registration is no longer this file's business either: the library
 -- registers every face it ships, from core/MediaSetup.lua's RegisterLSM call. PrettyChat
--- does not vendor LibSharedMedia-3.0, so that call is a no-op in this install — the
--- registration happens the day LSM arrives, and nothing here has to decide.
+-- does not vendor LibSharedMedia-3.0, so that call does nothing until some other addon
+-- brings LSM (PrettyChat:OnEnable repeats it for one that loads later), and nothing here
+-- has to decide.
 Const.FONT_MONO_NAME = "JetBrains Mono"
 Const.FONT_MONO      = NS.MediaFont and NS.MediaFont(Const.FONT_MONO_NAME) or _G.STANDARD_TEXT_FONT
 

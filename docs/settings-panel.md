@@ -164,7 +164,8 @@ addon…** under its own **Other Ka0s addons** heading, and the library's note. 
 draws a different look resets the font and texture overrides (LibKa0s v1.82.0). **Font** and **Texture** are
 the library's `Ka0sMedia_*` pickers (LibKa0s v1.83.0, options-ui-§23): each entry draws in its face or
 beside its bar, the leading row too, and the descriptor's `getLSM` feeds them. LibSharedMedia is not
-vendored here, so with no other addon loading it they list the leading row alone. They are this
+vendored here, so with no other addon loading it they list the leading row alone; when another addon
+brings it, the Ka0s faces are registered at file load or, if that addon loaded later, at `OnEnable`. They are this
 addon's only media pickers. PrettyChat has no bars, so a texture override has nothing of this
 addon's to draw on. On the library-absent path the stub's entry draws nothing.
 

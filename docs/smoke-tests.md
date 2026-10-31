@@ -952,7 +952,9 @@ skin, unless a check says otherwise.
   (new font files) with an addon that carries LibSharedMedia enabled, then open General → **Skin**.
   Open **Font** → the leading "Skin's default (<key>)" row and every entry draw in their own face, the
   Ka0s faces among them, on the first open. Open **Texture** → the same, each entry beside its bar. Pick
-  one of each → the closed row shows it, the font applies live, and a `/reload` keeps both. With no
+  one of each → the closed row shows it, the font applies live, and a `/reload` keeps both. Repeat with
+  PrettyChat and one non-Ka0s addon that embeds LibSharedMedia and loads after it (for example
+  WeakAuras), no other Ka0s addon → the Ka0s faces are still in **Font**, and a skin's face draws. With no
   addon carrying LibSharedMedia, each list holds the leading row alone and nothing errors. With the
   settings panel skinned, the pull-outs wear the skin. **Fail:** a list of plain names, a blank row, a
   face that only appears on a second open, or an error. Result:

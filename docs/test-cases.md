@@ -139,7 +139,7 @@ Total.
 - the combat watcher, the one frame the addon creates, is a T0 frame
 - docs/ARCHITECTURE.md carries the Frame layering section and points at the table
 
-### test_mediasetup.lua (8)
+### test_mediasetup.lua (11)
 
 - MediaSetup: NS.Icon answers the vendored path, EXTENSIONLESS
 - MediaSetup: an icon the library does not ship answers nil
@@ -148,6 +148,9 @@ Total.
 - MediaSetup: every mark the console title bar reaches for is one the library ships
 - MediaSetup: every icon CLAUDE.md declares has a file in the vendored copy, and nothing else ships
 - MediaSetup: the vendored face is on disk where the seam says it is
+- MediaSetup: OnEnable registers the Ka0s faces with an LSM that loaded after this file
+- MediaSetup: a key LSM already holds is not offered again
+- MediaSetup: with no library NS.RegisterMedia does nothing and raises nothing
 - MediaSetup: with no library there is no art and no face, and that is not an error
 
 ### test_util.lua (8)
@@ -796,7 +799,7 @@ Total.
 | test_envsetup.lua | 9 |
 | test_constants.lua | 8 |
 | test_layers.lua | 4 |
-| test_mediasetup.lua | 8 |
+| test_mediasetup.lua | 11 |
 | test_util.lua | 8 |
 | test_locale.lua | 12 |
 | test_defaults.lua | 18 |
@@ -827,4 +830,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **653** |
+| **Total** | **656** |
