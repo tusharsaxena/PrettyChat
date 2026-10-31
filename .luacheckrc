@@ -146,7 +146,7 @@ files["settings/Panel.lua"] = {
 }
 
 -- AceConsole-3.0 invokes the handler registered by `RegisterChatCommand` on the addon object --
--- core/PrettyChat.lua:70 registers it BY NAME, `"OnSlashCommand"`, so the library looks the method
+-- core/PrettyChat.lua:75 registers it BY NAME, `"OnSlashCommand"`, so the library looks the method
 -- up on the addon and calls it as `self[name](self, input)`. The receiver arrives whether the body
 -- reads it or not; this one hands `input` straight to the LibKa0s-Slash-1.0 instance in this
 -- file's `Sl` upvalue. A dot-defined function would land the addon table in `input`.

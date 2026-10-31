@@ -246,7 +246,7 @@ end
 --     (slash-commands-§4/§5), so one key would have to carry `|c…|r` escapes
 --     inside translatable text, and keying the halves separately re-creates
 --     exactly the fragments PC-R-06 removed.
---   * SHARED STEM — core/CoreSetup.lua:29-34 makes the degraded-install sentence
+--   * SHARED STEM — core/CoreSetup.lua:35-36 makes the degraded-install sentence
 --     one stem plus a per-site tail, so a degraded install says the same thing
 --     about WHY at five sites. Five whole-sentence keys would be five copies of
 --     the stem and would end that.
