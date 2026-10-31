@@ -378,8 +378,11 @@ test("Options cannot express the L trap either — its own, different tripwire",
     -- LibKa0s v1.62.0 moved the id surface out of OptionsWidgets.lua into OptionsIds.lua and
     -- OptionsIdList.lua, and the page registry out of Options.lua into OptionsRegistry.lua, so the
     -- check follows the code it already covered to its new files.
+    -- v1.84.0 peeled the flow engine, the tabbed page and the id suggestions out, so they join it.
     for _, rel in ipairs({ "libs/LibKa0s/Options.lua", "libs/LibKa0s/OptionsWidgets.lua",
-                           "libs/LibKa0s/OptionsIds.lua", "libs/LibKa0s/OptionsIdList.lua",
+                           "libs/LibKa0s/OptionsFlow.lua", "libs/LibKa0s/OptionsTabbed.lua",
+                           "libs/LibKa0s/OptionsIds.lua", "libs/LibKa0s/OptionsIdSuggest.lua",
+                           "libs/LibKa0s/OptionsIdList.lua",
                            "libs/LibKa0s/OptionsRegistry.lua",
                            "libs/LibKa0s/OptionsScroll.lua" }) do
         local src = readFile(rel)

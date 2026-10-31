@@ -26,10 +26,10 @@ works.
 | TEST-1 – 6 | Test preview | `/pc test` and the Test button, the filters |
 | RESET-1 – 13 | Resets | Row Reset, the Defaults buttons, `/pc reset <path>`, reset all, the one log line |
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
-| DIAG-1 – 27 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
+| DIAG-1 – 28 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | RV-75 – 77 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position |
-| SKIN-1 – 24 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers |
+| SKIN-1 – 26 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
 ## Before you start
@@ -707,6 +707,9 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   console closed, type `/pc debug` in chat → the console opens, and the confirmation still draws on top
   of it wherever the two overlap. Click **No** → nothing is reset. **Fail:** the console covers the
   confirmation when it opens (the console's show did not re-raise the shown StaticPopup). Result: pass (owner, 2026-10-24)
+- **DIAG-28. The report names Charts (LibKa0s v1.84.0).** `/pc diagnostics` → the identity header's
+  library list carries `Charts` between `Toast` and `Media`, and no line raises an error. **Fail:** the
+  name is missing, or the report stops early. Result:
 
 ## DEGRADED
 
@@ -968,6 +971,12 @@ skin, unless a check says otherwise.
   Skin tab shows *Off*. `/pc reset skin.outline` → back to the default. On the Categories page the tree
   and its editor still wear the skin. **Fail:** a missing row, a row out of that order, an `unknown`
   path, a tree left stock, or an error. Result:
+- **SKIN-26. The moved library files (LibKa0s v1.84.0).** `/reload` → no Lua error naming a
+  `libs/LibKa0s` file. General → **Skin** → **Skin** lists all nine skins, and picking one repaints the
+  console and the panel. **Font**, **Texture** and **Font outline** still draw under the dropdown. A
+  General tab click and a Categories page draw as before. On a new profile the first-run picker shows
+  its rows. **Fail:** a missing skin, a missing row or an error. This release moved these files without
+  changing them, so anything different is a bug. Result:
 
 ## Non-English client
 
