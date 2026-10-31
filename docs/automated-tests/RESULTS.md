@@ -32,6 +32,7 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 
 | Run | Commit | Tree | Version | Lint w/e | Files | Tests | Perf | NLOC | Funcs | Avg NLOC | Avg CCN | Max CCN | CCN warn | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [`20261031-211742`](20261031-211742/) | `b77224b` | clean | 1.7.0 | 0/0 | 67 | 656/1/657 | skip | 59462 | 1534 | 7.3 | 2.1 | 15 | 0 | **green** |
 | [`20261031-202238`](20261031-202238/) | `d6ac61e` | clean | 1.7.0 | 0/0 | 65 | 656/1/657 | skip | 59469 | 1538 | 7.2 | 2.1 | 15 | 0 | **green** |
 | [`20261009-191724`](20261009-191724/) | `3c40352` | clean | 1.6.0 → 1.7.0 | 0/0 | 56 | 574/1/575 | skip | 57462 | 1319 | 7.3 | 2.1 | 15 | 0 | **green** |
 | [`20260927-031723`](20260927-031723/) | `a663bc6` | clean | 1.6.0 | 0/0 | 53 | 518/0/518 | skip | 56489 | 1135 | 6.8 | 1.9 | 14 | 0 | **green** |
@@ -54,17 +55,17 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 ## Test suite
 
 **657 cases** — 656 passed, 0 failed, 1 skipped. The generated inventory
-[`20261031-202238/test-cases.md`](20261031-202238/test-cases.md) is the authority on which cases existed at this run;
+[`20261031-211742/test-cases.md`](20261031-211742/test-cases.md) is the authority on which cases existed at this run;
 `docs/test-cases.md` is that same list at HEAD.
 
-Moved **575 → 657** since the previous run.
+Unchanged from the previous run at 657 cases.
 
 **1 case(s) reported a `skip`.** A skip is counted in the total and never in `passed`, and at
 the release gate it is NOT EVALUATED rather than passed (`automated-tests-§3`).
 
 ## Lint
 
-**0 warnings / 0 errors over 65 files** (`luacheck .`).
+**0 warnings / 0 errors over 67 files** (`luacheck .`).
 
 Read that figure with its scope attached: `.luacheckrc` excludes 6 path(s) from it — `Libs`, `libs`, `GlobalStrings`, `docs/audits`, `docs/reviews`, `tests/_kit/` —
 so nothing under them is in the count above. A `0/0` that never moves is partly a statement about
@@ -81,8 +82,8 @@ combat path for one to measure, not because the question was never asked.
 
 ## Complexity watch list
 
-Current as of [`20261031-202238`](20261031-202238/) — **this run's measurement, not its diff.** Max CCN **15** across 1538
-functions, **0** of them warned on; 1 file(s) in the 1000–1500 band and 0 over the 1500 cap
+Current as of [`20261031-211742`](20261031-211742/) — **this run's measurement, not its diff.** Max CCN **15** across 1534
+functions, **0** of them warned on; 0 file(s) in the 1000–1500 band and 0 over the 1500 cap
 (`layout-§1`).
 
 Every row below is generated from this run's own `lizard` output. **The `Disposition` column is
@@ -101,7 +102,8 @@ None.
 
 | Band | File | LOC | Disposition |
 |---|---|---|---|
-| 1000–1500 (on notice) | `settings/Schema.lua` | 1225 | **Peeled**, 2026-10-31 (`FX-PC-SIZE`): the re-check at 1200 fired at `20261031-202238` (1113 → 1225), so the degradation stub moved to `settings/SchemaStub.lua` and the `General ▸ Skin` rows to `settings/SchemaSkin.lua` by pure moves. The file is 903 lines, out of the band, and this row drops at the next recorded run. |
+
+None.
 
 Left out as generated non-shipping data (`layout-§1`'s second carve-out, declared in
 `Kit.layoutCap.exempt` in `tests/run.lua`, the set the cap gate reads): `GlobalStrings/GlobalStrings.lua`.
