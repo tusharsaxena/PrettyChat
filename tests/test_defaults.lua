@@ -306,7 +306,7 @@ end)
 -- its default lives in defaults/Profile.lua's NS.GlobalDefaults rather than in NS.Defaults,
 -- which is exactly why the defaults table cannot imply it either.
 local MASTER_ROWS = 4
--- The Skin tab's eight skin.* rows (settings/Schema.lua, PC-01): source, skin, the Scope's two
+-- The Skin tab's eight skin.* rows (settings/SchemaSkin.lua, PC-01): source, skin, the Scope's two
 -- exceptions, the font and texture overrides, the font outline (LibKa0s v1.82.0) and pickerSeen. Written out for the reason the block
 -- above is: their defaults live in defaults/Profile.lua's profile.skin, not in NS.Defaults.
 local SKIN_ROWS = 8

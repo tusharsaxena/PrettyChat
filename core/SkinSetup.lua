@@ -17,7 +17,7 @@ local addonName, NS = ...
 --                           while the Scope's "Ignore settings panel" is ticked, so the notes stay
 --                           in the client's look with the rest of the page.
 --   NS.SKIN_SOURCE_OPTIONS  the source row's values, and NS.SKIN_OPTIONS the skin row's (every
---   NS.SKIN_OPTIONS         registered skin, in the library's order). settings/Schema.lua reads both.
+--   NS.SKIN_OPTIONS         registered skin, in the library's order). settings/SchemaSkin.lua reads both.
 --   NS.SkinChoice()         the stored (source, skin) pair, read through NS.Schema.Get; "ka0s",
 --                           "ka0s" before AceDB has built the profile store.
 --   NS.WriteSkinChoice(s,k,i,m) THE WRITE SEAM (architecture-§5): every half through NS.Schema.Set,
@@ -55,7 +55,8 @@ local addonName, NS = ...
 -- ── WHERE IT LOADS ───────────────────────────────────────────────────────────────────────────
 --
 -- After core/CoreSetup.lua (NS.Print, which the reload line goes through at call time) and before
--- settings/Schema.lua, which reads NS.SKIN_OPTIONS and NS.SKIN_SOURCE_OPTIONS at file load.
+-- settings/Schema.lua, whose load runs settings/SchemaSkin.lua's Schema.InstallSkinRows, which
+-- reads NS.SKIN_OPTIONS and NS.SKIN_SOURCE_OPTIONS.
 -- Registered at FILE LOAD (skinning-§1), so the EllesmereUI provider can offer the owner before
 -- EllesmereUI dispatches its skins. RegisterOwner calls `get` once, before AceDB exists, and it
 -- answers Ka0s Default; the profile's choice is applied by NS.ApplySkinChoice right after AceDB:New

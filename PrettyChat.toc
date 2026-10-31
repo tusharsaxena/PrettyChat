@@ -65,8 +65,8 @@ core\CoreSetup.lua
 # core\SkinSetup.lua loads AFTER core\CoreSetup.lua and BEFORE settings\Schema.lua, and the position
 # is load-bearing: it registers the LibKa0s-Skin-1.0 owner at file load (skinning-§1, so the
 # EllesmereUI provider can offer it before EllesmereUI dispatches its skins) and publishes
-# NS.SKIN_OPTIONS and NS.SKIN_SOURCE_OPTIONS, which settings\Schema.lua's skin.* rows read at file
-# load. NS.Print, NS.Schema and the profile store are read at call time only.
+# NS.SKIN_OPTIONS and NS.SKIN_SOURCE_OPTIONS, which settings\SchemaSkin.lua's skin.* rows read
+# while settings\Schema.lua loads. NS.Print, NS.Schema and the profile store are read at call time only.
 core\SkinSetup.lua
 # core\DebugLogSetup.lua loads AFTER core\Constants.lua and the position is load-bearing: its
 # file-scope lib:New descriptor reads NS.Const.FONT_MONO. NS.State and NS.Print are read at call
