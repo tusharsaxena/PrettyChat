@@ -213,7 +213,7 @@ console and its copy window, the Skin tab and the first-run picker. What is the 
 - **The choice.** Eight profile keys under `skin.*`: `source`, `skin`, the Scope's `ignorePanel`
   (**Ignore settings panel**, on in a new profile, so the settings pages stay the client's) and
   `ignoreFonts`, the `font` and `texture` overrides, the **Font outline** `outline` (LibKa0s v1.82.0,
-  ruling D-06 of `docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK/`: `all`, `hud`, the default since v1.83.0, or `off`,
+  ruling D-06 of Ka0sAddonsCommonTasks `docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK/`: `all`, `hud`, the default since v1.83.0, or `off`,
   stored through the same write seam as the overrides and applied with `Skin:SetOutline`), and
   `pickerSeen`. Each is a `skipRender` schema
   row on General's Skin tab, carrying `noReapply` so a skin write skips the format re-apply
@@ -237,8 +237,11 @@ console and its copy window, the Skin tab and the first-run picker. What is the 
   the addon stands up and the player is out of combat; a login in combat skips it until the next.
   No `onPreview` (no window or test mode), so the picker has no eye and only the `settings` icon is
   declared. The library titles it *Choose a skin*, with the owner label on its own line above the
-  dropdown (v1.81.0). Its `onClose` is the one write of `pickerSeen`; `NS.HideSkinPicker` (the stand-down, a
-  profile event) takes it down without writing it.
+  dropdown (v1.81.0), and under it the Skin tab's rows (v1.83.0): Font, Texture, Font outline and the
+  Scope, which preview and are written only by Apply or the gear. Its `onClose` is the one write of
+  `pickerSeen`; `NS.HideSkinPicker` (the stand-down, a profile event) takes it down without writing it.
+  `/pc skin` (`NS.RunSkinVerb`, the library's reserved verb `O.SkinVerb`, ruling D-16) opens the same
+  window whatever `pickerSeen` says.
 - **No HUD.** Nothing here has a bar, icon, glow or HUD style row, so there is no `fromSkin`
   companion and no one-time reset to the skin (owner ruling O2 has nothing to reset; PC-03 is a
   recorded exception of the rollout). For the same reason v1.81.0's HUD rulings (Ignore fonts
@@ -415,9 +418,9 @@ reach are reasoned in [global-strings.md](./global-strings.md#the-cap-exemption)
 turns the suite red, and so does a row for a file that has fallen back under the cap or been
 deleted. The figure in that column is a measurement, not a claim about today.
 
-**The 1000-1500 band is on notice, not in breach**: one file is in it on 2026-09-27,
-`settings/Schema.lua` (1087, new to the band: 998 at the v1.56.0 re-vendor, grown by the
-remediation items that followed it). `tests/test_panel.lua` (1125; 1053 on 2026-09-23) left it on
+**The 1000-1500 band is on notice, not in breach**: one file is in it on 2026-10-31,
+`settings/Schema.lua` (1225; 1087 on 2026-09-27 and 998 at the v1.56.0 re-vendor, grown by the
+remediation items and the skin rows that followed it). `tests/test_panel.lua` (1125; 1053 on 2026-09-23) left it on
 2026-09-27, one release run short of anti-pattern #53's limit: the Categories page's cases moved to
 `tests/test_panel_categories.lua` (653) and it fell to 480, with the helpers both call in
 `tests/panel_fixture.lua`. The 26
@@ -431,7 +434,7 @@ Vendored under `libs/` (the BigWigs packager pulls nothing — no `externals`): 
 
 Ten of LibKa0s's nineteen majors are adopted: **Core**, **Env**, **Media**, **DebugLog**, **Slash**, **Options**, **Launcher**, **Lifecycle** (`core/LifecycleSetup.lua`, the stand-down latch of `slash-commands-§7`), **Schema** (`settings/Schema.lua`, the settings schema's runtime, since v1.55.0) and **Skin** (`core/SkinSetup.lua`, the look of every surface this addon owns, since v1.80.0; [§ Skins](#skins)). **Compat** and **Bus** are declined as structural misfits: the addon reads no spell, specialization or secret value, and it publishes no message (`## Message Bus`). Each decline is a `state:will-not-do` issue, recorded in `docs/revendor/2026-09-23-v1.55.0/`. **Perf is declined** under a recorded `performance-§12` no-combat-path exemption — the register row above, with its sweep in [performance-sweep.md](./performance-sweep.md) and its reasoning at [LIBKA0S-12](https://github.com/tusharsaxena/PrettyChat/issues/10). **Item**, **Pool**, **Widgets**, **Glow**, **Sim** and **Toast** are not consumed by this addon's own code: nothing PrettyChat authors `LibStub`s any of the six (Glow and Sim arrived at v1.75.0 and Toast at v1.79.0, and adoption of none is required of any addon; this one has no frame to glow, nothing to simulate and no notice to raise). Vendored LibKa0s files do resolve some of them internally (as of v1.75.0, `DebugLog.lua` and `SimPanel.lua` reach Widgets, `OptionsNav.lua`, `OptionsTabs.lua` and `OptionsWidgets.lua` reach Pool, and `OptionsIds.lua` and `OptionsIdList.lua` reach Item), which is the library's business, not this addon's. Every LibKa0s file is vendored, used or not, because the folder is copied whole and never file by file, except `media/icons/`, which is pruned to the `LibKa0s icons:` declaration under the root [CLAUDE.md](../CLAUDE.md)'s provenance line (`library-stack-§7`; here `clear, close, copy, settings`: the debug console's three marks and the first-run skin picker's gear; no `eye`, since the addon has no window or test mode to preview a skin in).
 
-The debug console's log font is fixed monospace on purpose (JetBrains Mono, reaching `LibKa0s-DebugLog-1.0` as `Const.FONT_MONO`): aligned log output reads the same whatever face a player prefers elsewhere. The skin does not move it (decision D4 of the skinning rollout): the descriptor's `font` reaches the log and the line count, and every skin's chrome around them (title, buttons, toggle) takes the skin's own face. The Skin tab's **Font** override is the one media picker here, and it too leaves the log monospaced.
+The debug console's log font is fixed monospace on purpose (JetBrains Mono, reaching `LibKa0s-DebugLog-1.0` as `Const.FONT_MONO`): aligned log output reads the same whatever face a player prefers elsewhere. The skin does not move it (decision D4 of the skinning rollout): the descriptor's `font` reaches the log and the line count, and every skin's chrome around them (title, buttons, toggle) takes the skin's own face. The **Font** and **Texture** overrides are the only media pickers here, on the Skin tab and in the skin picker, and the font override too leaves the log monospaced.
 
 The shared test kit is vendored separately to `tests/_kit/` — **never** to `libs/`, which is the ship payload.
 

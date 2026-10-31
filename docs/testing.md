@@ -199,6 +199,15 @@ that earns it — and say in a comment why the code is correct as written.
 
 ## Test-case inventory & badge sync (`testing-§5`)
 
+### `tests/test_glyphs.lua` — the display-glyph guard
+
+This suite runs the kit's `glyphs.lua` guard over this addon's own Lua (ruling D-19 of Ka0sAddonsCommonTasks
+`docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK/`, Addendum 07). Every string literal in a tracked `.lua` file
+outside `libs/`, `tests/` and `tools/` may carry only characters every shipped skin face draws, because
+a character one face lacks is a box in that skin alone. A line that is data and is never drawn takes a
+`glyph: data` mark; the only ones here are in the GlobalStrings dump
+([global-strings.md](./global-strings.md)).
+
 ### `tests/test_disabled.lua` — the stand-down conformance suite
 
 `slash-commands-§7` requires every addon in the collection to carry one, and it says why: eleven addons implemented *disabled* as a **draw gate**, and a suite written against a handler's early return cannot tell a draw gate from a stand-down, because an early return is what a draw gate does. So every assertion in this suite is made against the **registration set**, through the kit's recording mock, and never against a handler's return value.
