@@ -6,12 +6,12 @@ Contributor-facing verification guide. (Player-facing docs live in the root [REA
 
 PrettyChat runs on the **shared LibKa0s test kit** (testing-§1), vendored whole to `tests/_kit/` and never edited there. The kit owns the case registry, the assertions, the runner, the `--list` renderer, the sandboxed source loader and the TOC reader; what stays in this repo is the instance factory, the mock extender and the suite list.
 
-It runs under stock Lua 5.1 with no WoW client, loading the vendored library files and then the addon's own sources into a mock WoW environment, and exercises constants, string helpers, locale manifest, defaults data, schema, sample renderer, apply pipeline and override engine, migration runner, addon lifecycle, debug console, diagnostics report, slash dispatcher, settings panel, Profiles page — and the nine adopted LibKa0s seams.
+It runs under stock Lua 5.1 with no WoW client, loading the vendored library files and then the addon's own sources into a mock WoW environment, and exercises constants, string helpers, locale manifest, defaults data, schema, sample renderer, apply pipeline and override engine, migration runner, addon lifecycle, debug console, diagnostics report, slash dispatcher, settings panel, Profiles page — and the ten adopted LibKa0s seams.
 
 ```sh
 lua tests/run.lua          # run every suite (exits non-zero on failure)
 lua tests/run.lua --list   # print the test-case inventory (runs nothing)
-luacheck .                 # static analysis (config in .luacheckrc)
+~/.claude/dev-copilot/bin/ka0s-bounded luacheck .   # static analysis (config in .luacheckrc)
 ```
 
 ## How the harness works
@@ -57,12 +57,12 @@ What the mocks deliberately do *not* model is layout: they answer "which widget,
 
 ## The gate
 
-Both `lua tests/run.lua` and `luacheck .` must be green before any commit. Lint config is `.luacheckrc` (`std=lua51`; excludes `libs/`, `GlobalStrings/`, `tests/_kit/`, `docs/audits`, `docs/reviews`). The suites register named `test(name, fn)` cases; the `Tests` badge in the README badge row shows the pass/total.
+Both `lua tests/run.lua` and `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` must be green before any commit. Lint config is `.luacheckrc` (`std=lua51`; excludes `libs/`, `GlobalStrings/`, `tests/_kit/`, `docs/audits`, `docs/reviews`). The suites register named `test(name, fn)` cases; the `Tests` badge in the README badge row shows the pass/total.
 
-**The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 62 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the ten seam files are inside the set that was actually checked:
+**The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 67 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the ten seam files are inside the set that was actually checked:
 
 ```sh
-luacheck . --formatter plain | tail -1     # and read the file count it reports
+~/.claude/dev-copilot/bin/ka0s-bounded luacheck . --formatter plain | tail -1     # and read the file count it reports
 ```
 
 A warning inside `core/EnvSetup.lua`, `core/MediaSetup.lua`, `core/CoreSetup.lua`, `core/SkinSetup.lua`, `core/DebugLogSetup.lua`, `core/LifecycleSetup.lua`, `core/LauncherSetup.lua`, `settings/Schema.lua`, `settings/OptionsSetup.lua` or `settings/Slash.lua` is an adoption defect. A warning elsewhere is pre-existing host hygiene. Neither statement means anything if the lint never opened the file.
@@ -162,7 +162,7 @@ ratifies one.
 
 ## The no-blanket-suppression gate
 
-`tests/test_lintconfig.lua` guards the thing that makes `luacheck .` worth running: that 0/0 is a
+`tests/test_lintconfig.lua` guards the thing that makes `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` worth running: that 0/0 is a
 statement about the code and not about `.luacheckrc`.
 
 Until `M4c-06` this repo carried `ignore = { "212/self", "212/event", "211/addonName" }` at the top
@@ -242,7 +242,7 @@ There are **two** checkpoints and a suite answers differently at each, so the ta
 
 | Suite | Command | Gates the run and the commit? | Gates the tag? |
 |---|---|---|---|
-| `lint` | `luacheck .` | **yes** | **yes** |
+| `lint` | `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` | **yes** | **yes** |
 | `tests` | `lua tests/run.lua` | **yes** | **yes** |
 | `perf` | `lua tests/perf.lua` | no — recorded only | **yes** |
 | `complexity` | `lizard -l lua -L 1500 -x "./libs/*" -x "./tests/_kit/*" .`, run by the runner over a sanitized shadow of the tree, with a function-count parity check (kit revision 35); never raw | no — recorded only | **yes** (a parity mismatch, `blindFiles` > 0, is `fail` and blocks the tag like a skip; so is a crashed or bounded lizard run since kit revision 41, listed under a separate `crashed` bucket that names the file, alongside `blindFiles`) |

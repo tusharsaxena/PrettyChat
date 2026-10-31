@@ -23,7 +23,7 @@ both columns are named (`automated-tests-§3`).
 
 | Suite | Command | Gates the run and the commit? | Gates the tag? |
 |---|---|---|---|
-| `lint` | `luacheck .` | **yes** | **yes** |
+| `lint` | `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` | **yes** | **yes** |
 | `tests` | `lua tests/run.lua` | **yes** | **yes** |
 | `perf` | `lua tests/perf.lua` | no — recorded only | **yes** |
 | `complexity` | `lizard -l lua -x "./libs/*" -x "./tests/_kit/*" .` | no — recorded only | **yes** |
