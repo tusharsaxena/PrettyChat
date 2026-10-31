@@ -29,8 +29,8 @@ deletions.
 
 - **New:** the `LibKa0s-Skin-1.0` major, at Skin minor 7, with `SkinDefs.lua`, `SkinEUI.lua`,
   `SkinAce.lua` and the three `SkinPaint*.lua` files; `OptionsAppearance.lua`, the Skin tab;
-  `OptionsSkinPicker.lua`, the first-run picker; `WidgetsCopyWindow.lua`; `Toast.lua`; the skin
-  fonts and textures under `media/`.
+  `OptionsSkinPicker.lua`, the first-run picker; `DebugLogWindow.lua`; `WidgetsCopyWindow.lua`;
+  `Toast.lua`; the skin fonts and textures under `media/`.
 - Kit revision **42 -> 44**, with `mock_paint.lua` new.
 - `LibKa0s icons:` gained `settings`, and the README's icon credits moved with it.
 
