@@ -29,7 +29,7 @@ works.
 | DIAG-1 – 28 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | RV-75 – 77 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position |
-| SKIN-1 – 26 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files |
+| SKIN-1 – 27 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
 ## Before you start
@@ -977,6 +977,14 @@ skin, unless a check says otherwise.
   General tab click and a Categories page draw as before. On a new profile the first-run picker shows
   its rows. **Fail:** a missing skin, a missing row or an error. This release moved these files without
   changing them, so anything different is a bug. Result:
+- **SKIN-27. One media picker (LibKa0s v1.84.0, re-cut; the owner's ruling of 2026-11-01).** With an
+  addon that carries LibSharedMedia enabled, open General → **Skin**. Open **Font** → every entry draws
+  in its own face and the pull-out wears the skin. PrettyChat has no border row, so run the border half
+  on **Texture**: every entry draws beside its bar, and the closed row sits level with the rows around
+  it. Pick one of each → the closed row shows it and the list stays open until you pick. Then enable an
+  addon that loads AceGUI-3.0-SharedMediaWidgets and `/reload` → both lists look the same as before.
+  **Fail:** a list of plain names, an unskinned pull-out, a row that changes when that addon is on, a
+  list that closes on its first entry, or an error. Result:
 
 ## Non-English client
 
@@ -1053,4 +1061,4 @@ PC-F01 and PC-F02, LibKa0s v1.83.0) passed: SLASH-1, SLASH-3, SKIN-1, SKIN-2, SK
 SKIN-19 to SKIN-24, each recorded on its `Result:` line as `Owner reported pass, 2026-10-31`.
 
 Pending from the findings remediation (Ka0sAddonsCommonTasks
-`docs/2026-10-31-FINDINGS_REMEDIATION/`, FX-PC-SIZE and FX-PC-DEAD): DEGRADED-11 and SKIN-25.
+`docs/2026-10-31-FINDINGS_REMEDIATION/`, FX-PC-SIZE and FX-PC-DEAD): DEGRADED-11 and SKIN-25, and from its media picker ruling (M3-MEDIA): SKIN-27.

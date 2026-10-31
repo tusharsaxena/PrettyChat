@@ -165,9 +165,10 @@ test("the Options stub carries the whole live surface", function()
         PatchAlwaysShowScrollbar = true,
         -- OptionsCompose 1. Four of the five composers are live-only because this
         -- addon has none of the surfaces they compose: `grep -rn 'type = "color"'
-        -- settings defaults` is empty, and so is `grep -rn 'LSM30_' settings` —
-        -- the schema is bool and string only, with no swatch, no font picker, no
-        -- border and no status bar anywhere in it. MasterControls is the one this
+        -- settings defaults` is empty, and `grep -rn 'Ka0sMedia_' settings` finds
+        -- only a comment — the schema is bool and string only, with no swatch, no
+        -- border and no status bar, and its font and texture rows are drawn by the
+        -- library's Skin tab, never composed here. MasterControls is the one this
         -- addon does call, and it is NOT here: it is in the stub, doing real work,
         -- because settings/Schema.lua composes the General page through it at
         -- load. The five published CONSTANTS go with the four composers, for the

@@ -166,7 +166,7 @@ the library's `Ka0sMedia_*` pickers (LibKa0s v1.83.0, options-ui-§23): each ent
 beside its bar, the leading row too, and the descriptor's `getLSM` feeds them. LibSharedMedia is not
 vendored here, so with no other addon loading it they list the leading row alone; when another addon
 brings it, the Ka0s faces are registered at file load or, if that addon loaded later, at `OnEnable`. They and the
-skin picker's copies of them are this addon's only media pickers. PrettyChat has no bars, so a texture override has nothing of this
+skin picker's copies of them are this addon's only media pickers, and `Ka0sMedia_*` is the only picker the collection uses (LibKa0s v1.84.0): nothing here vendors AceGUI-3.0-SharedMediaWidgets. PrettyChat has no bars, so a texture override has nothing of this
 addon's to draw on. On the library-absent path the stub's entry draws nothing.
 
 **What follows the skin.** Every library surface this addon shows follows the owner with no host
