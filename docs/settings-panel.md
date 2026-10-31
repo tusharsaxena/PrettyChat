@@ -151,14 +151,22 @@ The entry that selects a string *is* its name, which is why the `Heading` each b
 
 The General page's second tab is the library's own (`O.AppearanceTab`, skinning-§3), handed to
 `H.RenderTabbedSchema` through `opts.tabs` in `settings/Panel.lua`'s `GENERAL_OPTS`. Its key,
-`Appearance`, is the group of the seven `skipRender` `skin.*` rows ([schema.md](schema.md#row-kinds)),
+`Appearance`, is the group of the eight `skipRender` `skin.*` rows ([schema.md](schema.md#row-kinds)),
 so the host tab replaces that group's tab. This page has no Keybindings tab (PrettyChat binds no key),
 so the Skin tab is last. `get` and `set` are `core/SkinSetup.lua`'s read and write seams, so a pick
 lands through `NS.Schema.Set` like every other setting, and the tab calls `Skin:SetChoice` first, so
 the live repaint is the library's. It draws **Skin source** (the Ka0s skins or EllesmereUI), the
-nine skins under **Look**, **Font** and **Texture** (*Skin's own* in a new profile), the Scope
+nine skins under **Look**, **Font** and **Texture** (*Skin's default* in a new profile) with their
+**Reset font** and **Reset texture** buttons, **Font outline** (*HUD text only* in a new profile since LibKa0s
+v1.83.0, or *All text* or *Off*: LibKa0s v1.82.0, stored as `skin.outline`), the Scope
 (**Ignore settings panel**, on in a new profile, and **Ignore fonts**, off), **Copy to every Ka0s
-addon…** and the library's note. PrettyChat has no bars, so a texture override has nothing of this
+addon…** under its own **Other Ka0s addons** heading, and the library's note. Picking a skin that
+draws a different look resets the font and texture overrides (LibKa0s v1.82.0). **Font** and **Texture** are
+the library's `Ka0sMedia_*` pickers (LibKa0s v1.83.0, options-ui-§23): each entry draws in its face or
+beside its bar, the leading row too, and the descriptor's `getLSM` feeds them. LibSharedMedia is not
+vendored here, so with no other addon loading it they list the leading row alone; when another addon
+brings it, the Ka0s faces are registered at file load or, if that addon loaded later, at `OnEnable`. They and the
+skin picker's copies of them are this addon's only media pickers. PrettyChat has no bars, so a texture override has nothing of this
 addon's to draw on. On the library-absent path the stub's entry draws nothing.
 
 **What follows the skin.** Every library surface this addon shows follows the owner with no host
@@ -196,11 +204,14 @@ of `OnEnable` and after every profile event, unless the addon stands down or the
 combat (a login in combat skips it, and the next login out of combat shows it). PrettyChat has no
 window or test mode to preview a skin in, so the picker has no eye (`onPreview` is omitted) and
 draws only the `settings` gear, which opens this page on the Skin tab (`page = "General"`,
-`tab = "Appearance"`). A pick previews on whatever is open, the debug console and, with the panel
-skinned, these pages; **Apply** and the gear save it, and the close control and Escape put the
-stored skin back. Any of those closes marks the profile as having seen the picker (the spec's
+`tab = "Appearance"`). Under the dropdown it draws the Skin tab's rows (LibKa0s v1.83.0): **Font** and
+**Texture** with their reset icons, **Font outline** and the Scope's two boxes, saved through the same
+`NS.WriteSkinChoice`. A pick or a row change previews on whatever is open, the debug console and, with
+the panel skinned, these pages; **Apply** and the gear save it, and the close control and Escape put
+the stored choice back. Any of those closes marks the profile as having seen the picker (the spec's
 `onClose`, the one write of `skin.pickerSeen`). A close this addon makes itself, on a stand-down or
-a profile event, writes nothing, so the picker comes back.
+a profile event, writes nothing, so the picker comes back. `/pc skin` opens the same picker on demand, whatever
+`skin.pickerSeen` says.
 
 ## The `Profiles` sub-page
 

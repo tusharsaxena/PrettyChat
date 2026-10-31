@@ -162,14 +162,15 @@ test("exactly one addon-wide row exists, under the virtual General category", fu
     -- console toggle used to be a bespoke SessionCheckbox settings/Panel.lua drew
     -- through `pairWith`, and the Minimap button row is the composer's own at
     -- minor 7. There is exactly one declaration of each.
-    -- Eleven General rows since PC-01: the block's four, then the Skin tab's seven skin.* rows,
-    -- which are General-page settings but no part of the block.
+    -- Twelve General rows: the block's four, then the Skin tab's eight skin.* rows (seven since the
+    -- skinning rollout's PC-01, skin.outline the eighth at LibKa0s v1.82.0), which are General-page
+    -- settings but no part of the block.
     local block, skin = 0, 0
     for _, r in ipairs(Schema.RowsByCategory("General")) do
         if r.kind == "skin" then skin = skin + 1 else block = block + 1 end
     end
     t.eq(block, 4, "and General hosts the whole block")
-    t.eq(skin, 7, "beside the Skin tab's seven rows")
+    t.eq(skin, 8, "beside the Skin tab's eight rows")
 end)
 
 test("the Master controls block is the composed one, in canonical order", function()
@@ -395,12 +396,12 @@ end)
 -- called "Master controls".
 --
 -- The General page's second tab (PC-01) is the Skin tab: its group is "Appearance", the key
--- O.AppearanceTab answers (labeled "Skin"), and its seven skin.* rows are stored under the same
+-- O.AppearanceTab answers (labeled "Skin"), and its eight skin.* rows (skin.outline since v1.82.0) are stored under the same
 -- virtual category, so a tab is counted by its category AND its group.
 local PARTITION = {
     { page = "General", tabs = {
         { tab = "Master controls", category = "General", rows = 4 },
-        { tab = "Appearance",      category = "General", rows = 7 },
+        { tab = "Appearance",      category = "General", rows = 8 },
     } },
     { page = "Categories", tabs = {
         { tab = "Loot",       category = "Loot",       rows = 35 },

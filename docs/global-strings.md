@@ -48,6 +48,8 @@ The script:
 
 After regenerating, run `lua tests/run.lua` — `tests/test_defaults.lua` is what reads the chunks, so a re-split that changed a Blizzard signature shows up there rather than in game. If a Blizzard format-string signature changed (e.g. `%s` → `%2$s`), the corresponding `NS.Defaults` entry in `defaults/Defaults.lua` needs updating to match — see [common-tasks.md](./common-tasks.md#fix-a-broken-format-string). Run the full [smoke-test suite](./smoke-tests.md) — a client patch can shift behavior anywhere in the override pipeline, not just in the keys you re-split.
 
+The `€` in `BLIZZARD_STORE_CURRENCY_FORMAT_EURO` is a character some shipped skin face cannot draw, so `tests/test_glyphs.lua` needs a `glyph: data` mark on each line that holds it: the dump is data, never drawn. In `GlobalStrings.lua` the mark is a `-- glyph: data begin` / `-- glyph: data end` pair of comment lines around the key, because the splitter only parses a line that ends at `";`. A plain re-split of the committed dump keeps it, and the splitter writes the trailing mark on the `GlobalStrings_*.lua` chunk line itself (`GLYPH_DATA_KEYS` in `tools/split_globalstrings.py`). A fresh client dump dropped in over `GlobalStrings.lua` loses the begin/end pair, and the guard goes red naming that line: put the pair back. If a new dump brings another key with such a character, the guard names its chunk line too: add the key to `GLYPH_DATA_KEYS` and re-split.
+
 ## The cap exemption
 
 `GlobalStrings/GlobalStrings.lua` (23,842 lines) is the one tracked `.lua` file over `layout-§1`'s 1500-line cap. The census in [ARCHITECTURE.md](./ARCHITECTURE.md#files-over-the-1500-line-cap) records it as `exempt` under the generated-data carve-out; this section is the reasoning behind that row.

@@ -100,6 +100,7 @@ local enUS = {
     -- Slash-command help descriptions (shown in /pc help and the parent panel)
     "List available commands",
     "Open the settings panel",
+    "Choose a skin: open the skin picker",
     "List settings — `/pc list [<Category> | category | formatstring]`",
     "Print a setting's current value — `/pc get <path>`",
     "Set a setting — `/pc set <path> <value>` (try /pc list)",
@@ -161,6 +162,12 @@ local enUS = {
     "The texture this addon's bars use, over the skin's own. Empty keeps the skin's.",
     "Skin picker seen",
     "Whether the first-run skin picker was closed on this profile.",
+    -- settings/Schema.lua + core/SkinSetup.lua: the font outline row (LibKa0s v1.82.0).
+    "Font outline",
+    "Where the skin outlines this addon's text: all of it, its HUD text only, or nowhere.",
+    "All text",
+    "HUD text only",
+    "Off",
     -- core/SkinSetup.lua: the one line a reload request earns on a profile event.
     "Reload your interface (/reload) to finish changing the skin.",
 }

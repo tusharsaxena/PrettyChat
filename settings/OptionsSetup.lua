@@ -165,6 +165,9 @@ if not lib then
         -- "queued": there is no queue); HideSkinPicker is a no-op.
         SkinPicker           = function() return nil end,
         HideSkinPicker       = function() end,
+        -- The reserved `skin` verb (LibKa0s v1.82.0, OptionsSkinPicker minor 3): no
+        -- picker on this path, so SkinVerb opens nothing and answers nil, "absent".
+        SkinVerb             = function() return nil, "absent" end,
         -- ── the ONE stub member that is reached at LOAD ──────────────────
         --
         -- options-ui-§1's degradation rule is LOAD-COMPLETING, and the measured
@@ -344,13 +347,18 @@ NS.Helpers = lib:New({
     resetProfile = function() NS:ResetAll() end,
     profilesPage = true,
 
+    -- The Skin tab's Font and Texture are media pickers (the library's Ka0sMedia_* rows,
+    -- options-ui-§23). This is what O.LSMValues reads and what loads every face on the panel's show,
+    -- so each row draws in its own face on first open. LibSharedMedia is not vendored here: it answers
+    -- nil until some other addon has loaded it, and the library takes that. Asked at call time.
+    getLSM = function() return LibStub and LibStub("LibSharedMedia-3.0", true) end,
+
     -- Deliberately NOT passed, each for a reason worth writing down rather than
     -- leaving as an absence:
     --
     --   colorDecode / colorEncode — this addon has no color rows at all. The schema
     --     is bool and string only, so there is no stored color shape to declare.
-    --   getLSM / scheduleTimer    — no media pickers, no color pickers, no sliders,
-    --     so nothing reaches either.
+    --   scheduleTimer             — no color pickers and no sliders, so nothing reaches it.
     --   afterRestoreAll — the global reset is PrettyChat:ResetAll, which wipes the
     --     profile in one pass; the library's row-by-row RestoreAllDefaults is not on
     --     the path (see settings/Panel.lua), so there is nothing to run after it.

@@ -2245,7 +2245,9 @@ BLIZZARD_STORE_CURRENCY_FORMAT_BRL = "R$ %s";
 BLIZZARD_STORE_CURRENCY_FORMAT_CAD = "CAD %s";
 BLIZZARD_STORE_CURRENCY_FORMAT_CLP = "$%s";
 BLIZZARD_STORE_CURRENCY_FORMAT_CPT_LONG = "%s Battle Coins";
+-- glyph: data begin (a copy of the client's own GlobalStrings, never drawn: the panel shows the live snapshot)
 BLIZZARD_STORE_CURRENCY_FORMAT_EURO = "€%s";
+-- glyph: data end
 BLIZZARD_STORE_CURRENCY_FORMAT_GBP = "£%s";
 BLIZZARD_STORE_CURRENCY_FORMAT_GEL = "GEL %s";
 BLIZZARD_STORE_CURRENCY_FORMAT_HKD = "HK$%s";

@@ -4,7 +4,7 @@
 ![CurseForge Version](https://img.shields.io/curseforge/v/919766)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-631%2F631_passing-green)
+![Tests](https://img.shields.io/badge/Tests-656%2F656_passing-green)
 
 World of Warcraft tells you about loot, currency, gold, reputation, experience, honor and crafting in a stream of sentences that all look alike. PrettyChat rewrites them. The information doesn't change, but it's laid out and color-coded, so you can find the line you actually cared about while the chat window scrolls past you.
 
@@ -33,7 +33,7 @@ Changing how a message reads takes four steps. The first three happen on the **C
 
 Your version is only used while three switches are on: **Enable PrettyChat** on the General page, the category's switch on its tab, and the message's own **Rewrite this message**. Turn any of them off and the game's original comes back, while your wording stays saved. The **General visibility** dropdown next to the master switch can also limit PrettyChat to combat, or to the time outside it.
 
-The first time you log in on a profile, a small window asks you to pick a skin. The skin is the look of PrettyChat's debug console and, if you want, its settings pages. It doesn't touch your chat lines, which keep the colors in their wording. You can change it any time on the General page's **Skin** tab, along with the font and whether the settings pages keep the game's own look, which they do until you say otherwise. The Ka0s skins are built in, and with EllesmereUI installed PrettyChat can wear its look instead.
+The first time you log in on a profile, a small window asks you to pick a skin. The skin is the look of PrettyChat's debug console and, if you want, its settings pages. It doesn't touch your chat lines, which keep the colors in their wording. `/pc skin` brings that window back, and you can change it any time on the General page's **Skin** tab, along with the font and whether the settings pages keep the game's own look, which they do until you say otherwise. The Ka0s skins are built in, and with EllesmereUI installed PrettyChat can wear its look instead.
 
 Everything else is on the addon's page under Settings → AddOns, which `/pc` (or `/prettychat`) also opens, and `/pc help` lists every command.
 
@@ -97,24 +97,6 @@ Bugs and feature requests are tracked on GitHub: [https://github.com/tusharsaxen
 
 ## Credits
 
-The debug console uses [JetBrains Mono](https://www.jetbrains.com/lp/mono/), licensed under the SIL
-Open Font License 1.1.
-
-Ka0s Default, the skin every profile starts on, draws [Oxanium](https://github.com/sevmeyer/oxanium)
-by The Oxanium Project Authors, also SIL Open Font License 1.1.
-
-The other skins draw on seven more SIL Open Font License 1.1 faces, one family per skin:
-[Inter](https://github.com/rsms/inter) by The Inter Project Authors,
-[Nunito](https://github.com/googlefonts/nunito) by The Nunito Project Authors,
-[Vollkorn](https://github.com/FAlthausen/Vollkorn-Typeface) by The Vollkorn Project Authors,
-[Bitter](https://github.com/solmatas/BitterPro) by The Bitter Project Authors,
-[Philosopher](https://github.com/alexeiva/philosopher) by The Philosopher Project Authors,
-[Fira Sans](https://github.com/mozilla/Fira) by The Mozilla Foundation and Telefonica S.A., and
-[Atkinson Hyperlegible](https://www.brailleinstitute.org/freefont/) by the Braille Institute of
-America. Inter, Nunito, Vollkorn, Bitter and Oxanium are static weights cut from upstream's
-variable fonts.
-
 The debug console's copy, clear and close marks and the skin picker's settings mark are from
 [Open Iconic](https://github.com/iconic/open-iconic) by Waybury, licensed under the MIT License.
-The fonts and the icons ship inside the bundled LibKa0s payload, with their license text beside
-them.
+The icons ship inside the bundled LibKa0s payload, with their license beside them.

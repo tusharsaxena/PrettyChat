@@ -32,6 +32,7 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 
 | Run | Commit | Tree | Version | Lint w/e | Files | Tests | Perf | NLOC | Funcs | Avg NLOC | Avg CCN | Max CCN | CCN warn | Verdict |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [`20261031-202238`](20261031-202238/) | `d6ac61e` | clean | 1.7.0 | 0/0 | 65 | 656/1/657 | skip | 59469 | 1538 | 7.2 | 2.1 | 15 | 0 | **green** |
 | [`20261009-191724`](20261009-191724/) | `3c40352` | clean | 1.6.0 → 1.7.0 | 0/0 | 56 | 574/1/575 | skip | 57462 | 1319 | 7.3 | 2.1 | 15 | 0 | **green** |
 | [`20260927-031723`](20260927-031723/) | `a663bc6` | clean | 1.6.0 | 0/0 | 53 | 518/0/518 | skip | 56489 | 1135 | 6.8 | 1.9 | 14 | 0 | **green** |
 | [`20260927-030323`](20260927-030323/) | `c2faa0c` | clean | 1.5.0 → 1.6.0 | 0/0 | 51 | 518/0/518 | skip | 56455 | 1134 | 6.8 | 1.9 | 14 | 0 | **green** |
@@ -52,18 +53,18 @@ archaeology, for the same reason a skip is never a pass (`automated-tests-§4`).
 
 ## Test suite
 
-**575 cases** — 574 passed, 0 failed, 1 skipped. The generated inventory
-[`20261009-191724/test-cases.md`](20261009-191724/test-cases.md) is the authority on which cases existed at this run;
+**657 cases** — 656 passed, 0 failed, 1 skipped. The generated inventory
+[`20261031-202238/test-cases.md`](20261031-202238/test-cases.md) is the authority on which cases existed at this run;
 `docs/test-cases.md` is that same list at HEAD.
 
-Moved **518 → 575** since the previous run.
+Moved **575 → 657** since the previous run.
 
 **1 case(s) reported a `skip`.** A skip is counted in the total and never in `passed`, and at
 the release gate it is NOT EVALUATED rather than passed (`automated-tests-§3`).
 
 ## Lint
 
-**0 warnings / 0 errors over 56 files** (`luacheck .`).
+**0 warnings / 0 errors over 65 files** (`luacheck .`).
 
 Read that figure with its scope attached: `.luacheckrc` excludes 6 path(s) from it — `Libs`, `libs`, `GlobalStrings`, `docs/audits`, `docs/reviews`, `tests/_kit/` —
 so nothing under them is in the count above. A `0/0` that never moves is partly a statement about
@@ -80,7 +81,7 @@ combat path for one to measure, not because the question was never asked.
 
 ## Complexity watch list
 
-Current as of [`20261009-191724`](20261009-191724/) — **this run's measurement, not its diff.** Max CCN **15** across 1319
+Current as of [`20261031-202238`](20261031-202238/) — **this run's measurement, not its diff.** Max CCN **15** across 1538
 functions, **0** of them warned on; 1 file(s) in the 1000–1500 band and 0 over the 1500 cap
 (`layout-§1`).
 
@@ -100,7 +101,7 @@ None.
 
 | Band | File | LOC | Disposition |
 |---|---|---|---|
-| 1000–1500 (on notice) | `settings/Schema.lua` | 1113 | **On notice**, carried forward and re-ruled: 1070 → 1113 (+43) at `20261009-191724` (`3c40352`, the 1.7.0 release run), sixth consecutive run in the band (entered at `20260924-104049`), second release run in that span (1.6.0 at `20260927-030323`, 1.7.0 here). The growth is the 1.7.0 work landing in the schema: SP-PC-01 (+17, the Profiles page's rows and wiring), PC-01 (+19 net, refusing blank formats at the write seam), DL-PC-02 (+7, debug coverage), and a net 0 from SD-FIN-01, PC-05 and SD-FIN-03. It is the settings schema — every row, its wiring and the runtime instance over them — so it grows with the schema rather than by tangle, and no function in it is warned on. On notice is the compliant state under `layout-§1`, not a breach, and `docs/ARCHITECTURE.md` → *Files over the 1500-line cap* names it. Re-check at 1200. |
+| 1000–1500 (on notice) | `settings/Schema.lua` | 1225 | **On notice**, re-ruled at `20261031-202238` (`d6ac61e`): 1113 → 1225 (+112) crossed the old re-check at 1200, seventh consecutive run in the band, two release runs in that span (1.6.0, 1.7.0). The growth is almost all the skin rows, a cohesive block; the file is 651 NLOC with no warned function, so the size is schema and comment, not tangle. `docs/ARCHITECTURE.md` → *Files over the 1500-line cap* names it. Re-check at 1300; the peel seam is the `General ▸ Skin` block. |
 
 Left out as generated non-shipping data (`layout-§1`'s second carve-out, declared in
 `Kit.layoutCap.exempt` in `tests/run.lua`, the set the cap gate reads): `GlobalStrings/GlobalStrings.lua`.

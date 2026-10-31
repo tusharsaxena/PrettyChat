@@ -122,7 +122,7 @@ Run **both** of each pair and read the difference between them:
 ## The 1500-line cap gate
 
 `tests/_kit/test_layout_cap.lua` — the kit's gate since LibKa0s v1.55.0 (kit revision 25), and still
-the gate in the vendored LibKa0s v1.81.0 (kit revision 44), declared in `tests/run.lua` as
+the gate in the vendored LibKa0s v1.83.0 (kit revision 46), declared in `tests/run.lua` as
 `{ name = "test_layout_cap", dir = "tests/_kit/" }` — compares two things: every authored
 `.lua` git tracks, and the census under *Files over the 1500-line cap* in
 [ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both directions, so a file that crosses the
@@ -198,6 +198,15 @@ narrow the entry to `<code>/<variable>`, or put `-- luacheck: ignore <code>` bes
 that earns it — and say in a comment why the code is correct as written.
 
 ## Test-case inventory & badge sync (`testing-§5`)
+
+### `tests/test_glyphs.lua` — the display-glyph guard
+
+This suite runs the kit's `glyphs.lua` guard over this addon's own Lua (ruling D-19 of Ka0sAddonsCommonTasks
+`docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK/`, Addendum 07). Every string literal in a tracked `.lua` file
+outside `libs/`, `tests/` and `tools/` may carry only characters every shipped skin face draws, because
+a character one face lacks is a box in that skin alone. A line that is data and is never drawn takes a
+`glyph: data` mark; the only ones here are in the GlobalStrings dump
+([global-strings.md](./global-strings.md)).
 
 ### `tests/test_disabled.lua` — the stand-down conformance suite
 

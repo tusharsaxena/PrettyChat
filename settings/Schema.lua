@@ -569,8 +569,8 @@ addSkinRow("ignoreFonts", {
     tooltip = NS.L["Keep every font in this addon as the game draws it. The skin still colors the text."],
     onChange = function(v) NS.ApplySkinIgnore(nil, v) end,
 })
--- The font and texture overrides (LibKa0s-Skin-1.0 minor 6), drawn by the same tab as dropdowns of
--- LibSharedMedia keys. Free text, not `values`: a media pack may register its keys after this file
+-- The font and texture overrides (LibKa0s-Skin-1.0 minor 6), drawn by the same tab as the library's
+-- previewing pickers of LibSharedMedia keys (options-ui-§23). Free text, not `values`: a media pack may register its keys after this file
 -- loads, and `/pc set` takes any key. "" is the skin's own.
 addSkinRow("font", {
     type = "string", widget = "EditBox",
@@ -583,6 +583,16 @@ addSkinRow("texture", {
     label = NS.L["Texture"],
     tooltip = NS.L["The texture this addon's bars use, over the skin's own. Empty keeps the skin's."],
     onChange = function(v) NS.ApplySkinOverride(nil, v) end,
+})
+-- The font outline (LibKa0s-Skin-1.0 minor 9, ruling D-06), drawn by the same tab as its "Font
+-- outline" dropdown, which hands the mode to the write seam as media.outline. The library's three
+-- modes, in its order; `/pc set skin.outline` validates against them. Its onChange applies only
+-- its own half.
+addSkinRow("outline", {
+    type = "string", widget = "Dropdown", values = NS.SKIN_OUTLINE_OPTIONS,
+    label = NS.L["Font outline"],
+    tooltip = NS.L["Where the skin outlines this addon's text: all of it, its HUD text only, or nowhere."],
+    onChange = function(v) NS.ApplySkinOutline(v) end,
 })
 -- The first-run skin picker's memory: set when the picker closes, so it shows once per profile
 -- (owner ruling O3: false on every profile, old and new). Drawn by nothing; a reset puts it back.

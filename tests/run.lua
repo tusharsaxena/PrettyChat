@@ -148,6 +148,9 @@ Kit.run{
         -- General page's Skin tab, the profile events and the degraded facade. After the panel
         -- and Profiles suites because it drives the same General page and profile callbacks.
         "test_skinsetup",
+        -- The font outline (LibKa0s v1.82.0): skin.outline, its row, the write seam and the apply.
+        -- After test_skinsetup, whose seam it extends.
+        "test_skin_outline",
         -- The colors this addon writes itself on the settings pages and on GameTooltip (PC-02):
         -- each a token through the facade. After test_skinsetup, whose seam it reads.
         "test_skin_surfaces",
@@ -155,6 +158,12 @@ Kit.run{
         -- the picker's spec and triggers, the Categories tree and the Profiles page painted, the
         -- debug console owned. After test_skin_surfaces, which builds the same Categories page.
         "test_skin_picker",
+        -- The reserved `skin` verb (LibKa0s v1.82.0's O.SkinVerb): /pc skin shows the picker on
+        -- demand. After test_skin_picker, whose spec and picker queue it reads.
+        "test_skin_verb",
+        -- The display-glyph guard (kit revision 45, PC-02): every string literal outside libs/,
+        -- tests/ and tools/ draws in every shipped skin face. Reads the source, loads no addon.
+        "test_glyphs",
         "test_doc_structure",
         "test_register",
         -- The kit has shipped one suite of its own since revision 15: the working-tree

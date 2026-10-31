@@ -22,7 +22,7 @@ Everything a player can set lives in `db.profile`, so a profile carries all of i
 | `categories[<Cat>].enabled` | Each message category's Enable |
 | `categories[<Cat>].disabledStrings[<NAME>]` | Each format string's Enable (stored inverted) |
 | `categories[<Cat>].strings[<NAME>]` | Each format-string override |
-| `skin.*` | The skin this addon wears and the Skin tab's other choices (`skin.source`, `skin.skin`, `skin.ignorePanel`, `skin.ignoreFonts`, `skin.font`, `skin.texture`), and `skin.pickerSeen`, whether the first-run skin picker was closed on this profile |
+| `skin.*` | The skin this addon wears and the Skin tab's other choices (`skin.source`, `skin.skin`, `skin.ignorePanel`, `skin.ignoreFonts`, `skin.font`, `skin.texture`, `skin.outline`), and `skin.pickerSeen`, whether the first-run skin picker was closed on this profile |
 
 A profile stores only what differs from the defaults (auto-clear, [schema.md](schema.md)), so a new
 profile is an empty table until a player changes something in it. The `skin.*` keys are the

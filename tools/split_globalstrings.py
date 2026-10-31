@@ -39,6 +39,14 @@ MAX_ENTRIES_PER_CHUNK = 900
 # Pattern for KEY = "value"; format (ignores _G["KEY"] = "value"; entries)
 RE_SIMPLE = re.compile(r'^([A-Z_][A-Z0-9_]*)\s*=\s*"(.*)"\s*;\s*$')
 
+# The trailing mark the display-glyph guard (tests/test_glyphs.lua) reads on a
+# chunk line whose value holds a character some shipped skin face cannot draw.
+# The chunks are data, never drawn (the panel shows the live snapshot), so the
+# splitter writes the mark itself and a re-split keeps it. A fresh dump that
+# brings a new such key turns the guard red naming the line: add the key here.
+GLYPH_DATA_MARK = " -- glyph: data (a copy of the client's own GlobalStrings, never drawn: the panel shows the live snapshot)"
+GLYPH_DATA_KEYS = {"BLIZZARD_STORE_CURRENCY_FORMAT_EURO"}
+
 # Canonical sort order for first characters, used for the distribution printout.
 LETTER_ORDER = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789")
 
@@ -172,7 +180,8 @@ def main():
             f.write("local _, NS = ...\n")
             f.write("NS.GlobalStrings = NS.GlobalStrings or {}\n")
             for key, value in items:
-                f.write(f'NS.GlobalStrings["{key}"] = "{value}"\n')
+                mark = GLYPH_DATA_MARK if key in GLYPH_DATA_KEYS else ""
+                f.write(f'NS.GlobalStrings["{key}"] = "{value}"{mark}\n')
 
         lines = len(items) + 2
         print(f"  {filename} [{key_range}]: {len(items)} entries, {lines} lines")

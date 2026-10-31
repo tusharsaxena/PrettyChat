@@ -139,7 +139,7 @@ Total.
 - the combat watcher, the one frame the addon creates, is a T0 frame
 - docs/ARCHITECTURE.md carries the Frame layering section and points at the table
 
-### test_mediasetup.lua (8)
+### test_mediasetup.lua (11)
 
 - MediaSetup: NS.Icon answers the vendored path, EXTENSIONLESS
 - MediaSetup: an icon the library does not ship answers nil
@@ -148,6 +148,9 @@ Total.
 - MediaSetup: every mark the console title bar reaches for is one the library ships
 - MediaSetup: every icon CLAUDE.md declares has a file in the vendored copy, and nothing else ships
 - MediaSetup: the vendored face is on disk where the seam says it is
+- MediaSetup: OnEnable registers the Ka0s faces with an LSM that loaded after this file
+- MediaSetup: a key LSM already holds is not offered again
+- MediaSetup: with no library NS.RegisterMedia does nothing and raises nothing
 - MediaSetup: with no library there is no art and no face, and that is not an error
 
 ### test_util.lua (8)
@@ -454,7 +457,7 @@ Total.
 - NS.Print emits the cyan [PC] tag (reclaimed after the AceConsole embed)
 - a bare /pc opens the settings panel through config
 - a whitespace-only /pc is bare too
-- COMMANDS is the fourteen verbs, in their order, and help prints one row each
+- COMMANDS is the fifteen verbs, in their order, and help prints one row each
 - /pc help prints the help index
 - /pc help lists every command with its description
 - the resetall help row says it resets every setting
@@ -652,12 +655,12 @@ Total.
 - /pc profile refuses to switch in combat, and still lists
 - /pc profile answers while the addon is disabled, and can bring it back up
 
-### test_skinsetup.lua (18)
+### test_skinsetup.lua (19)
 
 - Skin seam: the owner is the folder name, and NS.Skin is its facade
 - Skin seam: the read answers Ka0s Default before the profile store exists
 - Skin seam: the owner tokens keep Ka0s Default's #aaaaaa and follow the skin elsewhere
-- Skin seam: the seven skin keys default to Ka0s Default, as skipRender Skin-tab rows
+- Skin seam: the eight skin keys default to Ka0s Default, as skipRender Skin-tab rows
 - Skin seam: the skin row's values are every registered skin, in the library's order
 - Skin seam: /pc list category never offers skin as a message category
 - Skin seam: /pc set refuses an unknown skin and applies a registered one, one repaint
@@ -670,8 +673,23 @@ Total.
 - Skin seam: a skin write still lands while the addon is stood down
 - Skin seam: the library-absent load has no Skin major and falls back to the host facade
 - Skin seam: the degraded facade answers every name the live facade carries
+- Skin seam: the degraded FontFlags and HudFontSize answer real values, never nil
 - Skin seam: the seam publishes the same NS members on both paths
 - Skin seam: each host-copy skin token is the live library's Ka0s Default value
+
+### test_skin_outline.lua (11)
+
+- Skin outline: a fresh profile stores HUD text only, the library's default
+- Skin outline: the seam's own default is the library's, with no profile store
+- Skin outline: a stored All text stays, never migrated to the new default
+- Skin outline: the schema row is a skipRender Skin-tab row with the library's three modes
+- Skin outline: the write seam stores media.outline, and leaves it alone when it is nil
+- Skin outline: another addon's copy reaches the store through WriteChoice
+- Skin outline: the row's write applies the mode live
+- Skin outline: /pc set refuses a mode the library does not know
+- Skin outline: the stored mode is applied with the stored choice
+- Skin outline: a profile switch applies the incoming profile's mode, and back
+- Skin outline: without the skin engine the apply is a quiet no-op and the store still takes it
 
 ### test_skin_surfaces.lua (10)
 
@@ -686,7 +704,7 @@ Total.
 - Skin surfaces: a note token that does not resolve still builds every page, in today's gray
 - Skin surfaces: settings/ writes no typed gray and no typed tooltip color
 
-### test_skin_picker.lua (14)
+### test_skin_picker.lua (17)
 
 - Skin picker: the spec names this owner, its seams and the Skin tab, with no eye
 - Skin picker: a fresh profile shows it at OnEnable, with no timer and no event armed
@@ -702,6 +720,22 @@ Total.
 - Skin widgets: a release hands the tree back stock
 - Skin widgets: the Profiles page paints what AceConfigDialog drew, and a skin switch re-opens it
 - Skin tools: the debug console is owned by this addon
+- Skin media: the descriptor passes getLSM, so a media list reads LibSharedMedia
+- Skin media: with no LibSharedMedia a media list still answers its no-media row
+- Skin media: the media rows are the Skin tab's, and no schema row is a plain media dropdown
+
+### test_skin_verb.lua (6)
+
+- Skin verb: the row sits right after config, with the library's help words
+- Skin verb: /pc skin shows the picker on a profile that has closed it
+- Skin verb: NS.RunSkinVerb hands O.SkinVerb this addon's first-run spec
+- Skin verb: in combat every call prints the library's gray line and shows nothing
+- Skin verb: refused while the addon is disabled, and no picker shows
+- Skin verb: without LibKa0s the verb prints the library-absent line
+
+### test_glyphs.lua (1)
+
+- glyphs: display strings use only characters every shipped skin face draws
 
 ### test_doc_structure.lua (13)
 
@@ -765,7 +799,7 @@ Total.
 | test_envsetup.lua | 9 |
 | test_constants.lua | 8 |
 | test_layers.lua | 4 |
-| test_mediasetup.lua | 8 |
+| test_mediasetup.lua | 11 |
 | test_util.lua | 8 |
 | test_locale.lua | 12 |
 | test_defaults.lua | 18 |
@@ -784,13 +818,16 @@ Total.
 | test_panel_categories.lua | 28 |
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
-| test_skinsetup.lua | 18 |
+| test_skinsetup.lua | 19 |
+| test_skin_outline.lua | 11 |
 | test_skin_surfaces.lua | 10 |
-| test_skin_picker.lua | 14 |
+| test_skin_picker.lua | 17 |
+| test_skin_verb.lua | 6 |
+| test_glyphs.lua | 1 |
 | test_doc_structure.lua | 13 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **631** |
+| **Total** | **656** |

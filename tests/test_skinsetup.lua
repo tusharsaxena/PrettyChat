@@ -2,7 +2,7 @@
 --
 -- What this addon owes the skin engine, and nothing the library pins itself: the owner is
 -- registered under the folder name with this addon's read and write seams and its two owner
--- tokens; the seven skin.* keys default to Ka0s Default and are skipRender schema rows on the
+-- tokens; the eight skin.* keys default to Ka0s Default and are skipRender schema rows on the
 -- General page's Skin tab (group "Appearance"); a skin write changes no chat string, so it skips
 -- the ApplyStrings pass (decision D8); the profile's skin is applied right after AceDB exists and
 -- on every profile event; one pick, from this addon's tab or from another addon's copy, is ONE
@@ -38,7 +38,7 @@ end
 
 local SKIN_PATHS = {
     "skin.source", "skin.skin", "skin.ignorePanel", "skin.ignoreFonts", "skin.font", "skin.texture",
-    "skin.pickerSeen",
+    "skin.outline", "skin.pickerSeen",
 }
 
 -- ── the owner ────────────────────────────────────────────────────────────────────────────────
@@ -90,7 +90,7 @@ end)
 
 -- ── the keys and the rows ────────────────────────────────────────────────────────────────────
 
-test("Skin seam: the seven skin keys default to Ka0s Default, as skipRender Skin-tab rows", function()
+test("Skin seam: the eight skin keys default to Ka0s Default, as skipRender Skin-tab rows", function()
     -- red under: a default other than today's look, a row that renders itself on top of the
     -- library's tab, or a row on some other page or tab.
     local inst = live()
@@ -102,6 +102,7 @@ test("Skin seam: the seven skin keys default to Ka0s Default, as skipRender Skin
     t.eq(d.ignoreFonts, false, "and skins the fonts")
     t.eq(d.font, "")
     t.eq(d.texture, "")
+    t.eq(d.outline, "hud", "D-10: HUD text only")
     t.eq(d.pickerSeen, false, "O3: the first-run picker shows on every profile")
     for _, path in ipairs(SKIN_PATHS) do
         local row = NS.Schema.FindByPath(path)
@@ -299,12 +300,42 @@ test("Skin seam: the degraded facade answers every name the live facade carries"
     ctx.assertSurfaceParity(inst.NS.Skin, bare.NS.Skin, "Skin facade vs host stub", {})
 end)
 
+test("Skin seam: the degraded FontFlags and HudFontSize answer real values, never nil", function()
+    -- Parity checks names and types only, so a regression to the no-op (nil, which SetFont
+    -- refuses) would pass it. These are the values, in the library's own shape: a picked flag as
+    -- stored; From skin (or nothing stored) through the Font outline, with `where == "window"`
+    -- reading the window text's half.
+    local inst = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    local S = inst.NS.Skin
+    t.eq(S.FontFlags("THICKOUTLINE"), "THICKOUTLINE", "a picked flag answers as stored")
+    t.eq(S.FontFlags(""), "", "a picked none answers as stored")
+    t.eq(S.FontFlags(nil), "OUTLINE", "the HUD under the default, HUD only (D-10)")
+    t.eq(S.FontFlags(nil, "window"), "", "window text under the default, HUD only (D-10)")
+    inst.NS.Schema.Set("skin.outline", "all")
+    t.eq(S.FontFlags(S.FROM_SKIN), "OUTLINE", "From skin under All text")
+    t.eq(S.FontFlags(nil), "OUTLINE", "nothing stored under All text")
+    t.eq(S.FontFlags(nil, "window"), "OUTLINE", "window text under All text")
+    inst.NS.Schema.Set("skin.outline", "hud")
+    t.eq(S.FontFlags(S.FROM_SKIN), "OUTLINE", "the HUD under HUD only")
+    t.eq(S.FontFlags(S.FROM_SKIN, "window"), "", "window text under HUD only")
+    t.eq(S.FontFlags("MONOCHROME", "window"), "MONOCHROME", "a picked flag wins under HUD only")
+    inst.NS.Schema.Set("skin.outline", "off")
+    t.eq(S.FontFlags(nil), "", "the HUD under Off")
+    t.eq(S.FontFlags(nil, "window"), "", "window text under Off")
+    t.eq(S.HudFontSize(18), 18, "a stored size above 0 as is")
+    t.eq(S.HudFontSize(0), 12, "0 counts as none")
+    t.eq(S.HudFontSize(-3), 12, "a negative size counts as none")
+    t.eq(S.HudFontSize("x"), 12, "a non-number counts as none")
+    t.eq(S.HudFontSize(nil), 12, "nothing stored")
+end)
+
 test("Skin seam: the seam publishes the same NS members on both paths", function()
     local inst = live()
     for _, name in ipairs({
         "Skin", "SKIN_TOKENS", "SKIN_FALLBACK", "SkinColor", "SkinEscape", "PanelEscape", "SKIN_SOURCE_OPTIONS",
         "SKIN_OPTIONS", "SkinChoice", "WriteSkinChoice", "SkinOverride", "ApplySkinChoice",
-        "ApplySkinIgnore", "ApplySkinOverride", "SkinPaintAce", "SkinPaintAceTree", "SkinOnRelease",
+        "ApplySkinIgnore", "ApplySkinOverride", "SkinOutline", "ApplySkinOutline", "SKIN_OUTLINE_OPTIONS",
+        "SkinPaintAce", "SkinPaintAceTree", "SkinOnRelease", "RunSkinVerb",
     }) do
         t.truthy(inst.NS[name] ~= nil, "live: NS." .. name)
         t.eq(type(bare.NS[name]), type(inst.NS[name]), "degraded: NS." .. name)
