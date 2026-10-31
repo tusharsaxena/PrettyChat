@@ -831,7 +831,7 @@ test("the degraded secret guard still neutralizes a protected value", function()
 end)
 
 test("degraded SetMany is all-or-nothing", function()
-    -- red under: drop S.SetMany from settings/Schema.lua's SchemaStub.New (the call
+    -- red under: drop S.SetMany from settings/SchemaStub.lua's SchemaStub.New (the call
     -- raises), or store inside stubSetMany's phase 1 (Loot.enabled moves on a refusal).
     local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
     local BS, RT, FMT = bare.NS.Schema, bare.NS.SchemaRuntime, "Loot.LOOT_ITEM_SELF.format"
@@ -893,7 +893,7 @@ test("degraded SafeRegisterEvents records a rejected name and registers the rest
 end)
 
 test("degraded Get forwards the instance id", function()
-    -- red under: settings/Schema.lua's stub S.Get calling row.get() with no argument,
+    -- red under: settings/SchemaStub.lua's stub S.Get calling row.get() with no argument,
     -- or its S.ApplyDefault(row, id) dropping id on the way to S.Set.
     local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
     local RT = bare.NS.SchemaRuntime

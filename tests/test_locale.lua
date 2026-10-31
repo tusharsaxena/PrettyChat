@@ -311,12 +311,12 @@ local RESIDUE = {
     {"settings/Schema.lua", "schema: %s is registered under more than one category (%s)",
      "the same: it names a Blizzard global registered twice in defaults/Defaults.lua "
      .. "(PRETTYCHAT-R-02), and reaching it at all is a defect"},
-    {"settings/Schema.lua", "PrettyChat: no setting ",
+    {"settings/SchemaStub.lua", "PrettyChat: no setting ",
      "the schema runtime stub's refusal, returned as Set's second value on a load with "
      .. "no LibKa0s. No surface in this addon prints it: both descriptors discard what "
      .. "`set` returns, and no host call site reads past the first value"},
-    {"settings/Schema.lua", "PrettyChat: invalid value for ", "the same, for a `validate` refusal"},
-    {"settings/Schema.lua", "PrettyChat: nowhere to store ", "the same, for a stored row with no root"},
+    {"settings/SchemaStub.lua", "PrettyChat: invalid value for ", "the same, for a `validate` refusal"},
+    {"settings/SchemaStub.lua", "PrettyChat: nowhere to store ", "the same, for a stored row with no root"},
     {"settings/Schema.lua", "conversion signature",
      "the format row's `validate` reason, returned as Set's third value (`why`). Nothing "
      .. "prints it: the player-facing refusal is the routed `Not saved` line beside it"},
@@ -350,7 +350,7 @@ local RESIDUE = {
     {"settings/OptionsSetup.lua", ", so the settings panel is unavailable.",
      "SHARED STEM: the panel's tail"},
     {"settings/Slash.lua", ", so the settings CLI is unavailable.", "SHARED STEM: the CLI's tail"},
-    {"settings/Schema.lua", ", so the schema was not checked.",
+    {"settings/SchemaStub.lua", ", so the schema was not checked.",
      "SHARED STEM: the schema runtime stub's Validate tail (LibKa0s-Schema-1.0 absent)"},
 
     -- SPLIT COLOR — the degraded `/pc debug on|off` acknowledgment.

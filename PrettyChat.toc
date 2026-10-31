@@ -103,6 +103,14 @@ modules\Override.lua
 modules\Diagnostics.lua
 
 # Settings. Every line in this group is load-bearing and carries its own note.
+# settings\SchemaStub.lua loads BEFORE settings\Schema.lua and the position is load-bearing: Schema
+# reads NS.SchemaStub at file load when LibKa0s-Schema-1.0 is absent.
+settings\SchemaStub.lua
+# settings\SchemaSkin.lua loads BEFORE settings\Schema.lua and AFTER defaults\Profile.lua and
+# core\PrettyChat.lua, and the position is load-bearing: Schema calls Schema.InstallSkinRows while
+# it builds its rows, and this file reads NS.ProfileDefaults and calls GetAddon("PrettyChat") at
+# file scope.
+settings\SchemaSkin.lua
 # settings\Schema.lua loads AFTER defaults\Defaults.lua, defaults\Profile.lua, core\PrettyChat.lua
 # and modules\Override.lua, and the position is load-bearing: it builds every row at file load from
 # NS.Defaults, NS.GeneralDefaults and NS.GlobalDefaults, sorts each category through

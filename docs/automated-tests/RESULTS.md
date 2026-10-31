@@ -101,7 +101,7 @@ None.
 
 | Band | File | LOC | Disposition |
 |---|---|---|---|
-| 1000–1500 (on notice) | `settings/Schema.lua` | 1225 | **On notice**, re-ruled at `20261031-202238` (`d6ac61e`): 1113 → 1225 (+112) crossed the old re-check at 1200, seventh consecutive run in the band, two release runs in that span (1.6.0, 1.7.0). The growth is almost all the skin rows, a cohesive block; the file is 651 NLOC with no warned function, so the size is schema and comment, not tangle. `docs/ARCHITECTURE.md` → *Files over the 1500-line cap* names it. Re-check at 1300; the peel seam is the `General ▸ Skin` block. |
+| 1000–1500 (on notice) | `settings/Schema.lua` | 1225 | **Peeled**, 2026-10-31 (`FX-PC-SIZE`): the re-check at 1200 fired at `20261031-202238` (1113 → 1225), so the degradation stub moved to `settings/SchemaStub.lua` and the `General ▸ Skin` rows to `settings/SchemaSkin.lua` by pure moves. The file is 903 lines, out of the band, and this row drops at the next recorded run. |
 
 Left out as generated non-shipping data (`layout-§1`'s second carve-out, declared in
 `Kit.layoutCap.exempt` in `tests/run.lua`, the set the cap gate reads): `GlobalStrings/GlobalStrings.lua`.
