@@ -101,7 +101,8 @@ test("sub-page frames start hidden and unbuilt", function()
     local fresh = ctx.loadAddon()
     local panel = panelFrame(fresh.env, "Categories")
     t.falsy(panel:IsShown(), "a registered page is hidden until Blizzard shows it")
-    t.eq(#fresh.env._widgets, 0, "registration creates no AceGUI widgets at all")
+    -- The five are the first-run skin picker's rows (LibKa0s v1.83.0); a fresh profile shows it at login.
+    t.eq(#fresh.env._widgets, 5, "registration builds no settings page, only the picker's rows")
 end)
 
 test("registration is a no-op on a client without the canvas Settings API", function()
