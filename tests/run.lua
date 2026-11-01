@@ -143,6 +143,7 @@ Kit.run{
         -- After test_debuglog because it is the last of the core/ seams, and BEFORE
         -- test_slash, which reads the same COMMANDS table from the dispatcher's side.
         "test_launcher",
+        "test_launcher_skin_entry",
         "test_slash",
         -- The stand-down conformance suite slash-commands-§7 requires of every addon.
         -- AFTER test_slash because its step 7 drives the same dispatcher, and after
