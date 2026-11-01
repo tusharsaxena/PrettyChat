@@ -348,7 +348,7 @@ if not Skin then
         "Tooltip", "Strip", "Cover", "Text", "ChartStyle", "BarStyle", "IconBorder", "GlowColor",
         "BarTexture", "FontFlags", "HudFontSize", "Mark",
         -- LibKa0s v1.85.0: nil is each getter's degraded answer, and BarGloss draws nothing.
-        "HudTextColor", "HudLabelColor", "BarFillColor", "HudShadow", "BarGloss",
+        "HudTextColor", "HudLabelColor", "BarFillColor", "HudShadow", "BarGloss", "HoverArt",
     }) do S[name] = noop end
     -- The two answers a font setting draws with (LibKa0s v1.82.0, SkinPaintExtras minor 7), never
     -- nil, so a caller's SetFont never reads "no flags" or "no size": a picked flag as stored; From
@@ -384,6 +384,10 @@ if not Skin then
         fs:SetShadowColor(0, 0, 0, on and 1 or 0)
         fs:SetShadowOffset(on and 1 or 0, on and -1 or 0)
     end
+
+    -- LibKa0s v1.85.0 (SkinPaintExtras minor 16): the stored three as handed, there being no skin to
+    -- defer to. Unused here, since PrettyChat draws no bar, but a no-op would answer no style.
+    S.BarBorder = function(style, show, size) return style, show, size end
 
     S.Token = function(name) return NS.SKIN_FALLBACK[name] end
     S.Color = color

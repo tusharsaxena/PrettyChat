@@ -33,6 +33,7 @@ tests/
   wow_mock.lua       -- a thin EXTENDER over tests/_kit/mock_base.lua
   mock_menu.lua      -- a fake MenuUtil for the launcher's right-click menu, modeled on LibKa0s's own
   panel_fixture.lua  -- the panel helpers test_panel.lua and test_panel_categories.lua both call
+  skin_surfaces.lua  -- the painted surfaces the kit's skin-switch test flips (Kit.skinSwitch)
   settings_snapshot.lua -- every stored setting path and its default, pinned (test_schema.lua reads it)
   test_<module>.lua  -- one suite per module; each reads _G.PC_TEST
   test_debug_coverage.lua -- per-CONCERN: the debug console's content (docs/debug.md, Coverage)
@@ -119,10 +120,14 @@ Run **both** of each pair and read the difference between them:
 
 **Which tag it compares against comes from the root [`CLAUDE.md`](../CLAUDE.md).** The gate greps the `Bundles [LibKa0s](…) vX.Y.Z (MIT).` provenance line out of that file — kit revision 9 moved it there from `README.md`, with **no fallback**, because the README is the player's page and no longer carries a bundled-library inventory at all. So the line moves in the same commit as the vendored bytes: bump `libs/LibKa0s/` or `tests/_kit/` without moving it and this gate fails, naming `CLAUDE.md`.
 
+## The skin gates
+
+Two kit suites, new at kit revision 50 (`skinning-§1`), declared in `tests/run.lua` by the pair. `test_skin_values` reads every color and texture a file under `core/`, `modules/` or `settings/` types and fails on any no kit category takes and no row in `Kit.skinValues.rows` names. This addon's nine rows are the `Const.Color` chat escapes, cause L13, so a typed color that reaches a settings page or a tooltip is a red: read it through a token instead. `test_skin_switch` flips a probe skin that gives every token a value of its own and fails a declared surface that draws the same. `tests/skin_surfaces.lua` declares the three page notes, the list hover's lines and the debug console, and its header says what is left out and why.
+
 ## The 1500-line cap gate
 
 `tests/_kit/test_layout_cap.lua` — the kit's gate since LibKa0s v1.55.0 (kit revision 25), and still
-the gate in the vendored LibKa0s v1.85.0 (kit revision 49), declared in `tests/run.lua` as
+the gate in the vendored LibKa0s v1.85.0 (kit revision 50), declared in `tests/run.lua` as
 `{ name = "test_layout_cap", dir = "tests/_kit/" }` — compares two things: every authored
 `.lua` git tracks, and the census under *Files over the 1500-line cap* in
 [ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both directions, so a file that crosses the

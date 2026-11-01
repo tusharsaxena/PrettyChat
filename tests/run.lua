@@ -75,6 +75,28 @@ Kit.diagnostics = {
     setDisabled = function(off) diagInstance.NS.Schema.Set("General.enabled", not off) end,
 }
 
+-- The kit's typed-value gate (skinning-§1). The one table it cannot place by shape is Const.Color,
+-- the chat escapes: what reads it is NS.Print's tag, slash output, the /pc test report and the reset
+-- every markup ends on, so these are the chat lines L13 leaves alone, and settings/ reads no color
+-- from it (tests/test_skin_surfaces.lua holds that at the source).
+local CHAT_ESCAPES = "a chat line's escape; chat is the one surface no skin reaches, by the L13 ruling"
+Kit.skinValues = {
+    rows = {
+        { file = "core/Constants.lua", substring = 'gold   = "|cffffd700"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'gray   = "|cffaaaaaa"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'red    = "|cffff5050"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'yellow = "|cffffff00"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'white  = "|cffffffff"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'cyan   = "|cff00ffff"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'green  = "|cff40ff40"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'listHead = "|cff33ff99"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'azure    = "|cff3399ff"', why = CHAT_ESCAPES, cause = "L13" },
+    },
+}
+
+-- The painted surfaces the kit's skin-switch test flips (tests/skin_surfaces.lua).
+Kit.skinSwitch = dofile("tests/skin_surfaces.lua")(loadAddon, root)
+
 -- Order is load-order-sensitive; keep it stable.
 Kit.run{
     dir    = "tests/",
@@ -182,5 +204,9 @@ Kit.run{
         -- through, and runs lizard end to end on a hazard fixture when lizard is on PATH (a
         -- declared skip otherwise). It needs no consumer facts.
         { name = "test_lizard_sighted", dir = "tests/_kit/" },
+        -- The kit's skin gates (skinning-§1), its own since revision 50: the typed-value check and
+        -- the probe-skin switch test, read off Kit.skinValues and Kit.skinSwitch above.
+        { name = "test_skin_values", dir = "tests/_kit/" },
+        { name = "test_skin_switch", dir = "tests/_kit/" },
     },
 }

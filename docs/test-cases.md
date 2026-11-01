@@ -655,7 +655,7 @@ Total.
 - /pc profile refuses to switch in combat, and still lists
 - /pc profile answers while the addon is disabled, and can bring it back up
 
-### test_skinsetup.lua (20)
+### test_skinsetup.lua (21)
 
 - Skin seam: the owner is the folder name, and NS.Skin is its facade
 - Skin seam: the read answers Ka0s Default before the profile store exists
@@ -674,6 +674,7 @@ Total.
 - Skin seam: the library-absent load has no Skin major and falls back to the host facade
 - Skin seam: the degraded facade answers every name the live facade carries
 - Skin seam: the degraded HudFont draws and MarkText answers a string
+- Skin seam: the degraded BarBorder answers the stored three it is handed
 - Skin seam: the degraded FontFlags and HudFontSize answer real values, never nil
 - Skin seam: the seam publishes the same NS members on both paths
 - Skin seam: each host-copy skin token is the live library's Ka0s Default value
@@ -787,6 +788,25 @@ Total.
 - lizard sighted: parity names every file whose counts differ, and only those
 - lizard sighted: lizard lists every function of a hazard fixture once it is sanitized
 
+### test_skin_values.lua (3)
+
+- skin values: every host row carries its file, substring, why and cause id
+- skin values: no typed value outside the kit's categories and the host's rows
+- skin values: the check is falsifiable, a planted value of each shape is reported
+
+### test_skin_switch.lua (10)
+
+- skin switch: the check is falsifiable, a surface that redraws a literal is reported
+- skin switch: the GLOBALNAME caption changes
+- skin switch: the Categories footnote changes
+- skin switch: the landing page's alias row changes
+- skin switch: the list hover's title and body changes
+- skin switch: the list hover's title and body changes with the Scope ignored
+- skin switch: the list hover's GLOBALNAME line changes
+- skin switch: the list hover's GLOBALNAME line changes with the Scope ignored
+- skin switch: the debug console changes
+- skin switch: the debug console changes with the Scope ignored
+
 ## Totals
 
 | Suite | Cases |
@@ -820,7 +840,7 @@ Total.
 | test_panel_categories.lua | 28 |
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
-| test_skinsetup.lua | 20 |
+| test_skinsetup.lua | 21 |
 | test_skin_outline.lua | 11 |
 | test_skin_surfaces.lua | 11 |
 | test_skin_picker.lua | 17 |
@@ -831,5 +851,7 @@ Total.
 | test_eol.lua | 2 |
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
+| test_skin_values.lua | 3 |
+| test_skin_switch.lua | 10 |
 | Skipped | 1 |
-| **Total** | **658** |
+| **Total** | **672** |

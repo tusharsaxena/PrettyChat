@@ -341,6 +341,15 @@ test("Skin seam: the degraded HudFont draws and MarkText answers a string", func
     t.eq(calls.fonts, 0, "and never reaches SetFont")
 end)
 
+test("Skin seam: the degraded BarBorder answers the stored three it is handed", function()
+    -- Parity sees names only. red under: a no-op, which answers no style.
+    local inst = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    local style, show, size = inst.NS.Skin.BarBorder("Solid", false, 2, true)
+    t.eq(style, "Solid")
+    t.eq(show, false)
+    t.eq(size, 2)
+end)
+
 test("Skin seam: the degraded FontFlags and HudFontSize answer real values, never nil", function()
     -- Parity checks names and types only, so a regression to the no-op (nil, which SetFont
     -- refuses) would pass it. These are the values, in the library's own shape: a picked flag as
