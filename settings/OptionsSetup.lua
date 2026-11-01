@@ -72,6 +72,8 @@ if not lib then
         RenderSchema         = function() end,
         RenderGrid           = function() end,
         TextRow              = function() end,
+        -- A label's font (LibKa0s v1.85.0, OptionsWidgets minor 43), owed by every Options stub.
+        LabelFont            = function() end,
         SetRenderer          = function() end,
         -- The landing page's whole body. It is a no-op rather than a lookalike for
         -- the reason every other renderer here is: the alternative is a second copy

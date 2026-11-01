@@ -300,6 +300,28 @@ test("Skin seam: the degraded facade answers every name the live facade carries"
     ctx.assertSurfaceParity(inst.NS.Skin, bare.NS.Skin, "Skin facade vs host stub", {})
 end)
 
+test("Skin seam: the degraded HudFont draws and MarkText answers a string", function()
+    -- Parity sees names only, and HudFont is the one v1.85.0 member a no-op breaks. red under: a
+    -- no-op stub, flags passed raw to SetFont, a shadow arm left unwritten.
+    local S = bare.NS.Skin
+    local calls = {}
+    local fs = {
+        SetFont = function(_, face, size, flags) calls.face, calls.size, calls.flags = face, size, flags end,
+        SetShadowColor = function(_, _, _, _, a) calls.alpha = a end,
+        SetShadowOffset = function(_, x, y) calls.x, calls.y = x, y end,
+    }
+    S.HudFont(fs, { face = "Fonts\\X.ttf", size = 0, flags = S.FROM_SKIN, shadow = true })
+    t.eq(calls.face, "Fonts\\X.ttf", "the host's face")
+    t.eq(calls.size, 12, "a size not above 0 takes 12")
+    t.eq(calls.flags, "OUTLINE", "the sentinel never reaches SetFont")
+    t.eq(calls.alpha, 1, "a stored shadow's color")
+    t.eq(calls.x, 1)
+    S.HudFont(fs, { face = "Fonts\\X.ttf", size = 14, flags = "", shadow = false })
+    t.eq(calls.alpha, 0, "the off arm clears")
+    t.eq(calls.y, 0)
+    t.eq(S.MarkText("a\\b", 10), "|Ta\\b:10:10|t", "the art's own color, no tint to read")
+end)
+
 test("Skin seam: the degraded FontFlags and HudFontSize answer real values, never nil", function()
     -- Parity checks names and types only, so a regression to the no-op (nil, which SetFont
     -- refuses) would pass it. These are the values, in the library's own shape: a picked flag as

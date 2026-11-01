@@ -109,16 +109,19 @@ function()
 
     -- The console's title-bar marks (the case above) must all be declared, or the
     -- prune removes art the library still draws and the control draws blank.
-    for _, name in ipairs({ "copy", "clear", "close" }) do
-        t.truthy(declared[name] == true, "the console draws '" .. name
-            .. "', which the `LibKa0s icons:` line does not declare")
+    -- So must the marks LibKa0s v1.85.0 draws itself beside skinned controls, which every
+    -- consumer owes (docs/releasing.md, step 8; kit revision 49).
+    for _, name in ipairs({ "copy", "clear", "close", "settings", "chevron-down", "chevron-up",
+        "confirm", "info", "move", "reset", "volume-high" }) do
+        t.truthy(declared[name] == true, "'" .. name
+            .. "' is drawn, and the `LibKa0s icons:` line does not declare it")
     end
 
     -- An undeclared catalog name is gone: the prune ran.
-    t.truthy(not declared.info, "info is not declared here")
-    local stray = io.open(root .. "info.tga", "rb")
+    t.truthy(not declared.help, "help is not declared here")
+    local stray = io.open(root .. "help.tga", "rb")
     if stray then stray:close() end
-    t.truthy(stray == nil, "info.tga still ships, so the prune did not run")
+    t.truthy(stray == nil, "help.tga still ships, so the prune did not run")
 end)
 
 test("MediaSetup: the vendored face is on disk where the seam says it is", function()

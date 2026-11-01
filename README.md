@@ -97,6 +97,6 @@ Bugs and feature requests are tracked on GitHub: [https://github.com/tusharsaxen
 
 ## Credits
 
-The debug console's copy, clear and close marks and the skin picker's settings mark are from
-[Open Iconic](https://github.com/iconic/open-iconic) by Waybury, licensed under the MIT License.
+The debug console's copy, clear and close marks, the skin picker's settings mark and the small marks
+beside skinned controls are from [Open Iconic](https://github.com/iconic/open-iconic) by Waybury, licensed under the MIT License.
 The icons ship inside the bundled LibKa0s payload, with their license beside them.
