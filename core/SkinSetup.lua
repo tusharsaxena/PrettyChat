@@ -248,7 +248,8 @@ end
 -- the stand-down, a profile event) is not the player's and writes nothing.
 --
 -- NO EYE (decision X6). PrettyChat has no window and no test mode to preview in, so `onPreview`
--- is omitted: the library hides the eye, and only the `settings` icon is declared (CLAUDE.md).
+-- is omitted: the library hides the eye, so the picker adds no `eye` to the CLAUDE.md icon
+-- declaration, only its `settings` gear.
 -- A pick previews on the open settings pages and the debug console, which follow the skin live.
 --
 -- QUEUED. One picker is up at a time across every Ka0s addon: while another addon's is up,

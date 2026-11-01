@@ -302,11 +302,15 @@ end)
 
 test("Skin seam: the degraded HudFont draws and MarkText answers a string", function()
     -- Parity sees names only, and HudFont is the one v1.85.0 member a no-op breaks. red under: a
-    -- no-op stub, flags passed raw to SetFont, a shadow arm left unwritten.
+    -- no-op stub, flags passed raw to SetFont, a shadow arm left unwritten, no client-face
+    -- fallback, a SetFont with no face (the Options document, section 7), another MarkText size.
     local S = bare.NS.Skin
     local calls = {}
     local fs = {
-        SetFont = function(_, face, size, flags) calls.face, calls.size, calls.flags = face, size, flags end,
+        SetFont = function(_, face, size, flags)
+            calls.fonts = (calls.fonts or 0) + 1
+            calls.face, calls.size, calls.flags = face, size, flags
+        end,
         SetShadowColor = function(_, _, _, _, a) calls.alpha = a end,
         SetShadowOffset = function(_, x, y) calls.x, calls.y = x, y end,
     }
@@ -320,6 +324,21 @@ test("Skin seam: the degraded HudFont draws and MarkText answers a string", func
     t.eq(calls.alpha, 0, "the off arm clears")
     t.eq(calls.y, 0)
     t.eq(S.MarkText("a\\b", 10), "|Ta\\b:10:10|t", "the art's own color, no tint to read")
+    t.eq(S.MarkText("a\\b"), "|Ta\\b:14:14|t", "no size takes 14")
+
+    calls.face = nil
+    S.HudFont(fs, { size = 14 })
+    t.eq(calls.face, bare.env.STANDARD_TEXT_FONT, "no face goes straight to the client's")
+
+    -- With no face at all it leaves the string alone and answers nil. Read before the restore, so
+    -- a failure here cannot strand the shared instance without the global.
+    local clientFace = bare.env.STANDARD_TEXT_FONT
+    calls.fonts = 0
+    bare.env.STANDARD_TEXT_FONT = nil
+    local answer = S.HudFont(fs, { size = 14 })
+    bare.env.STANDARD_TEXT_FONT = clientFace
+    t.nilv(answer, "no face at all answers nil")
+    t.eq(calls.fonts, 0, "and never reaches SetFont")
 end)
 
 test("Skin seam: the degraded FontFlags and HudFontSize answer real values, never nil", function()
