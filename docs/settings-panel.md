@@ -186,8 +186,9 @@ landing page and combat cover. The rest is the host's:
   ([profiles.md](profiles.md#the-profiles-page)).
 - **The gray notes** (the GLOBALNAME caption, the Categories footnote, the landing alias row) read
   `NS.PanelEscape("pc.note")`, and the list entry's tooltip reads `pc.tipNote` for its gray lines and
-  `gtip.value` for its title. Under Ka0s Default both are today's `#aaaaaa` and white; every other
-  skin draws its own muted text. The notes are text on the settings pages, so while **Ignore settings
+  `gtip.value` for its title, and passes `gtip.line` as the body line's color, so what the rendered
+  sample leaves uncolored follows the skin too. Under Ka0s Default these are today's `#aaaaaa`, white
+  and the client's gold; every other skin draws its own. The notes are text on the settings pages, so while **Ignore settings
   panel** is on they keep the token's Ka0s Default copy (`#aaaaaa`) with the rest of the page, gated
   on the public `Skin:GetIgnore(owner)` as the library's own settings-page paints are. The tooltip
   lines are Blizzard's GameTooltip, outside the Scope, so they follow the skin whatever it says. The

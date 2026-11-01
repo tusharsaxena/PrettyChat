@@ -438,7 +438,8 @@ local function showStringTooltip(owner, catData, globalName)
     if not (strData and GameTooltip) then return end
     GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
     -- The lines are this addon's; the frame stays Blizzard's (skinning-§7, decision X8). Read
-    -- at hover, so a skin switch reaches the next one. The body keeps the sample's own colors.
+    -- at hover, so a skin switch reaches the next one. The body keeps the sample's own colors, and
+    -- what the sample leaves uncolored takes gtip.line, the client's gold on Ka0s Default.
     local note = NS.SkinEscape("pc.tipNote")
     GameTooltip:SetText(strData.label, NS.SkinColor("gtip.value"))
     GameTooltip:AddLine(note .. globalName .. Color.reset)
@@ -448,7 +449,8 @@ local function showStringTooltip(owner, catData, globalName)
         local rendered, err = NS.RenderSample(original)
         body = rendered or (note .. tostring(err) .. Color.reset)
     end
-    GameTooltip:AddLine(body, nil, nil, nil, true)
+    local r, g, b = NS.SkinColor("gtip.line")
+    GameTooltip:AddLine(body, r, g, b, true)
     GameTooltip:Show()
 end
 
