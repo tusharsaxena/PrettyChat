@@ -655,7 +655,7 @@ Total.
 - /pc profile refuses to switch in combat, and still lists
 - /pc profile answers while the addon is disabled, and can bring it back up
 
-### test_skinsetup.lua (19)
+### test_skinsetup.lua (20)
 
 - Skin seam: the owner is the folder name, and NS.Skin is its facade
 - Skin seam: the read answers Ka0s Default before the profile store exists
@@ -673,6 +673,7 @@ Total.
 - Skin seam: a skin write still lands while the addon is stood down
 - Skin seam: the library-absent load has no Skin major and falls back to the host facade
 - Skin seam: the degraded facade answers every name the live facade carries
+- Skin seam: the degraded HudFont draws and MarkText answers a string
 - Skin seam: the degraded FontFlags and HudFontSize answer real values, never nil
 - Skin seam: the seam publishes the same NS members on both paths
 - Skin seam: each host-copy skin token is the live library's Ka0s Default value
@@ -691,7 +692,7 @@ Total.
 - Skin outline: a profile switch applies the incoming profile's mode, and back
 - Skin outline: without the skin engine the apply is a quiet no-op and the store still takes it
 
-### test_skin_surfaces.lua (10)
+### test_skin_surfaces.lua (11)
 
 - Skin surfaces: the page notes are today's #aaaaaa under Ka0s Default
 - Skin surfaces: under another skin the page notes take that skin's pc.note
@@ -701,6 +702,7 @@ Total.
 - Skin surfaces: a list entry's tooltip lines are Ka0s Default's exact values
 - Skin surfaces: under another skin the tooltip lines take gtip.value and pc.tipNote
 - Skin surfaces: the tooltip lines follow the skin whatever the Scope says
+- Skin surfaces: the tooltip's rendered body line draws in gtip.line, spied at AddLine
 - Skin surfaces: a note token that does not resolve still builds every page, in today's gray
 - Skin surfaces: settings/ writes no typed gray and no typed tooltip color
 
@@ -818,9 +820,9 @@ Total.
 | test_panel_categories.lua | 28 |
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
-| test_skinsetup.lua | 19 |
+| test_skinsetup.lua | 20 |
 | test_skin_outline.lua | 11 |
-| test_skin_surfaces.lua | 10 |
+| test_skin_surfaces.lua | 11 |
 | test_skin_picker.lua | 17 |
 | test_skin_verb.lua | 6 |
 | test_glyphs.lua | 1 |
@@ -830,4 +832,4 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | Skipped | 1 |
-| **Total** | **656** |
+| **Total** | **658** |

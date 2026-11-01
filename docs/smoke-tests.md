@@ -28,8 +28,8 @@ works.
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
 | DIAG-1 – 28 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
-| RV-75 – 77 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position |
-| SKIN-1 – 27 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker |
+| RV-75 – 77, RV-85 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position; v1.85.0: a clean load and its icons |
+| SKIN-1 – 31 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker, the v1.85.0 title bars, launcher tooltip, Scope-cleared rows and delete confirmation |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
 ## Before you start
@@ -760,6 +760,10 @@ prunes `libs/LibKa0s/media/icons/` to the `LibKa0s icons: clear, close, copy.` l
 - **RV-77. The Categories page keeps its scroll position (Options minor 29).** On a long Categories
   page, scroll down and change a setting that re-renders the page → the scroll position is kept, not
   reset to the top. **Fail:** the page jumps back to the top after the change. Result: pass (owner-marked 2026-10-23)
+- **RV-85. A clean load on LibKa0s v1.85.0 (FS-PC-RV).** `/reload` → no Lua error naming a file under
+  `libs/LibKa0s/`. Open `/pc config` and every page, `/pc debug`, the copy window and `/pc skin` → every
+  mark draws. The line in `CLAUDE.md` now declares eleven icons, because the library draws its own marks
+  beside skinned controls. **Fail:** a blank control where a mark should be, or a Lua error. Result:
 
 ## SKIN
 
@@ -830,9 +834,11 @@ never asked for it, so a player who wants the client's look picks **WoW Default*
   the rest of the page, and so is the landing page's alias row. Untick it → the open page's notes
   change to Azeroth's own muted text color, and so does the alias row. Hover a list entry, with the box
   ticked or not → the tooltip's title, the GLOBALNAME line and an "(original not available)" or error
-  line take Azeroth's tooltip colors, the rendered sample keeps the format's own colors, and the
-  tooltip frame is the game's. **Fail:** a note recolored while the box is ticked, a note still
-  `#aaaaaa` with it unticked, a recolored sample, or a restyled tooltip frame. Result: pass (owner-marked 2026-10-30)
+  line take Azeroth's tooltip colors, the rendered sample keeps the colors the format writes while its
+  uncolored text takes the skin's tooltip body color (FS-PC-FIX, cause L2), and the tooltip frame is the
+  game's. Under Ka0s Default that uncolored text is the client's gold, as before. **Fail:** a note
+  recolored while the box is ticked, a note still `#aaaaaa` with it unticked, a color the format writes
+  changed by the skin, uncolored sample text that stays gold on Azeroth, or a restyled tooltip frame. Result:
 - **SKIN-7. Other addons stay stock (PC-04).** On a non-default skin with **Ignore settings panel** off,
   open PrettyChat's Categories page, then another AceGUI addon's options with a tree on the left, then
   PrettyChat's Profiles page, then the other addon again, a few times → PrettyChat's tree, editor and
@@ -985,6 +991,27 @@ skin, unless a check says otherwise.
   addon that loads AceGUI-3.0-SharedMediaWidgets and `/reload` → both lists look the same as before.
   **Fail:** a list of plain names, an unskinned pull-out, a row that changes when that addon is on, a
   list that closes on its first entry, or an error. Result:
+- **SKIN-28. The title bars (FS-PC-RV, LibKa0s v1.85.0, cause L9).** On Ka0s Default open the console and
+  the copy window → each title bar is 30 high, 4 px taller than before, with its title and marks on the
+  band's middle and the log and text area clear below it. This is the one expected change under Ka0s
+  Default. Repeat on Obsidian. **Fail:** a title or mark off the band, an overlap with the log, or a
+  different height on the two windows. Result:
+- **SKIN-29. The minimap tooltip follows the skin (LibKa0s v1.85.0, cause L1).** On Ka0s Default hover the
+  minimap button → as LAUNCH-4, nothing moved. Pick Obsidian with no reload and hover again → the title
+  and lines take that skin's tooltip colors, and the Yes or No word its on and off colors. **Fail:** gold
+  lines on Obsidian, or a look that needs a `/reload`. Result:
+- **SKIN-30. The settings rows, Scope cleared (LibKa0s v1.85.0, causes L2, L5, L7).** On Obsidian with
+  **Ignore settings panel** unticked: hover any control on General and in the Categories editor → the
+  tooltip body takes the skin's color. On the landing page the Slash Commands rows take the skin's command
+  and body colors, not gold and white. The scroll bars' small up and down buttons are Ka0s chevrons in the
+  skin's color. Tick the box → the tooltip body, the command rows and the step buttons are the client's
+  again. In chat, `/pc help` keeps gold and white under both. **Fail:** gold rows with the box unticked, a
+  skin color with it ticked, or a chat line that changed. Result:
+- **SKIN-31. The delete confirmation (LibKa0s v1.85.0, cause A4).** On Obsidian with **Ignore settings
+  panel** unticked, create a throwaway profile, then delete it on the Profiles page → the confirmation
+  wears the skin, and its rows, labels and layout on the page do not move. Cancel, tick the box and
+  delete again → the stock box. Delete a profile in a non-Ka0s addon → the stock box either way. **Fail:**
+  a stock box with the box unticked, a skinned box on another addon's delete, or an error. Result:
 
 ## Non-English client
 
@@ -1062,3 +1089,5 @@ SKIN-19 to SKIN-24, each recorded on its `Result:` line as `Owner reported pass,
 
 Pending from the findings remediation (Ka0sAddonsCommonTasks
 `docs/2026-10-31-FINDINGS_REMEDIATION/`, FX-PC-SIZE and FX-PC-DEAD): DEGRADED-11 and SKIN-25, and from its media picker ruling (M3-MEDIA): SKIN-27.
+
+Owed: RV-85 and SKIN-28 to SKIN-31 (FS-PC-RV, LibKa0s v1.85.0, 2026-11-01); SKIN-6, whose expected result moved with FS-PC-FIX (cause L2).
