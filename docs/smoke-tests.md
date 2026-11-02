@@ -763,7 +763,7 @@ prunes `libs/LibKa0s/media/icons/` to the `LibKa0s icons: clear, close, copy.` l
 - **RV-85. A clean load on LibKa0s v1.85.0 (FS-PC-RV).** `/reload` → no Lua error naming a file under
   `libs/LibKa0s/`. Open `/pc config` and every page, `/pc debug`, the copy window and `/pc skin` → every
   mark draws. The line in `CLAUDE.md` now declares eleven icons, because the library draws its own marks
-  beside skinned controls. **Fail:** a blank control where a mark should be, or a Lua error. Result:
+  beside skinned controls. **Fail:** a blank control where a mark should be, or a Lua error. Result: Passed (owner, 2026-11-02)
 
 ## SKIN
 
@@ -838,7 +838,7 @@ never asked for it, so a player who wants the client's look picks **WoW Default*
   uncolored text takes the skin's tooltip body color (FS-PC-FIX, cause L2), and the tooltip frame is the
   game's. Under Ka0s Default that uncolored text is the client's gold, as before. **Fail:** a note
   recolored while the box is ticked, a note still `#aaaaaa` with it unticked, a color the format writes
-  changed by the skin, uncolored sample text that stays gold on Azeroth, or a restyled tooltip frame. Result:
+  changed by the skin, uncolored sample text that stays gold on Azeroth, or a restyled tooltip frame. Result: Passed (owner, 2026-11-02)
 - **SKIN-7. Other addons stay stock (PC-04).** On a non-default skin with **Ignore settings panel** off,
   open PrettyChat's Categories page, then another AceGUI addon's options with a tree on the left, then
   PrettyChat's Profiles page, then the other addon again, a few times → PrettyChat's tree, editor and
@@ -995,23 +995,23 @@ skin, unless a check says otherwise.
   the copy window → each title bar is 30 high, 4 px taller than before, with its title and marks on the
   band's middle and the log and text area clear below it. This is the one expected change under Ka0s
   Default. Repeat on Obsidian. **Fail:** a title or mark off the band, an overlap with the log, or a
-  different height on the two windows. Result:
+  different height on the two windows. Result: Passed (owner, 2026-11-02)
 - **SKIN-29. The minimap tooltip follows the skin (LibKa0s v1.85.0, cause L1).** On Ka0s Default hover the
   minimap button → as LAUNCH-4, nothing moved. Pick Obsidian with no reload and hover again → the title
   and lines take that skin's tooltip colors, and the Yes or No word its on and off colors. **Fail:** gold
-  lines on Obsidian, or a look that needs a `/reload`. Result:
+  lines on Obsidian, or a look that needs a `/reload`. Result: Passed (owner, 2026-11-02)
 - **SKIN-30. The settings rows, Scope cleared (LibKa0s v1.85.0, causes L2, L5, L7).** On Obsidian with
   **Ignore settings panel** unticked: hover any control on General and in the Categories editor → the
   tooltip body takes the skin's color. On the landing page the Slash Commands rows take the skin's command
   and body colors, not gold and white. The scroll bars' small up and down buttons are Ka0s chevrons in the
   skin's color. Tick the box → the tooltip body, the command rows and the step buttons are the client's
   again. In chat, `/pc help` keeps gold and white under both. **Fail:** gold rows with the box unticked, a
-  skin color with it ticked, or a chat line that changed. Result:
+  skin color with it ticked, or a chat line that changed. Result: Passed (owner, 2026-11-02)
 - **SKIN-31. The delete confirmation (LibKa0s v1.85.0, cause A4).** On Obsidian with **Ignore settings
   panel** unticked, create a throwaway profile, then delete it on the Profiles page → the confirmation
   wears the skin, and its rows, labels and layout on the page do not move. Cancel, tick the box and
   delete again → the stock box. Delete a profile in a non-Ka0s addon → the stock box either way. **Fail:**
-  a stock box with the box unticked, a skinned box on another addon's delete, or an error. Result:
+  a stock box with the box unticked, a skinned box on another addon's delete, or an error. Result: Passed (owner, 2026-11-02)
 - **SKIN-32. A stored pick of the deleted Friz lands on Ka0s Ubuntu (R3-FRIZ, schema v3).** Before
   updating, set the Skin tab's **Font** to *Ka0s Friz Quadrata TT* in two profiles and log out. Update and
   fully restart the client (a new font file) → the settings chrome draws in Ubuntu and the Font row reads
@@ -1098,3 +1098,5 @@ Pending from the findings remediation (Ka0sAddonsCommonTasks
 Owed: RV-85 and SKIN-28 to SKIN-31 (FS-PC-RV, LibKa0s v1.85.0, 2026-11-01); SKIN-6, whose expected result moved with FS-PC-FIX (cause L2).
 
 Owed from the owner's third smoke round (R3-FRIZ, 2026-11-02): SKIN-32, new, and SKIN-22, whose WoW Default face is now Ka0s Ubuntu, so its pass mark came off.
+
+On 2026-11-02 the owner reported that every check on the smoke lists of the full skinning run and its smoke feedback batch (Ka0sAddonsCommonTasks `docs/2026-11-01-FULL_SKINNING/` and `docs/2026-11-01-SMOKE_FEEDBACK/`) passed, apart from DpsRace's clock font, the skinned look of the AceGUI Dropdown and the Ka0sMedia_Font and Ka0sMedia_Statusbar pickers, FadeNineSlice and IconBorder (`docs/2026-11-02-SMOKE_ROUND3/`, R3-SMOKE). Passed, recorded on each `Result:` line as `Passed (owner, 2026-11-02)`: RV-85, SKIN-6, SKIN-28, SKIN-29, SKIN-30 and SKIN-31.
