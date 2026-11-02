@@ -328,7 +328,7 @@ Total.
 - SortedStringNames answers the same curated table on every call
 - a formatstring-filtered report does not shrink the cached list
 
-### test_database.lua (27)
+### test_database.lua (28)
 
 - NS.Database and the db.global namespace exist
 - a fresh DB is stamped at the current schema version
@@ -357,6 +357,7 @@ Total.
 - migration v2 drops Loot's disabledStrings and prunes what empties
 - migration v2 run a second time changes nothing
 - migration v2 lifts an inactive stored profile too
+- migration v3 moves a stored Ka0s Friz Quadrata TT to Ka0s Ubuntu in every profile, Blizzard's Friz kept
 
 ### test_lifecycle.lua (12)
 
@@ -450,6 +451,10 @@ Total.
 - Launcher: DEGRADED — the row still reads and writes, so the choice is kept
 - Launcher: DEGRADED — LibDataBroker present, LibDBIcon absent: the plugin, no button
 - Launcher: DEGRADED — no LibKa0s at all: no launcher, and the row survives
+
+### test_launcher_skin_entry.lua (1)
+
+- launcher descriptor passes openSkinPicker, which runs the skin verb
 
 ### test_slash.lua (54)
 
@@ -829,10 +834,11 @@ Total.
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
 | test_override.lua | 46 |
-| test_database.lua | 27 |
+| test_database.lua | 28 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 32 |
 | test_launcher.lua | 40 |
+| test_launcher_skin_entry.lua | 1 |
 | test_slash.lua | 54 |
 | test_disabled.lua | 14 |
 | test_diagnostics.lua | 18 |
@@ -854,4 +860,4 @@ Total.
 | test_skin_values.lua | 3 |
 | test_skin_switch.lua | 10 |
 | Skipped | 1 |
-| **Total** | **672** |
+| **Total** | **674** |

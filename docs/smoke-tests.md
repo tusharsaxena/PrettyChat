@@ -29,7 +29,7 @@ works.
 | DIAG-1 – 28 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | RV-75 – 77, RV-85 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position; v1.85.0: a clean load and its icons |
-| SKIN-1 – 31 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker, the v1.85.0 title bars, launcher tooltip, Scope-cleared rows and delete confirmation |
+| SKIN-1 – 32 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker, the v1.85.0 title bars, launcher tooltip, Scope-cleared rows and delete confirmation, a stored pick of the deleted Friz |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
 ## Before you start
@@ -950,9 +950,9 @@ skin, unless a check says otherwise.
   label, dropdown value and button (Reset font, Reset texture, Copy to every Ka0s addon) reads in full;
   Ka0s Default draws Prototype, Obsidian Expressway, WoW Forever Fira Sans Medium, WoW Midnight Segoe UI
   Semibold, Azeroth Open Sans Semibold, Ember Emblem, High Contrast Doris PP, Glass Avant Garde and WoW
-  Default Ka0s Friz Quadrata TT (visibly unlike Prototype; LibKa0s v1.83.0). Text in each skin is
+  Default Ka0s Ubuntu (visibly unlike Prototype; LibKa0s R3-L6, Ka0s Friz Quadrata TT before R3-FRIZ). Text in each skin is
   about as wide as Ka0s Default's. **Fail:** a clipped or ellipsized label, or text in one skin visibly
-  wider than the others. Result: Owner reported pass, 2026-10-31
+  wider than the others. Result: not run (re-opened by R3-FRIZ)
 - **SKIN-23. The v1.82.0 Skin tab and a clean load (PC-01).** `/reload` → no Lua error naming a file
   under `libs/LibKa0s/`. On the Skin tab: **Reset font** and **Reset texture** sit side by side under the
   dropdowns, each grayed while its half is the skin's default; the Scope check boxes line up with the
@@ -1012,6 +1012,11 @@ skin, unless a check says otherwise.
   wears the skin, and its rows, labels and layout on the page do not move. Cancel, tick the box and
   delete again → the stock box. Delete a profile in a non-Ka0s addon → the stock box either way. **Fail:**
   a stock box with the box unticked, a skinned box on another addon's delete, or an error. Result:
+- **SKIN-32. A stored pick of the deleted Friz lands on Ka0s Ubuntu (R3-FRIZ, schema v3).** Before
+  updating, set the Skin tab's **Font** to *Ka0s Friz Quadrata TT* in two profiles and log out. Update and
+  fully restart the client (a new font file) → the settings chrome draws in Ubuntu and the Font row reads
+  *Ka0s Ubuntu*; switch to the other profile → the same. **Fail:** the game's default face, or the row
+  still naming Ka0s Friz Quadrata TT. Result:
 
 ## Non-English client
 
@@ -1091,3 +1096,5 @@ Pending from the findings remediation (Ka0sAddonsCommonTasks
 `docs/2026-10-31-FINDINGS_REMEDIATION/`, FX-PC-SIZE and FX-PC-DEAD): DEGRADED-11 and SKIN-25, and from its media picker ruling (M3-MEDIA): SKIN-27.
 
 Owed: RV-85 and SKIN-28 to SKIN-31 (FS-PC-RV, LibKa0s v1.85.0, 2026-11-01); SKIN-6, whose expected result moved with FS-PC-FIX (cause L2).
+
+Owed from the owner's third smoke round (R3-FRIZ, 2026-11-02): SKIN-32, new, and SKIN-22, whose WoW Default face is now Ka0s Ubuntu, so its pass mark came off.

@@ -252,6 +252,10 @@ end
 --     the stem and would end that.
 local RESIDUE = {
     -- Not prose the addon speaks.
+    {"core/Database.lua", "Ka0s Friz Quadrata TT",
+     "a font FACE name: the LibSharedMedia key LibKa0s v1.85.0 deleted, which the v3 migration retires (R3-FRIZ)"},
+    {"core/Database.lua", "Ka0s Ubuntu",
+     "a font FACE name: the v3 migration's successor key for the deleted Ka0s Friz Quadrata TT (R3-FRIZ)"},
     {"core/Constants.lua", "JetBrains Mono",
      "a font FACE name — an identifier LibSharedMedia and the console descriptor match on"},
     {"settings/OptionsSetup.lua", "Ka0s Pretty Chat",

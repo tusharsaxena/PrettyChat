@@ -332,7 +332,7 @@ test("migration v2 moves a Loot-only override onto Tradeskill", function()
     t.eq(cats.Tradeskill and cats.Tradeskill.strings and cats.Tradeskill.strings[CREATED],
         "MINE %s", "the Loot override now lives under Tradeskill")
     t.nilv(cats.Loot, "the Loot table the copy emptied is pruned")
-    t.eq(pdb.global.schemaVersion, 2, "the stamp reaches v2")
+    t.eq(pdb.global.schemaVersion, 3, "the stamp walks through v2 to the current v3")
 end)
 
 test("migration v2 keeps an existing Tradeskill override and drops Loot's copy", function()
@@ -400,4 +400,25 @@ test("migration v2 lifts an inactive stored profile too", function()
     t.eq(cats.Tradeskill and cats.Tradeskill.strings and cats.Tradeskill.strings[CREATED_M],
         "ALT %s x%d", "the profile nobody activated is lifted")
     t.nilv(cats.Loot, "and its Loot copy is gone")
+end)
+
+-- ---- migration v3 (R3-FRIZ): the deleted Ka0s Friz Quadrata TT ----
+-- LibKa0s v1.85.0 deleted the face (R3-L7); a stored pick of it moves to Ka0s Ubuntu in every profile.
+-- red under: no v3 step, one that walks the active profile only, or one that rewrites Blizzard's own
+-- "Friz Quadrata TT".
+test("migration v3 moves a stored Ka0s Friz Quadrata TT to Ka0s Ubuntu in every profile, Blizzard's Friz kept", function()
+    local fresh = ctx.loadAddon()
+    local pdb = fresh.addon.db
+    local profiles = pdb.sv.profiles
+    profiles.Default = profiles.Default or {}
+    profiles.Default.skin = { font = "Ka0s Friz Quadrata TT" }
+    profiles.Alt = { skin = { font = "Ka0s Friz Quadrata TT" } }
+    profiles.Plain = { skin = { font = "Friz Quadrata TT" } }
+    pdb.global.schemaVersion = 2
+    fresh.NS.Database.RunMigrations(pdb)
+    t.eq(pdb.global.schemaVersion, 3, "the stamp reaches v3")
+    t.eq(profiles.Default.skin.font, "Ka0s Ubuntu", "the Default profile's override")
+    t.eq(profiles.Alt.skin.font, "Ka0s Ubuntu", "another profile's override")
+    t.eq(profiles.Plain.skin.font, "Friz Quadrata TT", "Blizzard's own Friz stays")
+    t.eq(fresh.NS.Database.RetireFonts(profiles.Alt), 0, "a second pass moves nothing")
 end)
