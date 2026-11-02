@@ -110,7 +110,7 @@ test("Skin picker: never in combat; the next start out of combat shows it", func
     local inst = ctx.loadAddon({ mock = function(m) m.InCombatLockdown = function() return true end end })
     t.nilv(shownOwner(inst), "a login in combat shows nothing")
     t.eq(inst.NS.Schema.Get(PATH), false, "and the profile still has not seen it")
-    t.eq(#inst.env.__timers, 0, "nothing is held for the combat's end")
+    t.eq(#inst.env.__timers, 1, "only the skin notice's retry is held for the combat's end")
     inst.env.InCombatLockdown = function() return false end
     inst.NS.MaybeShowSkinPicker()
     t.eq(shownOwner(inst), OWNER, "out of combat it shows")

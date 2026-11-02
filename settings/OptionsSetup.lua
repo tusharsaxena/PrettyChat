@@ -173,6 +173,7 @@ if not lib then
         -- The reserved `skin` verb (LibKa0s v1.82.0, OptionsSkinPicker minor 3): no
         -- picker on this path, so SkinVerb opens nothing and answers nil, "absent".
         SkinVerb             = function() return nil, "absent" end,
+        SkinNotice = function() return nil, "unavailable" end,
         -- ── the ONE stub member that is reached at LOAD ──────────────────
         --
         -- options-ui-§1's degradation rule is LOAD-COMPLETING, and the measured
