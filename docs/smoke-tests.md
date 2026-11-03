@@ -28,7 +28,7 @@ works.
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
 | DIAG-1 – 28 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
-| RV-75 – 77, RV-85 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position; v1.85.0: a clean load and its icons |
+| RV-75 – 77, RV-85 – 86 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position; v1.85.0: a clean load and its icons, and a clean load on the R4-L4 re-cut |
 | SKIN-1 – 33 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker, the v1.85.0 title bars, launcher tooltip, Scope-cleared rows and delete confirmation, a stored pick of the deleted Friz, no line under a window title |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
@@ -764,6 +764,11 @@ prunes `libs/LibKa0s/media/icons/` to the `LibKa0s icons: clear, close, copy.` l
   `libs/LibKa0s/`. Open `/pc config` and every page, `/pc debug`, the copy window and `/pc skin` → every
   mark draws. The line in `CLAUDE.md` now declares eleven icons, because the library draws its own marks
   beside skinned controls. **Fail:** a blank control where a mark should be, or a Lua error. Result: Passed (owner, 2026-11-02)
+- **RV-86. A clean load on the R4-L4 re-cut of LibKa0s v1.85.0 (R4-RV3).** `/reload` → no Lua error naming a file
+  under `libs/LibKa0s/`. Open `/pc config` and every page, `/pc debug`, the copy window and `/pc skin` under Ka0s Default
+  → every mark draws and each window looks as in SKIN-33. PrettyChat draws no icon edge of its own, so the re-cut's HUD
+  icon edge (S.IconBorder `hud`) changes nothing here. **Fail:** a Lua error, or a blank control where a mark should be.
+  Result:
 
 ## SKIN
 
@@ -1107,6 +1112,6 @@ Owed: RV-85 and SKIN-28 to SKIN-31 (FS-PC-RV, LibKa0s v1.85.0, 2026-11-01); SKIN
 
 Owed from the owner's third smoke round (R3-FRIZ, 2026-11-02): SKIN-32, new, and SKIN-22, whose WoW Default face is now Ka0s Ubuntu, so its pass mark came off.
 
-Owed from the owner's fourth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-SMOKE_ROUND4/`, R4-SEP, 2026-11-03): SKIN-33, new. DIAG-18's gray divider under the console's title is gone with it; the rest of DIAG-18 holds.
+Owed from the owner's fourth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-SMOKE_ROUND4/`, R4-SEP, 2026-11-03): SKIN-33, new. DIAG-18's gray divider under the console's title is gone with it; the rest of DIAG-18 holds. From R4-RV3: RV-86, new.
 
 On 2026-11-02 the owner reported that every check on the smoke lists of the full skinning run and its smoke feedback batch (Ka0sAddonsCommonTasks `docs/2026-11-01-FULL_SKINNING/` and `docs/2026-11-01-SMOKE_FEEDBACK/`) passed, apart from DpsRace's clock font, the skinned look of the AceGUI Dropdown and the Ka0sMedia_Font and Ka0sMedia_Statusbar pickers, FadeNineSlice and IconBorder (`docs/2026-11-02-SMOKE_ROUND3/`, R3-SMOKE). Passed, recorded on each `Result:` line as `Passed (owner, 2026-11-02)`: RV-85, SKIN-6, SKIN-28, SKIN-29, SKIN-30 and SKIN-31.
