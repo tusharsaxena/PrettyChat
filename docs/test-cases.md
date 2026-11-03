@@ -328,7 +328,7 @@ Total.
 - SortedStringNames answers the same curated table on every call
 - a formatstring-filtered report does not shrink the cached list
 
-### test_database.lua (27)
+### test_database.lua (28)
 
 - NS.Database and the db.global namespace exist
 - a fresh DB is stamped at the current schema version
@@ -357,6 +357,7 @@ Total.
 - migration v2 drops Loot's disabledStrings and prunes what empties
 - migration v2 run a second time changes nothing
 - migration v2 lifts an inactive stored profile too
+- migration v3 moves a stored Ka0s Friz Quadrata TT to Ka0s Ubuntu in every profile, Blizzard's Friz kept
 
 ### test_lifecycle.lua (12)
 
@@ -373,7 +374,7 @@ Total.
 - OpenConfig is silent on the paths the library does not report
 - OpenConfig is a silent no-op when the Settings API is unavailable
 
-### test_debuglog.lua (32)
+### test_debuglog.lua (33)
 
 - FONT_MONO points at the vendored JetBrainsMono TTF
 - pure line formatters render plain and colored lines
@@ -394,6 +395,7 @@ Total.
 - the line counter reports buffered lines against the cap
 - the Copy window is filled with the plain-text buffer
 - both console windows register for Esc-to-close
+- neither console window draws a line under its title (R4-SEP)
 - Show, Hide and Toggle drive the window's visibility
 - IsShown is false before the console has ever been built
 - the header label tracks the session flag in the debug-logging-§5 state colors
@@ -450,6 +452,10 @@ Total.
 - Launcher: DEGRADED — the row still reads and writes, so the choice is kept
 - Launcher: DEGRADED — LibDataBroker present, LibDBIcon absent: the plugin, no button
 - Launcher: DEGRADED — no LibKa0s at all: no launcher, and the row survives
+
+### test_launcher_skin_entry.lua (1)
+
+- launcher descriptor passes openSkinPicker, which runs the skin verb
 
 ### test_slash.lua (54)
 
@@ -655,7 +661,7 @@ Total.
 - /pc profile refuses to switch in combat, and still lists
 - /pc profile answers while the addon is disabled, and can bring it back up
 
-### test_skinsetup.lua (19)
+### test_skinsetup.lua (21)
 
 - Skin seam: the owner is the folder name, and NS.Skin is its facade
 - Skin seam: the read answers Ka0s Default before the profile store exists
@@ -673,6 +679,8 @@ Total.
 - Skin seam: a skin write still lands while the addon is stood down
 - Skin seam: the library-absent load has no Skin major and falls back to the host facade
 - Skin seam: the degraded facade answers every name the live facade carries
+- Skin seam: the degraded HudFont draws and MarkText answers a string
+- Skin seam: the degraded BarBorder answers the stored three it is handed
 - Skin seam: the degraded FontFlags and HudFontSize answer real values, never nil
 - Skin seam: the seam publishes the same NS members on both paths
 - Skin seam: each host-copy skin token is the live library's Ka0s Default value
@@ -691,7 +699,7 @@ Total.
 - Skin outline: a profile switch applies the incoming profile's mode, and back
 - Skin outline: without the skin engine the apply is a quiet no-op and the store still takes it
 
-### test_skin_surfaces.lua (10)
+### test_skin_surfaces.lua (11)
 
 - Skin surfaces: the page notes are today's #aaaaaa under Ka0s Default
 - Skin surfaces: under another skin the page notes take that skin's pc.note
@@ -701,12 +709,13 @@ Total.
 - Skin surfaces: a list entry's tooltip lines are Ka0s Default's exact values
 - Skin surfaces: under another skin the tooltip lines take gtip.value and pc.tipNote
 - Skin surfaces: the tooltip lines follow the skin whatever the Scope says
+- Skin surfaces: the tooltip's rendered body line draws in gtip.line, spied at AddLine
 - Skin surfaces: a note token that does not resolve still builds every page, in today's gray
 - Skin surfaces: settings/ writes no typed gray and no typed tooltip color
 
 ### test_skin_picker.lua (17)
 
-- Skin picker: the spec names this owner, its seams and the Skin tab, with no eye
+- Skin picker: the spec names this owner, its seams and the Skin tab, with no one-shot eye
 - Skin picker: a fresh profile shows it at OnEnable, with no timer and no event armed
 - Skin picker: an unseen profile shows it; a seen one does not, and takes it down
 - Skin picker: never in combat; the next start out of combat shows it
@@ -732,6 +741,24 @@ Total.
 - Skin verb: in combat every call prints the library's gray line and shows nothing
 - Skin verb: refused while the addon is disabled, and no picker shows
 - Skin verb: without LibKa0s the verb prints the library-absent line
+
+### test_skin_preview.lua (15)
+
+- Skin preview: the spec hands the picker a console preview and no one-shot onPreview
+- Skin preview: the mode reads the console the panel's checkbox and /pc debug move
+- Skin preview: the picker opened with the console hidden opens it with /pc test's sample
+- Skin preview: the enter runs the Test button's and /pc test's act
+- Skin preview: the eye hides the console and shows it again, without a second sample
+- Skin preview: the close control hides the console the picker opened
+- Skin preview: Escape hides the console the picker opened
+- Skin preview: Apply hides the console the picker opened
+- Skin preview: this addon's own hide (stand-down, profile event) hides the console the picker opened
+- Skin preview: the gear hides the console the picker opened, the panel opened
+- Skin preview: a console the eye hid and showed again is hidden at the close
+- Skin preview: a console already shown is left alone, its lines untouched
+- Skin preview: the player's console hidden by the eye comes back at the close, with no sample
+- Skin preview: the next showing runs the sample again
+- Skin preview: CLAUDE.md declares the eye and its icon ships
 
 ### test_glyphs.lua (1)
 
@@ -785,6 +812,25 @@ Total.
 - lizard sighted: parity names every file whose counts differ, and only those
 - lizard sighted: lizard lists every function of a hazard fixture once it is sanitized
 
+### test_skin_values.lua (3)
+
+- skin values: every host row carries its file, substring, why and cause id
+- skin values: no typed value outside the kit's categories and the host's rows
+- skin values: the check is falsifiable, a planted value of each shape is reported
+
+### test_skin_switch.lua (10)
+
+- skin switch: the check is falsifiable, a surface that redraws a literal is reported
+- skin switch: the GLOBALNAME caption changes
+- skin switch: the Categories footnote changes
+- skin switch: the landing page's alias row changes
+- skin switch: the list hover's title and body changes
+- skin switch: the list hover's title and body changes with the Scope ignored
+- skin switch: the list hover's GLOBALNAME line changes
+- skin switch: the list hover's GLOBALNAME line changes with the Scope ignored
+- skin switch: the debug console changes
+- skin switch: the debug console changes with the Scope ignored
+
 ## Totals
 
 | Suite | Cases |
@@ -807,10 +853,11 @@ Total.
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
 | test_override.lua | 46 |
-| test_database.lua | 27 |
+| test_database.lua | 28 |
 | test_lifecycle.lua | 12 |
-| test_debuglog.lua | 32 |
+| test_debuglog.lua | 33 |
 | test_launcher.lua | 40 |
+| test_launcher_skin_entry.lua | 1 |
 | test_slash.lua | 54 |
 | test_disabled.lua | 14 |
 | test_diagnostics.lua | 18 |
@@ -818,16 +865,19 @@ Total.
 | test_panel_categories.lua | 28 |
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
-| test_skinsetup.lua | 19 |
+| test_skinsetup.lua | 21 |
 | test_skin_outline.lua | 11 |
-| test_skin_surfaces.lua | 10 |
+| test_skin_surfaces.lua | 11 |
 | test_skin_picker.lua | 17 |
 | test_skin_verb.lua | 6 |
+| test_skin_preview.lua | 15 |
 | test_glyphs.lua | 1 |
 | test_doc_structure.lua | 13 |
 | test_register.lua | 1 |
 | test_eol.lua | 2 |
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
+| test_skin_values.lua | 3 |
+| test_skin_switch.lua | 10 |
 | Skipped | 1 |
-| **Total** | **656** |
+| **Total** | **690** |

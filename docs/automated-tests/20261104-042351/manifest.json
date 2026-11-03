@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "addon": "PrettyChat",
+  "addonVersion": "1.7.0",
+  "run": "20261104-042351",
+  "startedAt": "2026-11-04T04:23:51+05:30",
+  "durationMs": 32408,
+  "label": null,
+  "release": null,
+  "git": { "sha": "f0927040a9132e338e8f262bda11b0c861a94867", "branch": "feat/2026-11-01-full-skinning", "dirty": false },
+  "host": { "lua": "Lua 5.1.5  Copyright (C) 1994-2012 Lua.org, PUC-Rio", "luacheck": "Luacheck: 1.2.0", "lizard": "1.24.0", "timingSource": "date +%s%3N" },
+  "suites": {
+    "lint": { "status": "pass", "durationMs": 2760, "warnings": 0, "errors": 0, "files": 70, "gating": true, "gates": { "commit": true, "release": true } },
+    "tests": { "status": "pass", "durationMs": 22318, "passed": 690, "failed": 0, "skipped": 1, "total": 691, "gating": true, "gates": { "commit": true, "release": true } },
+    "perf": { "status": "skip", "durationMs": 4, "skipReason": "performance-§12 no-combat-path exemption (ratified; docs/ARCHITECTURE.md -> Documented deviations)", "scenarios": 0, "gating": false, "gates": { "commit": false, "release": true } },
+    "complexity": { "status": "pass", "durationMs": 5717, "warnings": 0, "maxCcn": 15, "nloc": 59910, "functions": 1604, "avgCcn": 2.1, "avgNloc": 7.2, "avgToken": 60.0, "warnFunRatio": 0.00, "warnNlocRatio": 0.00, "bandFiles": 0, "overCapFiles": 0, "blindFiles": 0, "crashedFiles": 0, "gating": false, "gates": { "commit": false, "release": true } }
+  },
+  "verdict": "green"
+}

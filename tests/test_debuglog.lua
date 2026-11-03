@@ -237,6 +237,20 @@ test("both console windows register for Esc-to-close", function()
     t.truthy(registered["PrettyChatDebugCopyWindow"], "so does the copy window")
 end)
 
+test("neither console window draws a line under its title (R4-SEP)", function()
+    -- Ka0sAddonsCommonTasks docs/2026-11-03-SMOKE_ROUND4, R4_SIGNOFF.md: no window has a separator
+    -- under its header, the Skin Tester showroom the reference. The library draws both windows; this
+    -- addon adds no line of its own, so a divider that is present must at least be hidden.
+    D:Show()
+    D:ShowCopy()
+    for _, name in ipairs({ "PrettyChatDebugWindow", "PrettyChatDebugCopyWindow" }) do
+        local f = env._frames.byName[name]
+        t.truthy(f, name .. " is built")
+        local divider = f.divider
+        t.truthy(divider == nil or not divider:IsShown(), name .. " shows no divider under its title")
+    end
+end)
+
 test("Show, Hide and Toggle drive the window's visibility", function()
     D:Hide()
     t.falsy(D:IsShown(), "hidden reports false")
@@ -250,8 +264,9 @@ end)
 
 test("IsShown is false before the console has ever been built", function()
     -- The window is created lazily on first use; the General-page checkbox
-    -- reads this before anything has opened it.
-    local fresh = ctx.loadAddon()
+    -- reads this before anything has opened it. A login in combat shows no
+    -- first-run picker, whose console eye would otherwise build and open it.
+    local fresh = ctx.loadAddon({ mock = function(m) m.InCombatLockdown = function() return true end end })
     t.falsy(fresh.NS.DebugLog:IsShown(), "no frame yet means not shown")
 end)
 
@@ -301,6 +316,12 @@ end
 -- it BEFORE this, never inside.
 local function captureRaw(fn)
     local Schema = NS.Schema
+    -- Any picker an earlier case left up taken down, then the console open, as it is for a player
+    -- reading these lines: a profile event that shows the first-run picker again then enters
+    -- nothing, so the picker's console sample (core/SkinSetup.lua, THE EYE;
+    -- tests/test_skin_preview.lua) writes no lines here.
+    NS.HideSkinPicker()
+    D:Show()
     NS.State.debug = true
     NS.Debug("Test", "warm-up")
     local origApply, origNotify = addon.ApplyStrings, Schema.NotifyPanelChange

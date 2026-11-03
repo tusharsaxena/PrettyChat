@@ -48,6 +48,9 @@ local addonName, NS = ...
 --                           queue WITHOUT marking it seen: the stand-down, a profile that has seen
 --                           it, and first on every profile event.
 --   NS.SkinPickerSpec()     the spec NS.MaybeShowSkinPicker hands O.SkinPicker.
+--   NS.SkinPreview          the picker's eye, `spec.preview` mode "console" (OptionsSkinPicker minor
+--                           11): the debug console with `/pc test`'s sample, entered at a show with
+--                           the console hidden, toggled by the eye, taken back at every close.
 --   NS.RunSkinVerb()        the reserved `/pc skin` verb's act (LibKa0s v1.82.0, ruling D-16):
 --                           O.SkinVerb(NS.SkinPickerSpec()), the picker on demand whatever
 --                           `pickerSeen` says; the library-absent line on nil, "absent".
@@ -103,6 +106,8 @@ NS.SKIN_FALLBACK = NS.SKIN_FALLBACK or {}
 for name, def in pairs(NS.SKIN_TOKENS) do NS.SKIN_FALLBACK[name] = def.default end
 -- The list entry's tooltip title (settings/Panel.lua, decision D2): WHITE, the 1, 1, 1 it typed.
 NS.SKIN_FALLBACK["gtip.value"] = { 1, 1, 1, 1 }
+-- The list entry's tooltip body (settings/Panel.lua, cause L2): the client's gold.
+NS.SKIN_FALLBACK["gtip.line"] = { 1, 0.82, 0, 1 }
 
 --- A color token's components AS A CALL SITE WRITES THEM: r, g, b for an opaque color and r, g, b,
 --- a otherwise, so a site that passed three components before it read a token still passes three
@@ -225,7 +230,7 @@ local function storedIgnore()
     return schemaGet(PANEL_PATH) == true, schemaGet(FONTS_PATH) == true
 end
 
--- ── the first-run skin picker (LibKa0s OptionsSkinPicker, owner ruling O3, decision X6) ───────
+-- ── the first-run skin picker (LibKa0s OptionsSkinPicker, owner ruling O3, the console eye) ───
 --
 -- WHEN. Once at login, from PrettyChat:OnEnable after the latch has its answer (OnInitialize
 -- applied the stored skin), and again after every profile event (core/PrettyChat.lua's shared
@@ -245,8 +250,19 @@ end
 -- `skin.pickerSeen`, through NS.Schema.Set. A close this addon makes itself (NS.HideSkinPicker:
 -- the stand-down, a profile event) is not the player's and writes nothing.
 --
--- NO EYE (decision X6). PrettyChat has no window and no test mode to preview in, so `onPreview`
--- is omitted: the library hides the eye, and only the `settings` icon is declared (CLAUDE.md).
+-- THE EYE (LibKa0s OptionsSkinPicker minor 11, `spec.preview`, mode "console"; the owner's answer
+-- "Debug console sample", Ka0sAddonsCommonTasks docs/2026-11-03-SMOKE_ROUND6/, which replaces
+-- decision X6's no-eye). PrettyChat has no window, test mode or unlock mode, so its preview is the
+-- debug console filled with `/pc test`'s sample lines. The mode is on while the console is shown:
+-- `isActive` and `isShown` both read NS.DebugLog:IsShown(), the state the General page's console
+-- checkbox and `/pc debug` move. A fresh showing with the console hidden calls `enter`, which runs
+-- PrettyChat:TestToConsole(), the act the Test button and `/pc test` run, so the console opens with
+-- the sample; the eye calls `exit` (NS.DebugLog:Hide(), the checkbox's own) and `enter` again; and
+-- every close takes back what the picker and its eye moved (the library's restore). A console the
+-- player already had open is the player's: the picker enters nothing, and a later `enter` (the
+-- eye, or the restore of a console the eye hid) only shows it again, never writing a second
+-- sample (`sampled`, cleared at each close). Nothing here is stored and the console has no combat
+-- refusal, so a /reload while the picker is up leaves the console closed.
 -- A pick previews on the open settings pages and the debug console, which follow the skin live.
 --
 -- QUEUED. One picker is up at a time across every Ka0s addon: while another addon's is up,
@@ -254,10 +270,44 @@ end
 
 local PICKER_PATH = "skin.pickerSeen"
 local quietClose = false -- true while NS.HideSkinPicker takes the picker down
+local sampled = false    -- this showing's console holds the sample, or is the player's own
+
+local function consoleShown()
+    local log = NS.DebugLog
+    return (log and log:IsShown()) and true or false
+end
+
+--- The eye's mode on: the console shown, with `/pc test`'s sample the first time in a showing.
+--- Nothing without the DebugLog library, whose absent console would send the sample to chat.
+local function previewEnter()
+    if not (LibStub and LibStub("LibKa0s-DebugLog-1.0", true)) then return end
+    if sampled then
+        NS.DebugLog:Show()
+        return
+    end
+    sampled = true
+    LibStub("AceAddon-3.0"):GetAddon(addonName):TestToConsole()
+end
+
+--- The eye's mode off: the console hidden. A console hidden here is never sampled again this
+--- showing, so the player's own console the eye hid comes back without the sample in it.
+local function previewExit()
+    sampled = true
+    NS.DebugLog:Hide()
+end
+
+NS.SkinPreview = {
+    mode = "console",
+    enter = previewEnter, exit = previewExit,
+    isActive = consoleShown, isShown = consoleShown,
+}
 
 --- The player's close: the picker seen, and nothing else. The library's put-back already wears the
---- stored choice (it reads `get` at the close), so the skin is not this callback's to move.
+--- stored choice (it reads `get` at the close), so the skin is not this callback's to move. Every
+--- close, this addon's own included, runs after the library's preview restore, so the next showing
+--- samples again.
 local function pickerClosed()
+    sampled = false
     if quietClose then return end
     local S = NS.Schema
     if not (NS.db and S and S.Set) then return end
@@ -270,6 +320,8 @@ function NS.SkinPickerSpec()
         -- The gear opens the General page (its own subcategory) on the Skin tab, whose key is
         -- "Appearance" (settings/Panel.lua's GENERAL_OPTS).
         page = "General", tab = "Appearance",
+        -- The eye's mode (THE EYE, above); no one-shot onPreview beside it.
+        preview = NS.SkinPreview,
         onClose = pickerClosed,
     }
 end
@@ -302,6 +354,51 @@ function NS.MaybeShowSkinPicker()
     local inCombat = _G.InCombatLockdown
     if inCombat and inCombat() then return nil end
     return O.SkinPicker(NS.SkinPickerSpec())
+end
+
+-- ── the one-time skin notice (LibKa0s OptionsSkinPicker minor 9, SG-L3) ────────────────────────
+-- A release that wants every account to learn skins exist raises lib.SKIN_NOTICE_VERSION. The first
+-- addon to ask in a session claims the notice and shows the picker; every other addon records the
+-- version and stays quiet. The record is `db.global.skinNotice`, a number: account-wide, so a profile
+-- switch never shows it twice. In combat nothing is claimed; it asks again every NOTICE_RETRY seconds until combat ends.
+local NOTICE_RETRY = 5   -- seconds between asks while the player is in combat
+local noticeWaiting = false
+
+local function noticeGlobal()
+    local d = NS.db or (NS.addon and NS.addon.db)
+    return d and d.global or nil
+end
+
+local noticeStore = {
+    get = function() local g = noticeGlobal(); return g and g.skinNotice or nil end,
+    set = function(v) local g = noticeGlobal(); if g then g.skinNotice = v end end,
+}
+
+function NS.MaybeShowSkinNotice()
+    local O = NS.Helpers
+    if not (O and type(O.SkinNotice) == "function" and noticeGlobal()) then return nil, "unavailable" end
+    if NS.IsStoodDown and NS.IsStoodDown() then
+        -- A stood-down addon shows nothing, but a seen record still silences the rest (SG-L3).
+        O.SkinNotice(nil, noticeStore, true)
+        return nil, "standdown"
+    end
+    local spec = NS.SkinPickerSpec()
+    local frame, why = O.SkinNotice(spec, noticeStore)
+    if why == "combat" and not noticeWaiting and type(_G.C_Timer) == "table" and _G.C_Timer.After then
+        noticeWaiting = true
+        _G.C_Timer.After(NOTICE_RETRY, function()
+            noticeWaiting = false
+            NS.MaybeShowSkinNotice()
+        end)
+    end
+    return frame, why
+end
+
+local pickerFirstRun = NS.MaybeShowSkinPicker
+function NS.MaybeShowSkinPicker()
+    local frame, why = NS.MaybeShowSkinNotice()
+    if frame or why == "queued" then return frame, why end
+    return pickerFirstRun()
 end
 
 --- The reserved `/pc skin` verb's act (LibKa0s v1.82.0, OptionsSkinPicker minor 3, ruling D-16):
@@ -343,7 +440,12 @@ if not Skin then
         "GetAccentColor", "GetPanelColor", "GetFont",
         "TitleBar", "Divider", "Footer", "Card", "Slider", "NavItem", "Drawer", "ListRow", "MenuFrame",
         "Tooltip", "Strip", "Cover", "Text", "ChartStyle", "BarStyle", "IconBorder", "GlowColor",
-        "BarTexture", "FontFlags", "HudFontSize",
+        "BarTexture", "FontFlags", "HudFontSize", "Mark",
+        -- LibKa0s v1.85.0: nil is each getter's degraded answer, and BarGloss draws nothing.
+        "HudTextColor", "HudLabelColor", "BarFillColor", "HudShadow", "BarGloss", "HoverArt",
+        -- LibKa0s v1.85.0 (Skin minor 16, R5-L3): Band answers nil, there being no band frame,
+        -- and Header places nothing.
+        "Band", "Header",
     }) do S[name] = noop end
     -- The two answers a font setting draws with (LibKa0s v1.82.0, SkinPaintExtras minor 7), never
     -- nil, so a caller's SetFont never reads "no flags" or "no size": a picked flag as stored; From
@@ -361,6 +463,28 @@ if not Skin then
         if n and n > 0 then return n end
         return 12
     end
+    -- LibKa0s v1.85.0 (SkinPaintExtras minor 9): a string a caller concatenates, so never nil. The
+    -- same markup in the art's own color, there being no tint to read.
+    S.MarkText = function(path, size)
+        size = size or 14
+        return ("|T%s:%d:%d|t"):format(path, size, size)
+    end
+    -- LibKa0s v1.85.0 (SkinPaintExtras minor 14, the Options document's stub): the one member that
+    -- must draw. Unused here, since PrettyChat has no HUD, but the facade owes it whole.
+    S.HudFont = function(fs, opts)
+        opts = type(opts) == "table" and opts or {}
+        local face = opts.face
+        if type(face) ~= "string" or face == "" then face = _G.STANDARD_TEXT_FONT end
+        if type(face) ~= "string" then return nil end
+        fs:SetFont(face, S.HudFontSize(opts.size), S.FontFlags(opts.flags))
+        local on = opts.shadow and true or false
+        fs:SetShadowColor(0, 0, 0, on and 1 or 0)
+        fs:SetShadowOffset(on and 1 or 0, on and -1 or 0)
+    end
+
+    -- LibKa0s v1.85.0 (SkinPaintExtras minor 16): the stored three as handed, there being no skin to
+    -- defer to. Unused here, since PrettyChat draws no bar, but a no-op would answer no style.
+    S.BarBorder = function(style, show, size) return style, show, size end
 
     S.Token = function(name) return NS.SKIN_FALLBACK[name] end
     S.Color = color

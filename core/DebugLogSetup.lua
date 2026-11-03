@@ -234,9 +234,11 @@ NS.DebugLog = lib:New({
     --
     -- No `skin`, no `applySkin`, no `makeCloseButton` either, and that is a
     -- decision rather than an omission. The flat 1px black edge with its gray inner
-    -- highlight, the gold title and the gray divider are now the NORMATIVE Ka0s
-    -- window edge (standalone-windows, Core minor 3), and the × on a window the
-    -- library draws is the library's — a host must not push its own onto them.
+    -- highlight and the gold title are now the NORMATIVE Ka0s window edge
+    -- (standalone-windows, Core minor 3), and the × on a window the library draws
+    -- is the library's — a host must not push its own onto them. The gray divider
+    -- that once sat under the title is gone (LibKa0s R4-SEP, Ka0sAddonsCommonTasks
+    -- docs/2026-11-03-SMOKE_ROUND4): no Ka0s window draws a line under its title.
     -- The console therefore looks slightly different from the one this addon
     -- shipped, and that is the point: it now matches every other Ka0s console.
 })

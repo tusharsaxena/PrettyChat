@@ -33,6 +33,7 @@ tests/
   wow_mock.lua       -- a thin EXTENDER over tests/_kit/mock_base.lua
   mock_menu.lua      -- a fake MenuUtil for the launcher's right-click menu, modeled on LibKa0s's own
   panel_fixture.lua  -- the panel helpers test_panel.lua and test_panel_categories.lua both call
+  skin_surfaces.lua  -- the painted surfaces the kit's skin-switch test flips (Kit.skinSwitch)
   settings_snapshot.lua -- every stored setting path and its default, pinned (test_schema.lua reads it)
   test_<module>.lua  -- one suite per module; each reads _G.PC_TEST
   test_debug_coverage.lua -- per-CONCERN: the debug console's content (docs/debug.md, Coverage)
@@ -46,7 +47,7 @@ tests/
   - **distinct `CreateFontString` / `CreateTexture` objects.** The base aliases them onto the frame itself — a divergence its own README documents as deliberate — and the debug console hangs three FontStrings off one title bar, so an aliased one would make `frame.debugToggle.text` read back the window *title*;
   - `Show()`/`Hide()` **fire** the OnShow/OnHide scripts and hooks; the base tracks visibility only, and every settings page builds its body on first show;
   - a **recording** `DEFAULT_CHAT_FRAME`; the base's stub frame answers `AddMessage` from its metatable and keeps nothing, which would silence every chat assertion in the suite;
-  - `AceAddon:NewAddon`, wrapped rather than replaced. Since kit revision 17 the wrapper calls the kit's own `NewAddon` with the name and the mixin list, so the kit names the object, registers it for the `GetAddon` six PrettyChat files call (`modules/Override.lua:8`, `modules/Diagnostics.lua:30`, `settings/Schema.lua:6`, `settings/Panel.lua:19`, `settings/Slash.lua:15`, and `settings/OptionsSetup.lua:220` through the addon object), and embeds AceConsole, whose `RegisterChatCommand` records into `AceConsole.commands` and runs through `AceConsole:__slash`. The wrapper keeps one thing of its own: AceConsole's `Print` shape landing in this environment's chat frame, because the kit's mixin writes to the harness process's never-set `DEFAULT_CHAT_FRAME`, and a failed reclaim that printed nothing would let the reclaim cases read a stale `[PC]` line and pass;
+  - `AceAddon:NewAddon`, wrapped rather than replaced. Since kit revision 17 the wrapper calls the kit's own `NewAddon` with the name and the mixin list, so the kit names the object, registers it for the `GetAddon` six PrettyChat files call (`modules/Override.lua:8`, `modules/Diagnostics.lua:30`, `settings/Schema.lua:6`, `settings/Panel.lua:19`, `settings/Slash.lua:15`, and `settings/OptionsSetup.lua:257` through the addon object), and embeds AceConsole, whose `RegisterChatCommand` records into `AceConsole.commands` and runs through `AceConsole:__slash`. The wrapper keeps one thing of its own: AceConsole's `Print` shape landing in this environment's chat frame, because the kit's mixin writes to the harness process's never-set `DEFAULT_CHAT_FRAME`, and a failed reclaim that printed nothing would let the reclaim cases read a stale `[PC]` line and pass;
   - `SettingsPanel = nil`, so the private category-tree walk takes its guarded fallback rather than "succeeding" against a stub that answers every method;
   - `C_AddOns` / `GetAddOnMetadata`, deliberately absent from the base so the `core/EnvSetup.lua` seam's library-absent fallback branch stays drivable;
   - `AceDBOptions-3.0`, `AceConfig-3.0` and `AceConfigDialog-3.0`, the Profiles page's libraries, which the base omits. The dialog **counts** its `Open` calls, which is how `tests/test_profiles.lua` tells a page that redrew from one that did not.
@@ -59,7 +60,7 @@ What the mocks deliberately do *not* model is layout: they answer "which widget,
 
 Both `lua tests/run.lua` and `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` must be green before any commit. Lint config is `.luacheckrc` (`std=lua51`; excludes `libs/`, `GlobalStrings/`, `tests/_kit/`, `docs/audits`, `docs/reviews`). The suites register named `test(name, fn)` cases; the `Tests` badge in the README badge row shows the pass/total.
 
-**The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 67 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the ten seam files are inside the set that was actually checked:
+**The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 70 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the ten seam files are inside the set that was actually checked:
 
 ```sh
 ~/.claude/dev-copilot/bin/ka0s-bounded luacheck . --formatter plain | tail -1     # and read the file count it reports
@@ -119,10 +120,14 @@ Run **both** of each pair and read the difference between them:
 
 **Which tag it compares against comes from the root [`CLAUDE.md`](../CLAUDE.md).** The gate greps the `Bundles [LibKa0s](…) vX.Y.Z (MIT).` provenance line out of that file — kit revision 9 moved it there from `README.md`, with **no fallback**, because the README is the player's page and no longer carries a bundled-library inventory at all. So the line moves in the same commit as the vendored bytes: bump `libs/LibKa0s/` or `tests/_kit/` without moving it and this gate fails, naming `CLAUDE.md`.
 
+## The skin gates
+
+Two kit suites, new at kit revision 50 (`skinning-§1`), declared in `tests/run.lua` by the pair. `test_skin_values` reads every color and texture a file under `core/`, `modules/` or `settings/` types and fails on any no kit category takes and no row in `Kit.skinValues.rows` names. This addon's nine rows are the `Const.Color` chat escapes, cause L13, so a typed color that reaches a settings page or a tooltip is a red: read it through a token instead. `test_skin_switch` flips a probe skin that gives every token a value of its own and fails a declared surface that draws the same. `tests/skin_surfaces.lua` declares the three page notes, the list hover's lines and the debug console, and its header says what is left out and why.
+
 ## The 1500-line cap gate
 
 `tests/_kit/test_layout_cap.lua` — the kit's gate since LibKa0s v1.55.0 (kit revision 25), and still
-the gate in the vendored LibKa0s v1.84.0 (kit revision 47), declared in `tests/run.lua` as
+the gate in the vendored LibKa0s v1.85.0 (kit revision 50), declared in `tests/run.lua` as
 `{ name = "test_layout_cap", dir = "tests/_kit/" }` — compares two things: every authored
 `.lua` git tracks, and the census under *Files over the 1500-line cap* in
 [ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both directions, so a file that crosses the

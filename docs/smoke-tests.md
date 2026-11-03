@@ -27,9 +27,9 @@ works.
 | RESET-1 – 13 | Resets | Row Reset, the Defaults buttons, `/pc reset <path>`, reset all, the one log line |
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
 | DIAG-1 – 28 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
-| DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
-| RV-75 – 77 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position |
-| SKIN-1 – 27 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker |
+| DEGRADED-1 – 11 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
+| RV-75 – 77, RV-85 – 89 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position; v1.85.0: a clean load and its icons, and a clean load on the R4-L4, round 5, round 6 and sim checkbox re-cuts |
+| SKIN-1 – 34 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker, the v1.85.0 title bars, launcher tooltip, Scope-cleared rows and delete confirmation, a stored pick of the deleted Friz, no line under a window title, the picker's console eye |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
 ## Before you start
@@ -640,7 +640,7 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   `libs/LibKa0s/media/icons/{copy,clear,close}.tga` did not ship. Result: pass (owner-marked 2026-10-10)
 - **DIAG-18. The window edge matches the collection's.** Open another Ka0s addon's console beside this
   one → a hard black 1px outer border with a lighter gray 1px line inside it, background
-  `0.06, 0.06, 0.08` at 92% alpha, a gold title and a gray divider under the title bar, and the same
+  `0.06, 0.06, 0.08` at 92% alpha, a gold title (no line under the title bar since LibKa0s R4-SEP, SKIN-33), and the same
   close mark on both; the copy window wears the same edge. Side by side the two differ only in title.
   **Fail:** different art on the two means one addon is on an older LibKa0s payload. Result: pass (owner-marked 2026-10-10)
 - **DIAG-19. No raw locale key on screen.** Walk `/pc config` (landing page, General, Categories and
@@ -760,6 +760,33 @@ prunes `libs/LibKa0s/media/icons/` to the `LibKa0s icons: clear, close, copy.` l
 - **RV-77. The Categories page keeps its scroll position (Options minor 29).** On a long Categories
   page, scroll down and change a setting that re-renders the page → the scroll position is kept, not
   reset to the top. **Fail:** the page jumps back to the top after the change. Result: pass (owner-marked 2026-10-23)
+- **RV-85. A clean load on LibKa0s v1.85.0 (FS-PC-RV).** `/reload` → no Lua error naming a file under
+  `libs/LibKa0s/`. Open `/pc config` and every page, `/pc debug`, the copy window and `/pc skin` → every
+  mark draws. The line in `CLAUDE.md` now declares eleven icons, because the library draws its own marks
+  beside skinned controls. **Fail:** a blank control where a mark should be, or a Lua error. Result: Passed (owner, 2026-11-02)
+- **RV-86. A clean load on the R4-L4 re-cut of LibKa0s v1.85.0 (R4-RV3).** `/reload` → no Lua error naming a file
+  under `libs/LibKa0s/`. Open `/pc config` and every page, `/pc debug`, the copy window and `/pc skin` under Ka0s Default
+  → every mark draws and each window looks as in SKIN-33. PrettyChat draws no icon edge of its own, so the re-cut's HUD
+  icon edge (S.IconBorder `hud`) changes nothing here. **Fail:** a Lua error, or a blank control where a mark should be.
+  Result:
+- **RV-87. A clean load on the round 5 re-cut of LibKa0s v1.85.0 (R5-RV).** `/reload` → no Lua error naming a file
+  under `libs/LibKa0s/`. Under Ka0s Default open `/pc debug`, its copy window and `/pc skin` → each window's header is the
+  gold title band, darker than round 4, flush inside the window edge with no strip of body color between the edge and
+  the band, and the title and close button sit on the band's vertical center. In `/pc skin`, open the skin list, then
+  press (a) the window body, (b) the game world and (c) the Font dropdown → each press closes the list, and (c) also
+  opens the Font list. **Fail:** a Lua error, no band, a dark strip above or beside the band, a title or close off
+  center, or a skin list that stays open after an outside press.
+  Result:
+- **RV-88. A clean load on the round 6 re-cut of LibKa0s v1.85.0 (R6-RV).** `/reload` → no Lua error naming a file
+  under `libs/LibKa0s/`. `/pc skin` opens the picker, a pick previews on the open settings pages and the console, and
+  Apply, the close control and Escape each close it, as in RV-87. Only the picker's file moved (OptionsSkinPicker minor
+  11); its eye is SKIN-34's. **Fail:** a Lua error, or a picker that does not open or close.
+  Result:
+- **RV-89. A clean load on the sim checkbox re-cut of LibKa0s v1.85.0 (R6-RV2).** `/reload` → no Lua error naming a
+  file under `libs/LibKa0s/`. `/pc config` ▸ General ▸ Master controls shows the rows PANEL-7 lists, as before,
+  and no Sim mode row: PrettyChat has no simulation. Only OptionsCompose moved (minor 19). **Fail:** a
+  Lua error, a missing row, or a Sim mode row.
+  Result:
 
 ## SKIN
 
@@ -830,9 +857,11 @@ never asked for it, so a player who wants the client's look picks **WoW Default*
   the rest of the page, and so is the landing page's alias row. Untick it → the open page's notes
   change to Azeroth's own muted text color, and so does the alias row. Hover a list entry, with the box
   ticked or not → the tooltip's title, the GLOBALNAME line and an "(original not available)" or error
-  line take Azeroth's tooltip colors, the rendered sample keeps the format's own colors, and the
-  tooltip frame is the game's. **Fail:** a note recolored while the box is ticked, a note still
-  `#aaaaaa` with it unticked, a recolored sample, or a restyled tooltip frame. Result: pass (owner-marked 2026-10-30)
+  line take Azeroth's tooltip colors, the rendered sample keeps the colors the format writes while its
+  uncolored text takes the skin's tooltip body color (FS-PC-FIX, cause L2), and the tooltip frame is the
+  game's. Under Ka0s Default that uncolored text is the client's gold, as before. **Fail:** a note
+  recolored while the box is ticked, a note still `#aaaaaa` with it unticked, a color the format writes
+  changed by the skin, uncolored sample text that stays gold on Azeroth, or a restyled tooltip frame. Result: Passed (owner, 2026-11-02)
 - **SKIN-7. Other addons stay stock (PC-04).** On a non-default skin with **Ignore settings panel** off,
   open PrettyChat's Categories page, then another AceGUI addon's options with a tree on the left, then
   PrettyChat's Profiles page, then the other addon again, a few times → PrettyChat's tree, editor and
@@ -856,13 +885,13 @@ never asked for it, so a player who wants the client's look picks **WoW Default*
   R-11).** Make a new profile and `/reload` while standing out of combat → the picker shows at login,
   high on the screen, titled *Choose a skin*, with **Ka0s Pretty Chat** whole on its own line above
   the dropdown (the window is wide enough for it; nothing cut off), a dropdown of the skin worn now and
-  a **gear** beside it,
-  **no eye** (PrettyChat has no window or test mode to preview in), **Apply**, **Apply to all Ka0s
-  addons** (only while another skinned Ka0s addon is loaded) and a close control. Open the console, then
-  pick **Glass** from the dropdown → the dropdown lists the nine skins, and the console wears Glass at once, and nothing is saved yet (the Skin tab still reads the old skin). Press
-  **Apply** → saved. `/reload` → no picker. **Fail:** the old *Choose a skin for …* title, the addon's
-  name missing or cut off, an eye, a picker that comes back after Apply, or a pick that saves without
-  Apply. Result: pass (owner-marked 2026-10-30)
+  a **gear** and a lit **eye** beside it,
+  **Apply**, **Apply to all Ka0s
+  addons** (only while another skinned Ka0s addon is loaded) and a close control; the debug console has
+  opened with `/pc test`'s sample (SKIN-34, R6-PV). Pick **Glass** from the dropdown → the dropdown lists the nine skins, and the console wears Glass at once, and nothing is saved yet (the Skin tab still reads the old skin). Press
+  **Apply** → saved, and the console closes. `/reload` → no picker. **Fail:** the old *Choose a skin for …* title, the addon's
+  name missing or cut off, no eye, a picker that comes back after Apply, or a pick that saves without
+  Apply. Result:
 - **SKIN-11. The picker's close, Escape and gear (PC-04).** On a new profile each time: pick a skin and
   close the picker → the old skin comes back and the picker stays away after `/reload`. Again with
   Escape → the same. Again with the gear → the skin is saved and the settings open on General at the
@@ -944,9 +973,9 @@ skin, unless a check says otherwise.
   label, dropdown value and button (Reset font, Reset texture, Copy to every Ka0s addon) reads in full;
   Ka0s Default draws Prototype, Obsidian Expressway, WoW Forever Fira Sans Medium, WoW Midnight Segoe UI
   Semibold, Azeroth Open Sans Semibold, Ember Emblem, High Contrast Doris PP, Glass Avant Garde and WoW
-  Default Ka0s Friz Quadrata TT (visibly unlike Prototype; LibKa0s v1.83.0). Text in each skin is
+  Default Ka0s Ubuntu (visibly unlike Prototype; LibKa0s R3-L6, Ka0s Friz Quadrata TT before R3-FRIZ). Text in each skin is
   about as wide as Ka0s Default's. **Fail:** a clipped or ellipsized label, or text in one skin visibly
-  wider than the others. Result: Owner reported pass, 2026-10-31
+  wider than the others. Result: not run (re-opened by R3-FRIZ)
 - **SKIN-23. The v1.82.0 Skin tab and a clean load (PC-01).** `/reload` → no Lua error naming a file
   under `libs/LibKa0s/`. On the Skin tab: **Reset font** and **Reset texture** sit side by side under the
   dropdowns, each grayed while its half is the skin's default; the Scope check boxes line up with the
@@ -985,6 +1014,56 @@ skin, unless a check says otherwise.
   addon that loads AceGUI-3.0-SharedMediaWidgets and `/reload` → both lists look the same as before.
   **Fail:** a list of plain names, an unskinned pull-out, a row that changes when that addon is on, a
   list that closes on its first entry, or an error. Result:
+- **SKIN-28. The title bars (FS-PC-RV, LibKa0s v1.85.0, cause L9).** On Ka0s Default open the console and
+  the copy window → each title bar is 30 high, 4 px taller than before, with its title and marks on the
+  band's middle and the log and text area clear below it. This is the one expected change under Ka0s
+  Default. Repeat on Obsidian. **Fail:** a title or mark off the band, an overlap with the log, or a
+  different height on the two windows. Result: Passed (owner, 2026-11-02)
+- **SKIN-29. The minimap tooltip follows the skin (LibKa0s v1.85.0, cause L1).** On Ka0s Default hover the
+  minimap button → as LAUNCH-4, nothing moved. Pick Obsidian with no reload and hover again → the title
+  and lines take that skin's tooltip colors, and the Yes or No word its on and off colors. **Fail:** gold
+  lines on Obsidian, or a look that needs a `/reload`. Result: Passed (owner, 2026-11-02)
+- **SKIN-30. The settings rows, Scope cleared (LibKa0s v1.85.0, causes L2, L5, L7).** On Obsidian with
+  **Ignore settings panel** unticked: hover any control on General and in the Categories editor → the
+  tooltip body takes the skin's color. On the landing page the Slash Commands rows take the skin's command
+  and body colors, not gold and white. The scroll bars' small up and down buttons are Ka0s chevrons in the
+  skin's color. Tick the box → the tooltip body, the command rows and the step buttons are the client's
+  again. In chat, `/pc help` keeps gold and white under both. **Fail:** gold rows with the box unticked, a
+  skin color with it ticked, or a chat line that changed. Result: Passed (owner, 2026-11-02)
+- **SKIN-31. The delete confirmation (LibKa0s v1.85.0, cause A4).** On Obsidian with **Ignore settings
+  panel** unticked, create a throwaway profile, then delete it on the Profiles page → the confirmation
+  wears the skin, and its rows, labels and layout on the page do not move. Cancel, tick the box and
+  delete again → the stock box. Delete a profile in a non-Ka0s addon → the stock box either way. **Fail:**
+  a stock box with the box unticked, a skinned box on another addon's delete, or an error. Result: Passed (owner, 2026-11-02)
+- **SKIN-32. A stored pick of the deleted Friz lands on Ka0s Ubuntu (R3-FRIZ, schema v3).** Before
+  updating, set the Skin tab's **Font** to *Ka0s Friz Quadrata TT* in two profiles and log out. Update and
+  fully restart the client (a new font file) → the settings chrome draws in Ubuntu and the Font row reads
+  *Ka0s Ubuntu*; switch to the other profile → the same. **Fail:** the game's default face, or the row
+  still naming Ka0s Friz Quadrata TT. Result:
+- **SKIN-33. No line under a window title (R4-SEP, R4-RV2, LibKa0s v1.85.0).** On Ka0s Default open the
+  console (`/pc debug`), its copy window (the copy mark) and the skin selector (`/pc skin`) → nothing
+  draws between the title band and the body, as in the Skin Tester's showroom; the console's status rule
+  above its footer stays. Pick Obsidian, then WoW Default, with no reload → still no line under any of the
+  three titles. Under Ka0s Default each title band is the dark gold gradient (R4-L2), the selector's second
+  swatch that header color. The settings pages keep their gold rule under the page title (PANEL-3): that is a page
+  header, not a window's. **Fail:** a gray or tinted 1px line under any window's title in any skin, or a
+  settings page that lost its rule. Result:
+- **SKIN-34. The picker's eye is the debug console sample (R6-PV, LibKa0s v1.85.0 OptionsSkinPicker
+  minor 11, mode "console").** (a) With the console closed, `/pc skin` → the debug console opens filled
+  with `/pc test`'s sample (its *sample of every format string* header and *end of test output* footer),
+  the picker stays in front of it, and the eye is lit; hover it → *Preview: the debug console is open.
+  Click to close it.* Click the eye → the console hides, the eye dims and its tooltip reads *… is closed.
+  Click to open it.*; click again → the console comes back with the
+  same lines, no second sample, and the eye lights. (b) Close the picker by each route in turn, reopening
+  it with `/pc skin` each time: the close control, Escape, **Apply**, the gear → after each the console
+  is hidden again (the gear's settings page stays open). (c) Open the console first (`/pc debug`), note
+  its last line, then `/pc skin` → the console stays as it was, with no sample written into it; close
+  the picker → the console is still open. (d) With the console open, `/pc skin`, click the eye (the
+  console hides), then close the picker → the console is open again, with no sample in it. Nothing is
+  stored: a `/reload` with the picker up comes back with the console closed. **Fail:** a picker that
+  opens no console, an empty console, a sample written into a console that was already open, an eye
+  that only opens, a console left open after a close the picker opened it for, or a console of the
+  player's left hidden after the close. Result:
 
 ## Non-English client
 
@@ -1062,3 +1141,15 @@ SKIN-19 to SKIN-24, each recorded on its `Result:` line as `Owner reported pass,
 
 Pending from the findings remediation (Ka0sAddonsCommonTasks
 `docs/2026-10-31-FINDINGS_REMEDIATION/`, FX-PC-SIZE and FX-PC-DEAD): DEGRADED-11 and SKIN-25, and from its media picker ruling (M3-MEDIA): SKIN-27.
+
+Owed: RV-85 and SKIN-28 to SKIN-31 (FS-PC-RV, LibKa0s v1.85.0, 2026-11-01); SKIN-6, whose expected result moved with FS-PC-FIX (cause L2).
+
+Owed from the owner's third smoke round (R3-FRIZ, 2026-11-02): SKIN-32, new, and SKIN-22, whose WoW Default face is now Ka0s Ubuntu, so its pass mark came off.
+
+Owed from the owner's fourth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-SMOKE_ROUND4/`, R4-SEP, 2026-11-03): SKIN-33, new. DIAG-18's gray divider under the console's title is gone with it; the rest of DIAG-18 holds. From R4-RV3: RV-86, new.
+
+Owed from the owner's fifth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-SMOKE_ROUND5/`, R5-RV, 2026-11-03): RV-87, new.
+
+Owed from the owner's sixth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-SMOKE_ROUND6/`, R6-RV, 2026-11-04): RV-88, new. From R6-RV2: RV-89, new. From R6-PV: SKIN-34, new, and SKIN-10, whose picker now has an eye and opens the console, so its pass mark came off.
+
+On 2026-11-02 the owner reported that every check on the smoke lists of the full skinning run and its smoke feedback batch (Ka0sAddonsCommonTasks `docs/2026-11-01-FULL_SKINNING/` and `docs/2026-11-01-SMOKE_FEEDBACK/`) passed, apart from DpsRace's clock font, the skinned look of the AceGUI Dropdown and the Ka0sMedia_Font and Ka0sMedia_Statusbar pickers, FadeNineSlice and IconBorder (`docs/2026-11-02-SMOKE_ROUND3/`, R3-SMOKE). Passed, recorded on each `Result:` line as `Passed (owner, 2026-11-02)`: RV-85, SKIN-6, SKIN-28, SKIN-29, SKIN-30 and SKIN-31.

@@ -134,6 +134,11 @@ test("the DebugLog stub carries the whole live surface", function()
         -- `grep -rn "DebugLog[:.]Text" core settings modules` is empty — and a stub
         -- copy would be a second place the library's English could drift.
         Text          = true,
+        -- Test seams the library's window build assigns (DebugLogWindow.lua), so they are on the
+        -- live half once the console has been built. The first-run picker's console eye builds it
+        -- at login (core/SkinSetup.lua, THE EYE), and no stub has a window to hand a test.
+        _frameForTest       = true,
+        _toggleClickForTest = true,
     })
 end)
 

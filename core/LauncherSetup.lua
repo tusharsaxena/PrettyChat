@@ -183,6 +183,7 @@ if Launcher then
         -- General page's Enable row reads (settings/Schema.lua) and the Slash
         -- dispatcher gates on (settings/Slash.lua). Since Launcher minor 4 it
         -- gates no click.
+        openSkinPicker = function() if NS.RunSkinVerb then NS.RunSkinVerb() end end,
         isEnabled = function() return NS:IsAddonEnabled() end,
 
         -- The menu's Enabled entry: the SAME function `/pc enable` and

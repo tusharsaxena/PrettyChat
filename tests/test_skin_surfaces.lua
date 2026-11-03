@@ -158,6 +158,37 @@ test("Skin surfaces: the tooltip lines follow the skin whatever the Scope says",
     t.truthy(lines[1]:find(want .. g, 1, true), "the GLOBALNAME line follows the skin: " .. lines[1])
 end)
 
+test("Skin surfaces: the tooltip's rendered body line draws in gtip.line, spied at AddLine", function()
+    -- Cause L2, row 540: the body named no color, so an unescaped stretch of the sample stayed the
+    -- client's in every skin. gtip.line is the client's gold on Ka0s Default and gtip.body
+    -- elsewhere. The spy reads what reaches the drawing call, so a skin switch is proved at the
+    -- setter. red under: AddLine(body, nil, nil, nil, true), or a color read once and kept.
+    local inst, _, tree, fixture = categories()
+    local tip = inst.env.GameTooltip
+    local add = tip.AddLine
+    local seen
+    tip.AddLine = function(self, text, r, g, b, wrap)
+        if wrap then seen = { r, g, b, wrap } end
+        return add(self, text)
+    end
+    local g = fixture.sortedNames("Loot")[2]
+    tree:Fire("OnButtonEnter", g, inst.env.CreateFrame("Button"))
+    local gold = inst.NS.Skin.Token("gtip.line")
+    t.truthy(seen and seen[1] == gold[1] and seen[2] == gold[2] and seen[3] == gold[3],
+        "Ka0s Default's body is the client's gold")
+    t.truthy(seen[4] == true, "the body still wraps")
+    local first = { seen[1], seen[2], seen[3] }
+
+    inst.env.LibStub("LibKa0s-Skin-1.0"):SetChoice(OWNER, "ka0s", "obsidian")
+    tree:Fire("OnButtonEnter", g, inst.env.CreateFrame("Button"))
+    local body = inst.NS.Skin.Token("gtip.body")
+    t.truthy(seen[1] == body[1] and seen[2] == body[2] and seen[3] == body[3],
+        "the next hover draws the new skin's gtip.body")
+    t.truthy(seen[1] ~= first[1] or seen[2] ~= first[2] or seen[3] ~= first[3],
+        "Obsidian must move the line, or this case asserts nothing")
+    tip.AddLine = add
+end)
+
 -- ── a token that does not resolve ───────────────────────────────────────────────────────────
 
 test("Skin surfaces: a note token that does not resolve still builds every page, in today's gray", function()

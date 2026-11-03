@@ -72,6 +72,8 @@ if not lib then
         RenderSchema         = function() end,
         RenderGrid           = function() end,
         TextRow              = function() end,
+        -- A label's font (LibKa0s v1.85.0, OptionsWidgets minor 43), owed by every Options stub.
+        LabelFont            = function() end,
         SetRenderer          = function() end,
         -- The landing page's whole body. It is a no-op rather than a lookalike for
         -- the reason every other renderer here is: the alternative is a second copy
@@ -171,6 +173,7 @@ if not lib then
         -- The reserved `skin` verb (LibKa0s v1.82.0, OptionsSkinPicker minor 3): no
         -- picker on this path, so SkinVerb opens nothing and answers nil, "absent".
         SkinVerb             = function() return nil, "absent" end,
+        SkinNotice = function() return nil, "unavailable" end,
         -- ── the ONE stub member that is reached at LOAD ──────────────────
         --
         -- options-ui-§1's degradation rule is LOAD-COMPLETING, and the measured

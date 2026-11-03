@@ -186,8 +186,9 @@ landing page and combat cover. The rest is the host's:
   ([profiles.md](profiles.md#the-profiles-page)).
 - **The gray notes** (the GLOBALNAME caption, the Categories footnote, the landing alias row) read
   `NS.PanelEscape("pc.note")`, and the list entry's tooltip reads `pc.tipNote` for its gray lines and
-  `gtip.value` for its title. Under Ka0s Default both are today's `#aaaaaa` and white; every other
-  skin draws its own muted text. The notes are text on the settings pages, so while **Ignore settings
+  `gtip.value` for its title, and passes `gtip.line` as the body line's color, so what the rendered
+  sample leaves uncolored follows the skin too. Under Ka0s Default these are today's `#aaaaaa`, white
+  and the client's gold; every other skin draws its own. The notes are text on the settings pages, so while **Ignore settings
   panel** is on they keep the token's Ka0s Default copy (`#aaaaaa`) with the rest of the page, gated
   on the public `Skin:GetIgnore(owner)` as the library's own settings-page paints are. The tooltip
   lines are Blizzard's GameTooltip, outside the Scope, so they follow the skin whatever it says. The
@@ -202,9 +203,12 @@ above the dropdown (`frame.ownerLabel`, LibKa0s v1.81.0). While the active
 profile's `skin.pickerSeen` is false, `NS.MaybeShowSkinPicker` shows the library's picker at the end
 of `OnEnable` and after every profile event, unless the addon stands down or the player is in
 combat (a login in combat skips it, and the next login out of combat shows it). PrettyChat has no
-window or test mode to preview a skin in, so the picker has no eye (`onPreview` is omitted) and
-draws only the `settings` gear, which opens this page on the Skin tab (`page = "General"`,
-`tab = "Appearance"`). Under the dropdown it draws the Skin tab's rows (LibKa0s v1.83.0): **Font** and
+window or test mode, so the picker's **eye** previews on the debug console (`spec.preview`, mode
+`"console"`, LibKa0s OptionsSkinPicker minor 11): opened with the console hidden, the picker opens it
+filled with `/pc test`'s sample lines, the Test button's act; the eye hides and shows it again, lit
+while it is up; and every close puts it back as it was, so a console the picker or the eye opened is
+hidden again and one the player had open stays, its lines untouched. The **gear** opens this page on
+the Skin tab (`page = "General"`, `tab = "Appearance"`). Under the dropdown it draws the Skin tab's rows (LibKa0s v1.83.0): **Font** and
 **Texture** with their reset icons, **Font outline** and the Scope's two boxes, saved through the same
 `NS.WriteSkinChoice`. A pick or a row change previews on whatever is open, the debug console and, with
 the panel skinned, these pages; **Apply** and the gear save it, and the close control and Escape put

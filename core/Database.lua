@@ -31,7 +31,7 @@ local Database = NS.Database
 
 -- The runner's target. Bump when the stored shape changes AND add a
 -- migrations[N] entry that upgrades a DB at version N-1 to version N.
-Database.SCHEMA_VERSION = 2
+Database.SCHEMA_VERSION = 3
 
 -- The AceDB `global` defaults -- the declared 0 stamp and LibDBIcon's minimap
 -- table -- are NS.GlobalDefaults in defaults/Profile.lua, the one declaration site
@@ -84,6 +84,26 @@ local function liftLootCreatedSelf(profile)
 end
 
 migrations[2] = { scope = "profile", run = liftLootCreatedSelf }
+
+-- v2 -> v3 (R3-FRIZ): LibKa0s v1.85.0 deleted Ka0s Friz Quadrata TT (R3-L7) and WoW Default draws Ka0s
+-- Ubuntu in its place (R3-L6). Every stored string naming the deleted face, at any depth (the skin's
+-- Font override), moves to its successor, in every profile. Blizzard's own "Friz Quadrata TT" stays.
+local RETIRED_FONTS = { ["Ka0s Friz Quadrata TT"] = "Ka0s Ubuntu" }
+
+--- Moves every string naming a retired face, at any depth of `t`, to its successor. Answers how many moved.
+function Database.RetireFonts(t)
+    local n = 0
+    for k, v in pairs(t) do
+        if type(v) == "table" then
+            n = n + Database.RetireFonts(v)
+        elseif RETIRED_FONTS[v] then
+            t[k], n = RETIRED_FONTS[v], n + 1
+        end
+    end
+    return n
+end
+
+migrations[3] = { scope = "profile", run = function(profile) Database.RetireFonts(profile) end }
 
 -- Drop every stored key no schema row owns, then prune what that empties
 -- (savedvariables-§1: the load pass may repair). Resets write ROWS, so a key

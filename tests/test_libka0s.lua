@@ -544,33 +544,19 @@ test("the Options descriptor passes the FOLDER name, so a help mark draws the li
         "the Options descriptor passes addonName = addonName")
 
     -- The art half. Since LibKa0s v1.75.0 media/icons/ is pruned to the CLAUDE.md
-    -- `LibKa0s icons:` declaration, and `info` ships only where something draws an
-    -- IdList. This addon draws none (outside the degradation stub no `IdList(` call
-    -- exists in core/, settings/ or modules/, comments stripped), so the declaration
-    -- must not name `info` and info.tga must be absent. The first IdList drawn here
-    -- turns this red, which is the prompt to declare `info` in the same commit.
-    t.truthy(io.popen ~= nil, "io.popen is available, so the source can be listed")
-    local pipe = io.popen("git -C '" .. ctx.root .. "' ls-files 'core/*.lua' 'settings/*.lua' 'modules/*.lua'")
-    t.truthy(pipe ~= nil, "git ls-files answered a handle")
-    local scanned = 0
-    for f in pipe:lines() do
-        if f ~= "settings/OptionsSetup.lua" then
-            scanned = scanned + 1
-            local body = (readFile(f) or ""):gsub("%-%-[^\r\n]*", "")
-            t.truthy(not body:find("IdList%("), f .. " draws an IdList, so `info` must be declared")
-        end
-    end
-    pipe:close()
-    t.truthy(scanned > 0, "the source scan found files to read")
-    -- The declaration, read with the kit's own parser (never a second one here).
+    -- `LibKa0s icons:` declaration. This addon draws no IdList itself, but LibKa0s
+    -- v1.85.0's library-drawn marks owe `info` from every consumer (docs/releasing.md,
+    -- step 8; kit revision 49), so it is declared and its file ships.
     local VendorSync = dofile(ctx.root .. "/tests/_kit/vendor_sync.lua")
     local decl, why = VendorSync.iconDeclaration(readFile("CLAUDE.md") or "")
     t.truthy(decl ~= nil and decl.mode == "list", "CLAUDE.md declares a list: " .. tostring(why))
+    local declared = false
     for _, name in ipairs(decl and decl.names or {}) do
-        t.truthy(name ~= "info", "the `LibKa0s icons:` line does not declare info")
+        if name == "info" then declared = true end
     end
+    t.truthy(declared, "the `LibKa0s icons:` line declares info")
     local fh = io.open(ctx.root .. "/libs/LibKa0s/media/icons/info.tga", "rb")
-    t.truthy(fh == nil, "libs/LibKa0s/media/icons/info.tga is pruned, because nothing here draws it")
+    t.truthy(fh ~= nil, "libs/LibKa0s/media/icons/info.tga ships, because the library draws it")
     if fh then fh:close() end
 end)
 

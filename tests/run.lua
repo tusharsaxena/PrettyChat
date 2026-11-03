@@ -75,6 +75,28 @@ Kit.diagnostics = {
     setDisabled = function(off) diagInstance.NS.Schema.Set("General.enabled", not off) end,
 }
 
+-- The kit's typed-value gate (skinning-§1). The one table it cannot place by shape is Const.Color,
+-- the chat escapes: what reads it is NS.Print's tag, slash output, the /pc test report and the reset
+-- every markup ends on, so these are the chat lines L13 leaves alone, and settings/ reads no color
+-- from it (tests/test_skin_surfaces.lua holds that at the source).
+local CHAT_ESCAPES = "a chat line's escape; chat is the one surface no skin reaches, by the L13 ruling"
+Kit.skinValues = {
+    rows = {
+        { file = "core/Constants.lua", substring = 'gold   = "|cffffd700"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'gray   = "|cffaaaaaa"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'red    = "|cffff5050"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'yellow = "|cffffff00"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'white  = "|cffffffff"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'cyan   = "|cff00ffff"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'green  = "|cff40ff40"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'listHead = "|cff33ff99"', why = CHAT_ESCAPES, cause = "L13" },
+        { file = "core/Constants.lua", substring = 'azure    = "|cff3399ff"', why = CHAT_ESCAPES, cause = "L13" },
+    },
+}
+
+-- The painted surfaces the kit's skin-switch test flips (tests/skin_surfaces.lua).
+Kit.skinSwitch = dofile("tests/skin_surfaces.lua")(loadAddon, root)
+
 -- Order is load-order-sensitive; keep it stable.
 Kit.run{
     dir    = "tests/",
@@ -121,6 +143,7 @@ Kit.run{
         -- After test_debuglog because it is the last of the core/ seams, and BEFORE
         -- test_slash, which reads the same COMMANDS table from the dispatcher's side.
         "test_launcher",
+        "test_launcher_skin_entry",
         "test_slash",
         -- The stand-down conformance suite slash-commands-§7 requires of every addon.
         -- AFTER test_slash because its step 7 drives the same dispatcher, and after
@@ -161,6 +184,10 @@ Kit.run{
         -- The reserved `skin` verb (LibKa0s v1.82.0's O.SkinVerb): /pc skin shows the picker on
         -- demand. After test_skin_picker, whose spec and picker queue it reads.
         "test_skin_verb",
+        -- The skin picker's eye (LibKa0s OptionsSkinPicker minor 11, spec.preview, mode "console"):
+        -- the debug console with /pc test's sample, toggled by the eye and put back at every close.
+        -- After test_skin_verb, whose /pc skin act opens the picker in every case.
+        "test_skin_preview",
         -- The display-glyph guard (kit revision 45, PC-02): every string literal outside libs/,
         -- tests/ and tools/ draws in every shipped skin face. Reads the source, loads no addon.
         "test_glyphs",
@@ -182,5 +209,9 @@ Kit.run{
         -- through, and runs lizard end to end on a hazard fixture when lizard is on PATH (a
         -- declared skip otherwise). It needs no consumer facts.
         { name = "test_lizard_sighted", dir = "tests/_kit/" },
+        -- The kit's skin gates (skinning-§1), its own since revision 50: the typed-value check and
+        -- the probe-skin switch test, read off Kit.skinValues and Kit.skinSwitch above.
+        { name = "test_skin_values", dir = "tests/_kit/" },
+        { name = "test_skin_switch", dir = "tests/_kit/" },
     },
 }
