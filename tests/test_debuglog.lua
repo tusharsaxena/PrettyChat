@@ -264,8 +264,9 @@ end)
 
 test("IsShown is false before the console has ever been built", function()
     -- The window is created lazily on first use; the General-page checkbox
-    -- reads this before anything has opened it.
-    local fresh = ctx.loadAddon()
+    -- reads this before anything has opened it. A login in combat shows no
+    -- first-run picker, whose console eye would otherwise build and open it.
+    local fresh = ctx.loadAddon({ mock = function(m) m.InCombatLockdown = function() return true end end })
     t.falsy(fresh.NS.DebugLog:IsShown(), "no frame yet means not shown")
 end)
 
@@ -315,6 +316,12 @@ end
 -- it BEFORE this, never inside.
 local function captureRaw(fn)
     local Schema = NS.Schema
+    -- Any picker an earlier case left up taken down, then the console open, as it is for a player
+    -- reading these lines: a profile event that shows the first-run picker again then enters
+    -- nothing, so the picker's console sample (core/SkinSetup.lua, THE EYE;
+    -- tests/test_skin_preview.lua) writes no lines here.
+    NS.HideSkinPicker()
+    D:Show()
     NS.State.debug = true
     NS.Debug("Test", "warm-up")
     local origApply, origNotify = addon.ApplyStrings, Schema.NotifyPanelChange

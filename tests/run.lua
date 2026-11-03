@@ -184,6 +184,10 @@ Kit.run{
         -- The reserved `skin` verb (LibKa0s v1.82.0's O.SkinVerb): /pc skin shows the picker on
         -- demand. After test_skin_picker, whose spec and picker queue it reads.
         "test_skin_verb",
+        -- The skin picker's eye (LibKa0s OptionsSkinPicker minor 11, spec.preview, mode "console"):
+        -- the debug console with /pc test's sample, toggled by the eye and put back at every close.
+        -- After test_skin_verb, whose /pc skin act opens the picker in every case.
+        "test_skin_preview",
         -- The display-glyph guard (kit revision 45, PC-02): every string literal outside libs/,
         -- tests/ and tools/ draws in every shipped skin face. Reads the source, loads no addon.
         "test_glyphs",

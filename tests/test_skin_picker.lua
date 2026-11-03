@@ -3,7 +3,8 @@
 -- NS.MaybeShowSkinPicker / NS.HideSkinPicker / NS.SkinPickerSpec / NS.SkinPaintAceTree).
 --
 -- What this addon owes the picker, and nothing the library pins itself: the spec it hands
--- O.SkinPicker (its owner, its two seams, the Skin tab's page and key, no eye, the close); WHEN it
+-- O.SkinPicker (its owner, its two seams, the Skin tab's page and key, the close; its eye is
+-- tests/test_skin_preview.lua's); WHEN it
 -- shows (a profile whose `skin.pickerSeen` is false, at OnEnable and after every profile event,
 -- never while the addon stands down and never in combat, with no timer and no event armed for
 -- it); and that only the player's close marks it seen.
@@ -63,9 +64,10 @@ end
 
 -- ── the spec ─────────────────────────────────────────────────────────────────────────────────
 
-test("Skin picker: the spec names this owner, its seams and the Skin tab, with no eye", function()
+test("Skin picker: the spec names this owner, its seams and the Skin tab, with no one-shot eye", function()
     -- red under: a set that is not the write seam (Apply would never reach the profile), a page or
-    -- tab key the General page does not carry, or an onPreview (X6: no window, no test mode).
+    -- tab key the General page does not carry, or a one-shot onPreview (the eye is spec.preview's,
+    -- tests/test_skin_preview.lua).
     local inst = ctx.loadAddon()
     local NS = inst.NS
     local spec = NS.SkinPickerSpec()
@@ -75,7 +77,7 @@ test("Skin picker: the spec names this owner, its seams and the Skin tab, with n
     t.eq(spec.page, "General")
     t.eq(spec.tab, "Appearance", "the Skin tab's key")
     t.truthy(NS.Helpers.__panelFor("General") ~= nil, "\"General\" is a registered page")
-    t.nilv(spec.onPreview, "no eye: PrettyChat has nothing to preview in")
+    t.nilv(spec.onPreview, "no one-shot eye: the console preview is spec.preview")
     t.eq(type(spec.onClose), "function")
 end)
 

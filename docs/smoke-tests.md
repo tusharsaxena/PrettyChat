@@ -29,7 +29,7 @@ works.
 | DIAG-1 – 28 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | RV-75 – 77, RV-85 – 88 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position; v1.85.0: a clean load and its icons, and a clean load on the R4-L4, round 5 and round 6 re-cuts |
-| SKIN-1 – 33 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker, the v1.85.0 title bars, launcher tooltip, Scope-cleared rows and delete confirmation, a stored pick of the deleted Friz, no line under a window title |
+| SKIN-1 – 34 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker, the v1.85.0 title bars, launcher tooltip, Scope-cleared rows and delete confirmation, a stored pick of the deleted Friz, no line under a window title, the picker's console eye |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
 ## Before you start
@@ -880,13 +880,13 @@ never asked for it, so a player who wants the client's look picks **WoW Default*
   R-11).** Make a new profile and `/reload` while standing out of combat → the picker shows at login,
   high on the screen, titled *Choose a skin*, with **Ka0s Pretty Chat** whole on its own line above
   the dropdown (the window is wide enough for it; nothing cut off), a dropdown of the skin worn now and
-  a **gear** beside it,
-  **no eye** (PrettyChat has no window or test mode to preview in), **Apply**, **Apply to all Ka0s
-  addons** (only while another skinned Ka0s addon is loaded) and a close control. Open the console, then
-  pick **Glass** from the dropdown → the dropdown lists the nine skins, and the console wears Glass at once, and nothing is saved yet (the Skin tab still reads the old skin). Press
-  **Apply** → saved. `/reload` → no picker. **Fail:** the old *Choose a skin for …* title, the addon's
-  name missing or cut off, an eye, a picker that comes back after Apply, or a pick that saves without
-  Apply. Result: pass (owner-marked 2026-10-30)
+  a **gear** and a lit **eye** beside it,
+  **Apply**, **Apply to all Ka0s
+  addons** (only while another skinned Ka0s addon is loaded) and a close control; the debug console has
+  opened with `/pc test`'s sample (SKIN-34, R6-PV). Pick **Glass** from the dropdown → the dropdown lists the nine skins, and the console wears Glass at once, and nothing is saved yet (the Skin tab still reads the old skin). Press
+  **Apply** → saved, and the console closes. `/reload` → no picker. **Fail:** the old *Choose a skin for …* title, the addon's
+  name missing or cut off, no eye, a picker that comes back after Apply, or a pick that saves without
+  Apply. Result:
 - **SKIN-11. The picker's close, Escape and gear (PC-04).** On a new profile each time: pick a skin and
   close the picker → the old skin comes back and the picker stays away after `/reload`. Again with
   Escape → the same. Again with the gear → the skin is saved and the settings open on General at the
@@ -1043,6 +1043,22 @@ skin, unless a check says otherwise.
   swatch that header color. The settings pages keep their gold rule under the page title (PANEL-3): that is a page
   header, not a window's. **Fail:** a gray or tinted 1px line under any window's title in any skin, or a
   settings page that lost its rule. Result:
+- **SKIN-34. The picker's eye is the debug console sample (R6-PV, LibKa0s v1.85.0 OptionsSkinPicker
+  minor 11, mode "console").** (a) With the console closed, `/pc skin` → the debug console opens filled
+  with `/pc test`'s sample (its *sample of every format string* header and *end of test output* footer),
+  the picker stays in front of it, and the eye is lit; hover it → *Preview: the debug console is open.
+  Click to close it.* Click the eye → the console hides, the eye dims and its tooltip reads *… is closed.
+  Click to open it.*; click again → the console comes back with the
+  same lines, no second sample, and the eye lights. (b) Close the picker by each route in turn, reopening
+  it with `/pc skin` each time: the close control, Escape, **Apply**, the gear → after each the console
+  is hidden again (the gear's settings page stays open). (c) Open the console first (`/pc debug`), note
+  its last line, then `/pc skin` → the console stays as it was, with no sample written into it; close
+  the picker → the console is still open. (d) With the console open, `/pc skin`, click the eye (the
+  console hides), then close the picker → the console is open again, with no sample in it. Nothing is
+  stored: a `/reload` with the picker up comes back with the console closed. **Fail:** a picker that
+  opens no console, an empty console, a sample written into a console that was already open, an eye
+  that only opens, a console left open after a close the picker opened it for, or a console of the
+  player's left hidden after the close. Result:
 
 ## Non-English client
 
@@ -1129,6 +1145,6 @@ Owed from the owner's fourth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03
 
 Owed from the owner's fifth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-SMOKE_ROUND5/`, R5-RV, 2026-11-03): RV-87, new.
 
-Owed from the owner's sixth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-SMOKE_ROUND6/`, R6-RV, 2026-11-04): RV-88, new.
+Owed from the owner's sixth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-SMOKE_ROUND6/`, R6-RV, 2026-11-04): RV-88, new. From R6-PV: SKIN-34, new, and SKIN-10, whose picker now has an eye and opens the console, so its pass mark came off.
 
 On 2026-11-02 the owner reported that every check on the smoke lists of the full skinning run and its smoke feedback batch (Ka0sAddonsCommonTasks `docs/2026-11-01-FULL_SKINNING/` and `docs/2026-11-01-SMOKE_FEEDBACK/`) passed, apart from DpsRace's clock font, the skinned look of the AceGUI Dropdown and the Ka0sMedia_Font and Ka0sMedia_Statusbar pickers, FadeNineSlice and IconBorder (`docs/2026-11-02-SMOKE_ROUND3/`, R3-SMOKE). Passed, recorded on each `Result:` line as `Passed (owner, 2026-11-02)`: RV-85, SKIN-6, SKIN-28, SKIN-29, SKIN-30 and SKIN-31.

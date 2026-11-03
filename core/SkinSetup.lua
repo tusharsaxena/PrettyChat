@@ -48,6 +48,9 @@ local addonName, NS = ...
 --                           queue WITHOUT marking it seen: the stand-down, a profile that has seen
 --                           it, and first on every profile event.
 --   NS.SkinPickerSpec()     the spec NS.MaybeShowSkinPicker hands O.SkinPicker.
+--   NS.SkinPreview          the picker's eye, `spec.preview` mode "console" (OptionsSkinPicker minor
+--                           11): the debug console with `/pc test`'s sample, entered at a show with
+--                           the console hidden, toggled by the eye, taken back at every close.
 --   NS.RunSkinVerb()        the reserved `/pc skin` verb's act (LibKa0s v1.82.0, ruling D-16):
 --                           O.SkinVerb(NS.SkinPickerSpec()), the picker on demand whatever
 --                           `pickerSeen` says; the library-absent line on nil, "absent".
@@ -227,7 +230,7 @@ local function storedIgnore()
     return schemaGet(PANEL_PATH) == true, schemaGet(FONTS_PATH) == true
 end
 
--- ── the first-run skin picker (LibKa0s OptionsSkinPicker, owner ruling O3, decision X6) ───────
+-- ── the first-run skin picker (LibKa0s OptionsSkinPicker, owner ruling O3, the console eye) ───
 --
 -- WHEN. Once at login, from PrettyChat:OnEnable after the latch has its answer (OnInitialize
 -- applied the stored skin), and again after every profile event (core/PrettyChat.lua's shared
@@ -247,9 +250,19 @@ end
 -- `skin.pickerSeen`, through NS.Schema.Set. A close this addon makes itself (NS.HideSkinPicker:
 -- the stand-down, a profile event) is not the player's and writes nothing.
 --
--- NO EYE (decision X6). PrettyChat has no window and no test mode to preview in, so `onPreview`
--- is omitted: the library hides the eye, so the picker adds no `eye` to the CLAUDE.md icon
--- declaration, only its `settings` gear.
+-- THE EYE (LibKa0s OptionsSkinPicker minor 11, `spec.preview`, mode "console"; the owner's answer
+-- "Debug console sample", Ka0sAddonsCommonTasks docs/2026-11-03-SMOKE_ROUND6/, which replaces
+-- decision X6's no-eye). PrettyChat has no window, test mode or unlock mode, so its preview is the
+-- debug console filled with `/pc test`'s sample lines. The mode is on while the console is shown:
+-- `isActive` and `isShown` both read NS.DebugLog:IsShown(), the state the General page's console
+-- checkbox and `/pc debug` move. A fresh showing with the console hidden calls `enter`, which runs
+-- PrettyChat:TestToConsole(), the act the Test button and `/pc test` run, so the console opens with
+-- the sample; the eye calls `exit` (NS.DebugLog:Hide(), the checkbox's own) and `enter` again; and
+-- every close takes back what the picker and its eye moved (the library's restore). A console the
+-- player already had open is the player's: the picker enters nothing, and a later `enter` (the
+-- eye, or the restore of a console the eye hid) only shows it again, never writing a second
+-- sample (`sampled`, cleared at each close). Nothing here is stored and the console has no combat
+-- refusal, so a /reload while the picker is up leaves the console closed.
 -- A pick previews on the open settings pages and the debug console, which follow the skin live.
 --
 -- QUEUED. One picker is up at a time across every Ka0s addon: while another addon's is up,
@@ -257,10 +270,44 @@ end
 
 local PICKER_PATH = "skin.pickerSeen"
 local quietClose = false -- true while NS.HideSkinPicker takes the picker down
+local sampled = false    -- this showing's console holds the sample, or is the player's own
+
+local function consoleShown()
+    local log = NS.DebugLog
+    return (log and log:IsShown()) and true or false
+end
+
+--- The eye's mode on: the console shown, with `/pc test`'s sample the first time in a showing.
+--- Nothing without the DebugLog library, whose absent console would send the sample to chat.
+local function previewEnter()
+    if not (LibStub and LibStub("LibKa0s-DebugLog-1.0", true)) then return end
+    if sampled then
+        NS.DebugLog:Show()
+        return
+    end
+    sampled = true
+    LibStub("AceAddon-3.0"):GetAddon(addonName):TestToConsole()
+end
+
+--- The eye's mode off: the console hidden. A console hidden here is never sampled again this
+--- showing, so the player's own console the eye hid comes back without the sample in it.
+local function previewExit()
+    sampled = true
+    NS.DebugLog:Hide()
+end
+
+NS.SkinPreview = {
+    mode = "console",
+    enter = previewEnter, exit = previewExit,
+    isActive = consoleShown, isShown = consoleShown,
+}
 
 --- The player's close: the picker seen, and nothing else. The library's put-back already wears the
---- stored choice (it reads `get` at the close), so the skin is not this callback's to move.
+--- stored choice (it reads `get` at the close), so the skin is not this callback's to move. Every
+--- close, this addon's own included, runs after the library's preview restore, so the next showing
+--- samples again.
 local function pickerClosed()
+    sampled = false
     if quietClose then return end
     local S = NS.Schema
     if not (NS.db and S and S.Set) then return end
@@ -273,6 +320,8 @@ function NS.SkinPickerSpec()
         -- The gear opens the General page (its own subcategory) on the Skin tab, whose key is
         -- "Appearance" (settings/Panel.lua's GENERAL_OPTS).
         page = "General", tab = "Appearance",
+        -- The eye's mode (THE EYE, above); no one-shot onPreview beside it.
+        preview = NS.SkinPreview,
         onClose = pickerClosed,
     }
 end

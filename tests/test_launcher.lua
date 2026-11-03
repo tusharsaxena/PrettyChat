@@ -584,6 +584,10 @@ function()
     hidden(inst)
     Schema.Set("General.visibility", "never")
     D:SetEnabled(true)
+    -- The login's picker down and the console open, as for a player reading the lines: the picker
+    -- the reset shows again then writes no console sample (core/SkinSetup.lua, THE EYE).
+    inst.NS.HideSkinPicker()
+    D:Show()
 
     local from = #D.buffer
     inst.addon:OnSlashCommand("resetall")
