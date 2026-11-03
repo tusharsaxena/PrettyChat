@@ -27,7 +27,7 @@ works.
 | RESET-1 – 13 | Resets | Row Reset, the Defaults buttons, `/pc reset <path>`, reset all, the one log line |
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
 | DIAG-1 – 28 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
-| DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
+| DEGRADED-1 – 11 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | RV-75 – 77, RV-85 – 89 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position; v1.85.0: a clean load and its icons, and a clean load on the R4-L4, round 5, round 6 and sim checkbox re-cuts |
 | SKIN-1 – 34 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker, the v1.85.0 title bars, launcher tooltip, Scope-cleared rows and delete confirmation, a stored pick of the deleted Friz, no line under a window title, the picker's console eye |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
