@@ -394,6 +394,9 @@ if not Skin then
         "BarTexture", "FontFlags", "HudFontSize", "Mark",
         -- LibKa0s v1.85.0: nil is each getter's degraded answer, and BarGloss draws nothing.
         "HudTextColor", "HudLabelColor", "BarFillColor", "HudShadow", "BarGloss", "HoverArt",
+        -- LibKa0s v1.85.0 (Skin minor 16, R5-L3): Band answers nil, there being no band frame,
+        -- and Header places nothing.
+        "Band", "Header",
     }) do S[name] = noop end
     -- The two answers a font setting draws with (LibKa0s v1.82.0, SkinPaintExtras minor 7), never
     -- nil, so a caller's SetFont never reads "no flags" or "no size": a picked flag as stored; From

@@ -769,6 +769,14 @@ prunes `libs/LibKa0s/media/icons/` to the `LibKa0s icons: clear, close, copy.` l
   → every mark draws and each window looks as in SKIN-33. PrettyChat draws no icon edge of its own, so the re-cut's HUD
   icon edge (S.IconBorder `hud`) changes nothing here. **Fail:** a Lua error, or a blank control where a mark should be.
   Result:
+- **RV-87. A clean load on the round 5 re-cut of LibKa0s v1.85.0 (R5-RV).** `/reload` → no Lua error naming a file
+  under `libs/LibKa0s/`. Under Ka0s Default open `/pc debug`, its copy window and `/pc skin` → each window's header is the
+  gold title band, darker than round 4, flush inside the window edge with no strip of body color between the edge and
+  the band, and the title and close button sit on the band's vertical center. In `/pc skin`, open the skin list, then
+  press (a) the window body, (b) the game world and (c) the Font dropdown → each press closes the list, and (c) also
+  opens the Font list. **Fail:** a Lua error, no band, a dark strip above or beside the band, a title or close off
+  center, or a skin list that stays open after an outside press.
+  Result:
 
 ## SKIN
 
@@ -1113,5 +1121,7 @@ Owed: RV-85 and SKIN-28 to SKIN-31 (FS-PC-RV, LibKa0s v1.85.0, 2026-11-01); SKIN
 Owed from the owner's third smoke round (R3-FRIZ, 2026-11-02): SKIN-32, new, and SKIN-22, whose WoW Default face is now Ka0s Ubuntu, so its pass mark came off.
 
 Owed from the owner's fourth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-SMOKE_ROUND4/`, R4-SEP, 2026-11-03): SKIN-33, new. DIAG-18's gray divider under the console's title is gone with it; the rest of DIAG-18 holds. From R4-RV3: RV-86, new.
+
+Owed from the owner's fifth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-SMOKE_ROUND5/`, R5-RV, 2026-11-03): RV-87, new.
 
 On 2026-11-02 the owner reported that every check on the smoke lists of the full skinning run and its smoke feedback batch (Ka0sAddonsCommonTasks `docs/2026-11-01-FULL_SKINNING/` and `docs/2026-11-01-SMOKE_FEEDBACK/`) passed, apart from DpsRace's clock font, the skinned look of the AceGUI Dropdown and the Ka0sMedia_Font and Ka0sMedia_Statusbar pickers, FadeNineSlice and IconBorder (`docs/2026-11-02-SMOKE_ROUND3/`, R3-SMOKE). Passed, recorded on each `Result:` line as `Passed (owner, 2026-11-02)`: RV-85, SKIN-6, SKIN-28, SKIN-29, SKIN-30 and SKIN-31.
