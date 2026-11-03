@@ -237,6 +237,20 @@ test("both console windows register for Esc-to-close", function()
     t.truthy(registered["PrettyChatDebugCopyWindow"], "so does the copy window")
 end)
 
+test("neither console window draws a line under its title (R4-SEP)", function()
+    -- Ka0sAddonsCommonTasks docs/2026-11-03-SMOKE_ROUND4, R4_SIGNOFF.md: no window has a separator
+    -- under its header, the Skin Tester showroom the reference. The library draws both windows; this
+    -- addon adds no line of its own, so a divider that is present must at least be hidden.
+    D:Show()
+    D:ShowCopy()
+    for _, name in ipairs({ "PrettyChatDebugWindow", "PrettyChatDebugCopyWindow" }) do
+        local f = env._frames.byName[name]
+        t.truthy(f, name .. " is built")
+        local divider = f.divider
+        t.truthy(divider == nil or not divider:IsShown(), name .. " shows no divider under its title")
+    end
+end)
+
 test("Show, Hide and Toggle drive the window's visibility", function()
     D:Hide()
     t.falsy(D:IsShown(), "hidden reports false")

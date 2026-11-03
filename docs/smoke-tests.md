@@ -29,7 +29,7 @@ works.
 | DIAG-1 – 28 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
 | DEGRADED-1 – 10 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | RV-75 – 77, RV-85 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position; v1.85.0: a clean load and its icons |
-| SKIN-1 – 32 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker, the v1.85.0 title bars, launcher tooltip, Scope-cleared rows and delete confirmation, a stored pick of the deleted Friz |
+| SKIN-1 – 33 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker, the v1.85.0 title bars, launcher tooltip, Scope-cleared rows and delete confirmation, a stored pick of the deleted Friz, no line under a window title |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
 ## Before you start
@@ -640,7 +640,7 @@ Every reset wipes each dimension it owns (a custom format and the enable flag), 
   `libs/LibKa0s/media/icons/{copy,clear,close}.tga` did not ship. Result: pass (owner-marked 2026-10-10)
 - **DIAG-18. The window edge matches the collection's.** Open another Ka0s addon's console beside this
   one → a hard black 1px outer border with a lighter gray 1px line inside it, background
-  `0.06, 0.06, 0.08` at 92% alpha, a gold title and a gray divider under the title bar, and the same
+  `0.06, 0.06, 0.08` at 92% alpha, a gold title (no line under the title bar since LibKa0s R4-SEP, SKIN-33), and the same
   close mark on both; the copy window wears the same edge. Side by side the two differ only in title.
   **Fail:** different art on the two means one addon is on an older LibKa0s payload. Result: pass (owner-marked 2026-10-10)
 - **DIAG-19. No raw locale key on screen.** Walk `/pc config` (landing page, General, Categories and
@@ -1017,6 +1017,14 @@ skin, unless a check says otherwise.
   fully restart the client (a new font file) → the settings chrome draws in Ubuntu and the Font row reads
   *Ka0s Ubuntu*; switch to the other profile → the same. **Fail:** the game's default face, or the row
   still naming Ka0s Friz Quadrata TT. Result:
+- **SKIN-33. No line under a window title (R4-SEP, R4-RV2, LibKa0s v1.85.0).** On Ka0s Default open the
+  console (`/pc debug`), its copy window (the copy mark) and the skin selector (`/pc skin`) → nothing
+  draws between the title band and the body, as in the Skin Tester's showroom; the console's status rule
+  above its footer stays. Pick Obsidian, then WoW Default, with no reload → still no line under any of the
+  three titles. Under Ka0s Default each title band is the dark gold gradient (R4-L2), the selector's second
+  swatch that header color. The settings pages keep their gold rule under the page title (PANEL-3): that is a page
+  header, not a window's. **Fail:** a gray or tinted 1px line under any window's title in any skin, or a
+  settings page that lost its rule. Result:
 
 ## Non-English client
 
@@ -1098,5 +1106,7 @@ Pending from the findings remediation (Ka0sAddonsCommonTasks
 Owed: RV-85 and SKIN-28 to SKIN-31 (FS-PC-RV, LibKa0s v1.85.0, 2026-11-01); SKIN-6, whose expected result moved with FS-PC-FIX (cause L2).
 
 Owed from the owner's third smoke round (R3-FRIZ, 2026-11-02): SKIN-32, new, and SKIN-22, whose WoW Default face is now Ka0s Ubuntu, so its pass mark came off.
+
+Owed from the owner's fourth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-SMOKE_ROUND4/`, R4-SEP, 2026-11-03): SKIN-33, new. DIAG-18's gray divider under the console's title is gone with it; the rest of DIAG-18 holds.
 
 On 2026-11-02 the owner reported that every check on the smoke lists of the full skinning run and its smoke feedback batch (Ka0sAddonsCommonTasks `docs/2026-11-01-FULL_SKINNING/` and `docs/2026-11-01-SMOKE_FEEDBACK/`) passed, apart from DpsRace's clock font, the skinned look of the AceGUI Dropdown and the Ka0sMedia_Font and Ka0sMedia_Statusbar pickers, FadeNineSlice and IconBorder (`docs/2026-11-02-SMOKE_ROUND3/`, R3-SMOKE). Passed, recorded on each `Result:` line as `Passed (owner, 2026-11-02)`: RV-85, SKIN-6, SKIN-28, SKIN-29, SKIN-30 and SKIN-31.
