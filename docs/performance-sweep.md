@@ -205,6 +205,11 @@ page's sweep was last taken on 2026-10-09. What the code does:
 - **What it costs.** One callback per 5 s while the notice waits on combat, and never more than one
   queued at a time (`noticeWaiting`). Each retry is one `O.SkinNotice` call; once combat ends the
   library stops answering `combat` and no further retry is armed. It is guarded on `C_Timer.After`.
+- **Why it does not touch criterion (a)** (the owner's ruling, 2026-11-06: not a combat path, and the
+  exemption stands). It is not an `OnUpdate` handler and not a game-event handler. It does re-arm
+  while combat lasts, one 5 s one-shot at a time, but only in the session in which the account's
+  skin notice is still pending, and each tick is one library call that shows nothing in combat; once
+  the notice is shown or recorded it never runs again.
 
 No suite pins the retry by name today.
 

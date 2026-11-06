@@ -14,7 +14,7 @@ filter, hooks no chat frame, and has no `OnUpdate` handler and no ticker. Its wh
 | A settings change, or a combat boundary while `General.visibility` is `inCombat` / `outOfCombat` | one `ApplyStrings` pass (a boundary: at most twice per fight) |
 | A settings-panel category render, panel open | one AceGUI tree build and **one** `C_Timer.After(0, …)` layout fit |
 | A profile switch, copy or reset, Profiles page open | **one** `C_Timer.After(0, …)` and one AceConfigDialog redraw a frame later |
-| The account's skin notice is pending and the library answers `combat` | **one** `C_Timer.After(5, …)` at a time, asking again until combat ends ([performance-sweep.md](./performance-sweep.md)) |
+| The account's skin notice is pending and the library answers `combat` | **one** `C_Timer.After(5, …)` at a time, asking again until combat ends; ruled not a combat path by the owner on 2026-11-06 ([performance-sweep.md](./performance-sweep.md)) |
 | Every other moment, combat included | **nothing** |
 
 ## Which of (b) and (c) applies: both
