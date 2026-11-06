@@ -214,21 +214,22 @@ if not lib then
         -- library's `function Sl:PrintHelp()` / `:HelpRows()` / `:LandingRows()`
         -- and the `Text` stub below. Every caller uses a colon; a stub whose
         -- shape differs from the live surface is a degraded path that only
-        -- happens to work (PC-R-08).
+        -- happens to work (PC-R-08). Each row is plain `cmd  desc` (slash-commands-§1):
+        -- the stub MUST NOT copy FormatRow's gold command and em dash.
         PrintHelp = function(_)
             NS.Print(L["v%s slash commands"]:format(VERSION))
             for _, entry in ipairs(COMMANDS) do
-                NS.Print("  /pc " .. entry[1] .. " — " .. entry[2])
+                NS.Print("  /pc " .. entry[1] .. "  " .. entry[2])
             end
         end,
         HelpRows    = function(_)
             local out = {}
-            for i, entry in ipairs(COMMANDS) do out[i] = "  /pc " .. entry[1] .. " — " .. entry[2] end
+            for i, entry in ipairs(COMMANDS) do out[i] = "  /pc " .. entry[1] .. "  " .. entry[2] end
             return out
         end,
         LandingRows = function(_)
             local out = {}
-            for i, entry in ipairs(COMMANDS) do out[i] = "/pc " .. entry[1] .. " — " .. entry[2] end
+            for i, entry in ipairs(COMMANDS) do out[i] = "/pc " .. entry[1] .. "  " .. entry[2] end
             return out
         end,
         CliList         = unavailable,

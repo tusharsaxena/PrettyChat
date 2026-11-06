@@ -5,8 +5,8 @@ summarizes and the `performance-§12` row of
 [`## Documented deviations`](./ARCHITECTURE.md#documented-deviations) ratifies: the committed
 whole-repo sweep that proves criterion (a), and the one load-time cost that was measured and removed.
 Moved here from `performance.md` so that page fits one screen (`documentation-§3`); the prose moved
-verbatim. The result block below was last re-taken on the LibKa0s v1.71.0 tree, by running the
-command, in the 2026-10-09 sync-docs commit.
+verbatim. The result block below was last re-taken on 2026-11-06, on the LibKa0s v1.85.0 tree, by running
+the command, in that day's sync-docs commit.
 
 ## The sweep — criterion (a), proven rather than asserted
 
@@ -29,7 +29,7 @@ under `docs/` and are covered by it. The rest are the vendored payloads (`libs/`
 the generated data (`GlobalStrings/`). **Nothing that ships is excluded**, and `tests/` is deliberately
 still in scope.
 
-Result, verbatim, at the commit that carries this page — **forty-three lines across twelve files**, sorted
+Result, verbatim, as re-taken on 2026-11-06 — **forty-five lines across thirteen files**, sorted
 by file and line:
 
 ```
@@ -45,30 +45,32 @@ core/CoreSetup.lua:127:            if Util.SafeRegisterEvent(target, event, hand
 core/CoreSetup.lua:140:Util.SafeRegisterEvent     = lib.SafeRegisterEvent
 core/CoreSetup.lua:141:Util.SafeRegisterUnitEvent = lib.SafeRegisterUnitEvent
 core/CoreSetup.lua:142:Util.SafeRegisterEvents    = lib.SafeRegisterEvents
-core/LifecycleSetup.lua:40:-- no AceTimer, no C_Timer ticker and no OnUpdate, it registers no message and no
-modules/Override.lua:126:-- Registration goes through LibKa0s-Core's SafeRegisterEvents (bound as
-modules/Override.lua:127:-- NS.Util.SafeRegisterEvents by core/CoreSetup.lua): the C_EventUtils.IsEventValid
-modules/Override.lua:200:        combatWatcher:SetScript("OnEvent", onCombatEdge)
-modules/Override.lua:212:    traceWatch(true, NS.Util.SafeRegisterEvents(combatWatcher, WATCH_EVENTS, nil, NS.RejectedEvents))
-settings/Panel.lua:546:    -- A frame later, both are true. C_Timer.After(0, ...) is the client's own way
-settings/Panel.lua:549:    if C_Timer and C_Timer.After then
-settings/Panel.lua:550:        C_Timer.After(0, function() fitTree(ctx) end)
-settings/Profiles.lua:130:--- redrawn a frame later (the header above says why). Without C_Timer, which a live client
-settings/Profiles.lua:137:    if not (shown and C_Timer and C_Timer.After) then
-settings/Profiles.lua:143:    C_Timer.After(0, redrawNextFrame)
+core/LifecycleSetup.lua:41:-- no AceTimer, no C_Timer ticker and no OnUpdate, it registers no message and no
+core/SkinSetup.lua:387:    if why == "combat" and not noticeWaiting and type(_G.C_Timer) == "table" and _G.C_Timer.After then
+core/SkinSetup.lua:389:        _G.C_Timer.After(NOTICE_RETRY, function()
+modules/Override.lua:145:-- Registration goes through LibKa0s-Core's SafeRegisterEvents (bound as
+modules/Override.lua:146:-- NS.Util.SafeRegisterEvents by core/CoreSetup.lua): the C_EventUtils.IsEventValid
+modules/Override.lua:219:        combatWatcher:SetScript("OnEvent", onCombatEdge)
+modules/Override.lua:231:    traceWatch(true, NS.Util.SafeRegisterEvents(combatWatcher, WATCH_EVENTS, nil, NS.RejectedEvents))
+settings/Panel.lua:609:    -- A frame later, both are true. C_Timer.After(0, ...) is the client's own way
+settings/Panel.lua:612:    if C_Timer and C_Timer.After then
+settings/Panel.lua:613:        C_Timer.After(0, function() fitTree(ctx) end)
+settings/Profiles.lua:148:--- redrawn a frame later (the header above says why). Without C_Timer, which a live client
+settings/Profiles.lua:155:    if not (shown and C_Timer and C_Timer.After) then
+settings/Profiles.lua:161:    C_Timer.After(0, redrawNextFrame)
 tests/test_disabled.lua:28:-- arms no AceTimer, no C_Timer ticker and no OnUpdate, registers no message and no
-tests/test_libka0s.lua:837:test("degraded SafeRegisterEvents records a rejected name and registers the rest", function()
-tests/test_libka0s.lua:839:    -- (the call raises on nil), call target:RegisterEvent without the pcall (the bad
-tests/test_libka0s.lua:850:    local ok, n = pcall(Util.SafeRegisterEvents, frame, events, nil, rejected)
-tests/test_libka0s.lua:862:    t.eq(Util.SafeRegisterEvents(frame, events, nil, rejected), 1, "a second walk answers the same")
-tests/test_libka0s.lua:864:    t.falsy(Util.SafeRegisterEvent(frame, "PLAYER_REGEN_DISABLED"), "one name answers false with no list")
-tests/test_libka0s.lua:865:    t.truthy(Util.SafeRegisterUnitEvent(frame, "UNIT_HEALTH", rejected, "player"), "the unit form registers")
-tests/test_libka0s.lua:866:    t.falsy(Util.SafeRegisterUnitEvent(frame, "PLAYER_REGEN_DISABLED", rejected, "player"),
-tests/test_override.lua:250:-- Both names go through NS.Util.SafeRegisterEvents (LibKa0s-Core), so a name the
-tests/test_override.lua:254:-- A fresh instance whose client refuses `name` at the frame's RegisterEvent and,
-tests/test_override.lua:283:test("IsEventValid rejects a name without calling RegisterEvent", function()
-tests/test_override.lua:295:    t.nilv(live.PLAYER_REGEN_ENABLED, "the gated name never reached RegisterEvent")
-tests/test_panel_categories.lua:272:-- red under: dropping the C_Timer.After, or scheduling it per render without the
+tests/test_libka0s.lua:850:test("degraded SafeRegisterEvents records a rejected name and registers the rest", function()
+tests/test_libka0s.lua:852:    -- (the call raises on nil), call target:RegisterEvent without the pcall (the bad
+tests/test_libka0s.lua:863:    local ok, n = pcall(Util.SafeRegisterEvents, frame, events, nil, rejected)
+tests/test_libka0s.lua:875:    t.eq(Util.SafeRegisterEvents(frame, events, nil, rejected), 1, "a second walk answers the same")
+tests/test_libka0s.lua:877:    t.falsy(Util.SafeRegisterEvent(frame, "PLAYER_REGEN_DISABLED"), "one name answers false with no list")
+tests/test_libka0s.lua:878:    t.truthy(Util.SafeRegisterUnitEvent(frame, "UNIT_HEALTH", rejected, "player"), "the unit form registers")
+tests/test_libka0s.lua:879:    t.falsy(Util.SafeRegisterUnitEvent(frame, "PLAYER_REGEN_DISABLED", rejected, "player"),
+tests/test_override.lua:258:-- Both names go through NS.Util.SafeRegisterEvents (LibKa0s-Core), so a name the
+tests/test_override.lua:262:-- A fresh instance whose client refuses `name` at the frame's RegisterEvent and,
+tests/test_override.lua:291:test("IsEventValid rejects a name without calling RegisterEvent", function()
+tests/test_override.lua:303:    t.nilv(live.PLAYER_REGEN_ENABLED, "the gated name never reached RegisterEvent")
+tests/test_panel_categories.lua:299:-- red under: dropping the C_Timer.After, or scheduling it per render without the
 tests/test_surface_parity.lua:111:        SafeRegisterEvent     = instance.NS.Util.SafeRegisterEvent,
 tests/test_surface_parity.lua:112:        SafeRegisterUnitEvent = instance.NS.Util.SafeRegisterUnitEvent,
 tests/test_surface_parity.lua:113:        SafeRegisterEvents    = instance.NS.Util.SafeRegisterEvents,
@@ -78,42 +80,48 @@ tests/wow_mock.lua:141:-- The EVENT methods are therefore the kit's, not this fi
 tests/wow_mock.lua:142:-- `UnregisterEvent`, `IsEventRegistered`, `RegisterUnitEvent` and
 ```
 
-Reconciled, so a future drift is visible rather than arguable. One is a lint declaration
-(`.luacheckrc:61`). Fifteen are the pattern names appearing **inside comments** — `core/CoreSetup.lua:54`,
-`:55`, `core/LifecycleSetup.lua:40`, `modules/Override.lua:126`, `:127`, `settings/Panel.lua:546`,
-`settings/Profiles.lua:130`, `tests/test_disabled.lua:28`, the comment in `tests/test_libka0s.lua`'s *degraded SafeRegisterEvents records a rejected name and registers the rest*, `tests/test_override.lua:250`, `:254`,
-`tests/test_panel_categories.lua:272` and `tests/wow_mock.lua:72`, `:141`, `:142` — which describe the discipline
-rather than doing anything; the harness mock no longer defines its own `RegisterEvent`, because the
-frame event methods are the kit's. Nine are `core/CoreSetup.lua`'s `SafeRegisterEvent` /
-`SafeRegisterUnitEvent` / `SafeRegisterEvents` surface (`:114`-`:127`, the degraded arm's one-rung
-bodies, and `:140`-`:142`, the binds to `LibKa0s-Core`'s own): wrappers that subscribe nothing until a
-caller hands them a frame, and the only caller is the combat watcher. Twelve are suite code that
-drives those wrappers or pins the watcher (`tests/test_libka0s.lua`, `tests/test_override.lua`,
-`tests/test_surface_parity.lua`); the seven `tests/test_libka0s.lua` lines are all the one test
-*degraded SafeRegisterEvents records a rejected name and registers the rest*, so find it by that name:
-the suite grows above it, and its line numbers move between re-takes. The remaining **six are call sites in shipped code**, and they are
-the three sections below: the combat watcher, one next-frame layout fit in the settings panel, and
-the Profiles page's next-frame redraw.
+Reconciled, so a future drift is visible rather than arguable. Each group is named by file and symbol,
+not by line, because the lines move between re-takes and the block above already prints them. One is a
+lint declaration (`C_Timer` in `.luacheckrc`'s `read_globals`). Fifteen are the pattern names appearing
+**inside comments** — `core/CoreSetup.lua`'s two above the degraded `Util.SafeRegister*` arm, the
+header of `core/LifecycleSetup.lua`, the two above `modules/Override.lua`'s `WATCH_EVENTS`
+registration, the comment above `fitTree`'s hop in `settings/Panel.lua`, the doc comment above the
+redraw in `settings/Profiles.lua`, the header of `tests/test_disabled.lua`, the comment in
+`tests/test_libka0s.lua`'s *degraded SafeRegisterEvents records a rejected name and registers the
+rest*, the two above `tests/test_override.lua`'s *IsEventValid rejects a name without calling
+RegisterEvent*, the `red under:` line of `tests/test_panel_categories.lua`'s *the render schedules a
+fit for the frame after the layout*, and the three in `tests/wow_mock.lua`'s header — which describe
+the discipline rather than doing anything; the harness mock no longer defines its own `RegisterEvent`,
+because the frame event methods are the kit's. Nine are `core/CoreSetup.lua`'s `SafeRegisterEvent` /
+`SafeRegisterUnitEvent` / `SafeRegisterEvents` surface (the degraded arm's one-rung `Util.*` bodies,
+and the three binds to `LibKa0s-Core`'s own): wrappers that subscribe nothing until a caller hands
+them a frame, and the only caller is the combat watcher. Twelve are suite code that drives those
+wrappers or pins the watcher (`tests/test_libka0s.lua`, `tests/test_override.lua`,
+`tests/test_surface_parity.lua`); the `tests/test_libka0s.lua` lines are all the one test *degraded
+SafeRegisterEvents records a rejected name and registers the rest*, so find it by that name. The
+remaining **eight are call sites in shipped code**, and they are the four sections below: the combat
+watcher, one next-frame layout fit in the settings panel, the Profiles page's next-frame redraw, and
+the skin notice's combat retry.
 
 One thing the grep does *not* return, said out loud so nobody re-adds it: `combatWatcher:UnregisterAllEvents`
-at `modules/Override.lua:208` **does not match**, because the pattern spells `RegisterAllEvents` with a
+in `PrettyChat:SyncCombatWatch` **does not match**, because the pattern spells `RegisterAllEvents` with a
 capital R and `UnregisterAllEvents` spells it lowercase. An earlier revision of this page printed that
 line inside its result block; the command above cannot produce it, and a result block holding a line
 its own command cannot return is worse than no result block at all.
 
 **Zero `SetScript("OnUpdate"`, zero ticker, zero repeating timer** anywhere in `core/`, `defaults/`,
 `locales/`, `modules/`, `settings/` or the TOC. That is the part of the old claim that survives.
-What does not survive is *"zero `C_Timer` call"*: `.luacheckrc:61` declares `C_Timer` in
+What does not survive is *"zero `C_Timer` call"*: `.luacheckrc` declares `C_Timer` in
 `read_globals`, and since 2026-09-03 that declaration has had a real consumer, since 2026-09-29 two.
 
-### The combat watcher — `modules/Override.lua:200`, `:212`
+### The combat watcher — `modules/Override.lua`, `PrettyChat:SyncCombatWatch`
 
 Both hits are `PrettyChat:SyncCombatWatch`, and what matters about them is *when they are reached*:
 
 - the frame is **created lazily**, on the first write that stores `General.visibility` as `inCombat`
   or `outOfCombat`. A default install (`always`) creates no frame and registers no event, so on the
   shipped configuration this half of the sweep's runtime answer is still zero;
-- both events are **unregistered** the moment the mode leaves that pair (`modules/Override.lua:208`),
+- both events are **unregistered** the moment the mode leaves that pair (`combatWatcher:UnregisterAllEvents`, in the same function),
   so the subscription tracks the setting rather than outliving it;
 - the handler fires at the combat **boundary** — `PLAYER_REGEN_DISABLED` on entry,
   `PLAYER_REGEN_ENABLED` on exit — at most twice per fight, and never *during* one. Its whole body is
@@ -122,7 +130,7 @@ Both hits are `PrettyChat:SyncCombatWatch`, and what matters about them is *when
 `tests/test_override.lua` pins all three: no frame on a default load, both events registered on a
 combat-scoped write, both dropped on the way back out.
 
-### The settings panel's next-frame fit — `settings/Panel.lua:549-550`
+### The settings panel's next-frame fit — `settings/Panel.lua`, `fitTree`
 
 **A guarded one-shot `C_Timer.After(0, …)` on the settings-panel render path, and nothing else.** It
 arrived on 2026-09-03 with the string-list revamp (`92c43f5`), after this page's sweep was last taken,
@@ -152,10 +160,10 @@ which is why the page went on asserting zero. Its disposition:
   deferred layout measurement, not per-frame and not repeating, and it schedules exactly one
   callback per render rather than one per category click.
 
-`tests/test_panel_categories.lua:274` pins it: the render schedules exactly one fit for the following frame, and
+`tests/test_panel_categories.lua`'s *the render schedules a fit for the frame after the layout* pins it: the render schedules exactly one fit for the following frame, and
 the case goes red if the hop is dropped or if the change guard stops holding.
 
-### The Profiles page's next-frame redraw — `settings/Profiles.lua:137`, `:143`
+### The Profiles page's next-frame redraw — `settings/Profiles.lua`, `NS.Config.RefreshProfilesPage`
 
 **A guarded one-shot `C_Timer.After(0, …)`, queued only when a profile event lands while the
 Profiles page is on screen.** It arrived on 2026-09-29 (`4f26883`). Its disposition:
@@ -174,13 +182,36 @@ Profiles page is on screen.** It arrived on 2026-09-29 (`4f26883`). Its disposit
   the header of `settings/Profiles.lua` and in [profiles.md](./profiles.md).
 - **What it costs.** One callback, one frame later, and one AceConfigDialog redraw of the page. A
   `redrawQueued` flag coalesces any number of profile events in one frame into a single callback. It
-  is guarded on `C_Timer and C_Timer.After` (`:137`); without them the redraw happens at once.
+  is guarded on `C_Timer and C_Timer.After`; without them the redraw happens at once.
 - **Why it does not touch criterion (a).** It is not an `OnUpdate` handler, not a repeating ticker,
   and not a game-event handler. It runs once per player-made profile change, never per frame.
 
-`tests/test_profiles.lua:163` pins it: three profile events in one frame queue one redraw, nothing
+`tests/test_profiles.lua`'s *Profiles: a change from the page's own control never re-opens the page
+under its callback* pins it: three profile events in one frame queue one redraw, nothing
 opens while the control's callback is running, and the next frame draws the page once. The case goes
 red if the redraw becomes synchronous or if the one-pass guard is dropped.
+
+### The skin notice's combat retry — `core/SkinSetup.lua`, `NS.MaybeShowSkinNotice`
+
+**A guarded one-shot `C_Timer.After(NOTICE_RETRY, …)`, queued only while `LibKa0s`'s skin notice
+answers `combat`.** It arrived with the skinning rollout (the library's `O.SkinNotice`), after this
+page's sweep was last taken on 2026-10-09. What the code does:
+
+- **Where it is reached from.** `NS.MaybeShowSkinNotice` only, which the first-run skin picker path
+  (`NS.MaybeShowSkinPicker`) calls, and the retry's own callback. A stood-down addon returns before
+  the timer, so nothing is queued while it is stood down.
+- **What it is for.** The notice is a window, and it is not shown in combat. When the library answers
+  `combat`, the retry asks again `NOTICE_RETRY` (5) seconds later instead of dropping the notice.
+- **What it costs.** One callback per 5 s while the notice waits on combat, and never more than one
+  queued at a time (`noticeWaiting`). Each retry is one `O.SkinNotice` call; once combat ends the
+  library stops answering `combat` and no further retry is armed. It is guarded on `C_Timer.After`.
+- **Why it does not touch criterion (a)** (the owner's ruling, 2026-11-06: not a combat path, and the
+  exemption stands). It is not an `OnUpdate` handler and not a game-event handler. It does re-arm
+  while combat lasts, one 5 s one-shot at a time, but only in the session in which the account's
+  skin notice is still pending, and each tick is one library call that shows nothing in combat; once
+  the notice is shown or recorded it never runs again.
+
+No suite pins the retry by name today.
 
 The addon's other lifecycle hooks are the two AceAddon callbacks in [performance.md](./performance.md)'s runtime table. Both run at login, neither
 repeats, and neither can be reached while the player is in combat.

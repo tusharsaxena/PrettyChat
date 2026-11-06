@@ -18,7 +18,7 @@ import, or a documented command. Nothing here is listed because it seemed likely
 
 | Requirement | Version | Evidence |
 |---|---|---|
-| World of Warcraft, Retail | Interface `120105` (Midnight 12.1.5) | `PrettyChat.toc:1` — `## Interface: 120105`, the single latest-Retail line |
+| World of Warcraft, Retail | Interface `120105` (Midnight 12.1.5) | `PrettyChat.toc` — `## Interface: 120105`, the single latest-Retail line |
 
 Every library the addon uses is **vendored and committed** under `libs/` and listed in the TOC's
 `# Libraries` section, so a player installs no library packs:
@@ -63,7 +63,7 @@ report. Install all of it; it is small.
 | | |
 |---|---|
 | **Version** | **5.1 exactly.** Not 5.2, not 5.3, not LuaJIT-as-5.2. |
-| **Why** | The headless harness sandboxes each loaded chunk with **`setfenv`**, which was **removed in Lua 5.2**. Evidence: `tests/loader.lua:105` and the vendored kit's `tests/_kit/loader.lua:72,91`. There is no fallback path — under 5.2+ the suite does not degrade, it fails to load the addon at all. |
+| **Why** | The headless harness sandboxes each loaded chunk with **`setfenv`**, which was **removed in Lua 5.2**. Evidence: `tests/loader.lua`'s `runSources` and the vendored kit's `tests/_kit/loader.lua` (`Loader.load`, `Loader.loadSource`). There is no fallback path — under 5.2+ the suite does not degrade, it fails to load the addon at all. |
 | **Install** | `sudo apt install -y lua5.1` |
 | **Verify** | `lua -v` → must print `Lua 5.1.x` |
 
@@ -119,7 +119,7 @@ dates for you. It does not make the addon non-compliant, and it is never a commi
 | | |
 |---|---|
 | **Version** | Any recent. |
-| **Why** | Beyond version control: the vendored gate `tests/_kit/vendor_sync.lua:441` runs `io.popen('git -C "<root>/../LibKa0s" …')` to compare the vendored `libs/LibKa0s` and `tests/_kit` against the sibling checkout; `tests/test_vendor_sync.lua` is the two-statement factory call that registers it. Without `git` on `PATH` those cases report **SKIP** with that reason rather than passing — but the comparison did not run, so the four `diff` commands in [`docs/testing.md`](./docs/testing.md) stay written down. |
+| **Why** | Beyond version control: the vendored gate `tests/_kit/vendor_sync.lua` (its `gitOut`) runs `io.popen('git -C "<root>/../LibKa0s" …')` to compare the vendored `libs/LibKa0s` and `tests/_kit` against the sibling checkout; `tests/test_vendor_sync.lua` is the two-statement factory call that registers it. Without `git` on `PATH` those cases report **SKIP** with that reason rather than passing — but the comparison did not run, so the four `diff` commands in [`docs/testing.md`](./docs/testing.md) stay written down. |
 | **Install** | `sudo apt install -y git` |
 | **Verify** | `git --version` |
 
@@ -158,7 +158,7 @@ regenerating the GlobalStrings chunks or the 128 launcher logo. A contributor fi
 |---|---|
 | **Version** | **Python 3.6 or newer** (the script uses f-strings). Verified here with 3.12.3. |
 | **Why** | `tools/split_globalstrings.py` regenerates the twenty-six committed `GlobalStrings/GlobalStrings_0NN.lua` chunks from Blizzard's `GlobalStrings.lua` dump. It is run **by hand after a WoW patch** — see `docs/common-tasks.md`, "Regenerate `GlobalStrings_*.lua` after a WoW patch" — and its output is committed. Nothing in the build, the TOC, the tests or the packager invokes it. It used to rewrite `PrettyChat.toc`'s `# GlobalStrings` block; since PC-R-05 dropped that block it **asserts the block's absence instead**, exiting 1 if a `# GlobalStrings` header or a `GlobalStrings\…` line returns, so a post-patch re-split cannot quietly restore the load cost. |
-| **Packages** | **None.** Its imports are `collections`, `glob`, `os`, `re`, `sys` (`tools/split_globalstrings.py:22-26`) — all standard library. There is no `requirements.txt`, no virtualenv, and no `pip install` step. |
+| **Packages** | **None.** Its imports are `collections`, `glob`, `os`, `re`, `sys` (the `import` lines at the top of `tools/split_globalstrings.py`) — all standard library. There is no `requirements.txt`, no virtualenv, and no `pip install` step. |
 | **Install** | `sudo apt install -y python3` (present by default on Ubuntu 24.04) |
 | **Verify** | `python3 --version` |
 | **Run** | `python3 tools/split_globalstrings.py` — every path it touches is resolved from the repo root, so it runs from any working directory |
@@ -174,7 +174,7 @@ signature, dev-only in the same sense as `docs/` and `tests/`.
 | | |
 |---|---|
 | **Version** | Any recent Pillow. Verified here with 10.2.0 (Ubuntu 24.04's `python3-pil`). |
-| **Why** | `layout-§4`'s recipe regenerates `media/logos/prettychat.logo.128.tga` (128x128, uncompressed 32-bit TGA, image type 2) from the 2000x2000 `media/logos/prettychat.logo.png` beside it, as `core/LauncherSetup.lua:102-103` records. The `.tga` is committed, so the recipe is run **by hand when the source art changes**; nothing in the build, the TOC, the tests or the packager invokes it. The other logo files (`prettychat.logo.tga`, `.jpg`) and `media/screenshots/` have no regeneration recipe and are not covered by this entry. |
+| **Why** | `layout-§4`'s recipe regenerates `media/logos/prettychat.logo.128.tga` (128x128, uncompressed 32-bit TGA, image type 2) from the 2000x2000 `media/logos/prettychat.logo.png` beside it, as the logo comment in `core/LauncherSetup.lua` records. The `.tga` is committed, so the recipe is run **by hand when the source art changes**; nothing in the build, the TOC, the tests or the packager invokes it. The other logo files (`prettychat.logo.tga`, `.jpg`) and `media/screenshots/` have no regeneration recipe and are not covered by this entry. |
 | **Packages** | `PIL` (Pillow), imported by the recipe's `from PIL import Image`. |
 | **Install** | `sudo apt install -y python3-pil` |
 | **Verify** | `python3 -c 'import PIL; print(PIL.__version__)'` |
