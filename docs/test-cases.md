@@ -99,7 +99,7 @@ Total.
 - degraded Get forwards the instance id
 - degraded: /pc test category Loot prints the report to chat every time
 
-### test_surface_parity.lua (7)
+### test_surface_parity.lua (8)
 
 - the Core stub carries the whole live surface
 - the DebugLog stub carries the whole live surface
@@ -107,6 +107,7 @@ Total.
 - the Lifecycle stub carries the whole live surface
 - the Schema stub carries the whole live surface, library and instance
 - the Slash stub carries the whole live surface
+- the degraded help rows are plain `cmd  desc`, not the library's em-dash row
 - the degraded DisabledLine is the library's line, byte for byte
 
 ### test_envsetup.lua (9)
@@ -841,7 +842,7 @@ Total.
 | test_lintconfig.lua | 4 |
 | test_prose.lua | 15 |
 | test_libka0s.lua | 34 |
-| test_surface_parity.lua | 7 |
+| test_surface_parity.lua | 8 |
 | test_envsetup.lua | 9 |
 | test_constants.lua | 8 |
 | test_layers.lua | 4 |
@@ -880,4 +881,4 @@ Total.
 | test_skin_values.lua | 3 |
 | test_skin_switch.lua | 10 |
 | Skipped | 1 |
-| **Total** | **690** |
+| **Total** | **691** |

@@ -250,6 +250,21 @@ test("the Slash stub carries the whole live surface", function()
     })
 end)
 
+-- slash-commands-§1: the stub MUST NOT copy FormatRow. A degraded help row prints `cmd  desc`
+-- plainly: two spaces, no gold command and no em dash.
+-- red under: the stub joining a row with " — " (the library's separator, hand-copied)
+test("the degraded help rows are plain `cmd  desc`, not the library's em-dash row", function()
+    local Sl, cmds = parityBare.NS.SlashCommands, parityBare.NS.COMMANDS
+    local rows, landing = Sl:HelpRows(), Sl:LandingRows()
+    t.eq(#rows, #cmds)
+    t.eq(#landing, #cmds)
+    for i, entry in ipairs(cmds) do
+        local plain = "/pc " .. entry[1] .. "  " .. entry[2]
+        t.eq(landing[i], plain)
+        t.eq(rows[i], "  " .. plain)
+    end
+end)
+
 test("the degraded DisabledLine is the library's line, byte for byte", function()
     -- slash-commands-§1 and the Slash version-15 doc's "The degradation stub": a
     -- library-absent stub may carry exactly ONE library string, DISABLED_LINE_FORMAT,
