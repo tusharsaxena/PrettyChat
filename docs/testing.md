@@ -127,7 +127,7 @@ Two kit suites, new at kit revision 50 (`skinning-§1`), declared in `tests/run.
 ## The 1500-line cap gate
 
 `tests/_kit/test_layout_cap.lua` — the kit's gate since LibKa0s v1.55.0 (kit revision 25), and still
-the gate in the vendored LibKa0s v1.85.0 (kit revision 50), declared in `tests/run.lua` as
+the gate in the vendored LibKa0s v1.90.0 (kit revision 51), declared in `tests/run.lua` as
 `{ name = "test_layout_cap", dir = "tests/_kit/" }` — compares two things: every authored
 `.lua` git tracks, and the census under *Files over the 1500-line cap* in
 [ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both directions, so a file that crosses the
