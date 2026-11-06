@@ -57,7 +57,7 @@ The `€` in `BLIZZARD_STORE_CURRENCY_FORMAT_EURO` is a character some shipped s
 **The exemption is earned condition by condition, and each condition is one line somebody could
 delete for an unrelated reason.** `layout-§1` grants it only when **all three** hold:
 
-1. **Generated, and saying so.** `GlobalStrings/GlobalStrings.lua:1` reads
+1. **Generated, and saying so.** The first line of `GlobalStrings/GlobalStrings.lua` reads
    `-- AUTOMATICALLY GENERATED -- Your benefactors send their regards.` It is an extraction from
    the client, and the next extraction overwrites any hand edit wholesale.
 2. **Nothing loads it.** `PrettyChat.toc` carries no `GlobalStrings\` line and has not since

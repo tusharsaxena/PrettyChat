@@ -1084,7 +1084,7 @@ German client the overridden lines read in English; do not file that. What these
 an error, an artifact, or the wrong original.
 
 - **LOC-1. The snapshot holds the client's own strings.** `PrettyChat:SnapshotOriginals`
-  (`core/PrettyChat.lua:190-199`) reads `_G[globalName]` at `OnEnable`. `/pc test formatstring
+  (`core/PrettyChat.lua`) reads `_G[globalName]` at `OnEnable`. `/pc test formatstring
   LOOT_ITEM_SELF` → the `Original:` line is the client's own German (or French) sentence. **Fail:** an
   English `Original:` line; the snapshot reads something other than `_G`, and every restore hands
   players text their client never wrote. Record the `Original:` line verbatim for `LOOT_ITEM_SELF`,
@@ -1094,7 +1094,7 @@ an error, an artifact, or the wrong original.
 - **LOC-2. Disabling gives the client's strings back.** `/pc set General.enabled false`, then loot, gain
   reputation and take money → all three lines are the client's untouched German.
   `/pc set General.enabled true` and trigger them again → PrettyChat's layout. The restore arm is
-  `ApplyStrings` (`modules/Override.lua:352-361`). **Fail:** English lines while disabled; the same
+  `PrettyChat:ApplyStrings` (`modules/Override.lua`). **Fail:** English lines while disabled; the same
   defect as LOC-1 seen from the other end. Result: pass (owner-marked 2026-10-10)
 - **LOC-3. One real line per category, watching for the raise.** With every category enabled, trigger
   one line from each: loot an item, receive a currency, take money, gain reputation, gain XP while
