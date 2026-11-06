@@ -327,7 +327,7 @@ never a live requirement, and never a reason to "restore" the file.
 | Doc | Status | Trigger |
 |---|---|---|
 | `slash-dispatch.md` | Present | 15 verbs in the command table |
-| `midnight-quirks.md` | Not applicable | No client-version workaround of the addon’s own; the GlobalStrings work is data, not a shim |
+| `midnight-quirks.md` | Present | Always (documentation-§3): the vendored client-quirks catalog (client-quirks-§1); the addon's own section is empty |
 | `message-bus.md` | Not applicable | The addon defines no cross-module messages |
 | `compat-layer.md` | Not applicable | Not applicable — compat's applicability condition (Standard v2.65.0): PrettyChat calls no deprecated or version-variant client API outside LibKa0s's majors, so it carries no `core/Compat.lua`. Its one former shim, `Compat.GetAddOnMetadata`, is now `LibKa0s-Env-1.0` behind `core/EnvSetup.lua` |
 | `profiles.md` | Present | The Profiles page (AceDBOptions, `settings/Profiles.lua`) makes AceDB profiles user-visible |
