@@ -213,5 +213,6 @@ Kit.run{
         -- the probe-skin switch test, read off Kit.skinValues and Kit.skinSwitch above.
         { name = "test_skin_values", dir = "tests/_kit/" },
         { name = "test_skin_switch", dir = "tests/_kit/" },
+        { name = "test_client_globals", dir = "tests/_kit/" },
     },
 }
