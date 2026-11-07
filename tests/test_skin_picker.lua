@@ -25,6 +25,9 @@ local test = ctx.test
 
 local OWNER = "PrettyChat"
 local PATH  = "skin.pickerSeen"
+-- The client's default skin under the active kit profile (LibKa0s v1.94.0, skinning-§2): WoW Forever
+-- on forever, Ka0s Default on retail. Pinned from the profile, never read back from the addon.
+local CLIENT_SKIN = dofile(ctx.root .. "/tests/_kit/mock_client.lua").current() == "forever" and "forever" or "ka0s"
 
 local function libs(inst)
     return inst.env.LibStub("LibKa0s-Skin-1.0"), inst.env.LibStub("LibKa0s-Options-1.0")
@@ -211,7 +214,7 @@ test("Skin picker: a pick previews unsaved; Apply saves it through the write sea
             if not hit and r.key == "obsidian" and r.swatches then r:__fire("OnClick"); hit = true end
         end
         t.truthy(hit, "no row for obsidian")
-        t.eq(select(2, NS.SkinChoice()), "ka0s", "a pick alone writes nothing to the profile")
+        t.eq(select(2, NS.SkinChoice()), CLIENT_SKIN, "a pick alone writes nothing to the profile")
         f.apply:__fire("OnClick")
     end)
     NS.WriteSkinChoice = write

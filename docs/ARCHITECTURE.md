@@ -81,6 +81,32 @@ Six more positions resolve something at file load and are annotated in the TOC a
 
 Topic detail: [module-map.md](./module-map.md).
 
+## Per-client features
+
+The addon serves Retail and WoW Forever (clients-§1; the roster's Clients value is `Retail · Forever`).
+**All features serve both clients.** No module, settings page or tab, slash verb, launcher entry or event
+registration carries a `clients` declaration, and the addon never asks which client it is on. The one
+thing that differs is the default skin a fresh profile wears, and that answer is the library's
+(`NS.DEFAULT_SKIN`, [Skins](#skins)).
+
+**One format-string list serves both clients, and that is measured.** The 79 GLOBALNAMEs in
+`defaults/Defaults.lua` are the client's own UI string names, not per-client game data with differing
+ids (clients-§5's seeds). Every one of them exists in WoW Forever's enUS GlobalStrings with text and
+placeholders byte-identical to Retail's, compared on 2026-11-08 between Ketho/BlizzardInterfaceResources
+`forever` (1.60.1, build 70532) and `live` (12.1.5, build 70448), both dated 2026-10-22,
+`Resources/GlobalStrings/enUS.lua`. None of them is a Warband, crafting-order or Delve string. So there
+is no second list and no client branch. What reopens it: a string missing or reworded on Forever, found
+in game (LOC-4's `(original not available)` placeholder, or a `/pc test` `Original:` line that differs
+from Retail's). A string the client does not define is already tolerated: `SnapshotOriginals` records it
+as nil and `ApplyStrings` restores it to nil (PC-R-07, pinned by `tests/test_apply.lua` and
+`tests/test_override.lua`).
+
+Character names on Forever can be two words ("Traxex Silentshot"). PrettyChat only rewrites format
+strings and never parses a name, so a name flows through its `%s` unchanged on either client.
+
+The headless suite runs under both kit profiles (clients-§6), and the kit's missing-globals suite checks
+the tracked source against both clients' API sets.
+
 ## Namespace publishing pattern
 
 Every file opens by destructuring the two values WoW passes each chunk — the addon FOLDER name and the addon-wide namespace table. Eleven files read both and spell the header `local addonName, NS = ...`: `core/Namespace.lua`, `core/CoreSetup.lua`, `core/SkinSetup.lua` (which registers the folder name as the LibKa0s-Skin-1.0 owner, skinning-§1), `core/EnvSetup.lua`, `core/MediaSetup.lua`, `core/DebugLogSetup.lua`, `core/PrettyChat.lua` (which hands the folder name to `:NewAddon`), `core/LifecycleSetup.lua` (which names the latch's owner in both of its descriptors), `core/LauncherSetup.lua` (which builds the broker object's `ICON_PATH` and its `name` from it) `settings/OptionsSetup.lua` (which passes it as the Options descriptor's `addonName`, so a help mark can draw the library's own `info` art; LibKa0s#42) and `settings/Panel.lua` (which builds `Interface\\AddOns\\<folder>` from it). The other fourteen never read the folder name and open `local _, NS = ...` — `M4c-06` corrected them when the blanket `211/addonName` suppression that had been hiding them came out of `.luacheckrc`. A copied header naming a value the file does not use is dead code, not a convention. Modules publish their public surface onto `NS`; nothing is exported through a global. The addon object **is** that same `NS` table (`core/PrettyChat.lua` passes `NS` to `:NewAddon`, architecture-§2), so the AceAddon methods hang off it and `LibStub("AceAddon-3.0"):GetAddon("PrettyChat")` returns the very same table.
@@ -213,7 +239,9 @@ console and its copy window, the Skin tab and the first-run picker. What is the 
   under Ka0s Default and following `text.muted` and `gtip.subtle` in every other skin (decisions X1,
   X2 and X12). With the library absent its facade answers every name from `NS.SKIN_FALLBACK`, which
   `tests/test_skinsetup.lua` holds to the library's values.
-- **The choice.** Eight profile keys under `skin.*`: `source`, `skin`, the Scope's `ignorePanel`
+- **The choice.** Eight profile keys under `skin.*`: `source`, `skin` (a new profile's is
+  `NS.DEFAULT_SKIN`, `Skin:DefaultSkin()`: WoW Forever on the Forever client, Ka0s Default on Retail;
+  LibKa0s v1.94.0, skinning-§2), the Scope's `ignorePanel`
   (**Ignore settings panel**, on in a new profile, so the settings pages stay the client's) and
   `ignoreFonts`, the `font` and `texture` overrides, the **Font outline** `outline` (LibKa0s v1.82.0,
   ruling D-06 of Ka0sAddonsCommonTasks `docs/2026-10-30-SKIN_FONTS_AND_FEEDBACK/`: `all`, `hud`, the default since v1.83.0, or `off`,
@@ -286,7 +314,8 @@ frame, the LibDBIcon button and its tooltip; and the brand art.
 
 ## Known Limitations
 
-- **Retail only.** `## Interface: 120105` (Midnight / Retail). Classic / Classic Era untested.
+- **Retail and WoW Forever** (`## Interface: 120105, 16001`), one codebase and no client branching:
+  every feature serves both clients ([Per-client features](#per-client-features)). No Classic flavor.
 - **Snapshot is load-time.** `OnEnable` snapshots Blizzard originals only for strings mentioned in `NS.Defaults` (79). Adding a new `globalName` needs a `/reload` for the snapshot to capture its pristine value.
 - **Positional format rendering is WoW-only.** `%n$s` specifiers rely on WoW's extended `string.format`; the headless test harness (stock Lua 5.1) can't render them and asserts graceful degradation instead.
 - **The rewritten text is every addon's text (handoff H-1).** Overriding `_G[GLOBALNAME]` changes the payload Blizzard's chat code builds, so the `CHAT_MSG_LOOT`, `CHAT_MSG_CURRENCY`, `CHAT_MSG_MONEY` and `CHAT_MSG_COMBAT_*` (XP, honor, faction) lines reach **every** addon in PrettyChat's format, not only the chat frame. A parser that compiles match patterns from those globals must build them from the live global, or re-check them against it on each parse; a pattern compiled once goes stale silently. The globals change mid-session on any settings write, a profile change and a stand-down, and under `General.visibility` `inCombat` or `outOfCombat` at **every combat boundary** (`## Event Subscriptions`). Known consumer: LootHistory, which now keeps beside each compiled pattern set the exact source globals it was compiled from and rebuilds the set when PrettyChat rewrites them (LootHistory `core/Util.lua`, `Util.ParseSelfLoot` / `Util.ParseSelfCurrency` / `Util.ParseRollWon`). It used to compile those patterns once per session and stop recording self-loot and currency in the other state until `/reload`; that stale-cache defect was fixed in LootHistory@79131e3 (handoff H-1, PRETTYCHAT-R-01). The fix is LootHistory's; PrettyChat adds no API, bus message or chat filter for it. In-client check: OVR-9 in [smoke-tests.md](./smoke-tests.md#ovr).

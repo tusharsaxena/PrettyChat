@@ -30,10 +30,15 @@ works.
 | DEGRADED-1 – 11 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
 | RV-75 – 77, RV-85 – 89 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position; v1.85.0: a clean load and its icons, and a clean load on the R4-L4, round 5, round 6 and sim checkbox re-cuts |
 | SKIN-1 – 34 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker, the v1.85.0 title bars, launcher tooltip, Scope-cleared rows and delete confirmation, a stored pick of the deleted Friz, no line under a window title, the picker's console eye |
+| FOREVER-1 – 14 | WoW Forever | The checks re-run on a live WoW Forever client: the AddOns list, a clean load, each category's lines in real play (a two-word name included), a category off, `/pc test`, the panel, profiles across a full restart, the default skin per client, the launcher and diagnostics |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
 ## Before you start
 
+- **Clients (clients-§6).** The addon serves Retail and WoW Forever. Every check outside the WoW Forever
+  section runs on **Retail**, where its recorded result was taken. The **WoW Forever** section names the
+  checks to re-run on a live **Forever** client; nothing in this addon is absent on either client, so
+  there is no absence check.
 - Error display on: `/console scriptErrors 1` (or BugSack). Every check assumes it.
 - A character that can loot, gain XP and reputation, take money, craft and repair, and a training
   dummy nearby for COMBAT and the combat halves of other checks.
@@ -1065,6 +1070,67 @@ skin, unless a check says otherwise.
   that only opens, a console left open after a close the picker opened it for, or a console of the
   player's left hidden after the close. Result:
 
+## WoW Forever
+
+**Client: WoW Forever** (1.60.1, interface 16001), every check here. The rest of this file is Retail's;
+these checks re-run its core on Forever, where the client draws its own frames and keeps its own `WTF`.
+Every Retail rule above holds: zero Lua errors, the cyan `[PC]` prefix, no taint warning.
+
+**Code:** `PrettyChat.toc` (the two-number `## Interface:` line), `defaults/Defaults.lua` (the one
+format-string list both clients share, [ARCHITECTURE.md](./ARCHITECTURE.md#per-client-features)),
+`core/PrettyChat.lua` (`SnapshotOriginals`), `modules/Override.lua` (`ApplyStrings`),
+`core/SkinSetup.lua` (`NS.DEFAULT_SKIN`).
+
+**Setup.** Link the checkout into the Forever client once, from an elevated Windows prompt, then fully
+restart the client:
+`mklink /d "G:\Games\Blizzard\World of Warcraft\_forever_\Interface\AddOns\PrettyChat" "D:\Profile\Users\Tushar\Documents\GIT\PrettyChat"`.
+Forever's SavedVariables are `_forever_/WTF/Account/<ACCOUNT>/SavedVariables/PrettyChat.lua`. Props: a
+character that can loot, take money, gain currency, reputation and XP (with rested XP banked), and craft;
+a group member to loot beside you (a two-word Forever name such as "Traxex Silentshot" is what to look
+for); honor if the character can reach it.
+
+- **FOREVER-1. The AddOns list.** At character select → **Ka0s Pretty Chat** is listed with its logo
+  and is **not** marked *Out of date*, and "Load out of date AddOns" does not need to be ticked for it
+  to load. Result: passed (owner, 2026-11-08)
+- **FOREVER-2. A fresh install loads clean.** With no `PrettyChat.lua` in Forever's SavedVariables, log
+  in → zero Lua errors and no `[PC] schema not ready yet` line, as INSTALL-1 on Retail. Result: passed (owner, 2026-11-08)
+- **FOREVER-3. Loot, yours and a group member's.** Loot an item yourself → the line is in PrettyChat's
+  `Loot | You | ...` layout. In a group, let the other player loot → `Loot | <name> | ...`, and a
+  two-word Forever name reads whole ("Traxex Silentshot"), not cut at the space. Result: passed (owner, 2026-11-08)
+- **FOREVER-4. Money and currency.** Loot money, then gain a currency → a `Money | ...` line and a
+  `Currency | ...` line, each in PrettyChat's layout and colors. Result: passed (owner, 2026-11-08)
+- **FOREVER-5. Reputation and experience.** Gain reputation, then kill a mob with rested XP banked → a
+  reputation line and an `XP | ... (... exp ... bonus)` line, with the rested bonus filled in and no
+  literal `%s` or `%d` left. Result: passed (owner, 2026-11-08)
+- **FOREVER-6. Honor.** If the character can earn honor, earn some → an honor line in PrettyChat's
+  layout. If honor is out of reach, write *not reachable* here. Result: passed (owner, 2026-11-08)
+- **FOREVER-7. Tradeskill.** Craft an item → the Tradeskill line in PrettyChat's layout, with no Lua
+  error. Result: passed (owner, 2026-11-08)
+- **FOREVER-8. A category off gives the client's line back.** `/pc set Loot.enabled false`, loot an
+  item → the line is the client's own sentence. `/pc set Loot.enabled true`, loot again →
+  PrettyChat's layout, with no `/reload`. Result: passed (owner, 2026-11-08)
+- **FOREVER-9. `/pc test`.** `/pc test` → the debug console fills with a block per category, as TEST-1
+  on Retail. Every `Original:` line is the client's sentence, none reads `(original not available)`,
+  and the footer reads `end of test output (79 strings shown)`. **Fail:** a placeholder or a count
+  under 79 means a string is missing on Forever; record which, because it reopens the one-list
+  decision ([ARCHITECTURE.md](./ARCHITECTURE.md#per-client-features)). Result: passed (owner, 2026-11-08)
+- **FOREVER-10. The settings panel.** Out of combat, `/pc config` → the panel opens on the landing page.
+  On Categories ▸ Loot, pick a string, edit its format and tick its Enable off and on → the Preview
+  box follows, and the next loot line uses the edit. Reset the row. Result: passed (owner, 2026-11-08)
+- **FOREVER-11. Profiles across a full restart.** On the Profiles page create `SmokeTest`, edit one Loot
+  format, then **exit the client completely** and start it again → `SmokeTest` is still active and the
+  edit is still there. The Profiles page names this character's profile key with no error. Delete
+  `SmokeTest` afterwards. Result: passed (owner, 2026-11-08)
+- **FOREVER-12. The default skin per client.** On a fresh Forever profile (Profiles ▸ new profile, or
+  FOREVER-2's empty SavedVariables) → `/pc get skin.skin` reads `forever` and the Skin tab shows
+  **WoW Forever**. On Retail, a fresh profile reads `ka0s` (**Ka0s Default**). Result: passed (owner, 2026-11-08)
+- **FOREVER-13. The launcher.** The minimap button shows the logo; left-click opens the settings panel;
+  right-click → the menu titled Ka0s Pretty Chat with **Enabled**, which works as LAUNCH-3 describes.
+  Result: passed (owner, 2026-11-08)
+- **FOREVER-14. Diagnostics.** `/pc diagnostics` → the report lands in the debug console with no
+  `section <name> failed` line, as DIAG-1; its `client:` line reads `version=1.60.1` and
+  `interface=16001`. Result: passed (owner, 2026-11-08)
+
 ## Non-English client
 
 Run on a client set to **deDE or frFR**, the two the collection's other locale checks use
@@ -1153,3 +1219,5 @@ Owed from the owner's fifth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-
 Owed from the owner's sixth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-SMOKE_ROUND6/`, R6-RV, 2026-11-04): RV-88, new. From R6-RV2: RV-89, new. From R6-PV: SKIN-34, new, and SKIN-10, whose picker now has an eye and opens the console, so its pass mark came off.
 
 On 2026-11-02 the owner reported that every check on the smoke lists of the full skinning run and its smoke feedback batch (Ka0sAddonsCommonTasks `docs/2026-11-01-FULL_SKINNING/` and `docs/2026-11-01-SMOKE_FEEDBACK/`) passed, apart from DpsRace's clock font, the skinned look of the AceGUI Dropdown and the Ka0sMedia_Font and Ka0sMedia_Statusbar pickers, FadeNineSlice and IconBorder (`docs/2026-11-02-SMOKE_ROUND3/`, R3-SMOKE). Passed, recorded on each `Result:` line as `Passed (owner, 2026-11-02)`: RV-85, SKIN-6, SKIN-28, SKIN-29, SKIN-30 and SKIN-31.
+
+On 2026-11-08 the owner reported that every check of the WoW Forever port (W2-PC-01, Ka0sAddonsCommonTasks `docs/2026-11-07-WOW_FOREVER_PORT_STEP5/04_WAVE2_SMOKE.md`) passed, with a Retail sanity pass: FOREVER-1 to FOREVER-14, each recorded on its `Result:` line as `passed (owner, 2026-11-08)`.

@@ -2,7 +2,7 @@
 --
 -- What this addon owes the skin engine, and nothing the library pins itself: the owner is
 -- registered under the folder name with this addon's read and write seams and its two owner
--- tokens; the eight skin.* keys default to Ka0s Default and are skipRender schema rows on the
+-- tokens; the eight skin.* keys default to the client's default skin and are skipRender schema rows on the
 -- General page's Skin tab (group "Appearance"); a skin write changes no chat string, so it skips
 -- the ApplyStrings pass (decision D8); the profile's skin is applied right after AceDB exists and
 -- on every profile event; one pick, from this addon's tab or from another addon's copy, is ONE
@@ -16,6 +16,15 @@ local t    = ctx.t
 local test = ctx.test
 
 local OWNER = "PrettyChat"
+-- The client's default skin under the active kit profile (LibKa0s v1.94.0, skinning-§2): WoW Forever
+-- on forever, Ka0s Default on retail. Pinned from the profile, never read back from the addon.
+local CLIENT_SKIN = dofile(ctx.root .. "/tests/_kit/mock_client.lua").current() == "forever" and "forever" or "ka0s"
+
+--- Ka0s Default by name, for a case that pins its values: under the forever kit profile a fresh
+--- instance wears WoW Forever (the client's default skin).
+local function onKa0s(Skin)
+    Skin:SetChoice(OWNER, "ka0s", "ka0s")
+end
 
 --- A fresh live instance, its Skin library, and a repaint counter on its facade.
 local function live()
@@ -53,7 +62,7 @@ test("Skin seam: the owner is the folder name, and NS.Skin is its facade", funct
     t.eq(Skin:OwnerLabel(OWNER), "Ka0s Pretty Chat", "the copy confirmation names the addon by its brand")
 end)
 
-test("Skin seam: the read answers Ka0s Default before the profile store exists", function()
+test("Skin seam: the read answers the client's default skin before the profile store exists", function()
     -- RegisterOwner calls `get` at FILE LOAD, before AceDB:New; a getter that raised there would be
     -- a visible Lua error on every login.
     local inst = live()
@@ -64,7 +73,7 @@ test("Skin seam: the read answers Ka0s Default before the profile store exists",
     NS.db = db
     t.truthy(ok, "NS.SkinChoice raised without a store: " .. tostring(source))
     t.eq(source, "ka0s")
-    t.eq(skin, "ka0s")
+    t.eq(skin, CLIENT_SKIN, "WoW Forever on Forever, Ka0s Default on Retail")
 end)
 
 test("Skin seam: the owner tokens keep Ka0s Default's #aaaaaa and follow the skin elsewhere", function()
@@ -73,6 +82,7 @@ test("Skin seam: the owner tokens keep Ka0s Default's #aaaaaa and follow the ski
     -- Default (|cffb3b3b8), a name the library refuses (a library family), or no follow.
     local inst, Skin = live()
     local NS = inst.NS
+    onKa0s(Skin)
     t.eq(NS.SkinEscape("pc.note"), "|cffaaaaaa", "the page note on Ka0s Default")
     t.eq(NS.SkinEscape("pc.tipNote"), "|cffaaaaaa", "the tooltip note on Ka0s Default")
     local r, g, b = NS.SkinColor("pc.note")
@@ -90,14 +100,14 @@ end)
 
 -- ── the keys and the rows ────────────────────────────────────────────────────────────────────
 
-test("Skin seam: the eight skin keys default to Ka0s Default, as skipRender Skin-tab rows", function()
+test("Skin seam: the eight skin keys default to the client's default skin, as skipRender Skin-tab rows", function()
     -- red under: a default other than today's look, a row that renders itself on top of the
     -- library's tab, or a row on some other page or tab.
     local inst = live()
     local NS = inst.NS
     local d = NS.ProfileDefaults.profile.skin
     t.eq(d.source, "ka0s")
-    t.eq(d.skin, "ka0s")
+    t.eq(d.skin, CLIENT_SKIN, "WoW Forever on Forever, Ka0s Default on Retail")
     t.eq(d.ignorePanel, true, "a new profile leaves the settings panel the client's")
     t.eq(d.ignoreFonts, false, "and skins the fonts")
     t.eq(d.font, "")
@@ -139,7 +149,7 @@ test("Skin seam: /pc set refuses an unknown skin and applies a registered one, o
     local inst, Skin, counter = live()
     local NS = inst.NS
     slash(inst, "set skin.skin no-such-skin")
-    t.eq(NS.db.profile.skin.skin, "ka0s", "an unknown skin was stored")
+    t.eq(NS.db.profile.skin.skin, CLIENT_SKIN, "an unknown skin was stored")
     t.eq(counter.looks, 0, "a refused set repainted")
     slash(inst, "set skin.skin obsidian")
     t.eq(NS.db.profile.skin.skin, "obsidian", "a registered skin was refused")
@@ -248,7 +258,7 @@ test("Skin seam: a profile switch, copy and reset each apply the incoming profil
     db:SetProfile("SkinProbe")
     db.profile.skin.skin = "glass"
     db:SetProfile("Default")
-    t.eq(select(2, Skin:GetChoice(OWNER)), "ka0s", "back on Default, Default's skin")
+    t.eq(select(2, Skin:GetChoice(OWNER)), CLIENT_SKIN, "back on Default, Default's skin")
     counter.looks = 0
     db:SetProfile("SkinProbe")
     t.eq(select(2, Skin:GetChoice(OWNER)), "glass", "the switch did not move the applied skin")
@@ -257,7 +267,7 @@ test("Skin seam: a profile switch, copy and reset each apply the incoming profil
     db:CopyProfile("SkinProbe")
     t.eq(select(2, Skin:GetChoice(OWNER)), "glass", "the copy did not apply the copied skin")
     db:ResetProfile()
-    t.eq(select(2, Skin:GetChoice(OWNER)), "ka0s", "the reset did not put Ka0s Default back")
+    t.eq(select(2, Skin:GetChoice(OWNER)), CLIENT_SKIN, "the reset did not put the default skin back")
 end)
 
 test("Skin seam: a profile's stored exceptions and overrides are applied with its skin", function()
@@ -398,7 +408,8 @@ test("Skin seam: each host-copy skin token is the live library's Ka0s Default va
     -- The degraded facade answers Ka0s Default from NS.SKIN_FALLBACK. A copy is the thing that
     -- drifts, so every entry is held to the library's value for THIS owner (its owner tokens
     -- resolve only for a registered owner).
-    local inst = live()
+    local inst, Skin = live()
+    onKa0s(Skin)
     local n = 0
     for name, c in pairs(bare.NS.SKIN_FALLBACK) do
         n = n + 1

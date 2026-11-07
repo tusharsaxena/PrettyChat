@@ -1,12 +1,12 @@
 # Pretty Chat
 
-![WoW](https://img.shields.io/badge/WoW-Midnight_12.1.5-purple)
+![WoW](https://img.shields.io/badge/WoW-Midnight_12.1.5_and_Forever_1.60.1-purple)
 ![CurseForge Version](https://img.shields.io/curseforge/v/919766)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-691%2F691_passing-green)
+![Tests](https://img.shields.io/badge/Tests-694%2F694_passing-green)
 
-Retail only for now; WoW Forever support is planned. World of Warcraft tells you about loot, currency, gold, reputation, experience, honor and crafting in a stream of sentences that all look alike. PrettyChat rewrites them. The information doesn't change, but it's laid out and color-coded, so you can find the line you actually cared about while the chat window scrolls past you.
+Supports Retail and WoW Forever. World of Warcraft tells you about loot, currency, gold, reputation, experience, honor and crafting in a stream of sentences that all look alike. PrettyChat rewrites them. The information doesn't change, but it's laid out and color-coded, so you can find the line you actually cared about while the chat window scrolls past you.
 
 You can switch off, reword or recolor any message type, either in the in-game settings panel or from chat with `/pc`.
 
