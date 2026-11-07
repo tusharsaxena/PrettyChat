@@ -18,8 +18,10 @@ local addonName, NS = ...
 --                           in the client's look with the rest of the page.
 --   NS.SKIN_SOURCE_OPTIONS  the source row's values, and NS.SKIN_OPTIONS the skin row's (every
 --   NS.SKIN_OPTIONS         registered skin, in the library's order). settings/SchemaSkin.lua reads both.
---   NS.SkinChoice()         the stored (source, skin) pair, read through NS.Schema.Get; "ka0s",
---                           "ka0s" before AceDB has built the profile store.
+--   NS.SkinChoice()         the stored (source, skin) pair, read through NS.Schema.Get; "ka0s" and
+--                           NS.DEFAULT_SKIN before AceDB has built the profile store.
+--   NS.DEFAULT_SKIN         the client's default skin, Skin:DefaultSkin(): "forever" on WoW Forever,
+--                           "ka0s" on Retail and without the library.
 --   NS.WriteSkinChoice(s,k,i,m) THE WRITE SEAM (architecture-§5): every half through NS.Schema.Set,
 --                           the one seam `/pc set` and the panel already write through. `i`, the
 --                           Scope's `{ panel, fonts }`, writes the two exceptions, and `m`, the Font
@@ -82,6 +84,9 @@ local FONT_PATH, TEXTURE_PATH = "skin.font", "skin.texture"
 local OUTLINE_PATH = "skin.outline"
 local OUTLINE_DEFAULT = "hud"
 local DEFAULT = "ka0s"
+-- The client's default skin (LibKa0s v1.94.0, Skin minor 18; skinning-§2): WoW Forever on the Forever
+-- client, Ka0s Default on Retail. defaults/Profile.lua stores it, and a profile with no skin reads it.
+NS.DEFAULT_SKIN = (Skin and type(Skin.DefaultSkin) == "function") and Skin:DefaultSkin() or DEFAULT
 local LABEL = "Ka0s Pretty Chat"
 
 -- This addon's owner tokens (skinning-§1; Ka0sAddonsCommonTasks docs/2026-10-29-SKINNING_ROLLOUT/
@@ -185,9 +190,9 @@ local function schemaGet(path)
     return S.Get(path)
 end
 
---- The stored pair: Ka0s Default until the profile store exists.
+--- The stored pair: the client's default skin until the profile store exists.
 function NS.SkinChoice()
-    return schemaGet(SOURCE_PATH) or DEFAULT, schemaGet(SKIN_PATH) or DEFAULT
+    return schemaGet(SOURCE_PATH) or DEFAULT, schemaGet(SKIN_PATH) or NS.DEFAULT_SKIN
 end
 
 --- A stored override as the profile keeps it: the LSM key, or "" for the skin's own.

@@ -14,11 +14,11 @@ import, or a documented command. Nothing here is listed because it seemed likely
 
 ## 1. Runtime (in-game) — what a player needs
 
-**World of Warcraft (Retail), and nothing else.**
+**World of Warcraft, Retail or WoW Forever, and nothing else.** One codebase serves both clients.
 
 | Requirement | Version | Evidence |
 |---|---|---|
-| World of Warcraft, Retail | Interface `120105` (Midnight 12.1.5) | `PrettyChat.toc` — `## Interface: 120105`, the single latest-Retail line |
+| World of Warcraft, Retail or WoW Forever | Interface `120105` (Midnight 12.1.5) and `16001` (Forever 1.60.1) | `PrettyChat.toc` — `## Interface: 120105, 16001`, Retail's number first and Forever's second (toc-file-§3) |
 
 Every library the addon uses is **vendored and committed** under `libs/` and listed in the TOC's
 `# Libraries` section, so a player installs no library packs:

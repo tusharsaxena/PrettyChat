@@ -56,7 +56,8 @@ NS.GeneralDefaults = {
 --
 -- `skin` is the skin this addon wears (skinning-§2; owner ruling R1, per addon, per profile),
 -- applied through core/SkinSetup.lua: where it comes from ("ka0s", the Ka0s skins, or "eui",
--- EllesmereUI's) and which Ka0s skin, "ka0s"/"ka0s" being Ka0s Default; the Skin tab's Scope
+-- EllesmereUI's) and which Ka0s skin, NS.DEFAULT_SKIN by default (core/SkinSetup.lua: WoW Forever on
+-- the Forever client, Ka0s Default on Retail, skinning-§2); the Skin tab's Scope
 -- (leave the settings panel the client's, leave every font the client's; a new profile leaves the
 -- panel the client's and skins the fonts, the owner's call for LootHistory on 2026-10-27, taken
 -- for the collection); the font and texture overrides, an LSM key each or "" for the skin's own;
@@ -70,7 +71,7 @@ NS.ProfileDefaults = {
         categories = {},
         skin = {
             source      = "ka0s",
-            skin        = "ka0s",
+            skin        = NS.DEFAULT_SKIN or "ka0s",
             ignorePanel = true,
             ignoreFonts = false,
             font        = "",

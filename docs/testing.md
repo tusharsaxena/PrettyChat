@@ -10,6 +10,7 @@ It runs under stock Lua 5.1 with no WoW client, loading the vendored library fil
 
 ```sh
 lua tests/run.lua          # run every suite (exits non-zero on failure)
+KA0S_KIT_CLIENT=forever lua tests/run.lua   # the same, under the kit's WoW Forever profile
 lua tests/run.lua --list   # print the test-case inventory (runs nothing)
 ~/.claude/dev-copilot/bin/ka0s-bounded luacheck .   # static analysis (config in .luacheckrc)
 ```
@@ -58,7 +59,7 @@ What the mocks deliberately do *not* model is layout: they answer "which widget,
 
 ## The gate
 
-Both `lua tests/run.lua` and `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` must be green before any commit. Lint config is `.luacheckrc` (`std=lua51`; excludes `libs/`, `GlobalStrings/`, `tests/_kit/`, `docs/audits`, `docs/reviews`). The suites register named `test(name, fn)` cases; the `Tests` badge in the README badge row shows the pass/total.
+`lua tests/run.lua`, `KA0S_KIT_CLIENT=forever lua tests/run.lua` and `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` must all be green before any commit. The addon serves Retail and WoW Forever, so the suite gates under both kit profiles (clients-§6), and the kit's missing-globals suite checks the tracked source against both clients' API sets. Lint config is `.luacheckrc` (`std=lua51`; excludes `libs/`, `GlobalStrings/`, `tests/_kit/`, `docs/audits`, `docs/reviews`). The suites register named `test(name, fn)` cases; the `Tests` badge in the README badge row shows the pass/total.
 
 **The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 70 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the ten seam files are inside the set that was actually checked:
 
@@ -239,8 +240,11 @@ All four out-of-game suites go through one vendored runner, and every run is rec
 ```sh
 tests/_kit/run-automated-tests.sh                            # all four, writes a bundle
 tests/_kit/run-automated-tests.sh --suite complexity          # a subset
-tests/_kit/run-automated-tests.sh --suite lint --suite tests --no-bundle   # the green gate; writes nothing
+tests/_kit/run-automated-tests.sh --suite lint --suite tests --no-bundle   # the green gate, Retail; writes nothing
+KA0S_KIT_CLIENT=forever tests/_kit/run-automated-tests.sh --suite tests --no-bundle   # and as WoW Forever
 ```
+
+The runner passes the environment through, so `KA0S_KIT_CLIENT` picks the kit profile for its `tests` suite.
 
 There are **two** checkpoints and a suite answers differently at each, so the table names both
 (`automated-tests-§3`).
@@ -248,7 +252,7 @@ There are **two** checkpoints and a suite answers differently at each, so the ta
 | Suite | Command | Gates the run and the commit? | Gates the tag? |
 |---|---|---|---|
 | `lint` | `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` | **yes** | **yes** |
-| `tests` | `lua tests/run.lua` | **yes** | **yes** |
+| `tests` | `lua tests/run.lua`, then `KA0S_KIT_CLIENT=forever lua tests/run.lua` | **yes**, both profiles | **yes**, both profiles |
 | `perf` | `lua tests/perf.lua` | no — recorded only | **yes** |
 | `complexity` | `lizard -l lua -L 1500 -x "./libs/*" -x "./tests/_kit/*" .`, run by the runner over a sanitized shadow of the tree, with a function-count parity check (kit revision 35); never raw | no — recorded only | **yes** (a parity mismatch, `blindFiles` > 0, is `fail` and blocks the tag like a skip; so is a crashed or bounded lizard run since kit revision 41, listed under a separate `crashed` bucket that names the file, alongside `blindFiles`) |
 

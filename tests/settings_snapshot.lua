@@ -20,6 +20,12 @@
 --
 -- PC-F01 (Ka0sAddonsCommonTasks docs/2026-10-31-FONT_PICKERS_AND_SKIN_FACES/) MOVES skin.outline's
 -- default to "hud" with the library's OUTLINE_DEFAULT (LibKa0s v1.83.0, ruling D-10).
+--
+-- W2-PC-01 (Ka0sAddonsCommonTasks docs/2026-11-07-WOW_FOREVER_PORT_STEP5/) MOVES skin.skin's default
+-- to the client's default skin (LibKa0s v1.94.0, skinning-§2): "forever" on WoW Forever, "ka0s" on
+-- Retail. CLIENT_SKIN is pinned from the kit profile, never read back from the addon.
+local CLIENT_SKIN = dofile(_G.PC_TEST.root .. "/tests/_kit/mock_client.lua").current() == "forever"
+    and "forever" or "ka0s"
 
 return {
     ["Currency.CURRENCY_GAINED.enabled"] = true,
@@ -193,7 +199,7 @@ return {
     ["global.minimap.shown"] = true,
     ["state.debugConsole"] = false,
     ["skin.source"] = "ka0s",
-    ["skin.skin"] = "ka0s",
+    ["skin.skin"] = CLIENT_SKIN,
     ["skin.ignorePanel"] = true,
     ["skin.ignoreFonts"] = false,
     ["skin.font"] = "",

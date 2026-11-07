@@ -185,8 +185,14 @@ test("hovering a list entry shows its label, its GLOBALNAME and the original ren
     local tip   = env.GameTooltip
     t.eq(tree.buttonTooltips, false, "AceGUI's own label-only hover is switched off")
 
+    -- Ka0s Default by name, so the GLOBALNAME line is today's gray: under the forever kit profile
+    -- the boot wears WoW Forever, the client's default skin. Put back after the hover.
+    local Skin = env.LibStub("LibKa0s-Skin-1.0")
+    local source, skin = Skin:GetChoice("PrettyChat")
+    Skin:SetChoice("PrettyChat", "ka0s", "ka0s")
     tip.lines, tip.text = nil, nil
     tree:Fire("OnButtonEnter", g, env.CreateFrame("Button"))
+    Skin:SetChoice("PrettyChat", source, skin)
     t.eq(tip.text, NS.Defaults.Loot.strings[g].label, "the title is the entry's label")
     local lines = tip.lines or {}
     t.truthy(lines[1] and lines[1]:find(g, 1, true), "the GLOBALNAME is the second line")

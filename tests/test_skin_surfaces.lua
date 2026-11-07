@@ -50,7 +50,8 @@ end
 
 test("Skin surfaces: the page notes are today's #aaaaaa under Ka0s Default", function()
     -- red under: a note snapped to text.muted (|cffb3b3b8), which moves Ka0s Default (X1).
-    local inst, scroll, tree = categories()
+    -- Ka0s Default by name: under the forever kit profile a fresh instance wears WoW Forever.
+    local inst, scroll, tree = categories("ka0s")
     local caption = tree.children[1].children[2]
     t.truthy(caption.text:find("|cffaaaaaa", 1, true), "the GLOBALNAME caption is #aaaaaa")
     t.truthy(labelsOf(scroll.children)[1]:find("|cffaaaaaa", 1, true), "the footnote is #aaaaaa")
@@ -134,7 +135,7 @@ end
 
 test("Skin surfaces: a list entry's tooltip lines are Ka0s Default's exact values", function()
     -- D2: the title was SetText(label, 1, 1, 1); gtip.value is WHITE on Ka0s Default.
-    local inst, _, tree, fixture = categories()
+    local inst, _, tree, fixture = categories("ka0s")
     local g, color, lines = hoverEntry(inst, tree, fixture, 2)
     t.truthy(color[1] == 1 and color[2] == 1 and color[3] == 1, "the title is white")
     t.truthy(lines[1]:find("|cffaaaaaa" .. g, 1, true), "the GLOBALNAME line is #aaaaaa")
@@ -163,7 +164,7 @@ test("Skin surfaces: the tooltip's rendered body line draws in gtip.line, spied 
     -- client's in every skin. gtip.line is the client's gold on Ka0s Default and gtip.body
     -- elsewhere. The spy reads what reaches the drawing call, so a skin switch is proved at the
     -- setter. red under: AddLine(body, nil, nil, nil, true), or a color read once and kept.
-    local inst, _, tree, fixture = categories()
+    local inst, _, tree, fixture = categories("ka0s")
     local tip = inst.env.GameTooltip
     local add = tip.AddLine
     local seen
