@@ -31,6 +31,7 @@ Every library the addon uses is **vendored and committed** under `libs/` and lis
   `settings/Profiles.lua`). They are the same Ace3 release as the rest of the Ace libraries here
   (AceConfig-3.0 minor 3, AceDBOptions-3.0 minor 15). `settings/Profiles.lua` resolves all four it
   needs with `LibStub(…, true)`, so an install missing any of them loses that page and nothing else.
+  Ace3: WoWUIDev/Ace3@ac3d1225 (untagged master; LibKa0s#76).
 - The broker pair is the **launcher's** (`launcher-§1`), not LibKa0s's: `core/LauncherSetup.lua`
   builds one LibDataBroker object and hands it to LibDBIcon, so the minimap button and any broker
   display draw from the same object. `LibKa0s-Launcher-1.0` resolves both with `LibStub(…, true)`
