@@ -1091,45 +1091,45 @@ for); honor if the character can reach it.
 
 - **FOREVER-1. The AddOns list.** At character select → **Ka0s Pretty Chat** is listed with its logo
   and is **not** marked *Out of date*, and "Load out of date AddOns" does not need to be ticked for it
-  to load. Result: owed
+  to load. Result: passed (owner, 2026-11-08)
 - **FOREVER-2. A fresh install loads clean.** With no `PrettyChat.lua` in Forever's SavedVariables, log
-  in → zero Lua errors and no `[PC] schema not ready yet` line, as INSTALL-1 on Retail. Result: owed
+  in → zero Lua errors and no `[PC] schema not ready yet` line, as INSTALL-1 on Retail. Result: passed (owner, 2026-11-08)
 - **FOREVER-3. Loot, yours and a group member's.** Loot an item yourself → the line is in PrettyChat's
   `Loot | You | ...` layout. In a group, let the other player loot → `Loot | <name> | ...`, and a
-  two-word Forever name reads whole ("Traxex Silentshot"), not cut at the space. Result: owed
+  two-word Forever name reads whole ("Traxex Silentshot"), not cut at the space. Result: passed (owner, 2026-11-08)
 - **FOREVER-4. Money and currency.** Loot money, then gain a currency → a `Money | ...` line and a
-  `Currency | ...` line, each in PrettyChat's layout and colors. Result: owed
+  `Currency | ...` line, each in PrettyChat's layout and colors. Result: passed (owner, 2026-11-08)
 - **FOREVER-5. Reputation and experience.** Gain reputation, then kill a mob with rested XP banked → a
   reputation line and an `XP | ... (... exp ... bonus)` line, with the rested bonus filled in and no
-  literal `%s` or `%d` left. Result: owed
+  literal `%s` or `%d` left. Result: passed (owner, 2026-11-08)
 - **FOREVER-6. Honor.** If the character can earn honor, earn some → an honor line in PrettyChat's
-  layout. If honor is out of reach, write *not reachable* here. Result: owed
+  layout. If honor is out of reach, write *not reachable* here. Result: passed (owner, 2026-11-08)
 - **FOREVER-7. Tradeskill.** Craft an item → the Tradeskill line in PrettyChat's layout, with no Lua
-  error. Result: owed
+  error. Result: passed (owner, 2026-11-08)
 - **FOREVER-8. A category off gives the client's line back.** `/pc set Loot.enabled false`, loot an
   item → the line is the client's own sentence. `/pc set Loot.enabled true`, loot again →
-  PrettyChat's layout, with no `/reload`. Result: owed
+  PrettyChat's layout, with no `/reload`. Result: passed (owner, 2026-11-08)
 - **FOREVER-9. `/pc test`.** `/pc test` → the debug console fills with a block per category, as TEST-1
   on Retail. Every `Original:` line is the client's sentence, none reads `(original not available)`,
   and the footer reads `end of test output (79 strings shown)`. **Fail:** a placeholder or a count
   under 79 means a string is missing on Forever; record which, because it reopens the one-list
-  decision ([ARCHITECTURE.md](./ARCHITECTURE.md#per-client-features)). Result: owed
+  decision ([ARCHITECTURE.md](./ARCHITECTURE.md#per-client-features)). Result: passed (owner, 2026-11-08)
 - **FOREVER-10. The settings panel.** Out of combat, `/pc config` → the panel opens on the landing page.
   On Categories ▸ Loot, pick a string, edit its format and tick its Enable off and on → the Preview
-  box follows, and the next loot line uses the edit. Reset the row. Result: owed
+  box follows, and the next loot line uses the edit. Reset the row. Result: passed (owner, 2026-11-08)
 - **FOREVER-11. Profiles across a full restart.** On the Profiles page create `SmokeTest`, edit one Loot
   format, then **exit the client completely** and start it again → `SmokeTest` is still active and the
   edit is still there. The Profiles page names this character's profile key with no error. Delete
-  `SmokeTest` afterwards. Result: owed
+  `SmokeTest` afterwards. Result: passed (owner, 2026-11-08)
 - **FOREVER-12. The default skin per client.** On a fresh Forever profile (Profiles ▸ new profile, or
   FOREVER-2's empty SavedVariables) → `/pc get skin.skin` reads `forever` and the Skin tab shows
-  **WoW Forever**. On Retail, a fresh profile reads `ka0s` (**Ka0s Default**). Result: owed
+  **WoW Forever**. On Retail, a fresh profile reads `ka0s` (**Ka0s Default**). Result: passed (owner, 2026-11-08)
 - **FOREVER-13. The launcher.** The minimap button shows the logo; left-click opens the settings panel;
   right-click → the menu titled Ka0s Pretty Chat with **Enabled**, which works as LAUNCH-3 describes.
-  Result: owed
+  Result: passed (owner, 2026-11-08)
 - **FOREVER-14. Diagnostics.** `/pc diagnostics` → the report lands in the debug console with no
   `section <name> failed` line, as DIAG-1; its `client:` line reads `version=1.60.1` and
-  `interface=16001`. Result: owed
+  `interface=16001`. Result: passed (owner, 2026-11-08)
 
 ## Non-English client
 
@@ -1219,3 +1219,5 @@ Owed from the owner's fifth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-
 Owed from the owner's sixth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-SMOKE_ROUND6/`, R6-RV, 2026-11-04): RV-88, new. From R6-RV2: RV-89, new. From R6-PV: SKIN-34, new, and SKIN-10, whose picker now has an eye and opens the console, so its pass mark came off.
 
 On 2026-11-02 the owner reported that every check on the smoke lists of the full skinning run and its smoke feedback batch (Ka0sAddonsCommonTasks `docs/2026-11-01-FULL_SKINNING/` and `docs/2026-11-01-SMOKE_FEEDBACK/`) passed, apart from DpsRace's clock font, the skinned look of the AceGUI Dropdown and the Ka0sMedia_Font and Ka0sMedia_Statusbar pickers, FadeNineSlice and IconBorder (`docs/2026-11-02-SMOKE_ROUND3/`, R3-SMOKE). Passed, recorded on each `Result:` line as `Passed (owner, 2026-11-02)`: RV-85, SKIN-6, SKIN-28, SKIN-29, SKIN-30 and SKIN-31.
+
+On 2026-11-08 the owner reported that every check of the WoW Forever port (W2-PC-01, Ka0sAddonsCommonTasks `docs/2026-11-07-WOW_FOREVER_PORT_STEP5/04_WAVE2_SMOKE.md`) passed, with a Retail sanity pass: FOREVER-1 to FOREVER-14, each recorded on its `Result:` line as `passed (owner, 2026-11-08)`.
