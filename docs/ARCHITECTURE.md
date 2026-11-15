@@ -94,7 +94,11 @@ thing that differs is the default skin a fresh profile wears, and that answer is
 ids (clients-§5's seeds). Every one of them exists in WoW Forever's enUS GlobalStrings with text and
 placeholders byte-identical to Retail's, compared on 2026-11-08 between Ketho/BlizzardInterfaceResources
 `forever` (1.60.1, build 70532) and `live` (12.1.5, build 70448), both dated 2026-10-22,
-`Resources/GlobalStrings/enUS.lua`. None of them is a Warband, crafting-order or Delve string. So there
+`Resources/GlobalStrings/enUS.lua`. Re-measured on 2026-11-15 from each client's own `GlobalStrings` DB2
+(wago.tools `wowf` 1.60.1.70938 against `wow` 12.1.5.70783), with the same result
+([seed-research/2026-11-15-forever/](./seed-research/2026-11-15-forever/)), and re-measured on every new
+Forever build by `/dev-copilot:validate-seeds PrettyChat forever` ([validate-seeds.md](./validate-seeds.md)).
+None of them is a Warband, crafting-order or Delve string. So there
 is no second list and no client branch. What reopens it: a string missing or reworded on Forever, found
 in game (LOC-4's `(original not available)` placeholder, or a `/pc test` `Original:` line that differs
 from Retail's). A string the client does not define is already tolerated: `SnapshotOriginals` records it
@@ -323,7 +327,8 @@ frame, the LibDBIcon button and its tooltip; and the brand art.
 ## Documentation map
 
 Every `.md` under `docs/` appears in exactly one table below (`documentation-§3`). Frozen and
-generated directories are named once each and never enumerated per run: `docs/audits/`, `docs/reviews/`, `docs/automated-tests/`, `docs/revendor/`, `docs/superpowers/`.
+generated directories are named once each and never enumerated per run: `docs/audits/`, `docs/reviews/`, `docs/automated-tests/`, `docs/revendor/`, `docs/superpowers/`,
+`docs/seed-research/` (one bundle per seed-validation run, [validate-seeds.md](./validate-seeds.md)).
 
 **Audit and review history.** The most recent compliance audit is [audits/2026-10-07/](./audits/2026-10-07/)
 (audited against Standard **v2.76.1**); the most recent engineering review is
@@ -379,6 +384,7 @@ never a live requirement, and never a reason to "restore" the file.
 | Doc | Covers |
 |---|---|
 | `global-strings.md` | The GlobalStrings sub-tree: what is overridden, how it is generated, and why the dump is exempt from the 1500-line cap (the three `layout-§1` conditions and what the gate checks) |
+| `validate-seeds.md` | The seed-validation contract `/dev-copilot:validate-seeds` runs: the 79 dependent keys checked against each client's `GlobalStrings` DB2, and the copy regenerated per Retail build (`tools/seeds/globalstrings.py`) |
 | `performance-sweep.md` | The committed `performance-§12` sweep behind the exemption, and the PC-R-05 load-time measurement |
 
 ## Documented deviations
@@ -439,15 +445,16 @@ What the rule does not allow is a fourth — a file over the cap that nothing an
 "the count sitting in a bundle manifest that no document reads". This table is the remark, and it
 is why an audit **MUST NOT** re-file `layout-§1` against the file in it.
 
-Measured 2026-09-08, re-measured 2026-09-23 and 2026-09-24 (unchanged for the dump) with
+Measured 2026-09-08, re-measured 2026-09-23 and 2026-09-24 (unchanged for the dump), and re-measured
+2026-11-15 after the dump was regenerated from Retail 12.1.5.70783 ([validate-seeds.md](./validate-seeds.md)), with
 
 ```sh
 git ls-files '*.lua' | grep -v '^libs/' | grep -v '^tests/_kit/' | xargs wc -l | sort -rn
 ```
 
-| File | Lines (2026-09-24) | Disposition |
+| File | Lines (2026-11-15) | Disposition |
 |---|---|---|
-| `GlobalStrings/GlobalStrings.lua` | 23,842 | `exempt` — `layout-§1`'s generated-data carve-out, handed to the gate as `Kit.layoutCap = { exempt = { "GlobalStrings/" } }` in `tests/run.lua`. Not a breach, so it carries none of the three terminal states; the three conditions ([global-strings.md](./global-strings.md#the-cap-exemption)) are the auditor's to re-check |
+| `GlobalStrings/GlobalStrings.lua` | 24,736 | `exempt` — `layout-§1`'s generated-data carve-out, handed to the gate as `Kit.layoutCap = { exempt = { "GlobalStrings/" } }` in `tests/run.lua`. Not a breach, so it carries none of the three terminal states; the three conditions ([global-strings.md](./global-strings.md#the-cap-exemption)) are the auditor's to re-check |
 
 **This addon has no cap breach.** One file is over 1500 lines and it is the generated dump, which
 the carve-out reaches. Nothing here is peeled, and nothing needed to be.
@@ -491,6 +498,6 @@ Headless harness under `tests/` (stock Lua 5.1, no client): `lua tests/run.lua` 
 
 - **Dual-path WSL.** `/home/tushar/GIT/PrettyChat/` and `/mnt/d/Profile/Users/Tushar/Documents/GIT/PrettyChat/` are the same repo via symlink.
 - **`.gitattributes`** forces CRLF on disk for all text files — hence the `--strip-trailing-cr` in the inventory diff ([testing.md](./testing.md)).
-- **`.gitignore`** covers OS/editor cruft and `.claude/`. `libs/` is tracked (vendored Ace3), as are `GlobalStrings/`, `tools/` (the chunk splitter), `media/`, all `.lua` source, `tests/`, `.luacheckrc` and `.pkgmeta`.
+- **`.gitignore`** covers OS/editor cruft and `.claude/`. `libs/` is tracked (vendored Ace3), as are `GlobalStrings/`, `tools/` (the chunk splitter, and the seed validator `tools/seeds/`, whose `.gitignore` keeps its download `.cache/` out), `media/`, all `.lua` source, `tests/`, `.luacheckrc` and `.pkgmeta`.
 - **Case-insensitive `/mnt/d`.** `libs/` was renamed from `Libs/` on disk; with `core.ignorecase=true`, recording a case flip in git needs `git mv -f Libs libs` even though the working tree already reads lowercase.
 

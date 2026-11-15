@@ -66,10 +66,10 @@ If you want the *shipped* default for a key to change (not just per-user overrid
 
 ## Regenerate `GlobalStrings_*.lua` after a WoW patch
 
-See [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patch). Short version:
+See [global-strings.md](./global-strings.md#regenerating-chunks-after-a-wow-patch) and the contract, [validate-seeds.md](./validate-seeds.md). Short version:
 
-1. Drop the new `GlobalStrings.lua` into `GlobalStrings/`.
-2. `python3 tools/split_globalstrings.py` — it rewrites the chunk files and asserts `PrettyChat.toc` still does not load them (PC-R-05). The chunk count changes whenever the entry count crosses a multiple of 900. Then run `lua tests/run.lua`: `tests/test_defaults.lua` reads the chunks, so a changed Blizzard signature surfaces there.
+1. `/dev-copilot:validate-seeds PrettyChat retail`, then `forever`. `tools/seeds/globalstrings.py` flags any key `defaults/Defaults.lua` depends on that the build dropped or changed, and its `apply` regenerates `GlobalStrings.lua` from the build's DB2 and runs `tools/split_globalstrings.py`. The splitter rewrites the chunk files and asserts `PrettyChat.toc` still does not load them (PC-R-05). The chunk count changes whenever the entry count crosses a multiple of 900.
+2. Re-list `tests/prose_waivers.lua` for the moved chunk boundaries, then run `lua tests/run.lua`: `tests/test_defaults.lua` reads the chunks, so a changed Blizzard signature surfaces there.
 3. `/reload` in-game; verify the panel's **Original** boxes still resolve.
 4. If Blizzard renamed any keys or changed signatures, update the corresponding entries in `defaults/Defaults.lua`.
 

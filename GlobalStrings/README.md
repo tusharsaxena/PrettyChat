@@ -1,13 +1,13 @@
 # GlobalStrings
 
-A searchable copy of Blizzard's GlobalStrings (~22,879 entries), split into 26 chunk files. The chunks populate the addon-private `NS.GlobalStrings` table (each chunk begins `local _, NS = ...; NS.GlobalStrings = NS.GlobalStrings or {}`).
+A searchable copy of Blizzard's GlobalStrings (24,732 entries, Retail 12.1.5.70783), split into 27 chunk files. The chunks populate the addon-private `NS.GlobalStrings` table (each chunk begins `local _, NS = ...; NS.GlobalStrings = NS.GlobalStrings or {}`).
 
 **Nothing loads these chunks at runtime (PC-R-05).** `PrettyChat.toc` carries no `GlobalStrings\` line and no `# GlobalStrings` section, and `.pkgmeta` keeps the whole folder out of the shipped zip. The chunks are repo-local reference data with exactly one reader, `tests/test_defaults.lua`, which loads them with `loadfile` to check every override against Blizzard's real signature — see [../docs/global-strings.md](../docs/global-strings.md) for why the eager load was removed and for the history of the removed LoadOnDemand sub-addon.
 
 ## Files
 
-- `GlobalStrings.lua` — Full Blizzard reference (~1.6 MB, source file, not loaded by any TOC; only used as input to `tools/split_globalstrings.py`)
-- `GlobalStrings_001.lua` ... `GlobalStrings_026.lua` — Chunk files, each a contiguous alphabetical range of keys
+- `GlobalStrings.lua` — Full Blizzard reference (~1.7 MB, source file, not loaded by any TOC; written only by `tools/seeds/globalstrings.py apply` and used as input to `tools/split_globalstrings.py`)
+- `GlobalStrings_001.lua` ... `GlobalStrings_027.lua` — Chunk files, each a contiguous alphabetical range of keys
 
 ## The splitter: `tools/split_globalstrings.py`
 
@@ -35,4 +35,4 @@ Chunks are cut by entry count rather than by first letter because letter groupin
 
 ### When to re-run
 
-Re-run this script whenever `GlobalStrings.lua` is updated (e.g., after a new WoW patch). You can get the latest GlobalStrings.lua [here](https://www.townlong-yak.com/framexml/live/Helix/GlobalStrings.lua).
+After a new WoW patch, run `/dev-copilot:validate-seeds PrettyChat retail`: `tools/seeds/globalstrings.py apply` regenerates `GlobalStrings.lua` from the live Retail build's `GlobalStrings` DB2 and runs this script for you (see [../docs/validate-seeds.md](../docs/validate-seeds.md)). Run it by hand only to re-cut the committed dump.

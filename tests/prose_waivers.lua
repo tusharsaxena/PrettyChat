@@ -17,21 +17,23 @@
 -- in docs/ARCHITECTURE.md's register, so it is not used here.
 --
 -- Measured 2026-09-23 against LibKa0s v1.55.0's gate (kit revision 25), re-measured 2026-09-24
--- against LibKa0s v1.56.0's (kit revision 26), unchanged: 34 lines across these ten files, and
--- nothing outside `GlobalStrings/`.
+-- against LibKa0s v1.56.0's (kit revision 26), unchanged. Re-cut 2026-11-15 when the dump was
+-- regenerated from Retail 12.1.5.70783 (tools/seeds/globalstrings.py apply, bundle
+-- docs/seed-research/2026-11-15-retail/): the same four words, the chunk boundaries moved, so each
+-- word now sits in the chunk listed below, and still nothing outside `GlobalStrings/`.
 return {
     waived = {
         ["GlobalStrings/GlobalStrings.lua"] = {
             ["amongst"] = true, ["cancelled"] = true, ["grey"] = true, ["travelling"] = true,
         },
         ["GlobalStrings/GlobalStrings_009.lua"] = { ["cancelled"] = true },
-        ["GlobalStrings/GlobalStrings_010.lua"] = { ["cancelled"] = true },
+        ["GlobalStrings/GlobalStrings_011.lua"] = { ["cancelled"] = true },
         ["GlobalStrings/GlobalStrings_015.lua"] = { ["cancelled"] = true },
-        ["GlobalStrings/GlobalStrings_016.lua"] = { ["amongst"] = true, ["grey"] = true },
-        ["GlobalStrings/GlobalStrings_018.lua"] = { ["cancelled"] = true, ["grey"] = true },
+        ["GlobalStrings/GlobalStrings_017.lua"] = { ["amongst"] = true, ["grey"] = true },
         ["GlobalStrings/GlobalStrings_019.lua"] = { ["cancelled"] = true, ["grey"] = true },
-        ["GlobalStrings/GlobalStrings_022.lua"] = { ["cancelled"] = true },
-        ["GlobalStrings/GlobalStrings_023.lua"] = { ["travelling"] = true },
-        ["GlobalStrings/GlobalStrings_024.lua"] = { ["grey"] = true },
+        ["GlobalStrings/GlobalStrings_020.lua"] = { ["grey"] = true },
+        ["GlobalStrings/GlobalStrings_023.lua"] = { ["cancelled"] = true },
+        ["GlobalStrings/GlobalStrings_024.lua"] = { ["travelling"] = true },
+        ["GlobalStrings/GlobalStrings_025.lua"] = { ["grey"] = true },
     },
 }
