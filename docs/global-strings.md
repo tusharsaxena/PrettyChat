@@ -1,6 +1,6 @@
 # GlobalStrings sub-tree
 
-`GlobalStrings/` holds a copy of Blizzard's `GlobalStrings.lua` (~22,879 entries), split into 26 chunk files, each a contiguous alphabetical range of keys. Each chunk assigns into an addon-private `NS.GlobalStrings` table (`local _, NS = ...; NS.GlobalStrings = NS.GlobalStrings or {}` — no `_G` global is created; PC-14).
+`GlobalStrings/` holds a copy of Blizzard's `GlobalStrings.lua` (24,732 entries, Retail 12.1.5.70783, regenerated 2026-11-15), split into 27 chunk files, each a contiguous alphabetical range of keys. Each chunk assigns into an addon-private `NS.GlobalStrings` table (`local _, NS = ...; NS.GlobalStrings = NS.GlobalStrings or {}` — no `_G` global is created; PC-14).
 
 ## Nothing loads these chunks at runtime (PC-R-05)
 
@@ -20,8 +20,9 @@ Historically there was a third path: `GlobalStrings/GlobalStrings.toc`, a `LoadO
 
 | Path | Purpose |
 |------|---------|
-| `GlobalStrings/GlobalStrings.lua` | Full Blizzard reference (~1.6 MB, source file). Input to `tools/split_globalstrings.py`. |
-| `GlobalStrings/GlobalStrings_001.lua` … `_026.lua` | Chunk files, each a contiguous alphabetical range of keys. Each emits `NS.GlobalStrings["KEY"] = "value"` assignments. **Not in the TOC, not in the shipped zip** — read only by `tests/test_defaults.lua`. |
+| `GlobalStrings/GlobalStrings.lua` | Full Blizzard reference (~1.7 MB, source file). Written only by `tools/seeds/globalstrings.py apply`, from the client's `GlobalStrings` DB2. Input to `tools/split_globalstrings.py`. |
+| `GlobalStrings/GlobalStrings_001.lua` … `_027.lua` | Chunk files, each a contiguous alphabetical range of keys. Each emits `NS.GlobalStrings["KEY"] = "value"` assignments. **Not in the TOC, not in the shipped zip** — read only by `tests/test_defaults.lua`. |
+| `tools/seeds/globalstrings.py` | The seed validator and the dump's writer ([validate-seeds.md](./validate-seeds.md)). It checks the keys `defaults/Defaults.lua` depends on against each client's build, and regenerates the dump per Retail build. |
 | `tools/split_globalstrings.py` | Splitter script — re-run after a WoW patch. It lives under `tools/` (`layout-§1`, "Where an authored generator lives") and reads and writes `GlobalStrings/` by repo-root path. |
 | `GlobalStrings/README.md` | Splitter usage instructions. |
 
@@ -33,12 +34,11 @@ At runtime the equivalent data is `addon.originalStrings`, snapshotted from `_G`
 
 ## Regenerating chunks after a WoW patch
 
-When Blizzard ships a new client (TWW patch, Midnight feature drop, etc.) the `GlobalStrings.lua` reference may add / rename / remove entries. To resync:
+When Blizzard ships a new client (TWW patch, Midnight feature drop, etc.) the `GlobalStrings.lua` reference may add / rename / remove entries. To resync, run `/dev-copilot:validate-seeds PrettyChat retail` (then `forever`). The procedure is the contract in [validate-seeds.md](./validate-seeds.md): `tools/seeds/globalstrings.py` pins the live Retail build on wago.tools, checks the 79 keys `defaults/Defaults.lua` depends on, freezes the build's `GlobalStrings` table into a bundle under `docs/seed-research/`, and its `apply` regenerates `GlobalStrings.lua` from that table and runs the splitter below. Do not drop a hand-fetched file in: the dump is written by the tool alone.
 
-1. Drop the new `GlobalStrings.lua` into `GlobalStrings/`. Source: [townlong-yak.com](https://www.townlong-yak.com/framexml/live/Helix/GlobalStrings.lua).
-2. From the project root: `python3 tools/split_globalstrings.py`.
+Until 2026-11-15 the dump was taken by hand from [townlong-yak.com](https://www.townlong-yak.com/framexml/live/Helix/GlobalStrings.lua). The regeneration from DB2 reproduces that file's format byte for byte (`tools/seeds/test_globalstrings.py` pins it), so the source changed and the format did not. The splitter can still be run on its own, `python3 tools/split_globalstrings.py`, to re-cut the committed dump.
 
-The script:
+The splitter:
 
 1. Parses the source for `KEY = "value";` entries (ignoring `_G["KEY"]` forms).
 2. Cuts the sorted entries into the fewest even chunks that all fit under `MAX_ENTRIES_PER_CHUNK` (900 entries, so 902 lines — under `layout-§1`'s 1000-LOC on-notice band, not merely under its 1500-LOC cap).
@@ -48,11 +48,11 @@ The script:
 
 After regenerating, run `lua tests/run.lua` — `tests/test_defaults.lua` is what reads the chunks, so a re-split that changed a Blizzard signature shows up there rather than in game. If a Blizzard format-string signature changed (e.g. `%s` → `%2$s`), the corresponding `NS.Defaults` entry in `defaults/Defaults.lua` needs updating to match — see [common-tasks.md](./common-tasks.md#fix-a-broken-format-string). Run the full [smoke-test suite](./smoke-tests.md) — a client patch can shift behavior anywhere in the override pipeline, not just in the keys you re-split.
 
-The `€` in `BLIZZARD_STORE_CURRENCY_FORMAT_EURO` is a character some shipped skin face cannot draw, so `tests/test_glyphs.lua` needs a `glyph: data` mark on each line that holds it: the dump is data, never drawn. In `GlobalStrings.lua` the mark is a `-- glyph: data begin` / `-- glyph: data end` pair of comment lines around the key, because the splitter only parses a line that ends at `";`. A plain re-split of the committed dump keeps it, and the splitter writes the trailing mark on the `GlobalStrings_*.lua` chunk line itself (`GLYPH_DATA_KEYS` in `tools/split_globalstrings.py`). A fresh client dump dropped in over `GlobalStrings.lua` loses the begin/end pair, and the guard goes red naming that line: put the pair back. If a new dump brings another key with such a character, the guard names its chunk line too: add the key to `GLYPH_DATA_KEYS` and re-split.
+The `€` in `BLIZZARD_STORE_CURRENCY_FORMAT_EURO` is a character some shipped skin face cannot draw, so `tests/test_glyphs.lua` needs a `glyph: data` mark on each line that holds it: the dump is data, never drawn. In `GlobalStrings.lua` the mark is a `-- glyph: data begin` / `-- glyph: data end` pair of comment lines around the key, because the splitter only parses a line that ends at `";`. A plain re-split of the committed dump keeps it, and the splitter writes the trailing mark on the `GlobalStrings_*.lua` chunk line itself (`GLYPH_DATA_KEYS` in `tools/split_globalstrings.py`). The regeneration (`tools/seeds/globalstrings.py apply`) writes the begin/end pair around every `GLYPH_DATA_KEYS` entry itself, reading the set from the splitter's source. If a new build brings another key with such a character, the guard names its chunk line: add the key to `GLYPH_DATA_KEYS` and re-run `apply`.
 
 ## The cap exemption
 
-`GlobalStrings/GlobalStrings.lua` (23,842 lines) is the one tracked `.lua` file over `layout-§1`'s 1500-line cap. The census in [ARCHITECTURE.md](./ARCHITECTURE.md#files-over-the-1500-line-cap) records it as `exempt` under the generated-data carve-out; this section is the reasoning behind that row.
+`GlobalStrings/GlobalStrings.lua` (24,736 lines) is the one tracked `.lua` file over `layout-§1`'s 1500-line cap. The census in [ARCHITECTURE.md](./ARCHITECTURE.md#files-over-the-1500-line-cap) records it as `exempt` under the generated-data carve-out; this section is the reasoning behind that row.
 
 **The exemption is earned condition by condition, and each condition is one line somebody could
 delete for an unrelated reason.** `layout-§1` grants it only when **all three** hold:

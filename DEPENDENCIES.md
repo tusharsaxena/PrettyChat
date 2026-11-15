@@ -151,20 +151,21 @@ dates for you. It does not make the addon non-compliant, and it is never a commi
 ## 3. Release / assets — regenerating committed data
 
 **None of this is needed to build, run or test the addon.** Skip this whole section unless you are
-regenerating the GlobalStrings chunks or the 128 launcher logo. A contributor fixing a typo installs nothing from here.
+re-validating the GlobalStrings data against a new client build, regenerating the GlobalStrings chunks, or the 128 launcher logo. A contributor fixing a typo installs nothing from here.
 
-### Python 3 — one generator script, standard library only
+### Python 3 — two scripts, standard library only
 
 | | |
 |---|---|
-| **Version** | **Python 3.6 or newer** (the script uses f-strings). Verified here with 3.12.3. |
-| **Why** | `tools/split_globalstrings.py` regenerates the twenty-six committed `GlobalStrings/GlobalStrings_0NN.lua` chunks from Blizzard's `GlobalStrings.lua` dump. It is run **by hand after a WoW patch** — see `docs/common-tasks.md`, "Regenerate `GlobalStrings_*.lua` after a WoW patch" — and its output is committed. Nothing in the build, the TOC, the tests or the packager invokes it. It used to rewrite `PrettyChat.toc`'s `# GlobalStrings` block; since PC-R-05 dropped that block it **asserts the block's absence instead**, exiting 1 if a `# GlobalStrings` header or a `GlobalStrings\…` line returns, so a post-patch re-split cannot quietly restore the load cost. |
-| **Packages** | **None.** Its imports are `collections`, `glob`, `os`, `re`, `sys` (the `import` lines at the top of `tools/split_globalstrings.py`) — all standard library. There is no `requirements.txt`, no virtualenv, and no `pip install` step. |
+| **Version** | **Python 3.8 or newer** (`tools/seeds/globalstrings.py`; the splitter alone needs 3.6, for its f-strings). Verified here with 3.12.3. |
+| **Why** | `tools/seeds/globalstrings.py` is the seed validator: it checks the keys `defaults/Defaults.lua` depends on against each client's `GlobalStrings` DB2, freezes a bundle under `docs/seed-research/`, and regenerates `GlobalStrings/GlobalStrings.lua` per Retail build — the procedure is `docs/validate-seeds.md`, run through `/dev-copilot:validate-seeds`. `tools/split_globalstrings.py` regenerates the twenty-seven committed `GlobalStrings/GlobalStrings_0NN.lua` chunks from Blizzard's `GlobalStrings.lua` dump. It is run **by hand after a WoW patch** — see `docs/common-tasks.md`, "Regenerate `GlobalStrings_*.lua` after a WoW patch" — and its output is committed. Nothing in the build, the TOC, the tests or the packager invokes it. It used to rewrite `PrettyChat.toc`'s `# GlobalStrings` block; since PC-R-05 dropped that block it **asserts the block's absence instead**, exiting 1 if a `# GlobalStrings` header or a `GlobalStrings\…` line returns, so a post-patch re-split cannot quietly restore the load cost. |
+| **Packages** | **None.** The splitter imports `collections`, `glob`, `os`, `re`, `sys`; the validator adds `argparse`, `csv`, `gzip`, `json`, `shutil`, `subprocess`, `urllib.request` and `pathlib` (the `import` lines at the top of each) — all standard library. Its tests run under `python3 -m pytest -q tools/seeds` (pytest, `sudo apt install -y python3-pytest`) or `python3 -m unittest discover tools/seeds`, which needs nothing extra. There is no `requirements.txt`, no virtualenv, and no `pip install` step. |
 | **Install** | `sudo apt install -y python3` (present by default on Ubuntu 24.04) |
 | **Verify** | `python3 --version` |
-| **Run** | `python3 tools/split_globalstrings.py` — every path it touches is resolved from the repo root, so it runs from any working directory |
+| **Network** | `tools/seeds/globalstrings.py status` and a first `derive` on a build reach **wago.tools** (`https://wago.tools/api/builds` and `https://wago.tools/db2/GlobalStrings/csv?build=<version>`, about 2 MB per client build), with the User-Agent `ka0s-seed-validation`. Downloads are cached in the git-ignored `tools/seeds/.cache/`; `derive --replay`, `check`, `rule`, `report`, `apply` and the tests need no network. |
+| **Run** | `python3 tools/seeds/globalstrings.py <command>` (see `docs/validate-seeds.md`); `python3 tools/split_globalstrings.py`. Every path either touches is resolved from the repo root, so both run from any working directory |
 
-`.pkgmeta` ignores `GlobalStrings` **whole** — the ~1.6 MB source dump and the twenty-six chunks —
+`.pkgmeta` ignores `GlobalStrings` **whole** — the ~1.7 MB source dump and the twenty-seven chunks —
 and ignores `tools` whole too, which is where the splitter lives (`layout-§1`, "Where an authored
 generator lives"): the program moved there, its input and output did not. Since PC-R-05 nothing in the addon loads any of it; what is left is repo-only
 reference data that `tests/test_defaults.lua` reads to check every override against Blizzard's real

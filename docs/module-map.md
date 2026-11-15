@@ -266,14 +266,15 @@ Source `.lua` is grouped under `core/`, `defaults/`, `locales/`, `modules/`, and
 
 | Path | Purpose |
 |------|---------|
-| `GlobalStrings/GlobalStrings.lua` | Blizzard reference (~1.6 MB, ~22,879 entries). Input to `tools/split_globalstrings.py`. |
-| `GlobalStrings/GlobalStrings_001.lua` … `_026.lua` | Chunk files, each a contiguous alphabetical range of keys. Each emits `NS.GlobalStrings["KEY"] = "value"` assignments. **Loaded by nothing at runtime** (PC-R-05) and not shipped; `tests/test_defaults.lua` reads them to check every override against Blizzard's real signature. |
+| `GlobalStrings/GlobalStrings.lua` | Blizzard reference (~1.7 MB, 24,732 entries, Retail 12.1.5.70783). Written only by `tools/seeds/globalstrings.py apply`; input to `tools/split_globalstrings.py`. |
+| `GlobalStrings/GlobalStrings_001.lua` … `_027.lua` | Chunk files, each a contiguous alphabetical range of keys. Each emits `NS.GlobalStrings["KEY"] = "value"` assignments. **Loaded by nothing at runtime** (PC-R-05) and not shipped; `tests/test_defaults.lua` reads them to check every override against Blizzard's real signature. |
 | `GlobalStrings/README.md` | Splitter usage instructions (where to source the latest `GlobalStrings.lua`, how to regenerate). |
 
 ### Dev tooling
 
 | Path | Purpose |
 |------|---------|
+| `tools/seeds/globalstrings.py` | The seed validator ([validate-seeds.md](./validate-seeds.md)): checks the 79 keys `defaults/Defaults.lua` depends on against each client's `GlobalStrings` DB2 on wago.tools, freezes a bundle under `docs/seed-research/`, and regenerates `GlobalStrings/GlobalStrings.lua` per Retail build. Python 3.8+, standard library only; its tests are `tools/seeds/test_globalstrings.py`, and its rulings `tools/seeds/<flavor>_rulings.json`. |
 | `tools/split_globalstrings.py` | Splitter script (`layout-§1`, "Where an authored generator lives"; `.pkgmeta`-ignored, never loaded). Re-run after a WoW patch updates `GlobalStrings/GlobalStrings.lua`; rewrites the chunk files in `GlobalStrings/` and refuses to finish if `PrettyChat.toc` has started loading them again. |
 
 ### Shared infrastructure

@@ -1,0 +1,1424 @@
+{
+ "build": "1.60.1.70938",
+ "candidates": [],
+ "copyEntries": 24732,
+ "date": "2026-11-15",
+ "dependencies": [
+  {
+   "build": [],
+   "category": "Loot",
+   "default": [],
+   "key": "BATTLE_PET_LOOT_RECEIVED",
+   "present": true,
+   "reference": []
+  },
+  {
+   "build": [
+    "string",
+    "int"
+   ],
+   "category": "Loot",
+   "default": [
+    "string",
+    "int"
+   ],
+   "key": "LOOT_CURRENCY_REFUND",
+   "present": true,
+   "reference": [
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string"
+   ],
+   "category": "Loot",
+   "default": [
+    "string"
+   ],
+   "key": "LOOT_DISENCHANT_CREDIT",
+   "present": true,
+   "reference": [
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string"
+   ],
+   "category": "Loot",
+   "default": [
+    "string",
+    "string"
+   ],
+   "key": "LOOT_ITEM",
+   "present": true,
+   "reference": [
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string"
+   ],
+   "category": "Loot",
+   "default": [
+    "string",
+    "string"
+   ],
+   "key": "LOOT_ITEM_BONUS_ROLL",
+   "present": true,
+   "reference": [
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string",
+    "int"
+   ],
+   "category": "Loot",
+   "default": [
+    "string",
+    "string",
+    "int"
+   ],
+   "key": "LOOT_ITEM_BONUS_ROLL_MULTIPLE",
+   "present": true,
+   "reference": [
+    "string",
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Loot",
+   "default": [
+    "string"
+   ],
+   "key": "LOOT_ITEM_BONUS_ROLL_SELF",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int"
+   ],
+   "category": "Loot",
+   "default": [
+    "string",
+    "int"
+   ],
+   "key": "LOOT_ITEM_BONUS_ROLL_SELF_MULTIPLE",
+   "present": true,
+   "reference": [
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string",
+    "int"
+   ],
+   "category": "Loot",
+   "default": [
+    "string",
+    "string",
+    "int"
+   ],
+   "key": "LOOT_ITEM_MULTIPLE",
+   "present": true,
+   "reference": [
+    "string",
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string"
+   ],
+   "category": "Loot",
+   "default": [
+    "string",
+    "string"
+   ],
+   "key": "LOOT_ITEM_PUSHED",
+   "present": true,
+   "reference": [
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string",
+    "int"
+   ],
+   "category": "Loot",
+   "default": [
+    "string",
+    "string",
+    "int"
+   ],
+   "key": "LOOT_ITEM_PUSHED_MULTIPLE",
+   "present": true,
+   "reference": [
+    "string",
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Loot",
+   "default": [
+    "string"
+   ],
+   "key": "LOOT_ITEM_PUSHED_SELF",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int"
+   ],
+   "category": "Loot",
+   "default": [
+    "string",
+    "int"
+   ],
+   "key": "LOOT_ITEM_PUSHED_SELF_MULTIPLE",
+   "present": true,
+   "reference": [
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Loot",
+   "default": [
+    "string"
+   ],
+   "key": "LOOT_ITEM_REFUND",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int"
+   ],
+   "category": "Loot",
+   "default": [
+    "string",
+    "int"
+   ],
+   "key": "LOOT_ITEM_REFUND_MULTIPLE",
+   "present": true,
+   "reference": [
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Loot",
+   "default": [
+    "string"
+   ],
+   "key": "LOOT_ITEM_SELF",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int"
+   ],
+   "category": "Loot",
+   "default": [
+    "string",
+    "int"
+   ],
+   "key": "LOOT_ITEM_SELF_MULTIPLE",
+   "present": true,
+   "reference": [
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Currency",
+   "default": [
+    "string"
+   ],
+   "key": "CURRENCY_GAINED",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int"
+   ],
+   "category": "Currency",
+   "default": [
+    "string",
+    "int"
+   ],
+   "key": "CURRENCY_GAINED_MULTIPLE",
+   "present": true,
+   "reference": [
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int"
+   ],
+   "category": "Currency",
+   "default": [
+    "string",
+    "int"
+   ],
+   "key": "CURRENCY_GAINED_MULTIPLE_BONUS",
+   "present": true,
+   "reference": [
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int"
+   ],
+   "category": "Currency",
+   "default": [
+    "string",
+    "int"
+   ],
+   "key": "CURRENCY_LOST_FROM_DEATH",
+   "present": true,
+   "reference": [
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string"
+   ],
+   "category": "Money",
+   "default": [
+    "string",
+    "string"
+   ],
+   "key": "LOOT_MONEY",
+   "present": true,
+   "reference": [
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Money",
+   "default": [
+    "string"
+   ],
+   "key": "LOOT_MONEY_REFUND",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Money",
+   "default": [
+    "string"
+   ],
+   "key": "LOOT_MONEY_SPLIT",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Money",
+   "default": [
+    "string"
+   ],
+   "key": "YOU_LOOT_MONEY",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string"
+   ],
+   "category": "Money",
+   "default": [
+    "string",
+    "string"
+   ],
+   "key": "YOU_LOOT_MONEY_GUILD",
+   "present": true,
+   "reference": [
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string"
+   ],
+   "category": "Money",
+   "default": [
+    "string",
+    "string"
+   ],
+   "key": "YOU_LOOT_MONEY_MOD",
+   "present": true,
+   "reference": [
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Money",
+   "default": [
+    "string"
+   ],
+   "key": "GENERIC_MONEY_GAINED_RECEIPT",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Money",
+   "default": [
+    "string"
+   ],
+   "key": "ERR_QUEST_REWARD_MONEY_S",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string"
+   ],
+   "category": "Reputation",
+   "default": [
+    "string",
+    "string"
+   ],
+   "key": "FACTION_STANDING_CHANGED",
+   "present": true,
+   "reference": [
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Reputation",
+   "default": [
+    "string"
+   ],
+   "key": "FACTION_STANDING_CHANGED_GUILD",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string"
+   ],
+   "category": "Reputation",
+   "default": [
+    "string",
+    "string"
+   ],
+   "key": "FACTION_STANDING_CHANGED_GUILDNAME",
+   "present": true,
+   "reference": [
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int"
+   ],
+   "category": "Reputation",
+   "default": [
+    "string",
+    "int"
+   ],
+   "key": "FACTION_STANDING_DECREASED",
+   "present": true,
+   "reference": [
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Reputation",
+   "default": [
+    "string"
+   ],
+   "key": "FACTION_STANDING_DECREASED_GENERIC",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int"
+   ],
+   "category": "Reputation",
+   "default": [
+    "string",
+    "int"
+   ],
+   "key": "FACTION_STANDING_INCREASED",
+   "present": true,
+   "reference": [
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "float"
+   ],
+   "category": "Reputation",
+   "default": [
+    "string",
+    "int",
+    "float"
+   ],
+   "key": "FACTION_STANDING_INCREASED_ACH_BONUS",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "float"
+   ]
+  },
+  {
+   "build": [
+    "float"
+   ],
+   "category": "Reputation",
+   "default": [
+    "float"
+   ],
+   "key": "FACTION_STANDING_INCREASED_ACH_PART",
+   "present": true,
+   "reference": [
+    "float"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "float"
+   ],
+   "category": "Reputation",
+   "default": [
+    "string",
+    "int",
+    "float"
+   ],
+   "key": "FACTION_STANDING_INCREASED_BONUS",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "float"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "float",
+    "float"
+   ],
+   "category": "Reputation",
+   "default": [
+    "string",
+    "int",
+    "float",
+    "float"
+   ],
+   "key": "FACTION_STANDING_INCREASED_DOUBLE_BONUS",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "float",
+    "float"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Reputation",
+   "default": [
+    "string"
+   ],
+   "key": "FACTION_STANDING_INCREASED_GENERIC",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int"
+   ],
+   "category": "Reputation",
+   "default": [
+    "string",
+    "int"
+   ],
+   "key": "FACTION_STANDING_INCREASED_GUARDIAN",
+   "present": true,
+   "reference": [
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "float"
+   ],
+   "category": "Reputation",
+   "default": [
+    "float"
+   ],
+   "key": "FACTION_STANDING_INCREASED_REFER_PART",
+   "present": true,
+   "reference": [
+    "float"
+   ]
+  },
+  {
+   "build": [
+    "float"
+   ],
+   "category": "Reputation",
+   "default": [
+    "float"
+   ],
+   "key": "FACTION_STANDING_INCREASED_REST_PART",
+   "present": true,
+   "reference": [
+    "float"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "string",
+    "string"
+   ],
+   "category": "Experience",
+   "default": [
+    "string",
+    "int",
+    "string",
+    "string"
+   ],
+   "key": "COMBATLOG_XPGAIN_EXHAUSTION1",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "category": "Experience",
+   "default": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "key": "COMBATLOG_XPGAIN_EXHAUSTION1_GROUP",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "category": "Experience",
+   "default": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "key": "COMBATLOG_XPGAIN_EXHAUSTION1_RAID",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "string",
+    "string"
+   ],
+   "category": "Experience",
+   "default": [
+    "string",
+    "int",
+    "string",
+    "string"
+   ],
+   "key": "COMBATLOG_XPGAIN_EXHAUSTION2",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "category": "Experience",
+   "default": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "key": "COMBATLOG_XPGAIN_EXHAUSTION2_GROUP",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "category": "Experience",
+   "default": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "key": "COMBATLOG_XPGAIN_EXHAUSTION2_RAID",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "string",
+    "string"
+   ],
+   "category": "Experience",
+   "default": [
+    "string",
+    "int",
+    "string",
+    "string"
+   ],
+   "key": "COMBATLOG_XPGAIN_EXHAUSTION4",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "category": "Experience",
+   "default": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "key": "COMBATLOG_XPGAIN_EXHAUSTION4_GROUP",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "category": "Experience",
+   "default": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "key": "COMBATLOG_XPGAIN_EXHAUSTION4_RAID",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "string",
+    "string"
+   ],
+   "category": "Experience",
+   "default": [
+    "string",
+    "int",
+    "string",
+    "string"
+   ],
+   "key": "COMBATLOG_XPGAIN_EXHAUSTION5",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "category": "Experience",
+   "default": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "key": "COMBATLOG_XPGAIN_EXHAUSTION5_GROUP",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "category": "Experience",
+   "default": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ],
+   "key": "COMBATLOG_XPGAIN_EXHAUSTION5_RAID",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "string",
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int"
+   ],
+   "category": "Experience",
+   "default": [
+    "string",
+    "int"
+   ],
+   "key": "COMBATLOG_XPGAIN_FIRSTPERSON",
+   "present": true,
+   "reference": [
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "int"
+   ],
+   "category": "Experience",
+   "default": [
+    "string",
+    "int",
+    "int"
+   ],
+   "key": "COMBATLOG_XPGAIN_FIRSTPERSON_GROUP",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "int"
+   ],
+   "category": "Experience",
+   "default": [
+    "string",
+    "int",
+    "int"
+   ],
+   "key": "COMBATLOG_XPGAIN_FIRSTPERSON_RAID",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "int"
+   ],
+   "category": "Experience",
+   "default": [
+    "int"
+   ],
+   "key": "COMBATLOG_XPGAIN_FIRSTPERSON_UNNAMED",
+   "present": true,
+   "reference": [
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "int",
+    "int"
+   ],
+   "category": "Experience",
+   "default": [
+    "int",
+    "int"
+   ],
+   "key": "COMBATLOG_XPGAIN_FIRSTPERSON_UNNAMED_GROUP",
+   "present": true,
+   "reference": [
+    "int",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "int",
+    "int"
+   ],
+   "category": "Experience",
+   "default": [
+    "int",
+    "int"
+   ],
+   "key": "COMBATLOG_XPGAIN_FIRSTPERSON_UNNAMED_RAID",
+   "present": true,
+   "reference": [
+    "int",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "int",
+    "string",
+    "string"
+   ],
+   "category": "Experience",
+   "default": [
+    "int",
+    "string",
+    "string"
+   ],
+   "key": "COMBATLOG_XPGAIN_QUEST",
+   "present": true,
+   "reference": [
+    "int",
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "int"
+   ],
+   "category": "Experience",
+   "default": [
+    "int"
+   ],
+   "key": "COMBATLOG_XPLOSS_FIRSTPERSON_UNNAMED",
+   "present": true,
+   "reference": [
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Honor",
+   "default": [],
+   "key": "COMBATLOG_DISHONORGAIN",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "int"
+   ],
+   "category": "Honor",
+   "default": [
+    "int"
+   ],
+   "key": "COMBATLOG_HONORAWARD",
+   "present": true,
+   "reference": [
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string",
+    "int"
+   ],
+   "category": "Honor",
+   "default": [
+    "string",
+    "string",
+    "int"
+   ],
+   "key": "COMBATLOG_HONORGAIN",
+   "present": true,
+   "reference": [
+    "string",
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string",
+    "int",
+    "string",
+    "string"
+   ],
+   "category": "Honor",
+   "default": [
+    "string",
+    "string",
+    "int",
+    "string",
+    "string"
+   ],
+   "key": "COMBATLOG_HONORGAIN_EXHAUSTION1",
+   "present": true,
+   "reference": [
+    "string",
+    "string",
+    "int",
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int"
+   ],
+   "category": "Honor",
+   "default": [
+    "string",
+    "int"
+   ],
+   "key": "COMBATLOG_HONORGAIN_NO_RANK",
+   "present": true,
+   "reference": [
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int",
+    "string",
+    "string"
+   ],
+   "category": "Honor",
+   "default": [
+    "string",
+    "int",
+    "string",
+    "string"
+   ],
+   "key": "COMBATLOG_HONORGAIN_NO_RANK_EXHAUSTION1",
+   "present": true,
+   "reference": [
+    "string",
+    "int",
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string"
+   ],
+   "category": "Tradeskill",
+   "default": [
+    "string",
+    "string"
+   ],
+   "key": "CREATED_ITEM",
+   "present": true,
+   "reference": [
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string",
+    "int"
+   ],
+   "category": "Tradeskill",
+   "default": [
+    "string",
+    "string",
+    "int"
+   ],
+   "key": "CREATED_ITEM_MULTIPLE",
+   "present": true,
+   "reference": [
+    "string",
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Tradeskill",
+   "default": [
+    "string"
+   ],
+   "key": "LOOT_ITEM_CREATED_SELF",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int"
+   ],
+   "category": "Tradeskill",
+   "default": [
+    "string",
+    "int"
+   ],
+   "key": "LOOT_ITEM_CREATED_SELF_MULTIPLE",
+   "present": true,
+   "reference": [
+    "string",
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string"
+   ],
+   "category": "Tradeskill",
+   "default": [
+    "string"
+   ],
+   "key": "TRADESKILL_LOG_FIRSTPERSON",
+   "present": true,
+   "reference": [
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string"
+   ],
+   "category": "Tradeskill",
+   "default": [
+    "string",
+    "string"
+   ],
+   "key": "TRADESKILL_LOG_THIRDPERSON",
+   "present": true,
+   "reference": [
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string",
+    "string"
+   ],
+   "category": "Tradeskill",
+   "default": [
+    "string",
+    "string"
+   ],
+   "key": "OPEN_LOCK_OTHER",
+   "present": true,
+   "reference": [
+    "string",
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "string"
+   ],
+   "category": "Tradeskill",
+   "default": [
+    "string"
+   ],
+   "key": "OPEN_LOCK_SELF",
+   "present": true,
+   "reference": [
+    "string",
+    "string"
+   ]
+  },
+  {
+   "build": [
+    "int"
+   ],
+   "category": "Misc",
+   "default": [
+    "int"
+   ],
+   "key": "ERR_QUEST_REWARD_EXP_I",
+   "present": true,
+   "reference": [
+    "int"
+   ]
+  },
+  {
+   "build": [
+    "string",
+    "int"
+   ],
+   "category": "Misc",
+   "default": [
+    "string",
+    "int"
+   ],
+   "key": "ERR_ZONE_EXPLORED_XP",
+   "present": true,
+   "reference": [
+    "string",
+    "int"
+   ]
+  }
+ ],
+ "flags": [],
+ "flavor": "forever",
+ "frameXmlRows": 25945,
+ "product": "wowf",
+ "table": "GlobalStrings",
+ "tool": "tools/seeds/globalstrings.py derive"
+}

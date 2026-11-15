@@ -1,0 +1,14 @@
+ID,BaseTag,TagText_lang,Flags
+1,OKAY,Okay,1
+2,CANCEL,Cancel,1
+3,ACCEPT,Accept,1
+4,LOOT_ITEM_SELF,You receive loot: %s.,1
+5,CHAT_SAY_GET,%s says:\32,1
+6,ERR_FRIEND_ONLINE_SS,|Hplayer:%s|h[%s]|h has come online.,1
+7,LOOT_ITEM,%s receives loot: %d.,1
+8,LOOT_ITEM_MULTIPLE,%s receives loot: %sx%d.,5
+9,NEW_STRING,"Say ""hi""",1
+10,GLUE_ONLY,Glue screen only,2
+11,90POA_BOSS_01,Kalisthene,1
+12,BLIZZARD_STORE_CURRENCY_FORMAT_EURO,€%s,1
+13,PARTY_PLAYER_CHROMIE_TIME_FMT,%s\n\n\%s,1

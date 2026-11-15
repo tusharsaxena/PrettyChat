@@ -61,6 +61,8 @@ What the mocks deliberately do *not* model is layout: they answer "which widget,
 
 `lua tests/run.lua`, `KA0S_KIT_CLIENT=forever lua tests/run.lua` and `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` must all be green before any commit. The addon serves Retail and WoW Forever, so the suite gates under both kit profiles (clients-§6), and the kit's missing-globals suite checks the tracked source against both clients' API sets. Lint config is `.luacheckrc` (`std=lua51`; excludes `libs/`, `GlobalStrings/`, `tests/_kit/`, `docs/audits`, `docs/reviews`). The suites register named `test(name, fn)` cases; the `Tests` badge in the README badge row shows the pass/total.
 
+A change under `tools/seeds/`, or a seed-validation run, also runs the seed validator's own tests: `python3 -m pytest -q tools/seeds` (standard-library `unittest` cases, no network). They are the fourth line of [validate-seeds.md](./validate-seeds.md)'s `## Gate`, and they are not counted in the badge.
+
 **The `luacheck` figure is scoped, not repo-wide.** What is excluded is vendored or generated, not ours: `libs/`, `GlobalStrings/`, and `tests/_kit/` — the byte copy of LibKa0s' `testkit/`, which is linted in the library as source. The rest of `tests/` **is** linted, so the figure now covers 70 files rather than the 18 it covered while the whole test tree sat outside the gate. Before quoting 0/0, confirm the ten seam files are inside the set that was actually checked:
 
 ```sh
@@ -143,7 +145,7 @@ from the runner's list: `Kit.assertSuiteInventory` reddens on that too, which is
 having one.
 
 **The part specific to this repo is the carve-out, and the gate is handed it rather than inferring
-it.** PrettyChat has no cap breach; what it has is `GlobalStrings/GlobalStrings.lua`, 23,842 lines
+it.** PrettyChat has no cap breach; what it has is `GlobalStrings/GlobalStrings.lua`, 24,736 lines
 of generated dump, exempt only while all three of the carve-out's conditions hold — a comment at the
 top saying it is generated, no load list carrying it, a `.pkgmeta` entry keeping it out of the zip.
 No path betrays those facts, so `tests/run.lua` sets `Kit.layoutCap = { exempt = { "GlobalStrings/" } }`

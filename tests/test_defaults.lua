@@ -166,9 +166,9 @@ end)
 -- Both raised in a live client, for every user, on a routine reputation gain.
 --
 -- The check below compares against the SHIPPED BLIZZARD SIGNATURE in
--- GlobalStrings/ instead — the same 22,879-entry dump the settings panel reads
--- to show the "Original" box — so the arguments are the ones the game really
--- hands over.
+-- GlobalStrings/ instead — the dump of the client's own strings, regenerated
+-- from each Retail build's GlobalStrings DB2 (docs/validate-seeds.md) — so the
+-- arguments are the ones the game really hands over.
 --
 -- THE RULE IS A PREFIX, NOT AN EQUALITY. Lua's string.format ignores surplus
 -- arguments: string.format("a %s", "x", "extra") is "a x". So an override may
