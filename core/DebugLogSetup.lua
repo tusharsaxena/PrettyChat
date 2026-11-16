@@ -155,6 +155,27 @@ if not lib then
         BuildDiagnostics = function()
             return { lines = {}, dropped = 0, capped = false, capsHit = false }
         end,
+        -- A multi-line report (LibKa0s v1.105.0, DebugLogDiagnostics minor 11): with no
+        -- console to write into, the lines stream to chat with no pointer line, and the
+        -- count comes back like the live one's. Called as a method, so the first
+        -- parameter is self.
+        Report          = function(_, _, fn)
+            local n = 0
+            if type(fn) == "function" then
+                local safe = (NS.Util and NS.Util.SafeToString) or tostring
+                fn(function(line)
+                    n = n + 1
+                    if NS.Print then NS.Print(safe(line)) end
+                end)
+            end
+            return n
+        end,
+        -- The report's value serializer (DebugLogDiagnostics minor 11): one safe line,
+        -- no table walk, because the walk is the library's.
+        Serialize       = function(_, v)
+            local safe = (NS.Util and NS.Util.SafeToString) or tostring
+            return { safe(type(v) == "table" and "<table>" or v) }
+        end,
         -- The live router's words, on the stub's own members: `diagnostics` answers the
         -- line above, `on` and `off` set the flag, anything else is the host's.
         DebugVerb       = function(self, rest)
