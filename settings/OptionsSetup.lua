@@ -141,6 +141,10 @@ if not lib then
         -- NavRail, new at LibKa0s v1.61.0 (OptionsNav minor 1): drawn only by a page
         -- render, and no page here draws a rail, so the same inert no-op applies.
         NavRail              = function() end,
+        -- SideTabs, new at LibKa0s v1.100.0 (OptionsNav minor 7): the one-tab side strip,
+        -- drawn only by a page render, and no page here draws one, so the same inert
+        -- no-op applies.
+        SideTabs             = function() end,
         -- Drawer, new at LibKa0s v1.73.0 (Options minor 29 attaches OptionsDrawer minor 1):
         -- drawn only by a page render, and no page here draws a drawer, so the same inert
         -- no-op applies.
