@@ -285,20 +285,33 @@ test("the checkbox re-syncs when the console is opened another way", function()
     t.eq(debugBox.value, false, "closing it unticks the box")
 end)
 
-test("the Test button writes the report to the console, never into chat", function()
-    -- The report is a few hundred lines with every category enabled, and the chat frame is
-    -- the thing this addon exists to keep readable. The button opens the console
-    -- and writes there -- and so does `/pc test` now (the case below). Dies if the
-    -- sink argument is dropped and Test falls back to NS.Print for both callers.
+-- The report's one chat line (LibKa0s DebugLog minor 23's REPORT_WRITTEN, through D:Report): the
+-- owner's ruling of 2026-11-08 gives every report exactly one pointer in chat, and nothing else.
+local function onlyPointer(before, title)
+    local msgs = env.DEFAULT_CHAT_FRAME.messages
+    t.eq(#msgs, before + 1, "exactly one line went to chat, the report's pointer")
+    local line = msgs[#msgs] or ""
+    t.truthy(line:find(title .. ": %d+ lines written to the debug console%. Use Copy to share it%."),
+        "and it is the pointer, naming the report: " .. line)
+end
+
+test("the Test button writes the report to the console, with one pointer line in chat", function()
+    -- Re-pinned at AD-79-PC (LibKa0s#79). This case pinned "not one line went to chat": the report
+    -- is a few hundred lines and the chat frame is the thing this addon exists to keep readable, so
+    -- the body still goes to the console, opened if hidden. What moved is the one pointer line the
+    -- ruling gives every report, through NS.DebugLog:Report. Dies if the sink argument is dropped
+    -- and Test falls back to NS.Print, or if the report stops pointing.
     NS.DebugLog:Hide()
     NS.DebugLog:Clear()
+    NS.DebugLog:SetEnabled(false)
     local before = #env.DEFAULT_CHAT_FRAME.messages
     byLabel(generalWidgets, "Button", L["Test"]):Fire("OnClick")
 
-    t.eq(#env.DEFAULT_CHAT_FRAME.messages, before, "not one line went to chat")
+    onlyPointer(before, "test")
     t.truthy(NS.DebugLog:IsShown(), "the console is opened, so the report is visible")
+    t.truthy(NS.DebugLog:FindLine("/pc test"), "the report opens with the library's header")
     t.truthy(NS.DebugLog:FindLine("sample of every format string"),
-        "and the report's header is in the console buffer")
+        "and the report's own header is in the console buffer, with logging off")
     t.truthy(NS.DebugLog:FindLine("end of test output"), "along with its footer")
     NS.DebugLog:Hide()
 end)
@@ -307,9 +320,10 @@ test("/pc test writes the same report to the same place the button does", functi
     -- This case used to say the verb still printed the report to chat, and pinned the two callers
     -- DISAGREEING: the button opened the console, the verb put a few hundred lines into the
     -- chat frame. One name, two acts. The sink is still a PARAMETER on Test rather than a
-    -- redirection of NS.Print -- both callers simply pass the console writer now
-    -- (settings/Panel.lua's PrettyChat:TestToConsole, which the verb routes through).
-    -- Dies if the verb is pointed back at NS.Print, or if the filter stops reaching Test.
+    -- redirection of NS.Print -- both callers hand it the report's writer
+    -- (settings/Panel.lua's PrettyChat:TestToConsole, which the verb routes through), and since
+    -- AD-79-PC both point at it with one chat line. Dies if the verb is pointed back at NS.Print,
+    -- or if the filter stops reaching Test.
     NS.DebugLog:Hide()
     NS.DebugLog:Clear()
     local before = #env.DEFAULT_CHAT_FRAME.messages
@@ -317,13 +331,31 @@ test("/pc test writes the same report to the same place the button does", functi
         "Loot." .. sortedNames("Loot")[1] .. ".format").globalName
     NS.SlashCommands:OnSlash("test formatstring " .. name)
 
-    t.eq(#env.DEFAULT_CHAT_FRAME.messages, before, "not one line went to chat")
+    onlyPointer(before, "test formatstring " .. name)
     t.truthy(NS.DebugLog:IsShown(), "the console is opened, as the button opens it")
+    t.truthy(NS.DebugLog:FindLine("/pc test formatstring " .. name),
+        "the library's header names the filter")
     t.truthy(NS.DebugLog:FindLine("sample of every format string"),
         "and it is the same header the button produces")
     t.truthy(NS.DebugLog:FindLine(name),
         "the filter still narrows the report to the named format string")
     NS.DebugLog:Hide()
+end)
+
+test("/pc test's refusals stay in chat and write no report", function()
+    -- red under: a refusal routed through the report (the body would hold the usage line and the
+    -- console would open), or a pointer printed for a report that was never written.
+    for _, form in ipairs({ "test category zzz", "test formatstring NOPE_NOPE", "test nonsense" }) do
+        NS.DebugLog:Hide()
+        NS.DebugLog:Clear()
+        local before = #env.DEFAULT_CHAT_FRAME.messages
+        NS.SlashCommands:OnSlash(form)
+        t.eq(#env.DEFAULT_CHAT_FRAME.messages, before + 1, form .. ": one refusal line in chat")
+        t.falsy((env.DEFAULT_CHAT_FRAME.messages[before + 1] or ""):find("lines written", 1, true),
+            form .. ": and it is not a pointer")
+        t.falsy(NS.DebugLog:IsShown(), form .. ": the console stays hidden")
+        t.falsy(NS.DebugLog:FindLine("sample of every format string"), form .. ": no report body")
+    end
 end)
 
 test("Reset all asks for confirmation instead of resetting immediately", function()

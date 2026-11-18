@@ -261,7 +261,8 @@ end
 -- debug console filled with `/pc test`'s sample lines. The mode is on while the console is shown:
 -- `isActive` and `isShown` both read NS.DebugLog:IsShown(), the state the General page's console
 -- checkbox and `/pc debug` move. A fresh showing with the console hidden calls `enter`, which runs
--- PrettyChat:TestToConsole(), the act the Test button and `/pc test` run, so the console opens with
+-- PrettyChat:TestToConsole(nil, true), the act the Test button and `/pc test` run, quiet (no report
+-- header and no chat pointer: the player opened a picker, not a report), so the console opens with
 -- the sample; the eye calls `exit` (NS.DebugLog:Hide(), the checkbox's own) and `enter` again; and
 -- every close takes back what the picker and its eye moved (the library's restore). A console the
 -- player already had open is the player's: the picker enters nothing, and a later `enter` (the
@@ -291,7 +292,7 @@ local function previewEnter()
         return
     end
     sampled = true
-    LibStub("AceAddon-3.0"):GetAddon(addonName):TestToConsole()
+    LibStub("AceAddon-3.0"):GetAddon(addonName):TestToConsole(nil, true)
 end
 
 --- The eye's mode off: the console hidden. A console hidden here is never sampled again this

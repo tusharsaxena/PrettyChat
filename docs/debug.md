@@ -3,7 +3,7 @@
 PrettyChat has two debug surfaces, and both write into the same window:
 
 - **The debug console** is `LibKa0s-DebugLog-1.0`'s window. Tagged `NS.Debug` lines land there while
-  the session flag is on, and `/pc test` writes its sample lines there whatever the flag says.
+  the session flag is on, and `/pc test` writes its sample lines there whatever the flag says, as a report (`D:Report`: a `/pc test` header, the console opened, one pointer line in chat).
 - **The diagnostics report** is a one-shot snapshot of the addon's state, written into the console
   by `/pc diagnostics` (`debug-logging-§14`). It is the reason this page exists (`documentation-§3`,
   Tier 2): every Ka0s addon ships the report, and a maintainer reading a pasted one needs to know what
@@ -70,7 +70,7 @@ Launcher descriptors, and `NS.Debug` itself to the Options one. The `Emitted by`
 | `UI` | `settings/Panel.lua`, `settings/Schema.lua` | A Categories tab switch (`categories tab <name>`) and a string selection (`<category> string <NAME>`). A panel refresher that raised inside its `pcall`: `<site> failed: <error>`, once per distinct site and error, through the console's `D.DebugOnce` (a Clear re-arms it). |
 | `Cfg` | the library (`LibKa0s-Options-1.0`) | The settings panel opened, an open refused in combat, a registration parked in combat and its `register flushed (combat ended)` line, and (Options minor 27) one `<what> refused (in combat)` line for each write, Defaults, button, toggle, tab or page switch the combat lock refuses on an open panel, once per combat (`tab Money refused (in combat)`). |
 | `Launcher` | the library (`LibKa0s-Launcher-1.0`), through `core/LauncherSetup.lua` | The launcher's own lines. Its state lines, `registered` or the broker library it found missing, are written at `OnEnable` while the session-only flag is off, so they go to the console's at-enable queue (`debugAtEnable`, Launcher minor 5) and land once, right after the `[Init]` summary, the first time logging is turned on. Its events, a menu entry refused while disabled and a tooltip callback that raised, are written as they happen. |
-| `Test` | `settings/Panel.lua` | The `/pc test` samples and the General page's **Test** button. Written ungated, because the player asked for them. |
+| `Test` | `settings/Panel.lua` | The `/pc test` samples and the General page's **Test** button, a report through `NS.DebugLog:Report` (its first line the `/pc test ...` header). Written ungated, because the player asked for them. The skin picker's eye writes the same lines with no header (`TestToConsole(nil, true)`). |
 | `Diag` | the library | The diagnostics report's markers, identity header and `truncated` line. |
 
 A new tag is a one-word string at the call site. Add its row here in the same change.

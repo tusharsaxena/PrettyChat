@@ -62,7 +62,7 @@ Total.
 - prose self-test: the disclosure names what each entry suppressed, and says when it is bounded
 - prose self-test: a malformed waived is a failure, not a silence
 
-### test_libka0s.lua (34)
+### test_libka0s.lua (35)
 
 - the locale-table matcher catches both offending spellings and clears the legal one
 - no seam file hands a LibKa0s descriptor the addon-wide locale table
@@ -97,6 +97,7 @@ Total.
 - degraded SetMany is all-or-nothing
 - degraded SafeRegisterEvents records a rejected name and registers the rest
 - degraded Get forwards the instance id
+- degraded: the DebugLog stub's Report is the live call shape, D:Report(tag, title, fn)
 - degraded: /pc test category Loot prints the report to chat every time
 
 ### test_surface_parity.lua (8)
@@ -553,7 +554,7 @@ Total.
 - diagnostics: a secret value in the store or in a global does not raise
 - diagnostics: the report writes nothing, anywhere, and clears nothing
 
-### test_panel.lua (27)
+### test_panel.lua (28)
 
 - registration builds the parent category and three sub-pages
 - the strip carries one tab per message category, in CATEGORY_ORDER
@@ -572,8 +573,9 @@ Total.
 - toggling the master checkbox writes through the single Schema path
 - the Debug console checkbox drives the window, never the logging flag
 - the checkbox re-syncs when the console is opened another way
-- the Test button writes the report to the console, never into chat
+- the Test button writes the report to the console, with one pointer line in chat
 - /pc test writes the same report to the same place the button does
+- /pc test's refusals stay in chat and write no report
 - Reset all asks for confirmation instead of resetting immediately
 - the Defaults button is deferred to first show, not built at registration
 - the General page declares a Defaults button whose click opens the reset-all popup
@@ -847,7 +849,7 @@ Total.
 | test_layout_cap.lua | 13 |
 | test_lintconfig.lua | 4 |
 | test_prose.lua | 15 |
-| test_libka0s.lua | 34 |
+| test_libka0s.lua | 35 |
 | test_surface_parity.lua | 8 |
 | test_envsetup.lua | 9 |
 | test_constants.lua | 8 |
@@ -868,7 +870,7 @@ Total.
 | test_slash.lua | 54 |
 | test_disabled.lua | 14 |
 | test_diagnostics.lua | 18 |
-| test_panel.lua | 27 |
+| test_panel.lua | 28 |
 | test_panel_categories.lua | 28 |
 | test_debug_coverage.lua | 23 |
 | test_profiles.lua | 19 |
@@ -888,4 +890,4 @@ Total.
 | test_skin_switch.lua | 10 |
 | test_client_globals.lua | 3 |
 | Skipped | 1 |
-| **Total** | **694** |
+| **Total** | **696** |

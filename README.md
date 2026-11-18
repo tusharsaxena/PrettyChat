@@ -4,7 +4,7 @@
 ![CurseForge Version](https://img.shields.io/curseforge/v/919766)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 ![Standard](https://img.shields.io/badge/Ka0s-WoW_Addon_Standard-yellow)
-![Tests](https://img.shields.io/badge/Tests-694%2F694_passing-green)
+![Tests](https://img.shields.io/badge/Tests-696%2F696_passing-green)
 
 Supports Retail and WoW Forever. World of Warcraft tells you about loot, currency, gold, reputation, experience, honor and crafting in a stream of sentences that all look alike. PrettyChat rewrites them. The information doesn't change, but it's laid out and color-coded, so you can find the line you actually cared about while the chat window scrolls past you.
 
@@ -29,7 +29,7 @@ Changing how a message reads takes four steps. The first three happen on the **C
 - Find the message. Pick a kind of message from the tabs across the top (Loot, Currency, Money and so on), then a line from the list down the left. Its editor opens beside the list, with the game's wording in **Original** and yours in **New**.
 - Write your version in the **New** box. The **Preview** box shows the finished line and updates as you type. Colors are part of the wording. To recolor a line, edit its `|cffRRGGBB…|r` codes in that same box.
 - Keep the placeholders. The `%s` and `%d` are the slots the game drops the item name and the amount into. You can stop before the original's last one, and the line just comes out without whatever it carried. You can't add one, change one's type or reorder them. If you try, PrettyChat won't save your version and prints both sets of placeholders so you can see where yours differs.
-- Try the whole set. `/pc test` writes every message to the debug console twice, the game's version above yours. Sending it there keeps a couple of hundred lines out of your chat window. The **Test** button on the **General** page does the same run. Add `category Loot` or `formatstring LOOT_ITEM_SELF` to the command to narrow it.
+- Try the whole set. `/pc test` writes every message to the debug console twice, the game's version above yours. Sending it there keeps a couple of hundred lines out of your chat window: chat gets one line saying how many were written. The **Test** button on the **General** page does the same run. Add `category Loot` or `formatstring LOOT_ITEM_SELF` to the command to narrow it.
 
 Your version is only used while three switches are on: **Enable PrettyChat** on the General page, the category's switch on its tab, and the message's own **Rewrite this message**. Turn any of them off and the game's original comes back, while your wording stays saved. The **General visibility** dropdown next to the master switch can also limit PrettyChat to combat, or to the time outside it.
 

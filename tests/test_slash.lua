@@ -448,12 +448,16 @@ test("/pc test writes to the debug console and leaves the chat frame alone", fun
     -- The report is a few hundred lines. It belongs in a window with a scrollbar and a copy
     -- button, not in the chat frame this addon exists to keep readable -- which is why the
     -- panel's Test button always sent it there. The verb does the same thing now.
+    -- Re-pinned at AD-79-PC (LibKa0s#79): the report is D:Report's, so chat gets exactly one
+    -- line, the pointer, where this case pinned none; the body still never reaches chat.
     -- red under: routing the verb back through NS.Print.
     local beforeChat = #env.DEFAULT_CHAT_FRAME.messages
     local lines = console("test category Loot")
     t.truthy(#lines > 0, "/pc test emits output to the console")
-    t.eq(#env.DEFAULT_CHAT_FRAME.messages, beforeChat,
-        "and not one line of it reaches the chat frame")
+    t.eq(#env.DEFAULT_CHAT_FRAME.messages, beforeChat + 1,
+        "and not one line of it reaches the chat frame, only the report's pointer")
+    t.truthy(env.DEFAULT_CHAT_FRAME.messages[beforeChat + 1]:find(
+        "test category Loot: %d+ lines written to the debug console"), "which names the report")
     local allTagged = true
     for _, line in ipairs(lines) do
         if not line:find("[Test]", 1, true) then allTagged = false end

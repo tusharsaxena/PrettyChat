@@ -901,6 +901,25 @@ test("degraded Get forwards the instance id", function()
 end)
 
 
+test("degraded: the DebugLog stub's Report is the live call shape, D:Report(tag, title, fn)", function()
+    -- red under: a stub that reads `fn` from the title's slot (`function(_, _, fn)`), which takes
+    -- the title for the body, answers 0 and prints nothing, so every report a library-less install
+    -- asks for vanished. The LibKa0s DebugLog version-23.11.1.5 document's stub is
+    -- `function(_, _, _, fn)`: self, tag, title, body. The library-absent arm streams the body to
+    -- chat with no pointer line and answers the count.
+    local bare = ctx.loadAddon({ skip = { "libs/LibKa0s/Core.lua" } })
+    local D    = bare.NS.DebugLog
+    local msgs = bare.env.DEFAULT_CHAT_FRAME.messages
+    local before = #msgs
+    local n = D:Report("Test", "test", function(out) out("first"); out("second") end)
+    t.eq(n, 2, "the stub answers the body's line count")
+    t.eq(#msgs, before + 2, "every body line reached chat, and no pointer line beside them")
+    t.truthy(msgs[before + 1]:find("first", 1, true), "in order: the first line")
+    t.truthy(msgs[before + 2]:find("second", 1, true), "then the second")
+    t.eq(D:Report("Test", "test", function() end), 0, "an empty body answers 0")
+    t.eq(#msgs, before + 2, "and prints nothing")
+end)
+
 test("degraded: /pc test category Loot prints the report to chat every time", function()
     -- red under: the stub's no-op Add, where the second run prints nothing.
     -- TestToConsole used to hand Test the console's writer unconditionally, so with
