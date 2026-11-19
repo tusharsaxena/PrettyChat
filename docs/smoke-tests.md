@@ -28,7 +28,7 @@ works.
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
 | DIAG-1 – 28 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
 | DEGRADED-1 – 11 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
-| RV-75 – 77, RV-85 – 89 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position; v1.85.0: a clean load and its icons, and a clean load on the R4-L4, round 5, round 6 and sim checkbox re-cuts |
+| RV-75 – 77, RV-85 – 89, RV-107 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position; v1.85.0: a clean load and its icons, and a clean load on the R4-L4, round 5, round 6 and sim checkbox re-cuts; v1.107.0: a clean load |
 | SKIN-1 – 34 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker, the v1.85.0 title bars, launcher tooltip, Scope-cleared rows and delete confirmation, a stored pick of the deleted Friz, no line under a window title, the picker's console eye |
 | FOREVER-1 – 14 | WoW Forever | The checks re-run on a live WoW Forever client: the AddOns list, a clean load, each category's lines in real play (a two-word name included), a category off, `/pc test`, the panel, profiles across a full restart, the default skin per client, the launcher and diagnostics |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
@@ -804,6 +804,11 @@ prunes `libs/LibKa0s/media/icons/` to the `LibKa0s icons: clear, close, copy.` l
   and no Sim mode row: PrettyChat has no simulation. Only OptionsCompose moved (minor 19). **Fail:** a
   Lua error, a missing row, or a Sim mode row.
   Result:
+- **RV-107. A clean load on LibKa0s v1.107.0 (AF-RV-PC).** `/reload` with PrettyChat enabled → no Lua error naming a
+  file under `libs/LibKa0s/`. Open `/pc config`, `/pc debug` and its copy window → every mark draws, as in RV-85. Only
+  the drag strip's two files moved (WidgetsDragHandle minor 15, WidgetsDragHandleTip minor 2); PrettyChat is frameless and
+  draws no drag strip, so nothing on screen should change. **Fail:** a Lua error, or a blank control where a mark should be.
+  Result:
 
 ## SKIN
 
@@ -1233,3 +1238,5 @@ Owed from the owner's sixth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-
 On 2026-11-02 the owner reported that every check on the smoke lists of the full skinning run and its smoke feedback batch (Ka0sAddonsCommonTasks `docs/2026-11-01-FULL_SKINNING/` and `docs/2026-11-01-SMOKE_FEEDBACK/`) passed, apart from DpsRace's clock font, the skinned look of the AceGUI Dropdown and the Ka0sMedia_Font and Ka0sMedia_Statusbar pickers, FadeNineSlice and IconBorder (`docs/2026-11-02-SMOKE_ROUND3/`, R3-SMOKE). Passed, recorded on each `Result:` line as `Passed (owner, 2026-11-02)`: RV-85, SKIN-6, SKIN-28, SKIN-29, SKIN-30 and SKIN-31.
 
 On 2026-11-08 the owner reported that every check of the WoW Forever port (W2-PC-01, Ka0sAddonsCommonTasks `docs/2026-11-07-WOW_FOREVER_PORT_STEP5/04_WAVE2_SMOKE.md`) passed, with a Retail sanity pass: FOREVER-1 to FOREVER-14, each recorded on its `Result:` line as `passed (owner, 2026-11-08)`.
+
+Owed from the adoption feedback run (Ka0sAddonsCommonTasks `docs/2026-11-19-ADOPTION_FEEDBACK/`, AF-RV-PC, LibKa0s v1.107.0, 2026-11-19): RV-107, new.

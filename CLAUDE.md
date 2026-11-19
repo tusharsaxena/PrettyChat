@@ -42,5 +42,5 @@ addon serves Retail and WoW Forever, so the suite runs under both kit profiles, 
 `luacheck` loads no kit, so it runs through the bounded runner, testing-§15). Never
 auto-stage/commit/push and never bump the version without an explicit instruction.
 
-Bundles [LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.106.0 (MIT).
+Bundles [LibKa0s](https://github.com/tusharsaxena/LibKa0s) v1.107.0 (MIT).
 LibKa0s icons: chevron-down, chevron-up, clear, close, confirm, copy, eye, info, move, reset, settings, volume-high.
