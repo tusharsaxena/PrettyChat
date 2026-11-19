@@ -157,9 +157,10 @@ if not lib then
         end,
         -- A multi-line report (LibKa0s v1.105.0, DebugLogDiagnostics minor 11): with no
         -- console to write into, the lines stream to chat with no pointer line, and the
-        -- count comes back like the live one's. Called as a method, so the first
-        -- parameter is self.
-        Report          = function(_, _, fn)
+        -- count comes back like the live one's. Called as a method, D:Report(tag, title,
+        -- fn), so the parameters are self, tag, title and the body (the title's slot was
+        -- read as the body until AD-79-PC, which answered 0 and printed nothing).
+        Report          = function(_, _, _, fn)
             local n = 0
             if type(fn) == "function" then
                 local safe = (NS.Util and NS.Util.SafeToString) or tostring

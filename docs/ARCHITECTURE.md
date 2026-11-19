@@ -276,7 +276,8 @@ console and its copy window, the Skin tab and the first-run picker. What is the 
   `NS.SkinPreview` is the debug console filled with `/pc test`'s sample lines. `isActive` and
   `isShown` read `NS.DebugLog:IsShown()`, the state the General page's console checkbox and
   `/pc debug` move. A fresh showing with the console hidden calls `enter`, which runs
-  `PrettyChat:TestToConsole()` (the Test button's and `/pc test`'s act); the eye calls `exit`
+  `PrettyChat:TestToConsole(nil, true)` (the Test button's and `/pc test`'s act, quiet: no report
+  header and no chat pointer, AD-79-PC); the eye calls `exit`
   (`NS.DebugLog:Hide()`) and `enter` again, and is lit while the console is up; every close (Apply,
   Apply to all, the gear, the close control, Escape, `NS.HideSkinPicker`) puts the console back as it
   was at the open, through the library's restore. A console the player already had open is left

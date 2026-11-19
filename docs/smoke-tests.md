@@ -23,7 +23,7 @@ works.
 | STATE-1 – 6 | Enable and stand-down | `/pc enable` / `/pc disable`, what answers while disabled, the combat watcher standing down |
 | COMBAT-1 – 4 | Combat | The panel's combat refusal and cover, the launcher in combat, diagnostics in combat |
 | OVR-1 – 10 | Override pipeline | The three enable layers, General visibility, one-category registration, the chat text other addons read, a real line for a changed string |
-| TEST-1 – 6 | Test preview | `/pc test` and the Test button, the filters |
+| TEST-1 – 7 | Test preview | `/pc test` and the Test button, the filters, the report's one chat pointer |
 | RESET-1 – 13 | Resets | Row Reset, the Defaults buttons, `/pc reset <path>`, reset all, the one log line |
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
 | DIAG-1 – 28 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
@@ -448,11 +448,14 @@ Find the cause before changing anything; a fix that only makes the check pass is
   `sample of every format string (preview ignores enable toggles):`, then per category a gold
   `Category: <name>` header and a three-line block per string (green `Name:`, `Original:`,
   `Formatted:`) followed by a blank line, then the footer `end of test output (N strings shown)`. Every
-  line is `[Test]`-tagged, and nothing reaches the chat frame. **Fail:** the report in chat (the sink
-  was dropped). Result: pass (owner-marked 2026-10-10)
-- **TEST-2. The Test button.** General ▸ **Test** → the same report in the console, not in chat, and the
-  console's copy mark gives you all of it. **Fail:** the console opens empty (the report was written
-  before the window existed). Result: pass (owner-marked 2026-10-10)
+  line is `[Test]`-tagged, the first one the report's header `/pc test`, and chat gets exactly one line,
+  `test: N lines written to the debug console. Use Copy to share it.` (amended at AD-79-PC, LibKa0s#79).
+  **Fail:** the report in chat (the sink was dropped), or no pointer line. Result: pending (amended
+  2026-11-18; passed as first written, owner-marked 2026-10-10)
+- **TEST-2. The Test button.** General ▸ **Test** → the same report in the console, with only the one
+  `test: N lines written ...` pointer in chat, and the console's copy mark gives you all of it, as plain
+  text. **Fail:** the console opens empty (the report was written before the window existed). Result:
+  pending (amended 2026-11-18 at AD-79-PC; passed as first written, owner-marked 2026-10-10)
 - **TEST-3. The preview ignores the toggles.** Untick *Enable Loot*, `/pc test category Loot` → the Loot
   block still prints with its `Formatted:` lines. Tick it again. `/pc disable`, then General ▸ **Test**
   → the report still writes, and its second line is `(addon is currently disabled — these formats
@@ -469,6 +472,15 @@ Find the cause before changing anything; a fix that only makes the check pass is
   and no report. `/pc test formatstring NOPE_NOPE` →
   `unknown format string 'NOPE_NOPE' — try /pc list formatstring` and no report. `/pc test bogus` → the
   usage line naming the four forms. No Lua error in any. Result: pass (owner-marked 2026-10-10)
+- **TEST-7. The report's pointer, with logging off and on.** `/pc debug off`, close the console, then
+  `/pc test category Loot` → the console opens holding `/pc test category Loot` as its first new line, then
+  the Loot block, and chat gets exactly one line, `test category Loot: N lines written to the debug
+  console. Use Copy to share it.`, where N counts the header. `/pc debug on` and run it again → the same,
+  one pointer line again. `/pc test category nope` → the refusal in chat, no pointer and nothing new in the
+  console. Open the skin picker (`/pc skin`) with the console closed → the console opens with the sample
+  and chat gets no pointer line (the eye is not a report). **Fail:** a second chat line, a missing
+  pointer, a pointer for the refusal, or a pointer when the picker opens. Result: pending (added
+  2026-11-18, AD-79-PC)
 
 ## RESET
 

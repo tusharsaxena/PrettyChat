@@ -127,10 +127,31 @@ local DebugLogLib = LibStub and LibStub("LibKa0s-DebugLog-1.0", true)
 -- exists to keep readable -- which made them two acts wearing one name. The filter
 -- is what the verb's `category` / `formatstring` forms need; the button passes
 -- none, which is the `all` case.
-function PrettyChat:TestToConsole(filter)
+--
+-- A REPORT, through the console's D:Report (LibKa0s#79, AD-79-PC; the owner's ruling
+-- of 2026-11-08): written ungated, so it lands with logging off, under a `/pc test ...`
+-- header, the console opened if hidden, and exactly ONE pointer line in chat. Its
+-- title is the verb as the filter reads, so the header and the pointer name what was
+-- asked for. A refusal never gets here: runTest answers usage and unknown names in
+-- chat itself and calls nothing (settings/Slash.lua).
+--
+-- `quiet` is the skin picker's eye (core/SkinSetup.lua, THE EYE): the same sample in
+-- the same console, but no report header and no pointer, because the player opened
+-- a picker and asked for no report. It shows the console first, as this did before
+-- the report seam.
+local function testTitle(filter)
+    if not filter then return "test" end
+    return ("test %s %s"):format(filter.kind, filter.value)
+end
+
+function PrettyChat:TestToConsole(filter, quiet)
     if not DebugLogLib then return PrettyChat:Test(filter) end
-    NS.DebugLog:Show()
-    PrettyChat:Test(filter, function(line) NS.DebugLog:Add("Test", line) end)
+    if quiet then
+        NS.DebugLog:Show()
+        PrettyChat:Test(filter, function(line) NS.DebugLog:Add("Test", line) end)
+        return
+    end
+    NS.DebugLog:Report("Test", testTitle(filter), function(out) PrettyChat:Test(filter, out) end)
 end
 
 -- The Master controls group's closing acts, wired as its `afterGroup`.
