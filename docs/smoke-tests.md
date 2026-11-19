@@ -804,6 +804,11 @@ prunes `libs/LibKa0s/media/icons/` to the `LibKa0s icons: clear, close, copy.` l
   and no Sim mode row: PrettyChat has no simulation. Only OptionsCompose moved (minor 19). **Fail:** a
   Lua error, a missing row, or a Sim mode row.
   Result:
+- **RV-107. A clean load on LibKa0s v1.107.0 (AF-RV-PC).** `/reload` with PrettyChat enabled → no Lua error naming a
+  file under `libs/LibKa0s/`. Open `/pc config`, `/pc debug` and its copy window → every mark draws, as in RV-85. Only
+  the drag strip's two files moved (WidgetsDragHandle minor 15, WidgetsDragHandleTip minor 2); PrettyChat is frameless and
+  draws no drag strip, so nothing on screen should change. **Fail:** a Lua error, or a blank control where a mark should be.
+  Result:
 
 ## SKIN
 
@@ -1233,3 +1238,5 @@ Owed from the owner's sixth smoke round (Ka0sAddonsCommonTasks `docs/2026-11-03-
 On 2026-11-02 the owner reported that every check on the smoke lists of the full skinning run and its smoke feedback batch (Ka0sAddonsCommonTasks `docs/2026-11-01-FULL_SKINNING/` and `docs/2026-11-01-SMOKE_FEEDBACK/`) passed, apart from DpsRace's clock font, the skinned look of the AceGUI Dropdown and the Ka0sMedia_Font and Ka0sMedia_Statusbar pickers, FadeNineSlice and IconBorder (`docs/2026-11-02-SMOKE_ROUND3/`, R3-SMOKE). Passed, recorded on each `Result:` line as `Passed (owner, 2026-11-02)`: RV-85, SKIN-6, SKIN-28, SKIN-29, SKIN-30 and SKIN-31.
 
 On 2026-11-08 the owner reported that every check of the WoW Forever port (W2-PC-01, Ka0sAddonsCommonTasks `docs/2026-11-07-WOW_FOREVER_PORT_STEP5/04_WAVE2_SMOKE.md`) passed, with a Retail sanity pass: FOREVER-1 to FOREVER-14, each recorded on its `Result:` line as `passed (owner, 2026-11-08)`.
+
+Owed from the adoption feedback run (Ka0sAddonsCommonTasks `docs/2026-11-19-ADOPTION_FEEDBACK/`, AF-RV-PC, LibKa0s v1.107.0, 2026-11-19): RV-107, new.
