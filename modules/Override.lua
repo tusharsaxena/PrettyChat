@@ -8,16 +8,36 @@ local _, NS = ...
 local PrettyChat = LibStub("AceAddon-3.0"):GetAddon("PrettyChat")
 
 local Color  = NS.Const.Color
-local note   = NS.Util.note
 local L      = NS.L
 
--- Row labels for the `/pc test` report. Color is a load-time constant, so these
--- are built once here rather than per Test() call.
-local LABEL = {
-    name      = Color.green .. "Name: "      .. Color.reset,
-    original  = Color.green .. "Original: "  .. Color.reset,
-    formatted = Color.green .. "Formatted: " .. Color.reset,
-}
+-- The `/pc test` report's colors, one palette per destination, chosen once per Test() call.
+--
+-- CHAT keeps the chat escapes (Const.Color, the L13 ruling): the report reaches chat only on a
+-- degraded load with no console (PrettyChat:Test's sink note below).
+--
+-- THE CONSOLE reads the skin (owner ruling U-25, 2026-11-20): the labels `pc.reportLabel`, the
+-- category header `pc.reportHead`, the gray placeholder and error lines `pc.note`, each an owner
+-- token whose Ka0s Default is the chat escape's pixel (core/SkinSetup.lua), and the white note()
+-- lines carry no escape, so they draw the console's own `log.text`. Read when the report is
+-- written: a line already in the console keeps the colors it was written in, as any message's
+-- own escapes do there, and the next report reads the new skin.
+local CHAT_PALETTE = { label = Color.green, head = Color.gold, muted = Color.gray, note = Color.white }
+
+local function reportPalette(toConsole)
+    if not toConsole then return CHAT_PALETTE end
+    return {
+        label = NS.SkinEscape("pc.reportLabel"),
+        head  = NS.SkinEscape("pc.reportHead"),
+        muted = NS.SkinEscape("pc.note"),
+        note  = "",
+    }
+end
+
+--- `s` in one of the palette's colors; an empty escape (the console's note) leaves it plain.
+local function paint(escape, s)
+    if escape == "" then return s end
+    return escape .. s .. Color.reset
+end
 
 -- One sorted global-name array per category, built on first ask and kept. Sorted
 -- rather than pairs() order so every walk -- ApplyStrings, the `/pc test` report,
@@ -604,10 +624,10 @@ end
 -- Render one format string for the report, turning a string.format failure into a
 -- gray `(error: ...)` line rather than letting it propagate. Second return is the
 -- errored flag, which feeds the report's error tally.
-local function renderOrError(fmt)
+local function renderOrError(pal, fmt)
     local rendered, err = NS.RenderSample(fmt)
     if rendered then return rendered, false end
-    return Color.gray .. "(error: " .. tostring(err) .. ")" .. Color.reset, true
+    return paint(pal.muted, "(error: " .. tostring(err) .. ")"), true
 end
 
 -- A nil filter matches every category; a formatstring filter is category-blind.
@@ -658,20 +678,20 @@ end
 -- `emit` is the report's OUTPUT SINK, threaded from Test rather than read off NS:
 -- the settings panel's Test button writes the whole report into the debug console
 -- while `/pc test` keeps writing it to chat, and both must be the same report.
-local function printStringRow(emit, addon, category, globalName)
-    emit(LABEL.name .. globalName)
+local function printStringRow(emit, pal, addon, category, globalName)
+    emit(paint(pal.label, "Name: ") .. globalName)
 
     -- A nil original (the client never defined the global) reads as the same
     -- placeholder the panel's Original box shows, and is not an error: there is
     -- nothing to render, and RenderSample would call it an empty format.
     local origFmt = NS.OriginalFormat(addon, globalName)
-    local origLine, origErr = Color.gray .. L["(original not available)"] .. Color.reset, false
-    if origFmt ~= nil then origLine, origErr = renderOrError(origFmt) end
-    emit(LABEL.original .. origLine)
+    local origLine, origErr = paint(pal.muted, L["(original not available)"]), false
+    if origFmt ~= nil then origLine, origErr = renderOrError(pal, origFmt) end
+    emit(paint(pal.label, "Original: ") .. origLine)
 
     local newFmt = addon:GetStringValue(category, globalName)
-    local newLine, newErr = renderOrError(newFmt)
-    emit(LABEL.formatted .. newLine)
+    local newLine, newErr = renderOrError(pal, newFmt)
+    emit(paint(pal.label, "Formatted: ") .. newLine)
 
     emit("")
 
@@ -680,13 +700,13 @@ end
 
 -- One category's block: the gold header, then every string row. Returns the
 -- printed / errored counts this block contributed.
-local function printCategoryBlock(emit, addon, category, names)
-    emit(Color.gold .. "Category: " .. category .. Color.reset)
+local function printCategoryBlock(emit, pal, addon, category, names)
+    emit(paint(pal.head, "Category: " .. category))
     emit("")
 
     local printed, errored = 0, 0
     for _, globalName in ipairs(names) do
-        if printStringRow(emit, addon, category, globalName) then
+        if printStringRow(emit, pal, addon, category, globalName) then
             errored = errored + 1
         else
             printed = printed + 1
@@ -695,13 +715,13 @@ local function printCategoryBlock(emit, addon, category, names)
     return printed, errored
 end
 
-local function printFooter(emit, printed, errored)
+local function printFooter(emit, pal, printed, errored)
     local footer = ("end of test output (%d %s shown"):format(
         printed, printed == 1 and "string" or "strings")
     if errored > 0 then
         footer = footer .. (", %d errored"):format(errored)
     end
-    emit(note(footer .. ")"))
+    emit(paint(pal.note, footer .. ")"))
 end
 
 -- Print every format string in a per-category block. For each string
@@ -731,9 +751,10 @@ end
 -- destination is untouched either way; the sink is a parameter, not a redirection.
 function PrettyChat:Test(filter, sink)
     local emit = sink or NS.Print
-    emit(note(L["sample of every format string (preview ignores enable toggles):"]))
+    local pal = reportPalette(sink ~= nil)
+    emit(paint(pal.note, L["sample of every format string (preview ignores enable toggles):"]))
     if self:IsStoodDown() then
-        emit(note(L["(addon is currently disabled — these formats aren't being applied to live chat)"]))
+        emit(paint(pal.note, L["(addon is currently disabled — these formats aren't being applied to live chat)"]))
     end
 
     local printed, errored = 0, 0
@@ -743,16 +764,16 @@ function PrettyChat:Test(filter, sink)
             local names = collectNames(category, filter)
             if #names > 0 then
                 emittedAny = true
-                local p, e = printCategoryBlock(emit, self, category, names)
+                local p, e = printCategoryBlock(emit, pal, self, category, names)
                 printed, errored = printed + p, errored + e
             end
         end
     end
 
     if not emittedAny then
-        emit(note(L["(no matching strings)"]))
+        emit(paint(pal.note, L["(no matching strings)"]))
         return
     end
 
-    printFooter(emit, printed, errored)
+    printFooter(emit, pal, printed, errored)
 end
