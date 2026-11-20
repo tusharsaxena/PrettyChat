@@ -97,9 +97,19 @@ local LABEL = "Ka0s Pretty Chat"
 -- |cffaaaaaa), following the nearest library ROLE token in every other skin and under EllesmereUI.
 -- Two names rather than one, because a tooltip line follows the gtip family, which no skin
 -- darkens, and a page note the text family.
+--
+-- The `/pc test` report's labels in the debug console (owner ruling U-25, 2026-11-20,
+-- Ka0sAddonsCommonTasks docs/2026-11-20-LIBKA0S_94_97_99_100/SD_RULE.md): the console is a skinned
+-- window, not a chat line, so L13 does not hold them. Each `default` is the pixel the report typed
+-- (Const.Color.green 40ff40 and gold ffd700), so Ka0s Default keeps its bytes; every other skin draws
+-- the role token: the labels `sem.good`, the category header `text.heading`. The gray placeholder
+-- and error lines read `pc.note` (text.muted) and the white note() lines drop their escape for the
+-- console's own `log.text` (modules/Override.lua, reportPalette).
 NS.SKIN_TOKENS = {
-    ["pc.note"]    = { default = { 170 / 255, 170 / 255, 170 / 255, 1 }, follow = "text.muted" },
-    ["pc.tipNote"] = { default = { 170 / 255, 170 / 255, 170 / 255, 1 }, follow = "gtip.subtle" },
+    ["pc.note"]        = { default = { 170 / 255, 170 / 255, 170 / 255, 1 }, follow = "text.muted" },
+    ["pc.tipNote"]     = { default = { 170 / 255, 170 / 255, 170 / 255, 1 }, follow = "gtip.subtle" },
+    ["pc.reportLabel"] = { default = { 64 / 255, 1, 64 / 255, 1 }, follow = "sem.good" },
+    ["pc.reportHead"]  = { default = { 1, 215 / 255, 0, 1 }, follow = "text.heading" },
 }
 
 -- The Ka0s Default tokens the DEGRADED facade answers, limited to the ones this addon reads: its

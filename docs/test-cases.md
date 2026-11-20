@@ -281,7 +281,7 @@ Total.
 - ResetString clears both the custom format and the per-string disable
 - the Tradeskill format is the one that reaches _G for LOOT_ITEM_CREATED_SELF
 
-### test_override.lua (46)
+### test_override.lua (51)
 
 - GetStringValue falls back to the defaults table until overridden
 - IsAddonEnabled treats an absent flag as default-true
@@ -329,6 +329,11 @@ Total.
 - the /pc test report lists each category's strings in the curated order
 - SortedStringNames answers the same curated table on every call
 - a formatstring-filtered report does not shrink the cached list
+- the console report's labels follow the skin through pc.reportLabel
+- the console report's category header follows the skin through pc.reportHead
+- the console report's header and footer carry no escape, so they draw log.text
+- the console report's placeholder follows the skin through pc.note
+- the chat report keeps the chat escapes under every skin (L13)
 
 ### test_database.lua (28)
 
@@ -817,13 +822,14 @@ Total.
 
 ### test_skin_values.lua (3)
 
-- skin values: every host row carries its file, substring, why and cause id
+- skin values: every host row carries its file, substring, why and a cause id or kit row category
 - skin values: no typed value outside the kit's categories and the host's rows
 - skin values: the check is falsifiable, a planted value of each shape is reported
 
-### test_skin_switch.lua (10)
+### test_skin_switch.lua (13)
 
 - skin switch: the check is falsifiable, a surface that redraws a literal is reported
+- skin switch: the check is falsifiable, a bar whose texture never moves is reported
 - skin switch: the GLOBALNAME caption changes
 - skin switch: the Categories footnote changes
 - skin switch: the landing page's alias row changes
@@ -831,6 +837,8 @@ Total.
 - skin switch: the list hover's title and body changes with the Scope ignored
 - skin switch: the list hover's GLOBALNAME line changes
 - skin switch: the list hover's GLOBALNAME line changes with the Scope ignored
+- skin switch: the /pc test report in the debug console changes
+- skin switch: the /pc test report in the debug console changes with the Scope ignored
 - skin switch: the debug console changes
 - skin switch: the debug console changes with the Scope ignored
 
@@ -861,7 +869,7 @@ Total.
 | test_schema.lua | 47 |
 | test_render.lua | 12 |
 | test_apply.lua | 11 |
-| test_override.lua | 46 |
+| test_override.lua | 51 |
 | test_database.lua | 28 |
 | test_lifecycle.lua | 12 |
 | test_debuglog.lua | 33 |
@@ -887,7 +895,7 @@ Total.
 | test_diagnostics_contract.lua | 8 |
 | test_lizard_sighted.lua | 8 |
 | test_skin_values.lua | 3 |
-| test_skin_switch.lua | 10 |
+| test_skin_switch.lua | 13 |
 | test_client_globals.lua | 3 |
 | Skipped | 1 |
-| **Total** | **696** |
+| **Total** | **704** |

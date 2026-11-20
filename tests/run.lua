@@ -76,9 +76,12 @@ Kit.diagnostics = {
 }
 
 -- The kit's typed-value gate (skinning-§1). The one table it cannot place by shape is Const.Color,
--- the chat escapes: what reads it is NS.Print's tag, slash output, the /pc test report and the reset
--- every markup ends on, so these are the chat lines L13 leaves alone, and settings/ reads no color
--- from it (tests/test_skin_surfaces.lua holds that at the source).
+-- the chat escapes: what reads it is NS.Print's tag, slash output, the /pc test report when it goes
+-- to chat (a degraded load with no console) and the reset every markup ends on, so these are the
+-- chat lines L13 leaves alone, and settings/ reads no color from it (tests/test_skin_surfaces.lua
+-- holds that at the source). The report written into the debug console is not a chat line (owner
+-- ruling U-25, 2026-11-20): it reads owner tokens (modules/Override.lua, reportPalette), and
+-- tests/skin_surfaces.lua declares it.
 local CHAT_ESCAPES = "a chat line's escape; chat is the one surface no skin reaches, by the L13 ruling"
 Kit.skinValues = {
     rows = {

@@ -654,13 +654,16 @@ test("Test writes every line to the sink it is given, and nothing to chat", func
         "the header went to the sink")
     t.truthy(sunk[#sunk]:find("end of test output", 1, true), "and so did the footer")
 
-    -- Byte-for-byte the same report as the default sink's, header to footer.
+    -- The same report as the default sink's, header to footer, line for line. Its colors are
+    -- not the chat's (owner ruling U-25: the console's read the skin, chat's stay Const.Color),
+    -- so the two are compared with their escapes stripped.
+    local function plain(line) return (line:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")) end
     local at = mark()
     addon:Test({ kind = "category", value = cat })
     local printed = lines(env, at)
     t.eq(#printed, #sunk, "the two reports are the same length")
     for i, line in ipairs(sunk) do
-        t.eq(NS.PREFIX .. line, printed[i], ("line %d is the same text"):format(i))
+        t.eq(plain(NS.PREFIX .. line), plain(printed[i]), ("line %d is the same text"):format(i))
     end
 end)
 
@@ -902,4 +905,99 @@ test("a formatstring-filtered report does not shrink the cached list", function(
     t.truthy(full > 1, "the category has more than the one filtered string")
     addon:Test({ kind = "formatstring", value = g }, function() end)
     t.eq(#NS.SortedStringNames(cat), full, "the filter built a new table, not a shrunk cache")
+end)
+
+-- ---- the console report's colors (U-25) ---------------------------------
+--
+-- The owner's U-25 (Ka0sAddonsCommonTasks docs/2026-11-20-LIBKA0S_94_97_99_100/SD_RULE.md,
+-- 2026-11-20): `/pc test`'s report lives in the skinned debug console, which L13 (chat lines)
+-- does not cover, so its labels read owner tokens that follow role tokens: the green labels
+-- `pc.reportLabel` (sem.good), the gold header `pc.reportHead` (text.heading), the gray
+-- placeholder and error lines `pc.note` (text.muted), and the white note() header and footer
+-- drop their escape for the console's own log.text. Ka0s Default keeps today's bytes. The chat
+-- report (a degraded load, no sink) keeps Const.Color.
+
+-- The report of `g` through a console-style sink, written under one skin and put back after.
+local function reportUnder(instance, skinKey, filter, toChat)
+    local Skin = instance.env.LibStub("LibKa0s-Skin-1.0")
+    local source, skin = Skin:GetChoice("PrettyChat")
+    Skin:SetChoice("PrettyChat", "ka0s", skinKey)
+    local sunk, want = {}, {
+        label = instance.NS.SkinEscape("sem.good"),
+        head  = instance.NS.SkinEscape("text.heading"),
+        muted = instance.NS.SkinEscape("text.muted"),
+    }
+    local at = #instance.env.DEFAULT_CHAT_FRAME.messages
+    if toChat then
+        instance.addon:Test(filter or { kind = "formatstring", value = g })
+        for i = at + 1, #instance.env.DEFAULT_CHAT_FRAME.messages do
+            sunk[#sunk + 1] = instance.env.DEFAULT_CHAT_FRAME.messages[i]
+        end
+    else
+        instance.addon:Test(filter or { kind = "formatstring", value = g },
+            function(line) sunk[#sunk + 1] = line end)
+    end
+    Skin:SetChoice("PrettyChat", source, skin)
+    return sunk, want
+end
+
+local function lineWith(list, needle)
+    for _, line in ipairs(list) do
+        if line:find(needle, 1, true) then return line end
+    end
+end
+
+-- red under: LABEL built from Const.Color.green at load
+test("the console report's labels follow the skin through pc.reportLabel", function()
+    local C = NS.Const.Color
+    local base = reportUnder(inst, "ka0s")
+    local nameLine = lineWith(base, "Name: ")
+    t.eq(nameLine and nameLine:sub(1, #C.green), C.green, "Ka0s Default keeps today's green")
+
+    local sunk, want = reportUnder(inst, "obsidian")
+    t.truthy(want.label ~= C.green, "the probe skin's sem.good is not today's green")
+    for _, label in ipairs({ "Name: ", "Original: ", "Formatted: " }) do
+        local line = lineWith(sunk, label)
+        t.eq(line and line:sub(1, #want.label), want.label, label .. "takes Obsidian's sem.good")
+    end
+end)
+
+-- red under: the header typed as Const.Color.gold
+test("the console report's category header follows the skin through pc.reportHead", function()
+    local C = NS.Const.Color
+    local base = reportUnder(inst, "ka0s", { kind = "category", value = cat })
+    local head = lineWith(base, "Category: ")
+    t.eq(head and head:sub(1, #C.gold), C.gold, "Ka0s Default keeps today's gold")
+
+    local sunk, want = reportUnder(inst, "obsidian", { kind = "category", value = cat })
+    head = lineWith(sunk, "Category: ")
+    t.truthy(want.head ~= C.gold, "the probe skin's text.heading is not today's gold")
+    t.eq(head and head:sub(1, #want.head), want.head, "the header takes Obsidian's text.heading")
+end)
+
+-- red under: note() (Const.Color.white) on the console's header and footer
+test("the console report's header and footer carry no escape, so they draw log.text", function()
+    local sunk = reportUnder(inst, "obsidian")
+    t.eq(sunk[1], NS.L["sample of every format string (preview ignores enable toggles):"],
+        "the header is the plain string")
+    t.falsy(sunk[#sunk]:find("|c", 1, true), "the footer carries no color escape")
+    t.truthy(sunk[#sunk]:find("1 string shown", 1, true), "and is still the footer")
+end)
+
+-- red under: the placeholder typed as Const.Color.gray
+test("the console report's placeholder follows the skin through pc.note", function()
+    local fresh = loadWithoutGlobal("LOOT_ITEM_SELF")
+    local sunk, want = reportUnder(fresh, "obsidian", { kind = "formatstring", value = "LOOT_ITEM_SELF" })
+    local original = lineWith(sunk, "Original: ")
+    local placeholder = want.muted .. fresh.NS.L["(original not available)"]
+    t.truthy(want.muted ~= NS.Const.Color.gray, "the probe skin's text.muted is not today's gray")
+    t.truthy(original and original:find(placeholder, 1, true), "the placeholder takes Obsidian's text.muted")
+end)
+
+-- red under: a console palette leaking onto the chat path
+test("the chat report keeps the chat escapes under every skin (L13)", function()
+    local C = NS.Const.Color
+    local sunk = reportUnder(inst, "obsidian", nil, true)
+    t.truthy(lineWith(sunk, C.green .. "Name: "), "the chat report's labels stay Const.Color.green")
+    t.truthy(lineWith(sunk, C.white .. "sample of every format string"), "and its header stays white")
 end)

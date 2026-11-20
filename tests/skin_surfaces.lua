@@ -2,8 +2,17 @@
 -- surface this addon paints itself, off one instance with its Categories page open.
 --
 -- WHAT IS DECLARED. PrettyChat draws no frame of its own, so what it paints is text: the three page
--- notes in pc.note, the list entry's GameTooltip lines in gtip.value, gtip.line and pc.tipNote, and
--- the debug console, the one library window it opens.
+-- notes in pc.note, the list entry's GameTooltip lines in gtip.value, gtip.line and pc.tipNote, the
+-- debug console, the one library window it opens, and the `/pc test` report written into it, whose
+-- labels read pc.reportLabel, pc.reportHead and pc.note (owner ruling U-25, 2026-11-20).
+--
+-- THE REPORT IS READ THROUGH A MIRROR TOO. Its lines are text with their colors in escapes, baked
+-- when the report is written, so each flip writes the report afresh through the sink
+-- PrettyChat:TestToConsole hands Test, and the mirror takes the lines joined: what the spy reads is
+-- exactly what the console receives.
+--
+-- NO FAMILY HOLD AND NO `expect`. PrettyChat draws no StatusBar and no Texture (no data fill, no
+-- art), and every surface's text color follows the skin, so no ruling keeps a family fixed here.
 --
 -- A NOTE IS READ THROUGH A MIRROR. A skin switch re-renders the page a frame later, so a label is a
 -- new widget each flip and spying on one would watch the widget the render threw away. Each note's
@@ -24,7 +33,7 @@ local OWNER = "PrettyChat"
 
 return function(loadAddon, root)
     local inst = loadAddon()
-    local env, NS = inst.env, inst.NS
+    local env, NS, addon = inst.env, inst.NS, inst.addon
     local fixture = dofile(root .. "/tests/panel_fixture.lua")(NS)
 
     fixture.panelFrame(env, "Categories"):Show()
@@ -91,6 +100,16 @@ return function(loadAddon, root)
                 paint = function(mirror)
                     hover()
                     mirror:SetText(env.GameTooltip.lines[1])
+                end,
+            },
+            {
+                name = "the /pc test report in the debug console",
+                build = function() return { SetText = function(self, text) self.text = text end } end,
+                paint = function(mirror)
+                    local lines = {}
+                    addon:Test({ kind = "category", value = "Loot" },
+                        function(line) lines[#lines + 1] = line end)
+                    mirror:SetText(table.concat(lines, "\n"))
                 end,
             },
             {

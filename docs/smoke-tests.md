@@ -28,8 +28,8 @@ works.
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
 | DIAG-1 – 28 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
 | DEGRADED-1 – 11 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
-| RV-75 – 77, RV-85 – 89, RV-107 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position; v1.85.0: a clean load and its icons, and a clean load on the R4-L4, round 5, round 6 and sim checkbox re-cuts; v1.107.0: a clean load |
-| SKIN-1 – 34 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker, the v1.85.0 title bars, launcher tooltip, Scope-cleared rows and delete confirmation, a stored pick of the deleted Friz, no line under a window title, the picker's console eye |
+| RV-75 – 77, RV-85 – 89, RV-107, RV-108 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position; v1.85.0: a clean load and its icons, and a clean load on the R4-L4, round 5, round 6 and sim checkbox re-cuts; v1.107.0 and v1.108.0: a clean load |
+| SKIN-1 – 35 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker, the v1.85.0 title bars, launcher tooltip, Scope-cleared rows and delete confirmation, a stored pick of the deleted Friz, no line under a window title, the picker's console eye, the console report's labels |
 | FOREVER-1 – 14 | WoW Forever | The checks re-run on a live WoW Forever client: the AddOns list, a clean load, each category's lines in real play (a two-word name included), a category off, `/pc test`, the panel, profiles across a full restart, the default skin per client, the launcher and diagnostics |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
 
@@ -809,6 +809,12 @@ prunes `libs/LibKa0s/media/icons/` to the `LibKa0s icons: clear, close, copy.` l
   the drag strip's two files moved (WidgetsDragHandle minor 15, WidgetsDragHandleTip minor 2); PrettyChat is frameless and
   draws no drag strip, so nothing on screen should change. **Fail:** a Lua error, or a blank control where a mark should be.
   Result:
+- **RV-108. A clean load on LibKa0s v1.108.0 (SD-RV-PC).** `/reload` with PrettyChat enabled → no Lua error naming a
+  file under `libs/LibKa0s/`. Open `/pc config`, its Skin tab, `/pc debug` and its copy window → every mark draws, as in
+  RV-85. Seventeen library files moved (the composers, bars, charts, call-out and arrow now follow the skin by default), but
+  PrettyChat composes no font, border or bar group and draws no bar, chart or call-out, so nothing it draws should change.
+  **Fail:** a Lua error, or a blank control where a mark should be.
+  Result:
 
 ## SKIN
 
@@ -1086,6 +1092,19 @@ skin, unless a check says otherwise.
   opens no console, an empty console, a sample written into a console that was already open, an eye
   that only opens, a console left open after a close the picker opened it for, or a console of the
   player's left hidden after the close. Result:
+- **SKIN-35. The `/pc test` report's labels follow the skin in the console (SD-SK-PC, owner ruling U-25).** (a) On
+  **Ka0s Default**, `/pc test category loot` → the console's report draws as before: green `Name:`, `Original:` and
+  `Formatted:` labels, a gold `Category: Loot` header, and the *sample of every format string* header and
+  *end of test output* footer in the console's own white text. (b) Switch to **Obsidian** on the Skin tab,
+  then `/pc test category loot` again → the new report's labels draw in Obsidian's green, its `Category:` header in
+  Obsidian's heading color (a near-white, not gold), and the header and footer in the console's text
+  color; the report written under Ka0s Default above keeps its old colors (a known limitation). Repeat on
+  **Azeroth** and **WoW Midnight** → each new report's labels and header change with the skin and stay
+  readable on its console. (c) On a string whose original is missing or whose format errors, the
+  `(original not available)` or `(error: ...)` text draws in the skin's muted gray. (d) The chat lines stay
+  as they were: the cyan `[PC]` pointer, slash output and `/pc list` keep their chat colors under every
+  skin. **Fail:** a report whose labels or header stay green and gold under Obsidian, an unreadable label
+  on any skin's console, a changed chat color, or a Lua error. Result:
 
 ## WoW Forever
 
@@ -1240,3 +1259,5 @@ On 2026-11-02 the owner reported that every check on the smoke lists of the full
 On 2026-11-08 the owner reported that every check of the WoW Forever port (W2-PC-01, Ka0sAddonsCommonTasks `docs/2026-11-07-WOW_FOREVER_PORT_STEP5/04_WAVE2_SMOKE.md`) passed, with a Retail sanity pass: FOREVER-1 to FOREVER-14, each recorded on its `Result:` line as `passed (owner, 2026-11-08)`.
 
 Owed from the adoption feedback run (Ka0sAddonsCommonTasks `docs/2026-11-19-ADOPTION_FEEDBACK/`, AF-RV-PC, LibKa0s v1.107.0, 2026-11-19): RV-107, new.
+
+Owed from the skin-defaults run (Ka0sAddonsCommonTasks `docs/2026-11-20-LIBKA0S_94_97_99_100/`, SD-RV-PC, LibKa0s v1.108.0, 2026-11-20): RV-108, new. From SD-SK-PC (owner ruling U-25): SKIN-35, new.
