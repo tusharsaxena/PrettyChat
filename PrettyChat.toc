@@ -91,10 +91,10 @@ defaults\Profile.lua
 defaults\Defaults.lua
 
 # Modules (the override pipeline).
-# modules\Override.lua loads AFTER core\PrettyChat.lua, core\Constants.lua, core\Util.lua and
-# locales\enUS.lua, and the position is load-bearing: at file scope it calls
-# GetAddon("PrettyChat") (non-silent, so it raises without the AceAddon object core\PrettyChat.lua
-# creates) and takes NS.Const.Color, NS.Util.note and NS.L as upvalues.
+# modules\Override.lua loads AFTER core\PrettyChat.lua, core\Constants.lua and locales\enUS.lua,
+# and the position is load-bearing: at file scope it calls GetAddon("PrettyChat") (non-silent, so
+# it raises without the AceAddon object core\PrettyChat.lua creates) and takes NS.Const.Color and
+# NS.L as upvalues. NS.Util is read at call time only.
 modules\Override.lua
 # modules\Diagnostics.lua loads AFTER core\PrettyChat.lua, and that much is load-bearing: its
 # file-scope GetAddon("PrettyChat") raises without the AceAddon object. Its place after
