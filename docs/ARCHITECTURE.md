@@ -379,7 +379,7 @@ never a live requirement, and never a reason to "restore" the file.
 | Doc | Status | Trigger |
 |---|---|---|
 | `slash-dispatch.md` | Present | 15 verbs in the command table |
-| `midnight-quirks.md` | Present | Always (documentation-§3): the vendored client-quirks catalog (client-quirks-§1); the addon's own section is empty |
+| `midnight-quirks.md` | Present | Always (documentation-§3): the vendored client-quirks catalog (client-quirks-§1); the addon's own section holds the two-client Interface line entry |
 | `forever-quirks.md` | Present | Clients value `Retail · Forever` (forever-quirks-§1): the vendored Forever quirks catalog; the addon's own section is empty |
 | `message-bus.md` | Not applicable | The addon defines no cross-module messages |
 | `compat-layer.md` | Not applicable | Not applicable — compat's applicability condition (Standard v2.65.0): PrettyChat calls no deprecated or version-variant client API outside LibKa0s's majors, so it carries no `core/Compat.lua`. Its one former shim, `Compat.GetAddOnMetadata`, is now `LibKa0s-Env-1.0` behind `core/EnvSetup.lua` |
