@@ -814,7 +814,7 @@ prunes `libs/LibKa0s/media/icons/` to the `LibKa0s icons: clear, close, copy.` l
   RV-85. Seventeen library files moved (the composers, bars, charts, call-out and arrow now follow the skin by default), but
   PrettyChat composes no font, border or bar group and draws no bar, chart or call-out, so nothing it draws should change.
   **Fail:** a Lua error, or a blank control where a mark should be.
-  Result:
+  Result: passed (owner, 2026-11-24)
 - **RV-112. A clean load on LibKa0s v1.112.0, and the copy window is a companion (FB-PC-01).** `/reload` with PrettyChat
   enabled → no Lua error naming a file under `libs/LibKa0s/`. Open `/pc config` and its Skin tab → every mark draws, as in
   RV-85. `/pc debug`, then its Copy mark → the copy window's title bar carries the close mark alone, no gear
@@ -1119,7 +1119,7 @@ skin, unless a check says otherwise.
   `(original not available)` or `(error: ...)` text draws in the skin's muted gray. (d) The chat lines stay
   as they were: the cyan `[PC]` pointer, slash output and `/pc list` keep their chat colors under every
   skin. **Fail:** a report whose labels or header stay green and gold under Obsidian, an unreadable label
-  on any skin's console, a changed chat color, or a Lua error. Result:
+  on any skin's console, a changed chat color, or a Lua error. Result: passed (owner, 2026-11-24)
 
 ## WoW Forever
 
@@ -1276,6 +1276,8 @@ On 2026-11-08 the owner reported that every check of the WoW Forever port (W2-PC
 Owed from the adoption feedback run (Ka0sAddonsCommonTasks `docs/2026-11-19-ADOPTION_FEEDBACK/`, AF-RV-PC, LibKa0s v1.107.0, 2026-11-19): RV-107, new.
 
 Owed from the skin-defaults run (Ka0sAddonsCommonTasks `docs/2026-11-20-LIBKA0S_94_97_99_100/`, SD-RV-PC, LibKa0s v1.108.0, 2026-11-20): RV-108, new. From SD-SK-PC (owner ruling U-25): SKIN-35, new.
+
+On 2026-11-24 the owner reported that both passed (run SKIN 11-20 of the owner's smoke sheet, a copy of `Ka0sPendingSmoke-2026-11-23.csv`), recorded on the owner's word on each `Result:` line as `passed (owner, 2026-11-24)`: RV-108 and SKIN-35.
 
 Owed from the feedback batch (Ka0sAddonsCommonTasks `docs/2026-11-24-FEEDBACK_BATCH/`, FB-PC-01, LibKa0s v1.112.0, 2026-11-24): RV-112, new.
 
