@@ -130,7 +130,7 @@ Two kit suites, new at kit revision 50 (`skinning-§1`), declared in `tests/run.
 ## The 1500-line cap gate
 
 `tests/_kit/test_layout_cap.lua` — the kit's gate since LibKa0s v1.55.0 (kit revision 25), and still
-the gate in the vendored LibKa0s v1.109.0 (kit revision 59), declared in `tests/run.lua` as
+the gate in the vendored LibKa0s v1.113.0 (kit revision 60), declared in `tests/run.lua` as
 `{ name = "test_layout_cap", dir = "tests/_kit/" }` — compares two things: every authored
 `.lua` git tracks, and the census under *Files over the 1500-line cap* in
 [ARCHITECTURE.md](ARCHITECTURE.md). It reads them in both directions, so a file that crosses the
@@ -215,6 +215,18 @@ outside `libs/`, `tests/` and `tools/` may carry only characters every shipped s
 a character one face lacks is a box in that skin alone. A line that is data and is never drawn takes a
 `glyph: data` mark; the only ones here are in the GlobalStrings dump
 ([global-strings.md](./global-strings.md)).
+
+### `tests/test_sample_names.lua` and `tests/test_menu_sim_scope.lua` — the round-2 source guards
+
+Both read the source and stand for audits that found nothing to change (FB2-PC-01 of Ka0sAddonsCommonTasks
+`docs/2026-11-24-FEEDBACK_BATCH/R2_SMOKE_FEEDBACK.md`, standard v2.120.0). `test_sample_names` holds LibKa0s#104's
+one source of sample names: no `Sample*`/`Mock*` name literal in a tracked text file outside `tests/`, `libs/` and
+the frozen bundles, and the format preview's `%s` placeholder stays the bare word `Sample`, which names nobody.
+`test_menu_sim_scope` holds the other two: PrettyChat runs no simulation (so no start path owes the step panel)
+and builds or paints no menu that marks a selection (its dropdowns are AceGUI settings-page pullouts and its
+launcher menu is the client's). A new simulation, `W.Dropdown`, `W.ContextMenu` or painted selection fails the
+guard until it arrives with the tests the rule asks for. Each suite opens with a case proving its matcher can
+see a hit, and fails rather than passes when `git ls-files` cannot run.
 
 ### `tests/test_disabled.lua` — the stand-down conformance suite
 

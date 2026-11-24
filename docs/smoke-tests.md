@@ -28,7 +28,7 @@ works.
 | LAUNCH-1 – 7 | Launcher | The minimap button, its menu and tooltip, the Minimap button row, broker displays |
 | DIAG-1 – 28 | Debug and diagnostics | The diagnostics report and the logging it turns on, the console and its chrome, raw locale keys, resizing the console and its copy window, the console's Diagnostics link, the library's own lines in the console, where the console layers |
 | DEGRADED-1 – 11 | Library-absent install | `libs/LibKa0s` renamed aside: fallbacks, refusals, restore |
-| RV-75 – 77, RV-85 – 89, RV-107, RV-108 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position; v1.85.0: a clean load and its icons, and a clean load on the R4-L4, round 5, round 6 and sim checkbox re-cuts; v1.107.0 and v1.108.0: a clean load |
+| RV-75 – 77, RV-85 – 89, RV-107, RV-108, RV-112, RV-113 | Re-vendor checks | LibKa0s v1.75.0: the icons left after the prune, a clean load, the Options scroll position; v1.85.0: a clean load and its icons, and a clean load on the R4-L4, round 5, round 6 and sim checkbox re-cuts; v1.107.0 and v1.108.0: a clean load; v1.112.0: a clean load and the copy window's close-only title bar; v1.113.0: a clean load |
 | SKIN-1 – 35 | Skins | Ka0s Default as before, the Skin tab, each skin live, the settings pages and the Categories tree skinned, the notes and tooltip lines, other addons stock, fonts and overrides, profiles, the first-run picker, EllesmereUI on and off, the CLI, a degraded install, the console's close mark given back, the Font outline, From skin, `/pc skin`, width parity, the v1.82.0 Skin tab, the media pickers, the skin rows' move, the v1.84.0 moved files, the one media picker, the v1.85.0 title bars, launcher tooltip, Scope-cleared rows and delete confirmation, a stored pick of the deleted Friz, no line under a window title, the picker's console eye, the console report's labels |
 | FOREVER-1 – 14 | WoW Forever | The checks re-run on a live WoW Forever client: the AddOns list, a clean load, each category's lines in real play (a two-word name included), a category off, `/pc test`, the panel, profiles across a full restart, the default skin per client, the launcher and diagnostics |
 | LOC-1 – 5 | Non-English client | The snapshot and restore on a localized client, one real line per category, missing globals |
@@ -815,6 +815,21 @@ prunes `libs/LibKa0s/media/icons/` to the `LibKa0s icons: clear, close, copy.` l
   PrettyChat composes no font, border or bar group and draws no bar, chart or call-out, so nothing it draws should change.
   **Fail:** a Lua error, or a blank control where a mark should be.
   Result:
+- **RV-112. A clean load on LibKa0s v1.112.0, and the copy window is a companion (FB-PC-01).** `/reload` with PrettyChat
+  enabled → no Lua error naming a file under `libs/LibKa0s/`. Open `/pc config` and its Skin tab → every mark draws, as in
+  RV-85. `/pc debug`, then its Copy mark → the copy window's title bar carries the close mark alone, no gear
+  (standalone-windows *A companion window carries no settings mark*, standard v2.119.0); the console behind it keeps its
+  gear, and the close mark closes the copy window only. Six library files moved (Core's preview stand-in, the disabled
+  primary button, the companion header, the copy window, the icon browser, High Contrast's HUD shadow); PrettyChat has no
+  class color, no disabled primary button and no HUD text, so nothing else it draws should change. **Fail:** a Lua error,
+  a blank mark, or a gear on the copy window.
+  Result:
+- **RV-113. A clean load on LibKa0s v1.113.0 (FB2-PC-01).** `/reload` with PrettyChat enabled → no Lua error naming a
+  file under `libs/LibKa0s/`. Open `/pc config` and its Skin tab → every mark draws, as in RV-85. Two library files moved:
+  Sim minor 5 (every sim start shows the step panel, and the sample crowd) and WidgetsDropdown minor 4 (a selected row
+  stands off a plain row). PrettyChat has no simulation, draws no sample person and builds no library dropdown (its
+  dropdowns are AceGUI's, which keep their check mark), so nothing it draws should change. **Fail:** a Lua error, or a blank control where a mark should be.
+  Result:
 
 ## SKIN
 
@@ -1261,3 +1276,7 @@ On 2026-11-08 the owner reported that every check of the WoW Forever port (W2-PC
 Owed from the adoption feedback run (Ka0sAddonsCommonTasks `docs/2026-11-19-ADOPTION_FEEDBACK/`, AF-RV-PC, LibKa0s v1.107.0, 2026-11-19): RV-107, new.
 
 Owed from the skin-defaults run (Ka0sAddonsCommonTasks `docs/2026-11-20-LIBKA0S_94_97_99_100/`, SD-RV-PC, LibKa0s v1.108.0, 2026-11-20): RV-108, new. From SD-SK-PC (owner ruling U-25): SKIN-35, new.
+
+Owed from the feedback batch (Ka0sAddonsCommonTasks `docs/2026-11-24-FEEDBACK_BATCH/`, FB-PC-01, LibKa0s v1.112.0, 2026-11-24): RV-112, new.
+
+Owed from round 2 of the feedback batch (Ka0sAddonsCommonTasks `docs/2026-11-24-FEEDBACK_BATCH/R2_SMOKE_FEEDBACK.md`, FB2-PC-01, LibKa0s v1.113.0, 2026-11-24): RV-113, new.

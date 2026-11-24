@@ -194,6 +194,12 @@ Kit.run{
         -- The display-glyph guard (kit revision 45, PC-02): every string literal outside libs/,
         -- tests/ and tools/ draws in every shipped skin face. Reads the source, loads no addon.
         "test_glyphs",
+        -- One source of sample names (FB2-PC-01, LibKa0s#104): no Sample*/Mock* name literal outside
+        -- tests/ and libs/. Reads the source, as test_glyphs does, and loads one addon for the preview.
+        "test_sample_names",
+        -- The round-2 sim and menu audits (FB2-PC-01, D2 and D3): no simulation and no menu of the
+        -- addon's own, held at the source so a new one arrives with its tests.
+        "test_menu_sim_scope",
         "test_doc_structure",
         "test_register",
         -- The kit has shipped one suite of its own since revision 15: the working-tree
