@@ -772,6 +772,12 @@ Total.
 
 - glyphs: display strings use only characters every shipped skin face draws
 
+### test_sample_names.lua (3)
+
+- sample names: the guard sees a name literal and lets an English word through
+- sample names: no Sample*/Mock* name literal lives outside tests/, libs/ and the frozen bundles
+- sample names: the format preview's string placeholder is the bare word, naming nobody
+
 ### test_menu_sim_scope.lua (3)
 
 - menu/sim scope: the guards see a use and skip a comment that names it
@@ -895,6 +901,7 @@ Total.
 | test_skin_verb.lua | 6 |
 | test_skin_preview.lua | 15 |
 | test_glyphs.lua | 1 |
+| test_sample_names.lua | 3 |
 | test_menu_sim_scope.lua | 3 |
 | test_doc_structure.lua | 13 |
 | test_register.lua | 1 |
@@ -905,4 +912,4 @@ Total.
 | test_skin_switch.lua | 13 |
 | test_client_globals.lua | 3 |
 | Skipped | 1 |
-| **Total** | **707** |
+| **Total** | **710** |
