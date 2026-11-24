@@ -1,0 +1,4 @@
+FB2 independent review (workflow wf_0f1c645f-6fa, 2026-11-24): ok
+Fixes: none
+Gate: Re-run by the reviewer at 7eee199 (TOC Interface 120105, 16001). Retail: 710 passed, 0 failed, 1 skipped (711 total). Forever (KA0S_KIT_CLIENT=forever): 710 passed, 0 failed, 1 skipped (711 total). luacheck (bounded): 0 warnings / 0 errors in 72 files. The 1500-line cap is enforced by the kit's test_layout_cap and passes; both new suites are under 100 lines. Working tree clean. No timeouts.
+Open:
