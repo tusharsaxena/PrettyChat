@@ -827,8 +827,8 @@ prunes `libs/LibKa0s/media/icons/` to the `LibKa0s icons: clear, close, copy.` l
 - **RV-113. A clean load on LibKa0s v1.113.0 (FB2-PC-01).** `/reload` with PrettyChat enabled → no Lua error naming a
   file under `libs/LibKa0s/`. Open `/pc config` and its Skin tab → every mark draws, as in RV-85. Two library files moved:
   Sim minor 5 (every sim start shows the step panel, and the sample crowd) and WidgetsDropdown minor 4 (a selected row
-  stands off a plain row, SKIN-36). PrettyChat has no simulation and draws no sample person, so nothing else it draws
-  should change. **Fail:** a Lua error, or a blank control where a mark should be.
+  stands off a plain row). PrettyChat has no simulation, draws no sample person and builds no library dropdown (its
+  dropdowns are AceGUI's, which keep their check mark), so nothing it draws should change. **Fail:** a Lua error, or a blank control where a mark should be.
   Result:
 
 ## SKIN
