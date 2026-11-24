@@ -216,6 +216,18 @@ a character one face lacks is a box in that skin alone. A line that is data and 
 `glyph: data` mark; the only ones here are in the GlobalStrings dump
 ([global-strings.md](./global-strings.md)).
 
+### `tests/test_sample_names.lua` and `tests/test_menu_sim_scope.lua` — the round-2 source guards
+
+Both read the source and stand for audits that found nothing to change (FB2-PC-01 of Ka0sAddonsCommonTasks
+`docs/2026-11-24-FEEDBACK_BATCH/R2_SMOKE_FEEDBACK.md`, standard v2.120.0). `test_sample_names` holds LibKa0s#104's
+one source of sample names: no `Sample*`/`Mock*` name literal in a tracked text file outside `tests/`, `libs/` and
+the frozen bundles, and the format preview's `%s` placeholder stays the bare word `Sample`, which names nobody.
+`test_menu_sim_scope` holds the other two: PrettyChat runs no simulation (so no start path owes the step panel)
+and builds or paints no menu that marks a selection (its dropdowns are AceGUI settings-page pullouts and its
+launcher menu is the client's). A new simulation, `W.Dropdown`, `W.ContextMenu` or painted selection fails the
+guard until it arrives with the tests the rule asks for. Each suite opens with a case proving its matcher can
+see a hit, and fails rather than passes when `git ls-files` cannot run.
+
 ### `tests/test_disabled.lua` — the stand-down conformance suite
 
 `slash-commands-§7` requires every addon in the collection to carry one, and it says why: eleven addons implemented *disabled* as a **draw gate**, and a suite written against a handler's early return cannot tell a draw gate from a stand-down, because an early return is what a draw gate does. So every assertion in this suite is made against the **registration set**, through the kit's recording mock, and never against a handler's return value.
