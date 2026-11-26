@@ -56,7 +56,8 @@ installed, at runtime or at build time.
 
 ## 2. Development — the contributor toolchain
 
-This is the set you need to run the gate (`lua tests/run.lua` + `~/.claude/dev-copilot/bin/ka0s-bounded luacheck .`) and the complexity
+This is the set you need to run the gate (`lua tests/run.lua`, `KA0S_KIT_CLIENT=forever lua tests/run.lua`,
+`~/.claude/dev-copilot/bin/ka0s-bounded luacheck .` and `python3 -m pytest -q tools/seeds`) and the complexity
 report. Install all of it; it is small.
 
 ### Lua 5.1 — a hard version requirement, not a preference
@@ -133,6 +134,15 @@ dates for you. It does not make the addon non-compliant, and it is never a commi
 | **Install** | `sudo apt install -y diffutils` (both are normally already present) |
 | **Verify** | `diff --version` |
 
+### Python 3 and pytest — the seed tests in the commit gate
+
+| | |
+|---|---|
+| **Version** | **Python 3.8 or newer** (the validator `tools/seeds/globalstrings.py` that the tests import); any recent pytest. Verified here with Python 3.12.3 and pytest 9.1.1. |
+| **Why** | The root `CLAUDE.md` gate runs `python3 -m pytest -q tools/seeds` before every commit (SF-GATE-01), as [`docs/validate-seeds.md`](./docs/validate-seeds.md)'s `## Gate` writes it. `tools/seeds/test_globalstrings.py` is standard-library `unittest` cases with no network; pytest only collects and runs them. `python3 -m unittest discover tools/seeds` runs the same cases with nothing extra installed. |
+| **Install** | `sudo apt install -y python3 python3-pytest` |
+| **Verify** | `python3 -m pytest --version` |
+
 ### Not required, and deliberately not listed
 
 - **A WoW client** is not needed for the headless suite; it is needed only for the manual
@@ -150,7 +160,8 @@ dates for you. It does not make the addon non-compliant, and it is never a commi
 
 ## 3. Release / assets — regenerating committed data
 
-**None of this is needed to build, run or test the addon.** Skip this whole section unless you are
+**None of this is needed to build or run the addon**, and testing needs only the Python 3 and pytest
+of section 2 (the seed tests). Skip this whole section unless you are
 re-validating the GlobalStrings data against a new client build, regenerating the GlobalStrings chunks, or the 128 launcher logo. A contributor fixing a typo installs nothing from here.
 
 ### Python 3 — two scripts, standard library only
@@ -194,15 +205,17 @@ install locally to package this addon.
 
 ## 4. Am I set up correctly?
 
-Run these from the repo root. All three should be green.
+Run these from the repo root. All five should be green.
 
 ```sh
 lua tests/run.lua                                     # headless suite — exits non-zero on failure
+KA0S_KIT_CLIENT=forever lua tests/run.lua             # the same suite under the Forever kit profile
 ~/.claude/dev-copilot/bin/ka0s-bounded luacheck .   # lint (config: .luacheckrc)
+python3 -m pytest -q tools/seeds                      # the seed validator's own tests, no network
 bash tests/_kit/run-automated-tests.sh --suite complexity   # sighted complexity report (automated-tests-§3)
 ```
 
-The first two are the **commit gate**; the third is a **release** checkpoint and never gates a
+The first four are the **commit gate**; the fifth is a **release** checkpoint and never gates a
 commit. What each one covers, and how to read its output, is in
 [`docs/testing.md`](./docs/testing.md).
 
